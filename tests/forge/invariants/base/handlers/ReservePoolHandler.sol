@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { Maths } from 'src/libraries/internal/Maths.sol';
 
@@ -16,7 +16,9 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
     function kickReserveAuction(
         uint256 actorIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
+        numberOfCalls['BReserveHandler.kickReserveAuction']++;
+
         // Action phase
         _kickReserveAuction();
     }
@@ -25,7 +27,9 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
         uint256 actorIndex_,
         uint256 amountToTake_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
+        numberOfCalls['BReserveHandler.takeReserves']++;
+
         // Prepare test phase
         uint256 boundedAmount = _preTakeReserves(amountToTake_);
 
@@ -44,7 +48,7 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
         if (claimableReservesRemaining == 0) _kickReserveAuction();
 
         // skip enough time for auction price to decrease
-        skip(24 hours);
+        skip(_getKickReserveTime());
 
         (, , claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
         boundedAmount_ = constrictToRange(amountToTake_, 0, Maths.min(MIN_QUOTE_AMOUNT, claimableReservesRemaining));

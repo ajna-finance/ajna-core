@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
+import { Math }           from '@openzeppelin/contracts/utils/math/Math.sol';
 
 import { PoolType } from '../../interfaces/pool/IPool.sol';
 
@@ -24,14 +25,18 @@ import { Maths }   from '../internal/Maths.sol';
     uint256 constant MIN_PRICE = 99_836_282_890;
     uint256 constant MAX_PRICE = 1_004_968_987.606512354182109771 * 1e18;
 
+    uint256 constant MAX_NEUTRAL_PRICE = 50_248_449_380.325617709105488550 * 1e18; // 50 * MAX_PRICE
+
+    /// @dev deposit buffer (extra margin) used for calculating reserves
+    uint256 constant DEPOSIT_BUFFER = 1.000000001 * 1e18;
+
     /// @dev step amounts in basis points. This is a constant across pools at `0.005`, achieved by dividing `WAD` by `10,000`
     int256 constant FLOAT_STEP_INT = 1.005 * 1e18;
 
     /**
-     *  @notice Calculates the price for a given `Fenwick` index.
+     *  @notice Calculates the price (`WAD` precision) for a given `Fenwick` index.
      *  @dev    Reverts with `BucketIndexOutOfBounds` if index exceeds maximum constant.
      *  @dev    Uses fixed-point math to get around lack of floating point numbers in `EVM`.
-     *  @dev    Price expected to be inputted as a `WAD` (`18` decimal).
      *  @dev    Fenwick index is converted to bucket index.
      *  @dev    Fenwick index to bucket index conversion:
      *  @dev      `1.00`      : bucket index `0`,     fenwick index `4156`: `7388-4156-3232=0`.
@@ -119,13 +124,13 @@ import { Maths }   from '../internal/Maths.sol';
     /**
      * @notice Calculates the unutilized deposit fee, charged to lenders who deposit below the `LUP`.
      * @param  interestRate_ The current interest rate.
-     * @return Fee rate based upon the given interest rate.
+     * @return Fee rate based upon the given interest rate, capped at 10%.
      */
     function _depositFeeRate(
         uint256 interestRate_
     ) pure returns (uint256) {
-        // current annualized rate divided by 365 (24 hours of interest)
-        return Maths.wdiv(interestRate_, 365 * 1e18);
+        // current annualized rate divided by 365 (24 hours of interest), capped at 10%
+        return Maths.min(Maths.wdiv(interestRate_, 365 * 1e18), 0.1 * 1e18);
     }
 
     /**
@@ -184,6 +189,7 @@ import { Maths }   from '../internal/Maths.sol';
 
     /**
      *  @notice Returns the amount of collateral calculated for the given amount of `LP`.
+     *  @dev    The value returned is capped at collateral amount available in bucket.
      *  @param  bucketCollateral_ Amount of collateral in bucket.
      *  @param  bucketLP_         Amount of `LP` in bucket.
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
@@ -198,10 +204,14 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 lenderLPBalance_,
         uint256 bucketPrice_
     ) pure returns (uint256 collateralAmount_) {
-        // max collateral to lp
-        uint256 rate = Buckets.getExchangeRate(bucketCollateral_, bucketLP_, deposit_, bucketPrice_);
-
-        collateralAmount_ = Maths.wdiv(Maths.wmul(lenderLPBalance_, rate), bucketPrice_);
+        collateralAmount_ = Buckets.lpToCollateral(
+            bucketCollateral_,
+            bucketLP_,
+            deposit_,
+            lenderLPBalance_,
+            bucketPrice_,
+            Math.Rounding.Down
+        );
 
         if (collateralAmount_ > bucketCollateral_) {
             // user is owed more collateral than is available in the bucket
@@ -211,13 +221,14 @@ import { Maths }   from '../internal/Maths.sol';
 
     /**
      *  @notice Returns the amount of quote tokens calculated for the given amount of `LP`.
+     *  @dev    The value returned is capped at available bucket deposit.
      *  @param  bucketLP_         Amount of `LP` in bucket.
      *  @param  bucketCollateral_ Amount of collateral in bucket.
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
      *  @param  lenderLPBalance_  The amount of `LP` to calculate quote token amount for.
      *  @param  maxQuoteToken_    The max quote token amount to calculate `LP` for.
      *  @param  bucketPrice_      Bucket's price.
-     *  @return quoteTokenAmount_ Amount of quote tokens calculated for the given `LP` amount.
+     *  @return quoteTokenAmount_ Amount of quote tokens calculated for the given `LP` amount, capped at available bucket deposit.
      */
     function _lpToQuoteToken(
         uint256 bucketLP_,
@@ -227,9 +238,14 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 maxQuoteToken_,
         uint256 bucketPrice_
     ) pure returns (uint256 quoteTokenAmount_) {
-        uint256 rate = Buckets.getExchangeRate(bucketCollateral_, bucketLP_, deposit_, bucketPrice_);
-
-        quoteTokenAmount_ = Maths.wmul(lenderLPBalance_, rate);
+        quoteTokenAmount_ = Buckets.lpToQuoteTokens(
+            bucketCollateral_,
+            bucketLP_,
+            deposit_,
+            lenderLPBalance_,
+            bucketPrice_,
+            Math.Rounding.Down
+        );
 
         if (quoteTokenAmount_ > deposit_)       quoteTokenAmount_ = deposit_;
         if (quoteTokenAmount_ > maxQuoteToken_) quoteTokenAmount_ = maxQuoteToken_;
@@ -272,6 +288,7 @@ import { Maths }   from '../internal/Maths.sol';
 
     /**
      *  @notice Calculates claimable reserves within the pool.
+     *  @dev    Claimable reserve auctions and escrowed auction bonds are guaranteed by the pool.
      *  @param  debt_                    Pool's debt.
      *  @param  poolSize_                Pool's deposit size.
      *  @param  totalBondEscrowed_       Total bond escrowed.
@@ -286,9 +303,24 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 reserveAuctionUnclaimed_,
         uint256 quoteTokenBalance_
     ) pure returns (uint256 claimable_) {
-        claimable_ = Maths.wmul(0.995 * 1e18, debt_) + quoteTokenBalance_;
+        uint256 guaranteedFunds = totalBondEscrowed_ + reserveAuctionUnclaimed_;
 
-        claimable_ -= Maths.min(claimable_, poolSize_ + totalBondEscrowed_ + reserveAuctionUnclaimed_);
+        // calculate claimable reserves if there's quote token excess
+        if (quoteTokenBalance_ > guaranteedFunds) {
+            claimable_ = Maths.wmul(0.995 * 1e18, debt_) + quoteTokenBalance_;
+
+            claimable_ -= Maths.min(
+                claimable_,
+                // require 1.0 + 1e-9 deposit buffer (extra margin) for deposits
+                Maths.wmul(DEPOSIT_BUFFER, poolSize_) + guaranteedFunds
+            );
+
+            // incremental claimable reserve should not exceed excess quote in pool
+            claimable_ = Maths.min(
+                claimable_,
+                quoteTokenBalance_ - guaranteedFunds
+            );
+        }
     }
 
     /**

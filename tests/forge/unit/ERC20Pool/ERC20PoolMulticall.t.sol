@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
@@ -19,6 +19,8 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
     address internal _lender;
 
     function setUp() external {
+        _startTest();
+
         _lender = makeAddr("lender");
         lenders.add(_lender);
 
@@ -137,7 +139,7 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         );
 
         changePrank(_lender);
-        vm.expectRevert(IPoolErrors.LimitIndexExceeded.selector);
+        vm.expectRevert(IPoolErrors.InsufficientLiquidity.selector);
         ERC20Pool(address(_pool)).multicall(callsToExecute);
     }
 }

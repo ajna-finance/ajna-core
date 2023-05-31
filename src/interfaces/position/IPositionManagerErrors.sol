@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 /**
  * @title Positions Manager Errors
@@ -8,9 +8,19 @@ pragma solidity 0.8.14;
 interface IPositionManagerErrors {
 
     /**
+     * @notice User attempting to memorialize position with an allowance set too low.
+     */
+    error AllowanceTooLow();
+
+    /**
      * @notice User attempting to utilize `LP` from a bankrupt bucket.
      */
     error BucketBankrupt();
+
+    /**
+     *  @notice Can't deploy with `ERC20` or `ERC721` factory address `0x`.
+     */
+    error DeployWithZeroAddress();
 
     /**
      * @notice User attempting to burn a `LP` `NFT` before removing liquidity.
@@ -21,6 +31,11 @@ interface IPositionManagerErrors {
      * @notice User not authorized to interact with the specified `NFT`.
      */
     error NoAuth();
+
+    /**
+     * @notice `NFT` with provided ID does not exist.
+     */
+    error NoToken();
 
     /**
      * @notice User attempted to mint an `NFT` pointing to a pool that wasn't deployed by an `Ajna` factory.

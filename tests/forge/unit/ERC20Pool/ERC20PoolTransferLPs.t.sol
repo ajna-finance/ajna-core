@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
@@ -14,6 +14,8 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
     address internal _lender2;
 
     function setUp() external {
+        _startTest();
+
         _lender  = makeAddr("lender");
         _lender1 = makeAddr("lender1");
         _lender2 = makeAddr("lender2");

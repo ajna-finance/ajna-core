@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { ERC721HelperContract }                from './ERC721DSTestPlus.sol';
 import { FlashloanBorrower, SomeDefiStrategy } from '../../utils/FlashloanBorrower.sol';
@@ -16,6 +16,8 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
     uint    internal _bucketPrice;
 
     function setUp() external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _lender    = makeAddr("lender");
 

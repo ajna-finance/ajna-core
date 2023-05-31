@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import {
     AuctionsState,
@@ -80,6 +80,7 @@ library BorrowerActions {
     error AuctionActive();
     error BorrowerNotSender();
     error BorrowerUnderCollateralized();
+    error InsufficientLiquidity();
     error InsufficientCollateral();
     error InvalidAmount();
     error LimitIndexExceeded();
@@ -95,13 +96,13 @@ library BorrowerActions {
      *  @dev    - `SettlerActions._settleAuction` (`_removeAuction`):
      *  @dev      decrement kicker locked accumulator, increment kicker claimable accumumlator
      *  @dev      decrement auctions count accumulator
-     *  @dev      decrement `auctions.totalBondEscrowed` accumulator
      *  @dev      update auction queue state
      *  @dev    - `Loans.update` (`_upsert`):
      *  @dev      insert or update loan in loans array
      *  @dev      remove loan from loans array
      *  @dev      update borrower in `address => borrower` mapping
      *  @dev    === Reverts on ===
+     *  @dev    not enough quote tokens available `InsufficientLiquidity()`
      *  @dev    borrower not sender `BorrowerNotSender()`
      *  @dev    borrower debt less than pool min debt `AmountLTMinDebt()`
      *  @dev    limit price reached `LimitIndexExceeded()`
@@ -115,6 +116,7 @@ library BorrowerActions {
         DepositsState storage deposits_,
         LoansState    storage loans_,
         PoolState calldata poolState_,
+        uint256 maxAvailable_,
         address borrowerAddress_,
         uint256 amountToBorrow_,
         uint256 limitIndex_,
@@ -122,6 +124,9 @@ library BorrowerActions {
     ) external returns (
         DrawDebtResult memory result_
     ) {
+        // revert if not enough pool balance to borrow
+        if (amountToBorrow_ > maxAvailable_) revert InsufficientLiquidity();
+
         DrawDebtLocalVars memory vars;
         vars.pledge = collateralToPledge_ != 0;
         vars.borrow = amountToBorrow_ != 0;
@@ -189,7 +194,7 @@ library BorrowerActions {
             // an auctioned borrower in not allowed to draw more debt (even if collateralized at the new LUP) if auction is not settled
             if (result_.inAuction) revert AuctionActive();
 
-            vars.t0BorrowAmount = Maths.wdiv(amountToBorrow_, poolState_.inflator);
+            vars.t0BorrowAmount = Maths.ceilWdiv(amountToBorrow_, poolState_.inflator);
 
             // t0 debt change is t0 amount to borrow plus the origination fee
             vars.t0DebtChange = Maths.wmul(vars.t0BorrowAmount, _borrowFeeRate(poolState_.rate) + Maths.WAD);
@@ -203,7 +208,7 @@ library BorrowerActions {
                 loans_,
                 result_.poolDebt,
                 vars.borrowerDebt,
-                poolState_.quoteDustLimit
+                poolState_.quoteTokenScale
             );
 
             // add debt change to pool's debt
@@ -214,9 +219,8 @@ library BorrowerActions {
             // revert if borrow drives LUP price under the specified price limit
             _revertIfPriceDroppedBelowLimit(result_.newLup, limitIndex_);
 
-            // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
+            // use new lup to check borrow action won't push borrower into a state of under-collateralization
             // this check also covers the scenario when loan is already auctioned
-
             if (!_isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)) {
                 revert BorrowerUnderCollateralized();
             }
@@ -249,7 +253,6 @@ library BorrowerActions {
      *  @dev    - `SettlerActions._settleAuction` (`_removeAuction`):
      *  @dev      decrement kicker locked accumulator, increment kicker claimable accumumlator
      *  @dev      decrement auctions count accumulator
-     *  @dev      decrement `auctions.totalBondEscrowed` accumulator
      *  @dev      update auction queue state
      *  @dev    - `Loans.update` (`_upsert`):
      *  @dev      insert or update loan in loans array
@@ -304,13 +307,13 @@ library BorrowerActions {
             } else {
                 vars.t0RepaidDebt = Maths.min(
                     borrower.t0Debt,
-                    Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState_.inflator)
+                    Maths.floorWdiv(maxQuoteTokenAmountToRepay_, poolState_.inflator)
                 );
             }
 
             result_.t0PoolDebt        -= vars.t0RepaidDebt;
             result_.poolDebt          = Maths.wmul(result_.t0PoolDebt, poolState_.inflator);
-            result_.quoteTokenToRepay = Maths.wmul(vars.t0RepaidDebt,  poolState_.inflator);
+            result_.quoteTokenToRepay = Maths.ceilWmul(vars.t0RepaidDebt,  poolState_.inflator);
 
             vars.borrowerDebt = Maths.wmul(borrower.t0Debt - vars.t0RepaidDebt, poolState_.inflator);
 
@@ -319,7 +322,7 @@ library BorrowerActions {
                 loans_,
                 result_.poolDebt,
                 vars.borrowerDebt,
-                poolState_.quoteDustLimit
+                poolState_.quoteTokenScale
             );
 
             result_.newLup = Deposits.getLup(deposits_, result_.poolDebt);

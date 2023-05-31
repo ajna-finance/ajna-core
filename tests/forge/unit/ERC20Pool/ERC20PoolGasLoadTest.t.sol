@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { ERC20DSTestPlus } from './ERC20DSTestPlus.sol';
 
@@ -136,8 +136,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
 
         address borrower = _borrowers[borrowerId_];
 
-        vm.prank(borrower);
-
+        vm.startPrank(borrower);
         _drawDebtNoLupCheck({
             from:               borrower,
             borrower:           borrower,
@@ -145,6 +144,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
             limitIndex:         5000,
             collateralToPledge: 0
         });
+        vm.stopPrank();
 
         assertEq(_noOfLoans(), LOANS_COUNT);
     }
@@ -245,6 +245,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
 
             address borrower = _borrowers[i];
 
+            vm.startPrank(borrower);
             _drawDebtNoLupCheck({
                 from:               borrower,
                 borrower:           borrower,
@@ -252,6 +253,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
                 limitIndex:         5000,
                 collateralToPledge: 0
             });
+            vm.stopPrank();
 
             assertEq(_noOfLoans(), LOANS_COUNT);
 

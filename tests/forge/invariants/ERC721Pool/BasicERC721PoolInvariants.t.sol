@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import "@std/console.sol";
 
@@ -17,8 +17,6 @@ import { IBaseHandler }          from '../interfaces/IBaseHandler.sol';
 
 // contains invariants for the test
 contract BasicERC721PoolInvariants is BasicInvariants {
-
-    uint256               internal constant NUM_ACTORS = 10;
 
     NFTCollateralToken     internal _collateral;
     ERC721Pool             internal _erc721pool;
@@ -43,7 +41,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
             address(_quote),
             address(_collateral),
             address(_poolInfo),
-            NUM_ACTORS,
+            _numOfActors,
             address(this)
         );
 
@@ -67,26 +65,41 @@ contract BasicERC721PoolInvariants is BasicInvariants {
 
         (, previousInterestRateUpdate) = _erc721pool.interestRateInfo();
 
-        // TODO: Change once this issue is resolved -> https://github.com/foundry-rs/foundry/issues/2963
-        targetSender(address(0x1234));
     }
 
-    function invariant_CT2() public useCurrentTimestamp {
+    /************************************/
+    /*** ERC721 Collateral Invariants ***/
+    /************************************/
+
+    function invariant_collateral() public useCurrentTimestamp {
+        _invariant_CT2();
+        _invariant_CT3();
+        _invariant_CT4();
+        _invariant_CT5();
+        _invariant_CT6();
+        _invariant_CT7();
+    }
+
+    /**************************/
+    /*** Internal functions ***/
+    /**************************/
+
+    function _invariant_CT2() internal view {
         uint256 collateralBalance = _collateral.balanceOf(address(_erc721pool)) * 1e18;
         uint256 bucketCollateral;
         uint256 collateral;
 
-        uint256[] memory collateralBuckets = IBaseHandler(_handler).getCollateralBuckets();
-        for (uint256 i = 0; i < collateralBuckets.length; i++) {
-            uint256 bucketIndex = collateralBuckets[i];
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
             (, collateral, , , ) = _erc721pool.bucketInfo(bucketIndex);
             bucketCollateral += collateral;
         }
 
-        assertEq(collateralBalance, bucketCollateral + _erc721pool.pledgedCollateral(), "Collateral Invariant CT2");
+        require(collateralBalance == bucketCollateral + _erc721pool.pledgedCollateral(), "Collateral Invariant CT2");
     }
 
-    function invariant_CT3() public useCurrentTimestamp {
+    function _invariant_CT3() internal view {
         uint256 collateralBalance = _collateral.balanceOf(address(_erc721pool));
 
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
@@ -98,10 +111,10 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         }
 
         uint256 bucketTokens = _erc721pool.totalBucketTokens();
-        assertEq(collateralBalance, borrowerTokens + bucketTokens, "Collateral Invariant CT3");
+        require(collateralBalance == borrowerTokens + bucketTokens, "Collateral Invariant CT3");
     }
 
-    function invariant_CT4() public useCurrentTimestamp {
+    function _invariant_CT4() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 i = 0; i < actorCount; i++) {
@@ -110,11 +123,11 @@ contract BasicERC721PoolInvariants is BasicInvariants {
 
             (, uint256 borrowerCollateral, ) = _erc721pool.borrowerInfo(borrower);
 
-            assertGe(borrowerTokens * 1e18, borrowerCollateral, "Collateral Invariant CT4");
+            require(borrowerTokens * 1e18 >= borrowerCollateral, "Collateral Invariant CT4");
         }
     }
 
-    function invariant_CT5() public useCurrentTimestamp {
+    function _invariant_CT5() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 i = 0; i < actorCount; i++) {
@@ -124,7 +137,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
             for (uint256 tokenIndex = 0; tokenIndex < borrowerTokens; tokenIndex++) {
                 uint256 borrowerTokenId = _erc721pool.borrowerTokenIds(borrower, tokenIndex);
 
-                assertEq(_collateral.ownerOf(borrowerTokenId), address(_erc721pool), "Collateral Invariant CT5");
+                require(_collateral.ownerOf(borrowerTokenId) == address(_erc721pool), "Collateral Invariant CT5");
             }
         }
 
@@ -132,11 +145,11 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         for (uint256 tokenIndex = 0; tokenIndex < bucketTokens; tokenIndex++) {
             uint256 bucketTokenId = _erc721pool.bucketTokenIds(tokenIndex);
 
-            assertEq(_collateral.ownerOf(bucketTokenId), address(_erc721pool), "Collateral Invariant CT5");
+            require(_collateral.ownerOf(bucketTokenId) == address(_erc721pool), "Collateral Invariant CT5");
         }
     }
 
-    function invariant_CT6() public useCurrentTimestamp {
+    function _invariant_CT6() internal view {
         if (_erc721pool.isSubset()) {
             uint256 actorCount = IBaseHandler(_handler).getActorsCount();
             for (uint256 i = 0; i < actorCount; i++) {
@@ -146,7 +159,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
                 for (uint256 tokenIndex = 0; tokenIndex < borrowerTokens; tokenIndex++) {
                     uint256 borrowerTokenId = _erc721pool.borrowerTokenIds(borrower, tokenIndex);
 
-                    assertTrue(_erc721pool.tokenIdsAllowed(borrowerTokenId), "Collateral Invariant CT6");
+                    require(_erc721pool.tokenIdsAllowed(borrowerTokenId), "Collateral Invariant CT6");
                 }
             }
 
@@ -154,24 +167,23 @@ contract BasicERC721PoolInvariants is BasicInvariants {
             for (uint256 tokenIndex = 0; tokenIndex < bucketTokens; tokenIndex++) {
                 uint256 bucketTokenId = _erc721pool.bucketTokenIds(tokenIndex);
 
-                assertTrue(_erc721pool.tokenIdsAllowed(bucketTokenId), "Collateral Invariant CT6");
+                require(_erc721pool.tokenIdsAllowed(bucketTokenId), "Collateral Invariant CT6");
             }
         }    
     }
 
-    function invariant_CT7() public useCurrentTimestamp {
+    function _invariant_CT7() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         uint256 totalCollateralPledged;
         for (uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
-
             (, uint256 borrowerCollateral, ) = _erc721pool.borrowerInfo(borrower);
 
             totalCollateralPledged += borrowerCollateral;
         }
 
-        assertEq(_erc721pool.pledgedCollateral(), totalCollateralPledged, "Collateral Invariant CT7");
+        require(_erc721pool.pledgedCollateral() == totalCollateralPledged, "Collateral Invariant CT7");
     }
 
 }

@@ -1,11 +1,24 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 /**
  * @title Rewards Manager State
  */
 interface IRewardsManagerState {
+
+    /**
+     *  @notice Track whether a bucket's exchange rate has been updated in a given burn event epoch.
+     *  @param  pool_        The pool to check the update status of.
+     *  @param  bucketIndex_ The bucket index to check the update status of.
+     *  @param  epoch_   The burn epoch to check the bucket index in.
+     *  @return `True` if the buckets exchange rate was updated in the given epoch, else false.
+     */
+    function isBucketUpdated(
+        address pool_,
+        uint256 bucketIndex_,
+        uint256 epoch_
+    ) external view returns (bool);
 
     /**
      *  @notice Track whether a depositor has claimed rewards for a given burn event epoch.
@@ -76,6 +89,6 @@ struct StakeInfo {
 
 /// @dev Struct holding bucket state at stake time.
 struct BucketState {
-    uint128 lpsAtStakeTime;  // [WAD] LP amount the NFT owner is entitled in current bucket at the time of staking
-    uint128 rateAtStakeTime; // [WAD] current bucket exchange rate at the time of staking
+    uint256 lpsAtStakeTime;  // [WAD] LP amount the NFT owner is entitled in current bucket at the time of staking
+    uint256 rateAtStakeTime; // [WAD] current bucket exchange rate at the time of staking
 }

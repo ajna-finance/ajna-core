@@ -14,10 +14,10 @@ autofetch_sources: True
 # path remapping to support imports from GitHub/NPM
 compiler:
   solc:
-    version: 0.8.14
+    version: 0.8.18
     optimizer:
       enabled: true
-      runs: 500
+      runs: 0
     remappings:
       - "@ds-math=lib/ds-math/src/"
       - "@openzeppelin/contracts=lib/openzeppelin-contracts/contracts"

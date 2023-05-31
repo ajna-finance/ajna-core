@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
@@ -23,6 +23,8 @@ contract ERC20PoolFlashloanTest is ERC20HelperContract {
     uint    internal _bucketPrice;
 
     function setUp() external {
+        _startTest();
+
         _lender    = makeAddr("lender");
         _borrower  = makeAddr("borrower");
 

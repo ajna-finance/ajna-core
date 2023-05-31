@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
@@ -215,6 +215,7 @@ library PoolCommons {
      *  @param  thresholdPrice_ Current Pool Threshold Price.
      *  @param  elapsed_        Time elapsed since last inflator update.
      *  @return newInflator_    The new value of pool inflator.
+     *  @return newInterest_    The new interest accrued.
      */
     function accrueInterest(
         EmaState      storage emaParams_,
@@ -233,7 +234,7 @@ library PoolCommons {
         uint256 accrualIndex;
         if (htp > MAX_PRICE)      accrualIndex = 1;                 // if HTP is over the highest price bucket then no buckets earn interest
         else if (htp < MIN_PRICE) accrualIndex = MAX_FENWICK_INDEX; // if HTP is under the lowest price bucket then all buckets earn interest
-        else                      accrualIndex = _indexOf(htp);     // else HPT bucket earn interest
+        else                      accrualIndex = _indexOf(htp);     // else HTP bucket earn interest
 
         uint256 lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
         // accrual price is less of lup and htp, and prices decrease as index increases
@@ -247,12 +248,14 @@ library PoolCommons {
                 Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)
             );
 
+            // lender factor computation, capped at 10x the interest factor for borrowers
+            uint256 lenderFactor = Maths.min(
+                Maths.floorWdiv(newInterest_, interestEarningDeposit),
+                Maths.wmul(pendingFactor - Maths.WAD, Maths.wad(10))
+            ) + Maths.WAD;
+
             // Scale the fenwick tree to update amount of debt owed to lenders
-            Deposits.mult(
-                deposits_,
-                accrualIndex,
-                Maths.floorWdiv(newInterest_, interestEarningDeposit) + Maths.WAD // lender factor
-            );
+            Deposits.mult(deposits_, accrualIndex, lenderFactor);
         }
     }
 
@@ -326,9 +329,9 @@ library PoolCommons {
 
         // PRBMath library forbids raising a number < 1e18 to a power.  Using the product and quotient rules of 
         // exponents, rewrite the equation with a coefficient s which provides sufficient precision:
-        // Net Interest Margin = ((s - MAU1) * s)^(1/3) / s^(1/3) * 0.15
+        // Net Interest Margin = ((1 - MAU1) * s)^(1/3) / s^(1/3) * 0.15
 
-        uint256 base = 1_000_000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1_000_000 * 1e18);
+        uint256 base = 1_000_000 * 1e18 - Maths.min(mau_, 1e18) * 1_000_000;
         // If unutilized deposit is infinitessimal, lenders get 100% of interest.
         if (base < 1e18) {
             return 1e18;
@@ -364,7 +367,10 @@ library PoolCommons {
             else if (dwatp >= MIN_PRICE) meaningfulDeposit_ = Deposits.prefixSum(deposits_, _indexOf(dwatp));
             else                         meaningfulDeposit_ = Deposits.treeSum(deposits_);
         }
-        meaningfulDeposit_ -= Maths.min(meaningfulDeposit_, t0DebtInAuction_);
+        meaningfulDeposit_ -= Maths.min(
+            meaningfulDeposit_,
+            Maths.wmul(t0DebtInAuction_, inflator_)
+        );
     }
 
     /**********************/

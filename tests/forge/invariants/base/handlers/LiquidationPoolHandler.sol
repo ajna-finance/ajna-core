@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
+
+import { _isCollateralized } from 'src/libraries/helpers/PoolHelper.sol';
 
 import { UnboundedLiquidationPoolHandler } from './unbounded/UnboundedLiquidationPoolHandler.sol';
 import { BasicPoolHandler }                from './BasicPoolHandler.sol';
@@ -16,7 +18,8 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 amount_,
         uint256 kickerIndex_,
         uint256 skippedTime_
-    ) external useTimestamps skipTime(skippedTime_) {
+    ) external useTimestamps skipTime(skippedTime_) writeLogs {
+        numberOfCalls['BLiquidationHandler.kickAuction']++;
         _kickAuction(borrowerIndex_, amount_, kickerIndex_);
     }
 
@@ -24,7 +27,8 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 kickerIndex_,
         uint256 bucketIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(kickerIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(kickerIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
+        numberOfCalls['BLiquidationHandler.kickWithDeposit']++;
         _kickWithDeposit(_lenderBucketIndex);
     }
 
@@ -32,7 +36,8 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 kickerIndex_,
         uint256 maxAmount_,
         uint256 skippedTime_
-    ) external useRandomActor(kickerIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(kickerIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
+        numberOfCalls['BLiquidationHandler.withdrawBonds']++;
         _withdrawBonds(_actor, maxAmount_);
     }
 
@@ -45,18 +50,16 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 amount_,
         uint256 takerIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(takerIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(takerIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BLiquidationHandler.takeAuction']++;
 
         // Prepare test phase
         address borrower;
         address taker       = _actor;
-        (amount_, borrower) = _preTake(amount_, borrowerIndex_, takerIndex_);
+        (amount_, borrower) = _preTake(amount_, borrowerIndex_, takerIndex_, skippedTime_);
 
         // Action phase
         changePrank(taker);
-        // skip time to make auction takeable
-        vm.warp(block.timestamp + 2 hours);
         _takeAuction(borrower, amount_, taker);
     }
 
@@ -66,16 +69,14 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         bool depositTake_,
         uint256 takerIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(takerIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(takerIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BLiquidationHandler.bucketTake']++;
 
         // Prepare test phase
         address taker                           = _actor;
-        (address borrower, uint256 bucketIndex) = _preBucketTake(borrowerIndex_, takerIndex_, bucketIndex_);
+        (address borrower, uint256 bucketIndex) = _preBucketTake(borrowerIndex_, takerIndex_, bucketIndex_, skippedTime_);
 
         changePrank(taker);
-        // skip time to make auction takeable
-        vm.warp(block.timestamp + 2 hours);
         _bucketTake(taker, borrower, depositTake_, bucketIndex);
     }
 
@@ -88,7 +89,8 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 borrowerIndex_,
         uint256 kickerIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
+        numberOfCalls['BLiquidationHandler.settleAuction']++;
 
         // prepare phase
         address actor                        = _actor;
@@ -96,8 +98,6 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
 
         // Action phase
         changePrank(actor);
-        // skip time to make auction clearable
-        vm.warp(block.timestamp + 73 hours);
         _settleAuction(borrower, maxDepth);
 
         // Cleanup phase
@@ -118,33 +118,47 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         borrowerKicked_ = kickTime != 0;
 
         if (!borrowerKicked_) {
-            (uint256 debt, , ) = _pool.borrowerInfo(borrower_);
+            // if borrower not kicked then check if it is undercollateralized / kickable
+            uint256 lup = _poolInfo.lup(address(_pool));
+            (uint256 debt, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
 
-            if (debt == 0) {
+            if (_isCollateralized(debt, collateral, lup, _pool.poolType())) {
                 changePrank(borrower_);
                 _actor = borrower_;
                 uint256 drawDebtAmount = _preDrawDebt(amount_);
                 _drawDebt(drawDebtAmount);
 
                 // skip to make borrower undercollateralized
-                vm.warp(block.timestamp + 200 days);
+                (debt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+                if (debt != 0) vm.warp(block.timestamp + _getKickSkipTime());
             }
         }
     }
 
-    function _preTake(uint256 amount_, uint256 borrowerIndex_, uint256 kickerIndex_) internal returns(uint256 boundedAmount_, address borrower_){
+    function _preTake(uint256 amount_, uint256 borrowerIndex_, uint256 kickerIndex_, uint256 skipTime_) internal returns(uint256 boundedAmount_, address borrower_){
         boundedAmount_ = _constrictTakeAmount(amount_);
         borrower_      = _kickAuction(borrowerIndex_, boundedAmount_ * 100, kickerIndex_);
+
+        // skip time to make auction takeable
+        skipTime_ = constrictToRange(skipTime_, 2 hours, 71 hours);
+        vm.warp(block.timestamp + skipTime_);
     }
 
-    function _preBucketTake(uint256 borrowerIndex_, uint256 kickerIndex_, uint256 bucketIndex_) internal returns(address borrower_, uint256 bucket_) {
+    function _preBucketTake(uint256 borrowerIndex_, uint256 kickerIndex_, uint256 bucketIndex_, uint256 skipTime_) internal returns(address borrower_, uint256 bucket_) {
         bucket_   = constrictToRange(bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
         borrower_ = _kickAuction(borrowerIndex_, 1e24, kickerIndex_);
+
+        // skip time to make auction takeable
+        skipTime_ = constrictToRange(skipTime_, 2 hours, 71 hours);
+        vm.warp(block.timestamp + skipTime_);
     }
 
     function _preSettleAuction(uint256 borrowerIndex_, uint256 kickerIndex_) internal returns(address borrower_, uint256 maxDepth_) {
         maxDepth_ = LENDER_MAX_BUCKET_INDEX - LENDER_MIN_BUCKET_INDEX;
         borrower_ = _kickAuction(borrowerIndex_, 1e24, kickerIndex_);
+
+        // skip time to make auction clearable
+        vm.warp(block.timestamp + 73 hours);
     }
 
     /************************/
@@ -156,7 +170,6 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 amount_,
         uint256 kickerIndex_
     ) internal useRandomActor(kickerIndex_) returns(address borrower_) {
-        numberOfCalls['BLiquidationHandler.kickAuction']++;
 
         // Prepare test phase
         address kicker   = _actor;
@@ -165,6 +178,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
 
         // Action phase
         _actor = kicker;
+        changePrank(kicker);
         if (!borrowerKicked) _kickAuction(borrower_);
     }
 

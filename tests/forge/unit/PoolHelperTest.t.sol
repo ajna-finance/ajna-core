@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import '../utils/DSTestPlus.sol';
 
@@ -128,6 +128,9 @@ contract PoolHelperTest is DSTestPlus {
         uint256 interestRate = 0.07 * 1e18;
         assertEq(_depositFeeRate(interestRate), 0.000191780821917808 * 1e18);
         assertEq(_depositFeeRate(0.2 * 1e18),   0.000547945205479452 * 1e18);
+
+        // fee rate should be capped at 10%
+        assertEq(_depositFeeRate(1_000 * 1e18), 0.1 * 1e18);
     }
 
     /**

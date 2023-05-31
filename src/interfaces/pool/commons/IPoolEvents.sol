@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 /**
  * @title Pool Events
@@ -15,8 +15,8 @@ interface IPoolEvents {
      *  @notice Emitted when lender adds quote token to the pool.
      *  @param  lender    Recipient that added quote tokens.
      *  @param  index     Index at which quote tokens were added.
-     *  @param  amount    Amount of quote tokens added to the pool.
-     *  @param  lpAwarded Amount of `LP` awarded for the deposit. 
+     *  @param  amount    Amount of quote tokens added to the pool (`WAD` precision).
+     *  @param  lpAwarded Amount of `LP` awarded for the deposit (`WAD` precision).
      *  @param  lup       `LUP` calculated after deposit.
      */
     event AddQuoteToken(
@@ -32,9 +32,9 @@ interface IPoolEvents {
      *  @param  lender         Recipient that moved quote tokens.
      *  @param  from           Price bucket from which quote tokens were moved.
      *  @param  to             Price bucket where quote tokens were moved.
-     *  @param  amount         Amount of quote tokens moved.
-     *  @param  lpRedeemedFrom Amount of `LP` removed from the `from` bucket.
-     *  @param  lpAwardedTo    Amount of `LP` credited to the `to` bucket.
+     *  @param  amount         Amount of quote tokens moved (`WAD` precision).
+     *  @param  lpRedeemedFrom Amount of `LP` removed from the `from` bucket (`WAD` precision).
+     *  @param  lpAwardedTo    Amount of `LP` credited to the `to` bucket (`WAD` precision).
      *  @param  lup            `LUP` calculated after removal.
      */
     event MoveQuoteToken(
@@ -51,8 +51,8 @@ interface IPoolEvents {
      *  @notice Emitted when lender removes quote token from the pool.
      *  @param  lender     Recipient that removed quote tokens.
      *  @param  index      Index at which quote tokens were removed.
-     *  @param  amount     Amount of quote tokens removed from the pool.
-     *  @param  lpRedeemed Amount of `LP` exchanged for quote token.
+     *  @param  amount     Amount of quote tokens removed from the pool (`WAD` precision).
+     *  @param  lpRedeemed Amount of `LP` exchanged for quote token (`WAD` precision).
      *  @param  lup        `LUP` calculated after removal.
      */
     event RemoveQuoteToken(
@@ -67,8 +67,8 @@ interface IPoolEvents {
      *  @notice Emitted when lender claims collateral from a bucket.
      *  @param  claimer    Recipient that claimed collateral.
      *  @param  index      Index at which collateral was claimed.
-     *  @param  amount     The amount of collateral (or number of `NFT` tokens) transferred to the claimer.
-     *  @param  lpRedeemed Amount of `LP` exchanged for quote token.
+     *  @param  amount     The amount of collateral (`WAD` precision for `ERC20` pools, number of `NFT` tokens for `ERC721` pools) transferred to the claimer.
+     *  @param  lpRedeemed Amount of `LP` exchanged for quote token (`WAD` precision).
      */
     event RemoveCollateral(
         address indexed claimer,
@@ -84,8 +84,8 @@ interface IPoolEvents {
     /**
      *  @notice Emitted when borrower repays quote tokens to the pool and/or pulls collateral from the pool.
      *  @param  borrower         `msg.sender` or on behalf of sender.
-     *  @param  quoteRepaid      Amount of quote tokens repaid to the pool.
-     *  @param  collateralPulled The amount of collateral (or number of `NFT` tokens) transferred to the claimer.
+     *  @param  quoteRepaid      Amount of quote tokens repaid to the pool (`WAD` precision).
+     *  @param  collateralPulled The amount of collateral (`WAD` precision for `ERC20` pools, number of `NFT` tokens for `ERC721` pools) transferred to the claimer.
      *  @param  lup              `LUP` after repay.
      */
     event RepayDebt(
@@ -102,9 +102,9 @@ interface IPoolEvents {
     /**
      *  @notice Emitted when a liquidation is initiated.
      *  @param  borrower   Identifies the loan being liquidated.
-     *  @param  debt       Debt the liquidation will attempt to cover.
-     *  @param  collateral Amount of collateral up for liquidation.
-     *  @param  bond       Bond amount locked by kicker
+     *  @param  debt       Debt the liquidation will attempt to cover (`WAD` precision).
+     *  @param  collateral Amount of collateral up for liquidation (`WAD` precision for `ERC20` pools, number of `NFT` tokens for `ERC721` pools).
+     *  @param  bond       Bond amount locked by kicker (`WAD` precision).
      */
     event Kick(
         address indexed borrower,
@@ -117,7 +117,7 @@ interface IPoolEvents {
      *  @notice Emitted when kickers are withdrawing funds posted as auction bonds.
      *  @param  kicker   The kicker withdrawing bonds.
      *  @param  reciever The address receiving withdrawn bond amount.
-     *  @param  amount   The bond amount that was withdrawn.
+     *  @param  amount   The bond amount that was withdrawn (`WAD` precision).
      */
     event BondWithdrawn(
         address indexed kicker,
@@ -129,9 +129,9 @@ interface IPoolEvents {
      *  @notice Emitted when an actor uses quote token to arb higher-priced deposit off the book.
      *  @param  borrower    Identifies the loan being liquidated.
      *  @param  index       The index of the `Highest Price Bucket` used for this take.
-     *  @param  amount      Amount of quote token used to purchase collateral.
-     *  @param  collateral  Amount of collateral purchased with quote token.
-     *  @param  bondChange  Impact of this take to the liquidation bond.
+     *  @param  amount      Amount of quote token used to purchase collateral (`WAD` precision).
+     *  @param  collateral  Amount of collateral purchased with quote token (`WAD` precision).
+     *  @param  bondChange  Impact of this take to the liquidation bond (`WAD` precision).
      *  @param  isReward    `True` if kicker was rewarded with `bondChange` amount, `false` if kicker was penalized.
      *  @dev    amount / collateral implies the auction price.
      */
@@ -148,8 +148,8 @@ interface IPoolEvents {
      *  @notice Emitted when `LP` are awarded to a taker or kicker in a bucket take.
      *  @param  taker           Actor who invoked the bucket take.
      *  @param  kicker          Actor who started the auction.
-     *  @param  lpAwardedTaker  Amount of `LP` awarded to the taker.
-     *  @param  lpAwardedKicker Amount of `LP` awarded to the actor who started the auction.
+     *  @param  lpAwardedTaker  Amount of `LP` awarded to the taker (`WAD` precision).
+     *  @param  lpAwardedKicker Amount of `LP` awarded to the actor who started the auction (`WAD` precision).
      */
     event BucketTakeLPAwarded(
         address indexed taker,
@@ -161,9 +161,9 @@ interface IPoolEvents {
     /**
      *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
      *  @param  borrower   Identifies the loan being liquidated.
-     *  @param  amount     Amount of quote token used to purchase collateral.
-     *  @param  collateral Amount of collateral purchased with quote token (`ERC20` pool) or number of `NFT`s purchased (`ERC721` pool).
-     *  @param  bondChange Impact of this take to the liquidation bond.
+     *  @param  amount     Amount of quote token used to purchase collateral (`WAD` precision).
+     *  @param  collateral Amount of collateral purchased with quote token (for `ERC20` pool, `WAD` precision) or number of `NFT`s purchased (for `ERC721` pool).
+     *  @param  bondChange Impact of this take to the liquidation bond (`WAD` precision).
      *  @param  isReward   `True` if kicker was rewarded with `bondChange` amount, `false` if kicker was penalized.
      *  @dev    amount / collateral implies the auction price.
      */
@@ -177,8 +177,8 @@ interface IPoolEvents {
 
     /**
      *  @notice Emitted when an actor settles debt in a completed liquidation
-     *  @param  borrower   Identifies the loan under liquidation.
-     *  @param  settledDebt Amount of pool debt settled in this transaction.
+     *  @param  borrower    Identifies the loan under liquidation.
+     *  @param  settledDebt Amount of pool debt settled in this transaction (`WAD` precision).
      *  @dev    When `amountRemaining_ == 0`, the auction has been completed cleared and removed from the queue.
      */
     event Settle(
@@ -189,7 +189,7 @@ interface IPoolEvents {
     /**
      *  @notice Emitted when auction is completed.
      *  @param  borrower   Address of borrower that exits auction.
-     *  @param  collateral Borrower's remaining collateral when auction completed.
+     *  @param  collateral Borrower's remaining collateral when auction completed (`WAD` precision).
      */
     event AuctionSettle(
         address indexed borrower,
@@ -200,7 +200,7 @@ interface IPoolEvents {
      *  @notice Emitted when `NFT` auction is completed.
      *  @param  borrower   Address of borrower that exits auction.
      *  @param  collateral Borrower's remaining collateral when auction completed.
-     *  @param  lp         Amount of `LP` given to the borrower to compensate fractional collateral (if any).
+     *  @param  lp         Amount of `LP` given to the borrower to compensate fractional collateral (if any, `WAD` precision).
      *  @param  index      Index of the bucket with `LP` to compensate fractional collateral.
      */
     event AuctionNFTSettle(
@@ -212,9 +212,9 @@ interface IPoolEvents {
 
     /**
      *  @notice Emitted when a `Claimaible Reserve Auction` is started.
-     *  @return claimableReservesRemaining Amount of claimable reserves which has not yet been taken.
-     *  @return auctionPrice               Current price at which `1` quote token may be purchased, denominated in `Ajna`.
-     *  @return currentBurnEpoch           Current burn epoch.
+     *  @param  claimableReservesRemaining Amount of claimable reserves which has not yet been taken (`WAD` precision).
+     *  @param  auctionPrice               Current price at which `1` quote token may be purchased, denominated in `Ajna`.
+     *  @param  currentBurnEpoch           Current burn epoch.
      */
     event KickReserveAuction(
         uint256 claimableReservesRemaining,
@@ -224,9 +224,9 @@ interface IPoolEvents {
 
     /**
      *  @notice Emitted when a `Claimaible Reserve Auction` is taken.
-     *  @return claimableReservesRemaining Amount of claimable reserves which has not yet been taken.
-     *  @return auctionPrice               Current price at which `1` quote token may be purchased, denominated in `Ajna`.
-     *  @return currentBurnEpoch           Current burn epoch.
+     *  @param  claimableReservesRemaining Amount of claimable reserves which has not yet been taken (`WAD` precision).
+     *  @param  auctionPrice               Current price at which `1` quote token may be purchased, denominated in `Ajna`.
+     *  @param  currentBurnEpoch           Current burn epoch.
      */
     event ReserveAuction(
         uint256 claimableReservesRemaining,
@@ -243,7 +243,7 @@ interface IPoolEvents {
      *  @param  owner     `LP` owner.
      *  @param  spender   Address approved to transfer `LP`.
      *  @param  indexes   Bucket indexes of `LP` approved.
-     *  @param  amounts   `LP` amounts added (ordered by indexes).
+     *  @param  amounts   `LP` amounts added (ordered by indexes, `WAD` precision).
      */
     event IncreaseLPAllowance(
         address indexed owner,
@@ -257,7 +257,7 @@ interface IPoolEvents {
      *  @param  owner     `LP` owner.
      *  @param  spender   Address approved to transfer `LP`.
      *  @param  indexes   Bucket indexes of `LP` approved.
-     *  @param  amounts   `LP` amounts removed (ordered by indexes).
+     *  @param  amounts   `LP` amounts removed (ordered by indexes, `WAD` precision).
      */
     event DecreaseLPAllowance(
         address indexed owner,
@@ -304,7 +304,7 @@ interface IPoolEvents {
      *  @param  owner    The original owner address of the position.
      *  @param  newOwner The new owner address of the position.
      *  @param  indexes  Array of price bucket indexes at which `LP` were transferred.
-     *  @param  lp       Amount of `LP` transferred.
+     *  @param  lp       Amount of `LP` transferred (`WAD` precision).
      */
     event TransferLP(
         address owner,
@@ -320,7 +320,7 @@ interface IPoolEvents {
     /**
      *  @notice Emitted when `LP` are forfeited as a result of the bucket losing all assets.
      *  @param  index       The index of the bucket.
-     *  @param  lpForfeited Amount of `LP` forfeited by lenders.
+     *  @param  lpForfeited Amount of `LP` forfeited by lenders (`WAD` precision).
      */
     event BucketBankruptcy(
         uint256 indexed index,
@@ -331,7 +331,7 @@ interface IPoolEvents {
      *  @notice Emitted when a flashloan is taken from pool.
      *  @param  receiver The address receiving the flashloan.
      *  @param  token    The address of token flashloaned from pool.
-     *  @param  amount   The amount of tokens flashloaned from pool.
+     *  @param  amount   The amount of tokens flashloaned from pool (token precision).
      */
     event Flashloan(
         address indexed receiver,

@@ -106,8 +106,6 @@ class PoolHelper:
         self.pool = pool
         self.pool_info_utils = ajna_protocol.pool_info_utils
 
-    # TODO: Move this functionality into SDK to insulate consumer from implementation logic.
-
     def availableLiquidity(self):
         quoteBalance = self.quoteToken().balanceOf(self.pool.address)
         reserves = quoteBalance + self.debt() - self.pool.depositSize()

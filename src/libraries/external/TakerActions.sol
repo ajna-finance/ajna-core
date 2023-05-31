@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
+import { Math }           from '@openzeppelin/contracts/utils/math/Math.sol';
 
 import { PoolType } from '../../interfaces/pool/IPool.sol';
 
@@ -141,8 +142,8 @@ library TakerActions {
         uint256 collateralScale_
     ) external returns (TakeResult memory result_) {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
-
-        if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
+        // revert if borrower's collateral is 0
+        if (borrower.collateral == 0) revert InsufficientCollateral();
 
         result_.debtPreAction       = borrower.t0Debt;
         result_.collateralPreAction = borrower.collateral;
@@ -212,8 +213,10 @@ library TakerActions {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
         if (
-            (poolState_.poolType == uint8(PoolType.ERC721) && borrower.collateral < 1e18) || // revert in case of NFT take when there isn't a full token to be taken
-            (poolState_.poolType == uint8(PoolType.ERC20)  && borrower.collateral == 0)      // revert in case of ERC20 take when no collateral to be taken
+            // revert in case of NFT take when there isn't a full token to be taken
+            (poolState_.poolType == uint8(PoolType.ERC721) && borrower.collateral < 1e18) ||
+            // revert in case of ERC20 take when no collateral to be taken
+            (poolState_.poolType == uint8(PoolType.ERC20)  && borrower.collateral == 0)
         ) {
             revert InsufficientCollateral();
         }
@@ -290,7 +293,7 @@ library TakerActions {
             uint256 price     = _reserveAuctionPrice(kicked);
 
             amount_       = Maths.min(unclaimed, maxAmount_);
-            ajnaRequired_ = Maths.wmul(amount_, price);
+            ajnaRequired_ = Maths.ceilWmul(amount_, price);
 
             unclaimed -= amount_;
 
@@ -380,9 +383,12 @@ library TakerActions {
             // slither-disable-next-line divide-before-multiply
             uint256 collateralTaken = (vars_.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
 
-            if (collateralTaken != vars_.collateralAmount) { // collateral taken not a round number
+            // collateral taken not a round number
+            if (collateralTaken != vars_.collateralAmount) {
                 if (Maths.min(borrower_.collateral, params_.takeCollateral) >= collateralTaken + 1e18) {
-                    collateralTaken += 1e18; // round up collateral to take
+                    // round up collateral to take
+                    collateralTaken += 1e18;
+
                     // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
                     // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
                     vars_.excessQuoteToken = Maths.wmul(collateralTaken - vars_.collateralAmount, vars_.auctionPrice);
@@ -506,7 +512,7 @@ library TakerActions {
             loans_,
             poolState_.debt,
             borrowerDebt,
-            poolState_.quoteDustLimit
+            poolState_.quoteTokenScale
         );
 
         // calculate new lup with repaid debt from take
@@ -608,32 +614,37 @@ library TakerActions {
     ) internal {
         Bucket storage bucket = buckets_[bucketIndex_];
 
-        uint256 scaledDeposit = Maths.wmul(vars.unscaledDeposit, vars.bucketScale);
-
-        uint256 exchangeRate = Buckets.getExchangeRate(
-            bucket.collateral,
-            bucket.lps,
-            scaledDeposit,
-            vars.bucketPrice
-        );
-
         uint256 bankruptcyTime = bucket.bankruptcyTime;
+        uint256 scaledDeposit  = Maths.wmul(vars.unscaledDeposit, vars.bucketScale);
         uint256 totalLPReward;
+        uint256 takerLPReward;
+        uint256 kickerLPReward;
 
         // if arb take - taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
         if (!depositTake_) {
-            uint256 takerReward = Maths.wmul(vars.collateralAmount, vars.bucketPrice - vars.auctionPrice);
+            takerLPReward = Buckets.quoteTokensToLP(
+                bucket.collateral,
+                bucket.lps,
+                scaledDeposit,
+                Maths.wmul(vars.collateralAmount, vars.bucketPrice - vars.auctionPrice),
+                vars.bucketPrice,
+                Math.Rounding.Down
+            );
+            totalLPReward = takerLPReward;
 
-            totalLPReward = Maths.wdiv(takerReward, exchangeRate);
-
-            Buckets.addLenderLP(bucket, bankruptcyTime, msg.sender, totalLPReward);
+            Buckets.addLenderLP(bucket, bankruptcyTime, msg.sender, takerLPReward);
         }
-
-        uint256 kickerLPReward;
 
         // the bondholder/kicker is awarded bond change worth of LPB in the bucket
         if (vars.isRewarded) {
-            kickerLPReward = Maths.wdiv(vars.bondChange, exchangeRate);
+            kickerLPReward = Buckets.quoteTokensToLP(
+                bucket.collateral,
+                bucket.lps,
+                scaledDeposit,
+                vars.bondChange,
+                vars.bucketPrice,
+                Math.Rounding.Down
+            );
             totalLPReward  += kickerLPReward;
 
             Buckets.addLenderLP(bucket, bankruptcyTime, vars.kicker, kickerLPReward);
@@ -641,24 +652,24 @@ library TakerActions {
             // take is above neutralPrice, Kicker is penalized
             vars.bondChange = Maths.min(liquidation_.bondSize, vars.bondChange);
 
-            liquidation_.bondSize                 -= uint160(vars.bondChange);
+            liquidation_.bondSize -= uint160(vars.bondChange);
 
             auctions_.kickers[vars.kicker].locked -= vars.bondChange;
             auctions_.totalBondEscrowed           -= vars.bondChange;
         }
 
-        Deposits.unscaledRemove(deposits_, bucketIndex_, vars.unscaledQuoteTokenAmount); // remove quote tokens from bucket’s deposit
+        // remove quote tokens from bucket’s deposit
+        Deposits.unscaledRemove(deposits_, bucketIndex_, vars.unscaledQuoteTokenAmount);
 
         // total rewarded LP are added to the bucket LP balance
-        bucket.lps += totalLPReward;
-
+        if (totalLPReward != 0) bucket.lps += totalLPReward;
         // collateral is added to the bucket’s claimable collateral
         bucket.collateral += vars.collateralAmount;
 
         emit BucketTakeLPAwarded(
             msg.sender,
             vars.kicker,
-            totalLPReward - kickerLPReward,
+            takerLPReward,
             kickerLPReward
         );
     }

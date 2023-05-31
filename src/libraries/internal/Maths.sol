@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 /**
     @title  Maths library
@@ -18,12 +18,24 @@ library Maths {
         return (x * y) / WAD;
     }
 
+    function ceilWmul(uint256 x, uint256 y) internal pure returns (uint256) {
+        return (x * y + WAD - 1) / WAD;
+    }
+
     function wdiv(uint256 x, uint256 y) internal pure returns (uint256) {
         return (x * WAD + y / 2) / y;
     }
 
     function floorWdiv(uint256 x, uint256 y) internal pure returns (uint256) {
         return (x * WAD) / y;
+    }
+
+    function ceilWdiv(uint256 x, uint256 y) internal pure returns (uint256) {
+        return (x * WAD + y - 1) / y;
+    }
+
+    function ceilDiv(uint256 x, uint256 y) internal pure returns (uint256) {
+        return (x + y - 1) / y;
     }
 
     function max(uint256 x, uint256 y) internal pure returns (uint256) {

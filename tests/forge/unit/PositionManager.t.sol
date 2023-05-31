@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { Base64 } from '@base64-sol/base64.sol';
 
@@ -24,16 +24,19 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
         _positionManager = new PositionManager(_poolFactory, new ERC721PoolFactory(_ajna));
     }
 
+    function setUp() external {
+        _startTest();
+    }
+
     function _mintQuoteAndApproveManagerTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_quote), operator_, mintAmount_);
 
-        vm.prank(operator_);
+        changePrank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
         _pool.approveLPTransferors(transferors);
 
-        vm.prank(operator_);
         _quote.approve(address(_positionManager), type(uint256).max);
         _pool.approveLPTransferors(transferors);
     }
@@ -53,7 +56,7 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
         uint256 tokenId_,
         uint256 deadline_,
         uint256 ownerPrivateKey_
-    ) internal returns (uint8 v, bytes32 r, bytes32 s) {
+    ) internal view returns (uint8 v, bytes32 r, bytes32 s) {
         return vm.sign(
                 ownerPrivateKey_,
                 keccak256(
@@ -76,6 +79,14 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
 }
 
 contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract {
+
+    function testDeployWith0xAddressRevert() external {
+        ERC20PoolFactory erc20Factory;
+        ERC721PoolFactory erc721Factory;
+
+        vm.expectRevert(IPositionManagerErrors.DeployWithZeroAddress.selector);
+        new PositionManager(erc20Factory, erc721Factory);
+    }
 
     /**
      *  @notice Tests base NFT minting functionality.
@@ -156,11 +167,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // construct memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+            tokenId, address(_pool), indexes
         );
 
         // should revert if access hasn't been granted to transfer LP
-        vm.expectRevert(IPoolErrors.NoAllowance.selector);
+        vm.expectRevert(IPositionManagerErrors.AllowanceTooLow.selector);
         _positionManager.memorializePositions(memorializeParams);
 
         // allow position manager to take ownership of the position
@@ -269,7 +280,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // construct memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+            tokenId, address(_pool), indexes
         );
         // allow position manager to take ownership of the position
         uint256[] memory amounts = new uint256[](3);
@@ -607,7 +618,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         lender1Indexes[2] = 2552;
 
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId1, lender1Indexes
+            tokenId1, address(_pool), lender1Indexes
         );
 
         // allow position manager to take ownership of lender 1's position
@@ -702,7 +713,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         newIndexes[1] = 2553;
 
         memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId2, newIndexes
+            tokenId2, address(_pool), newIndexes
         );
 
         vm.expectEmit(true, true, true, true);
@@ -888,7 +899,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+            tokenId, address(_pool), indexes
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -965,11 +976,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertTrue(_positionManager.isPositionBucketBankrupt(tokenId, testIndex));
 
         // redeem should fail as the bucket has bankrupted
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
         vm.expectRevert(IPositionManagerErrors.BucketBankrupt.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // move liquidity should fail as the bucket has bankrupted
         IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
@@ -1004,7 +1015,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
         _pool.approveLPTransferors(transferors);
         memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+            tokenId, address(_pool), indexes
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -1115,7 +1126,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+            tokenId, address(_pool), indexes
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -1151,19 +1162,19 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // check old owner cannot redeem positions
         // construct redeem liquidity params
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
         // redeem liquidity called by old owner
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // check new owner can redeem positions
         changePrank(testReceiver);
         // allow position manager as transferor
         _pool.approveLPTransferors(transferors);
 
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // check pool state
         _assertLenderLpBalance({
@@ -1248,7 +1259,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+            tokenId, address(_pool), indexes
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -1291,12 +1302,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // check old owner cannot redeem positions
         // construct redeem liquidity params
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
         // redeem liquidity called by old owner
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // check new owner can redeem positions
         changePrank(testReceiver);
@@ -1305,7 +1316,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         transferors[0] = address(_positionManager);
         _pool.approveLPTransferors(transferors);
 
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // check pool state
         _assertLenderLpBalance({
@@ -1404,7 +1415,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // generate a new address and set test params
         address testAddress = makeAddr("testAddress");
 
-        vm.prank(testAddress);
+        changePrank(testAddress);
         uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
         assertEq(_positionManager.ownerOf(tokenId), testAddress);
         // construct BurnParams
@@ -1458,7 +1469,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+            tokenId, address(_pool), indexes
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -1475,10 +1486,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // redeem positions of testMinter
         changePrank(testMinter);
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         _positionManager.burn(burnParams);
 
@@ -1597,7 +1608,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // memorialize positions of testAddress1
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId1, indexes
+            tokenId1, address(_pool), indexes
         );
         changePrank(testAddress1);
         _positionManager.memorializePositions(memorializeParams);
@@ -1718,7 +1729,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // memorialize positions of testAddress2
         memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId2, indexes
+            tokenId2, address(_pool), indexes
         );
         changePrank(testAddress2);
         _positionManager.memorializePositions(memorializeParams);
@@ -1893,7 +1904,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         amounts[0] = 2_000 * 1e18;
         _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = 
-            IPositionManagerOwnerActions.MemorializePositionsParams(tokenId1, indexes);
+            IPositionManagerOwnerActions.MemorializePositionsParams(tokenId1, address(_pool), indexes);
         _positionManager.memorializePositions(memorializeParams);
         skip(1 days);
 
@@ -1901,7 +1912,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256 tokenId2 = _mintNFT(lender2, lender2, address(_pool));
         amounts[0] = 3_000 * 1e18;
         _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
-        memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(tokenId2, indexes);
+        memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(tokenId2, address(_pool), indexes);
         _positionManager.memorializePositions(memorializeParams);
         skip(1 days);
 
@@ -1954,11 +1965,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         transferors[0] = address(_positionManager);
         _pool.approveLPTransferors(transferors);
         indexes[0] = moveIndex;
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = 
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = 
             IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId1, address(_pool), indexes
         );
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
         skip(2 days);
 
         // borrower repays
@@ -1966,7 +1977,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             from:             borrower,
             borrower:         borrower,
             amountToRepay:    type(uint256).max,
-            amountRepaid:     1_002.608307827389905517 * 1e18,
+            amountRepaid:     1_002.608307827389905518 * 1e18,
             collateralToPull: 250 * 1e18,
             newLup:           MAX_PRICE
         });
@@ -1976,10 +1987,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         changePrank(lender2);
         _pool.approveLPTransferors(transferors);
         indexes[0] = mintIndex;
-        reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId2, address(_pool), indexes
         );
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // tearDown ensures buckets are empty
     }
@@ -2035,7 +2046,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+            tokenId, address(_pool), indexes
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -2058,20 +2069,20 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
         // redeem positions of testMinter
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
 
         // should fail if trying to redeem from different address but owner
         changePrank(notOwner);
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // redeem from owner
         vm.expectEmit(true, true, true, true);
         emit RedeemPosition(testMinter, tokenId, indexes);
         changePrank(testMinter);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // check pool state
         _assertLenderLpBalance({
@@ -2093,7 +2104,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // should fail if trying to redeem one more time
         vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
     }
 
     function testRedeemEmptyPositions() external {
@@ -2105,14 +2116,14 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // redeem positions of testMinter
         uint256[] memory indexes = new uint256[](1);
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
 
         // should fail if trying to redeem empty position
         changePrank(testMinter);
         vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
     }
 
     function testRedeemPositionsByNewNFTOwner() external {
@@ -2201,7 +2212,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _pool.approveLPTransferors(transferors);
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+            tokenId, address(_pool), indexes
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -2254,30 +2265,31 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // check new owner
         assertEq(_positionManager.ownerOf(tokenId), testReceiver);
 
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
 
         // check old owner cannot redeem positions
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // check position manager cannot redeem positions
         changePrank(address(_positionManager));
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // redeem from new owner
-        reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
         changePrank(testReceiver);
+        _pool.approveLPTransferors(transferors);
+
         vm.expectEmit(true, true, true, true);
         emit TransferLP(address(_positionManager), testReceiver, indexes, 15_000 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit RedeemPosition(testReceiver, tokenId, indexes);
-        _pool.approveLPTransferors(transferors);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // check pool state
         _assertLenderLpBalance({
@@ -2365,12 +2377,22 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         transferors[0] = address(_positionManager);
         _pool.approveLPTransferors(transferors);
 
-        // 3rd party minter mints NFT and memorialize lender positions
+        // 3rd party minter mints NFT
         uint256 tokenId = _mintNFT(minter, lender, address(_pool));
         assertEq(_positionManager.ownerOf(tokenId), lender);
+
+        // 3rd party minter is unable to memorialize positions onto the lender's NFT without approval
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+            tokenId, address(_pool), indexes
         );
+        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
+        _positionManager.memorializePositions(memorializeParams);
+
+        // lender approves 3rd party minder to memorialize their positions onto the nft
+        changePrank(lender);
+        _positionManager.approve(minter, tokenId);
+
+        changePrank(minter);
         _positionManager.memorializePositions(memorializeParams);
 
         _assertLenderLpBalance({
@@ -2392,6 +2414,13 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             depositTime: _startTime
         });
 
+        // lender revokes permissions to the minter
+        changePrank(lender);
+        _positionManager.approve(address(0), tokenId);
+
+        // minter attempts to take actions on the lender's nft when not approved
+        changePrank(minter);
+
         // minter cannot move liquidity on behalf of lender (is not approved)
         IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
             tokenId, address(_pool), 2550, 2551, block.timestamp + 30
@@ -2400,11 +2429,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.moveLiquidity(moveLiquidityParams);
 
         // minter cannot redeem positions on behalf of lender (is not approved)
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // minter cannot burn positions NFT on behalf of lender (is not approved)
         IPositionManagerOwnerActions.BurnParams memory burnParams = IPositionManagerOwnerActions.BurnParams(
@@ -2442,10 +2471,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // minter can redeem liquidity on behalf of lender
         indexes[0] = 2551;
-        reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         _assertLenderLpBalance({
             lender:      lender,
@@ -2506,12 +2535,15 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         amounts[0] = 10_000 * 1e18;
         _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
-        // 3rd party minter mints NFT and memorialize lender positions
+        // 3rd party minter mints NFT
         changePrank(minter);
         uint256 tokenId = _mintNFT(minter, lender, address(_pool));
         assertEq(_positionManager.ownerOf(tokenId), lender);
+
+        // lender memorializes their position onto the 3rd party minted NFT
+        changePrank(lender);
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+            tokenId, address(_pool), indexes
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -2522,7 +2554,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // minter is owner so can reddeem LP
         changePrank(minter);
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
 
@@ -2531,7 +2563,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         transferors[0] = address(_positionManager);
         _pool.approveLPTransferors(transferors);
 
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         _assertLenderLpBalance({
             lender:      lender,
@@ -2579,7 +2611,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
     function testTokenURI() external {
         // should revert if using non-existant tokenId
-        vm.expectRevert();
+        vm.expectRevert(IPositionManagerErrors.NoToken.selector);
         _positionManager.tokenURI(1);
 
         address testAddress = makeAddr("testAddress");
@@ -2615,7 +2647,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // memorialize position
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+            tokenId, address(_pool), indexes
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -2682,7 +2714,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         for (uint256 i = 0; i < addresses.length; ++i) {
             // construct memorialize params struct
             IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-                tokenIds[i], indexes
+                tokenIds[i], address(_pool), indexes
             );
 
             // allow position manager to take ownership of the position
@@ -2717,7 +2749,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 tokenIds[i], address(_pool), indexes
             );
             changePrank(addresses[i]);
-            _positionManager.reedemPositions(params);
+            _positionManager.redeemPositions(params);
         }
 
         (lpBalance, depositTime) = _pool.lenderInfo(indexes[0], alice);
@@ -2738,8 +2770,264 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             );
             changePrank(addresses[i]);
             vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
-            _positionManager.reedemPositions(params);
+            _positionManager.redeemPositions(params);
         }
+    }
+
+    function testMoveLiquidityToOverwriteBankruptBucket() external {
+        address testMinter      = makeAddr("testMinter");
+        address testMinter2     = makeAddr("testMinter2");
+        address testBorrower    = makeAddr("testBorrower");
+        address testBorrowerTwo = makeAddr("testBorrowerTwo");
+
+        uint256 testIndex = _i9_91;
+
+        /************************/
+        /*** Setup Pool State ***/
+        /************************/
+
+        _mintCollateralAndApproveTokens(testBorrower,  4 * 1e18);
+        _mintCollateralAndApproveTokens(testBorrowerTwo, 1_000 * 1e18);
+
+        _mintQuoteAndApproveManagerTokens(testMinter, 500_000 * 1e18);
+        _mintQuoteAndApproveManagerTokens(testMinter2, 500_000 * 1e18);
+
+        // add initial liquidity
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 2_000 * 1e18,
+            index:  _i9_91
+        });
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 5_000 * 1e18,
+            index:  _i9_81
+        });
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 11_000 * 1e18,
+            index:  _i9_72
+        });
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 25_000 * 1e18,
+            index:  _i9_62
+        });
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 30_000 * 1e18,
+            index:  _i9_52
+        });
+
+
+        // first borrower adds collateral token and borrows
+        _pledgeCollateral({
+            from:     testBorrower,
+            borrower: testBorrower,
+            amount:   2 * 1e18
+        });
+        _borrow({
+            from:       testBorrower,
+            amount:     19.25 * 1e18,
+            indexLimit: _i9_91,
+            newLup:     9.917184843435912074 * 1e18
+        });
+
+        // second borrower adds collateral token and borrows
+        _pledgeCollateral({
+            from:     testBorrowerTwo,
+            borrower: testBorrowerTwo,
+            amount:   1_000 * 1e18
+        });
+        _borrow({
+            from:       testBorrowerTwo,
+            amount:     7_980 * 1e18,
+            indexLimit: _i9_72,
+            newLup:     9.721295865031779605 * 1e18
+        });
+
+        _borrow({
+            from:       testBorrowerTwo,
+            amount:     1_730 * 1e18,
+            indexLimit: _i9_72,
+            newLup:     9.721295865031779605 * 1e18
+        });
+
+        /****************************/
+        /*** Memorialize Position ***/
+        /****************************/
+
+        // testMinter memorialize positions
+        uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
+        uint256[] memory indexes = new uint256[](2);
+        indexes[0] = testIndex;
+        indexes[1] = _i9_72;
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 2_000 * 1e18;
+        amounts[1] = 11_000 * 1e18;
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
+
+        address[] memory transferors = new address[](1);
+        transferors[0] = address(_positionManager);
+        _pool.approveLPTransferors(transferors);
+
+        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
+            tokenId, address(_pool), indexes
+        );
+        _positionManager.memorializePositions(memorializeParams);
+
+        /*************************/
+        /*** Bucket Bankruptcy ***/
+        /*************************/
+
+        // Skip to make borrower undercollateralized
+        skip(100 days);
+
+        // minter kicks borrower
+        _kick({
+            from:           testMinter,
+            borrower:       testBorrowerTwo,
+            debt:           9_976.561670003961916237 * 1e18,
+            collateral:     1_000 * 1e18,
+            bond:           98.533942419792216457 * 1e18,
+            transferAmount: 98.533942419792216457 * 1e18
+        });
+
+        // skip ahead so take can be called on the loan
+        skip(10 hours);
+
+        // take entire collateral
+        _take({
+            from:            testMinter,
+            borrower:        testBorrowerTwo,
+            maxCollateral:   1_000 * 1e18,
+            bondChange:      6.531114528261135360 * 1e18,
+            givenAmount:     653.111452826113536000 * 1e18,
+            collateralTaken: 1_000 * 1e18,
+            isReward:        true
+        });
+
+        _settle({
+            from:        testMinter,
+            borrower:    testBorrowerTwo,
+            maxDepth:    10,
+            settledDebt: 9_891.935520844277346922 * 1e18
+        });
+
+        // bucket is insolvent, balances are reset
+        _assertBucket({
+            index:        _i9_91,
+            lpBalance:    0, // bucket is bankrupt
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });
+
+        _assertBucket({
+            index:        _i9_81,
+            lpBalance:    0, // bucket is bankrupt
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });
+
+        _assertBucketAssets({
+            index:        _i9_72,
+            lpBalance:    11_000 * 1e18,
+            collateral:   0,
+            deposit:      8_936.865546659328965469 * 1e18,
+            exchangeRate: 0.812442322423575361 * 1e18
+        });
+
+        assertTrue(_positionManager.isPositionBucketBankrupt(tokenId, testIndex));
+        assertTrue(_positionManager.isPositionBucketBankrupt(tokenId, _i9_81));
+        assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, _i9_72));
+
+        // minter two needs to add to their position not on bankruptcy block
+        skip(1 days);
+
+        //minter 2 adds liquidity 
+        _addLiquidity({
+            from:    testMinter2,
+            amount:  10_000 * 1e18,
+            index:   _i9_91,
+            lpAward: 10000.0 * 1e18,
+            newLup:  9.917184843435912074 * 1e18
+        });
+
+        _assertBucketAssets({
+            index:        _i9_91,
+            lpBalance:    10_000.000000000000000000 * 1e18,
+            collateral:   0,
+            deposit:      10_000.000000000000000000 * 1e18,
+            exchangeRate: 1.0 * 1e18
+        });
+
+        // testMinter2 memorialize positions
+        uint256 tokenId2 = _mintNFT(testMinter2, testMinter2, address(_pool));
+        indexes[0] = testIndex;
+        amounts[0] = 10_000 * 1e18;
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
+        _pool.approveLPTransferors(transferors);
+
+        memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
+            tokenId2, address(_pool), indexes
+        );
+        _positionManager.memorializePositions(memorializeParams);
+
+        assertTrue(_positionManager.isPositionBucketBankrupt(tokenId, _i9_91));
+
+        // testMinter moves 8_936 QT _i9_72 to bankrupt _i9_91 deposit, should not have any pre bankruptcy LP
+        changePrank(testMinter);
+        IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
+            tokenId, address(_pool), _i9_72, testIndex, block.timestamp + 5 hours
+        );
+        _positionManager.moveLiquidity(moveLiquidityParams);
+
+        _assertBucketAssets({
+            index:        _i9_91,
+            lpBalance:    18_936.867676658332708016 * 1e18,
+            collateral:   0,
+            deposit:      18_936.867676658332708016 * 1e18,
+            exchangeRate: 1.0 * 1e18
+        });
+
+        _assertBucketAssets({
+            index:        _i9_72,
+            lpBalance:    0 * 1e18, // bucket is bankrupt
+            collateral:   0,
+            deposit:      0 * 1e18,
+            exchangeRate: 1.0 * 1e18
+        });
+
+        // testMinter position is now not bankrupt, however the have an excess of LP 
+        assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, testIndex));
+
+        uint256[] memory redeemIndex = new uint256[](1);
+        redeemIndex[0] = _i9_91;
+
+        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+            tokenId, address(_pool), redeemIndex
+        );
+        _positionManager.redeemPositions(reedemParams);
+
+        // minter one should only be able to withdraw what they moved
+        _removeAllLiquidity({
+            from:     testMinter,
+            amount:   8_936.867676658332708016 * 1e18,
+            index:    _i9_91,
+            newLup:   _p9_91,
+            lpRedeem: 8_936.867676658332708016 * 1e18
+        });
+
+        // minter2 has remaining liquidity in _i9_91
+        _assertBucketAssets({
+            index:        _i9_91,
+            lpBalance:    10_000.000000000000000000 * 1e18,
+            collateral:   0,
+            deposit:      10_000.000000000000000000 * 1e18,
+            exchangeRate: 1.0 * 1e18
+        });
     }
 
 }
@@ -2753,12 +3041,15 @@ abstract contract PositionManagerERC721PoolHelperContract is ERC721HelperContrac
         _pool = _deployCollectionPool();
     }
 
+    function setUp() external {
+        _startTest();
+    }
+
     function _mintQuoteAndApproveManagerTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_quote), operator_, mintAmount_);
 
-        vm.prank(operator_);
+        changePrank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
-        vm.prank(operator_);
         _quote.approve(address(_positionManager), type(uint256).max);
     }
 
@@ -2856,7 +3147,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
 
         // construct memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+            tokenId, address(_pool), indexes
         );
         // allow position manager to take ownership of the position
         uint256[] memory amounts = new uint256[](3);
@@ -3133,17 +3424,17 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
 
         // check old owner cannot redeem positions
         // construct redeem liquidity params
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), newIndexes
         );
         // redeem liquidity called by old owner
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // check new owner can redeem positions
         changePrank(testAddress2);
         _pool.approveLPTransferors(transferors);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
          // check pool state
         _assertLenderLpBalance({

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 }    from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -137,7 +137,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         PoolState memory poolState = _accruePoolInterest();
 
         // ensure the borrower is not credited with a fractional amount of collateral smaller than the token scale
-        collateralToPledge_ = _roundToScale(collateralToPledge_, _bucketCollateralDust(0));
+        collateralToPledge_ = _roundToScale(collateralToPledge_, _getArgUint256(COLLATERAL_SCALE));
 
         DrawDebtResult memory result = BorrowerActions.drawDebt(
             auctions,
@@ -145,6 +145,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             deposits,
             loans,
             poolState,
+            _availableQuoteToken(),
             borrowerAddress_,
             amountToBorrow_,
             limitIndex_,
@@ -212,8 +213,9 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         PoolState memory poolState = _accruePoolInterest();
 
         // ensure accounting is performed using the appropriate token scale
-        maxQuoteTokenAmountToRepay_ = _roundToScale(maxQuoteTokenAmountToRepay_, _getArgUint256(QUOTE_SCALE));
-        collateralAmountToPull_     = _roundToScale(collateralAmountToPull_,     _bucketCollateralDust(0));
+        if (maxQuoteTokenAmountToRepay_ != type(uint256).max)
+            maxQuoteTokenAmountToRepay_ = _roundToScale(maxQuoteTokenAmountToRepay_, poolState.quoteTokenScale);
+        collateralAmountToPull_         = _roundToScale(collateralAmountToPull_,     _getArgUint256(COLLATERAL_SCALE));
 
         RepayDebtResult memory result = BorrowerActions.repayDebt(
             auctions,
@@ -325,6 +327,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         (removedAmount_, redeemedLP_) = LenderActions.removeMaxCollateral(
             buckets,
             deposits,
+            _bucketCollateralDust(index_),
             maxAmount_,
             index_
         );
@@ -390,10 +393,10 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
-        uint256 collateralDust = _bucketCollateralDust(0);
+        uint256 collateralTokenScale = _getArgUint256(COLLATERAL_SCALE);
 
         // round requested collateral to an amount which can actually be transferred
-        maxAmount_ = _roundToScale(maxAmount_, collateralDust);
+        maxAmount_ = _roundToScale(maxAmount_, collateralTokenScale);
 
         TakeResult memory result = TakerActions.take(
             auctions,
@@ -403,10 +406,10 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             poolState,
             borrowerAddress_,
             maxAmount_,
-            collateralDust
+            collateralTokenScale
         );
         // round quote token up to cover the cost of purchasing the collateral
-        result.quoteTokenAmount = _roundUpToScale(result.quoteTokenAmount, _getArgUint256(QUOTE_SCALE));
+        result.quoteTokenAmount = _roundUpToScale(result.quoteTokenAmount, poolState.quoteTokenScale);
 
         _updatePostTakeState(result, poolState);
 
@@ -414,8 +417,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         if (data_.length != 0) {
             IERC20Taker(callee_).atomicSwapCallback(
-                result.collateralAmount / _getArgUint256(COLLATERAL_SCALE), 
-                result.quoteTokenAmount / _getArgUint256(QUOTE_SCALE), 
+                result.collateralAmount / collateralTokenScale,
+                result.quoteTokenAmount / poolState.quoteTokenScale,
                 data_
             );
         }
@@ -448,7 +451,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             borrowerAddress_,
             depositTake_,
             index_,
-            _bucketCollateralDust(0)
+            _getArgUint256(COLLATERAL_SCALE)
         );
 
         _updatePostTakeState(result, poolState);
@@ -473,18 +476,20 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     /************************/
 
     /**
-     *  @notice Helper function to transfer amount of collateral tokens (in collateral token precision) from sender to pool contract.
+     *  @notice Helper function to transfer amount of collateral tokens from sender to pool contract.
      *  @param  from_    Sender address.
-     *  @param  amount_  Amount to transfer from sender.
+     *  @param  amount_  Amount to transfer from sender (`WAD` precision). Scaled to collateral precision before transfer.
      */
     function _transferCollateralFrom(address from_, uint256 amount_) internal {
-        IERC20(_getArgAddress(COLLATERAL_ADDRESS)).safeTransferFrom(from_, address(this), amount_ / _getArgUint256(COLLATERAL_SCALE));
+        // Transfer amount in favour of the pool
+        uint256 transferAmount = Maths.ceilDiv(amount_, _getArgUint256(COLLATERAL_SCALE));
+        IERC20(_getArgAddress(COLLATERAL_ADDRESS)).safeTransferFrom(from_, address(this), transferAmount);
     }
 
     /**
-     *  @notice Helper function to transfer amount of collateral tokens (in collateral token precision) from pool contract.
+     *  @notice Helper function to transfer amount of collateral tokens from pool contract.
      *  @param  to_     Receiver address.
-     *  @param  amount_ Amount to transfer to receiver.
+     *  @param  amount_ Amount to transfer to receiver (`WAD` precision). Scaled to collateral precision before transfer.
      */
     function _transferCollateral(address to_, uint256 amount_) internal {
         IERC20(_getArgAddress(COLLATERAL_ADDRESS)).safeTransfer(to_, amount_ / _getArgUint256(COLLATERAL_SCALE));
