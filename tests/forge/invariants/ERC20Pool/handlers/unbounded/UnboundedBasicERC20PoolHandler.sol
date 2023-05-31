@@ -2,11 +2,15 @@
 
 pragma solidity 0.8.18;
 
-import { ERC20Pool }                         from 'src/ERC20Pool.sol';
-import { ERC20PoolFactory }                  from 'src/ERC20PoolFactory.sol';
-import { PoolInfoUtils }                     from 'src/PoolInfoUtils.sol';
-import { _borrowFeeRate, _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
-import { Maths }                             from "src/libraries/internal/Maths.sol";
+import { ERC20Pool }        from 'src/ERC20Pool.sol';
+import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
+import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
+import {
+    _borrowFeeRate,
+    _depositFeeRate,
+    _roundToScale
+}                           from 'src/libraries/helpers/PoolHelper.sol';
+import { Maths }            from "src/libraries/internal/Maths.sol";
 
 import { UnboundedBasicPoolHandler } from "../../../base/handlers/unbounded/UnboundedBasicPoolHandler.sol";
 import { BaseERC20PoolHandler }      from './BaseERC20PoolHandler.sol';
@@ -135,6 +139,8 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
             increaseInReserves += Maths.wmul(
                 amount_, _borrowFeeRate(interestRate)
             );
+            // rounding in favour of pool goes to reserves
+            increaseInReserves += amount_ - _roundToScale(amount_, _pool.quoteTokenScale());
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
