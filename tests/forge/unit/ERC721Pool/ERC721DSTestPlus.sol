@@ -585,17 +585,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);        
     }
 
-    function _assertBorrowDustRevert(
-        address from,
-        uint256 amount,
-        uint256 indexLimit
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
-        uint256[] memory emptyArray;
-        ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);
-    }
-
     function _assertBorrowInvalidAmountRevert(
         address from,
         uint256 amount,
