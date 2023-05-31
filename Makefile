@@ -2,6 +2,9 @@
 # (-include to ignore error if it does not exist)
 -include .env && source ./tests/forge/invariants/scenarios/scenario-${SCENARIO}.sh
 
+CONTRACT_EXCLUDES="RegressionTest|Panic|RealWorld|Trading"
+TEST_EXCLUDES="testLoad|invariant|test_regression"
+
 all: clean install build
 
 # Clean the repo
@@ -14,16 +17,16 @@ install :; git submodule update --init --recursive
 build   :; forge clean && forge build
 
 # Unit Tests
-test                            :; forge test --no-match-test "testLoad|invariant|test_regression" --nmc "RegressionTest|Panic"  # --ffi # enable if you need the `ffi` cheat code on HEVM
-test-with-gas-report            :; forge test --no-match-test "testLoad|invariant|test_regression" --nmc "RegressionTest|Panic" --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
+test                            :; forge test --no-match-test ${TEST_EXCLUDES} --nmc ${CONTRACT_EXCLUDES}  # --ffi # enable if you need the `ffi` cheat code on HEVM
+test-with-gas-report            :; forge test --no-match-test ${TEST_EXCLUDES} --nmc ${CONTRACT_EXCLUDES} --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
 
 # Gas Load Tests
 test-load                       :; forge test --match-test testLoad --gas-report
 
 # Invariant Tests
-test-invariant-all              :; forge t --mt invariant --nmc "RegressionTest|Panic"
-test-invariant-erc20            :; forge t --mt invariant --nmc "RegressionTest|Panic" --mc ERC20
-test-invariant-erc721           :; forge t --mt invariant --nmc "RegressionTest|Panic" --mc ERC721
+test-invariant-all              :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES}
+test-invariant-erc20            :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc ERC20
+test-invariant-erc721           :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc ERC721
 test-invariant                  :; forge t --mt ${MT} --nmc RegressionTest
 test-invariant-erc20-precision  :; ./tests/forge/invariants/test-invariant-erc20-precision.sh
 test-invariant-erc721-precision :; ./tests/forge/invariants/test-invariant-erc721-precision.sh
