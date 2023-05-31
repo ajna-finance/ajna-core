@@ -34,10 +34,9 @@ import { Maths }   from '../internal/Maths.sol';
     int256 constant FLOAT_STEP_INT = 1.005 * 1e18;
 
     /**
-     *  @notice Calculates the price for a given `Fenwick` index.
+     *  @notice Calculates the price (`WAD` precision) for a given `Fenwick` index.
      *  @dev    Reverts with `BucketIndexOutOfBounds` if index exceeds maximum constant.
      *  @dev    Uses fixed-point math to get around lack of floating point numbers in `EVM`.
-     *  @dev    Price expected to be inputted as a `WAD` (`18` decimal).
      *  @dev    Fenwick index is converted to bucket index.
      *  @dev    Fenwick index to bucket index conversion:
      *  @dev      `1.00`      : bucket index `0`,     fenwick index `4156`: `7388-4156-3232=0`.

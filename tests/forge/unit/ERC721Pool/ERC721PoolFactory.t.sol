@@ -278,7 +278,15 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         assertEq(_factory.getDeployedPoolsList()[3],     poolAddress);
         assertEq(_factory.deployedPoolsList(3),          poolAddress);
 
-        vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
+        address deployed = _factory.deployedPools(
+            keccak256(abi.encode(tokenIdsTestSubset)),
+            address(_collateral),
+            address(_quote)
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(bytes4(keccak256("PoolAlreadyExists(address)")),
+            deployed)
+        );
         _factory.deployPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.05 * 10**18);
 
         assertEq(_factory.getDeployedPoolsList().length,  4);

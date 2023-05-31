@@ -80,6 +80,14 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
 
 contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract {
 
+    function testDeployWith0xAddressRevert() external {
+        ERC20PoolFactory erc20Factory;
+        ERC721PoolFactory erc721Factory;
+
+        vm.expectRevert(IPositionManagerErrors.DeployWithZeroAddress.selector);
+        new PositionManager(erc20Factory, erc721Factory);
+    }
+
     /**
      *  @notice Tests base NFT minting functionality.
      *          Reverts:
@@ -2603,7 +2611,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
     function testTokenURI() external {
         // should revert if using non-existant tokenId
-        vm.expectRevert();
+        vm.expectRevert(IPositionManagerErrors.NoToken.selector);
         _positionManager.tokenURI(1);
 
         address testAddress = makeAddr("testAddress");

@@ -215,6 +215,7 @@ library PoolCommons {
      *  @param  thresholdPrice_ Current Pool Threshold Price.
      *  @param  elapsed_        Time elapsed since last inflator update.
      *  @return newInflator_    The new value of pool inflator.
+     *  @return newInterest_    The new interest accrued.
      */
     function accrueInterest(
         EmaState      storage emaParams_,
@@ -328,9 +329,9 @@ library PoolCommons {
 
         // PRBMath library forbids raising a number < 1e18 to a power.  Using the product and quotient rules of 
         // exponents, rewrite the equation with a coefficient s which provides sufficient precision:
-        // Net Interest Margin = ((s - MAU1) * s)^(1/3) / s^(1/3) * 0.15
+        // Net Interest Margin = ((1 - MAU1) * s)^(1/3) / s^(1/3) * 0.15
 
-        uint256 base = 1_000_000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1_000_000 * 1e18);
+        uint256 base = 1_000_000 * 1e18 - Maths.min(mau_, 1e18) * 1_000_000;
         // If unutilized deposit is infinitessimal, lenders get 100% of interest.
         if (base < 1e18) {
             return 1e18;

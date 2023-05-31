@@ -66,7 +66,7 @@ contract TradingERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBa
         uint256 bucketIndex_,
         uint256 skippedTime_
     ) external useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeSwapLogs {
-        tradeAmount_ = constrictToRange(tradeAmount_, Maths.max(_pool.quoteTokenDust(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
+        tradeAmount_ = constrictToRange(tradeAmount_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
         traderIndex_ = constrictToRange(traderIndex_, 0, _lenders.length - 1);
 
         _actor = _lenders[traderIndex_];

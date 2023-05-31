@@ -23,8 +23,9 @@ interface IPoolFactory {
 
     /**
      *  @notice Pool with this combination of quote and collateral already exists.
+     *  @param  pool_ The address of deployed pool.
      */
-    error PoolAlreadyExists();
+    error PoolAlreadyExists(address pool_);
 
     /**
      *  @notice Pool starting interest rate is invalid.

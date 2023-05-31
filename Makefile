@@ -52,6 +52,9 @@ test-regression                 :; forge t --mt ${MT}
 # Coverage
 coverage                        :; forge coverage --no-match-test "testLoad|invariant"
 
+# Certora
+certora-erc721-permit          :; $(if $(CERTORAKEY),, @echo "set certora key"; exit 1;) PATH=~/.solc-select/artifacts/solc-0.8.14:~/.solc-select/artifacts:${PATH} certoraRun --solc_map PermitERC721Harness=solc-0.8.14,Auxiliar=solc-0.8.14,SignerMock=solc-0.8.14 --optimize_map PermitERC721Harness=500,Auxiliar=0,SignerMock=0 --rule_sanity basic certora/harness/PermitERC721Harness.sol certora/Auxiliar.sol certora/SignerMock.sol --verify PermitERC721Harness:certora/PermitERC721.spec --multi_assert_check $(if $(short), --short_output,)
+
 # Generate Gas Snapshots
 snapshot :; forge clean && forge snapshot
 
