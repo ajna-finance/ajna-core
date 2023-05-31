@@ -194,7 +194,7 @@ library BorrowerActions {
             // an auctioned borrower in not allowed to draw more debt (even if collateralized at the new LUP) if auction is not settled
             if (result_.inAuction) revert AuctionActive();
 
-            vars.t0BorrowAmount = Maths.wdiv(amountToBorrow_, poolState_.inflator);
+            vars.t0BorrowAmount = Maths.ceilWdiv(amountToBorrow_, poolState_.inflator);
 
             // t0 debt change is t0 amount to borrow plus the origination fee
             vars.t0DebtChange = Maths.wmul(vars.t0BorrowAmount, _borrowFeeRate(poolState_.rate) + Maths.WAD);
@@ -307,13 +307,13 @@ library BorrowerActions {
             } else {
                 vars.t0RepaidDebt = Maths.min(
                     borrower.t0Debt,
-                    Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState_.inflator)
+                    Maths.floorWdiv(maxQuoteTokenAmountToRepay_, poolState_.inflator)
                 );
             }
 
             result_.t0PoolDebt        -= vars.t0RepaidDebt;
             result_.poolDebt          = Maths.wmul(result_.t0PoolDebt, poolState_.inflator);
-            result_.quoteTokenToRepay = Maths.wmul(vars.t0RepaidDebt,  poolState_.inflator);
+            result_.quoteTokenToRepay = Maths.ceilWmul(vars.t0RepaidDebt,  poolState_.inflator);
 
             vars.borrowerDebt = Maths.wmul(borrower.t0Debt - vars.t0RepaidDebt, poolState_.inflator);
 

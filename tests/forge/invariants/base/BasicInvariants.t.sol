@@ -136,7 +136,7 @@ abstract contract BasicInvariants is BaseInvariants {
     /// @dev checks pool quote token balance is greater than equals total deposits in pool
     function _invariant_QT1() internal view {
         // convert pool quote balance into WAD
-        uint256 poolBalance    = _quote.balanceOf(address(_pool)) * 10**(18 - _quote.decimals());
+        uint256 poolBalance     = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
         (uint256 poolDebt, , ,) = _pool.debtInfo();
 
         (
@@ -179,7 +179,7 @@ abstract contract BasicInvariants is BaseInvariants {
     /// @dev checks pool quote token balance is greater than or equal with sum of escrowed bonds and unclaimed reserves
     function _invariant_QT3() internal view {
         // convert pool quote balance into WAD
-        uint256 poolBalance = _quote.balanceOf(address(_pool)) * 10**(18 - _quote.decimals());
+        uint256 poolBalance = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
         (
             uint256 totalBondEscrowed,
             uint256 unClaimed,
@@ -224,7 +224,7 @@ abstract contract BasicInvariants is BaseInvariants {
                     requireWithinDiff(
                         currentExchangeRate,
                         previousExchangeRate,
-                        1e13,  // otherwise require exchange rates to be within 1e-5
+                        1e8,  // otherwise require exchange rates to be within 1e-10
                         "Exchange Rate Invariant R1, R2, R3, R4, R5, R6, R7 or R8"
                     );    
                 }

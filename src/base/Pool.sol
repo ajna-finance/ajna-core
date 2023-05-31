@@ -701,7 +701,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @param  amount_  Amount to transfer from sender (`WAD` precision). Scaled to quote token precision before transfer.
      */
     function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
-        IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransferFrom(from_, address(this), amount_ / _getArgUint256(QUOTE_SCALE));
+        // Transfer amount in favour of the pool
+        uint256 transferAmount = Maths.ceilDiv(amount_, _getArgUint256(QUOTE_SCALE));
+        IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransferFrom(from_, address(this), transferAmount);
     }
 
     /**
@@ -829,9 +831,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             interestState.interestRate
         );
         return (
-            Maths.wmul(poolBalances.t0Debt, pendingInflator),
-            Maths.wmul(poolBalances.t0Debt, inflatorState.inflator),
-            Maths.wmul(poolBalances.t0DebtInAuction, inflatorState.inflator),
+            Maths.ceilWmul(poolBalances.t0Debt, pendingInflator),
+            Maths.ceilWmul(poolBalances.t0Debt, inflatorState.inflator),
+            Maths.ceilWmul(poolBalances.t0DebtInAuction, inflatorState.inflator),
             interestState.t0Debt2ToCollateral
         );
     }

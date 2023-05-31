@@ -76,3 +76,6 @@
 - **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
 - **RE11**: Reserves decrease by claimableReserves by kickReserveAuction
 - **RE12**: Reserves decrease by amount of reserve used to settle a auction
+
+Rewards:
+- Can't claim rewards for an end epoch twice

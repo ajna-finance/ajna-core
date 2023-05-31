@@ -75,7 +75,6 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         uint256[] memory indexes,
         uint256 updateExchangeRatesReward
     ) internal {
-
         changePrank(owner);
 
         // unstake using emergency (without claiming rewards)
@@ -111,14 +110,20 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         vm.expectEmit(true, true, true, true);
         emit UpdateExchangeRates(owner, pool, indexes, updateExchangeRatesReward);
 
-        // when the token is unstaked claimRewards emits
-        vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(owner, pool,  tokenId, claimedArray, reward);
+        if (claimedArray.length != 0) {
+            // when the token is unstaked claimRewards emits
+            vm.expectEmit(true, true, true, true);
+            emit ClaimRewards(owner, pool,  tokenId, claimedArray, reward);
+        }
 
         // when the token is unstaked unstake emits
         vm.expectEmit(true, true, true, true);
         emit Unstake(owner, address(pool), tokenId);
         _rewardsManager.unstake(tokenId);
+
+        // check exchange rates were updated
+        uint256 updateEpoch = IPool(pool).currentBurnEpoch();
+        _assertBucketsUpdated(pool, indexes, updateEpoch);
     }
 
     function _emergencyUnstakeToken(
@@ -131,6 +136,58 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         emit Unstake(owner, address(pool), tokenId);
         _rewardsManager.emergencyUnstake(tokenId);
     }
+
+    function _updateExchangeRates(
+        address updater,
+        address pool,
+        uint256[] memory indexes,
+        uint256 reward
+    ) internal {
+        changePrank(updater);
+        vm.expectEmit(true, true, true, true);
+        emit UpdateExchangeRates(updater, pool, indexes, reward);
+        _rewardsManager.updateBucketExchangeRatesAndClaim(pool, keccak256("ERC20_NON_SUBSET_HASH"), indexes);
+
+        // check exchange rates were updated
+        uint256 updateEpoch = IPool(pool).currentBurnEpoch();
+        _assertBucketsUpdated(pool, indexes, updateEpoch);
+    }
+
+    function _epochsClaimedArray(uint256 numberOfAuctions_, uint256 lastClaimed_) internal pure returns (uint256[] memory epochsClaimed_) {
+        epochsClaimed_ = new uint256[](numberOfAuctions_);
+        uint256 claimEpoch = lastClaimed_; // starting index, not inclusive
+
+        for (uint256 i = 0; i < numberOfAuctions_; i++) {
+            epochsClaimed_[i] = claimEpoch + 1;
+            claimEpoch += 1;
+        }
+    }
+
+    function _claimRewards(
+        address from,
+        address pool,
+        uint256 tokenId,
+        uint256 minAmountToReceive,
+        uint256 reward,
+        uint256[] memory epochsClaimed
+    ) internal {
+        changePrank(from);
+        uint256 fromAjnaBal       = _ajnaToken.balanceOf(from);
+
+        uint256 managerBalance    = _ajnaToken.balanceOf(address(_rewardsManager));
+        uint256 rewardTransferred = Maths.min(reward, managerBalance);
+
+        uint256 currentBurnEpoch = IPool(pool).currentBurnEpoch();
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(from, pool, tokenId, epochsClaimed, reward);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch, minAmountToReceive);
+
+        assertEq(_ajnaToken.balanceOf(from), fromAjnaBal + rewardTransferred);
+    }
+
+    /***************/
+    /*** Asserts ***/
+    /***************/
 
     function _assertUnstakeInvariants(address owner_, uint256 tokenId_) internal {
         assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId_), owner_);
@@ -158,8 +215,7 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         uint256 interest,
         uint256 burned,
         uint256 tokensToBurn
-        ) internal {
-
+    ) internal {
         (uint256 bETimestamp, uint256 bEInterest, uint256 bEBurned) = IPool(pool).burnInfo(epoch);
 
         assertEq(bETimestamp, timestamp);
@@ -168,46 +224,15 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         assertEq(burned,      tokensToBurn);
     }
 
-
-    function _updateExchangeRates(
-        address updater,
-        address pool,
-        uint256[] memory indexes,
-        uint256 reward
+    // check that an array of bucket indexes had their exchange rates updated
+    function _assertBucketsUpdated(
+        address pool_,
+        uint256[] memory indexes_,
+        uint256 epoch_
     ) internal {
-        changePrank(updater);
-        vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(updater, pool, indexes, reward);
-        _rewardsManager.updateBucketExchangeRatesAndClaim(pool, keccak256("ERC20_NON_SUBSET_HASH"), indexes);
-    }
-
-
-    function _epochsClaimedArray(uint256 numberOfAuctions_, uint256 lastClaimed_) internal pure returns (uint256[] memory epochsClaimed_) {
-        epochsClaimed_ = new uint256[](numberOfAuctions_);
-        uint256 claimEpoch = lastClaimed_; // starting index, not inclusive
-
-        for (uint256 i = 0; i < numberOfAuctions_; i++) {
-            epochsClaimed_[i] = claimEpoch + 1;
-            claimEpoch += 1;
+        for (uint256 i = 0; i < indexes_.length; ++i) {
+            assertTrue(_rewardsManager.isBucketUpdated(pool_, indexes_[i], epoch_));
         }
-    }
-
-    function _claimRewards(
-        address from,
-        address pool,
-        uint256 tokenId,
-        uint256 reward,
-        uint256[] memory epochsClaimed
-    ) internal {
-        changePrank(from);
-        uint256 fromAjnaBal = _ajnaToken.balanceOf(from);
-
-        uint256 currentBurnEpoch = IPool(pool).currentBurnEpoch();
-        vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(from, pool, tokenId, epochsClaimed, reward);
-        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
-
-        assertEq(_ajnaToken.balanceOf(from), fromAjnaBal + reward);
     }
 
     function _assertNotOwnerOfDepositRevert(address from , uint256 tokenId) internal {
@@ -215,23 +240,37 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         changePrank(from);
         uint256 currentBurnEpoch = _pool.currentBurnEpoch();
         vm.expectRevert(IRewardsManagerErrors.NotOwnerOfDeposit.selector);
-        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch, 0);
     }
 
     function _assertNotOwnerOfDepositUnstakeRevert(address from , uint256 tokenId) internal {
-        // check only deposit owner can claim rewards
+        // check only deposit owner can unstake
         changePrank(from);
-        uint256 currentBurnEpoch = _pool.currentBurnEpoch();
         vm.expectRevert(IRewardsManagerErrors.NotOwnerOfDeposit.selector);
-        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+        _rewardsManager.unstake(tokenId);
     }
 
     function _assertAlreadyClaimedRevert(address from , uint256 tokenId) internal {
-        // check only deposit owner can claim rewards
+        // check if rewards can only be claimed once
         changePrank(from);
         uint256 currentBurnEpoch = _pool.currentBurnEpoch();
         vm.expectRevert(IRewardsManagerErrors.AlreadyClaimed.selector);
-        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch, 0);
+    }
+
+    function _assertUnstakeInsufficientLiquidityRevert(address from, uint256 tokenId) internal {
+        // should revert if token balance is less than rewards to claim
+        changePrank(from);
+        vm.expectRevert(IRewardsManagerErrors.InsufficientLiquidity.selector);
+        _rewardsManager.unstake(tokenId);
+    }
+
+    function _assertClaimRewardsInsufficientLiquidityRevert(address from, uint256 tokenId, uint256 minRewardToClaim) internal {
+        // should revert if token balance is less than rewards to claim
+        changePrank(from);
+        uint256 currentBurnEpoch = _pool.currentBurnEpoch();
+        vm.expectRevert(IRewardsManagerErrors.InsufficientLiquidity.selector);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch, minRewardToClaim);
     }
 
     function _assertStake(

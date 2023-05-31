@@ -246,7 +246,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
                 address(_pool),
                 5 * 1e18,
                 high
-            ), 1668940620571264
+            ), 1668940620571263
         );
         assertEq(
             _poolUtils.lpToCollateral(
