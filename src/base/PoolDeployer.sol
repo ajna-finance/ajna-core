@@ -4,9 +4,6 @@ pragma solidity 0.8.18;
 
 import { IPoolFactory } from '../interfaces/pool/IPoolFactory.sol';
 
-
-import '@std/console.sol';
-
 /**
  *  @title  Pool Deployer base contract
  *  @notice Base contract for Pool Deployer, contains logic used by both ERC20 and ERC721 Pool Factories.
