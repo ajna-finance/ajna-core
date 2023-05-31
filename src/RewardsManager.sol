@@ -2,10 +2,9 @@
 
 pragma solidity 0.8.18;
 
-import { IERC20 }          from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import { IERC721 }         from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
-import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
-import { SafeERC20 }       from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import { IERC20 }    from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import { IERC721 }   from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import { IPool }                        from './interfaces/pool/IPool.sol';
 import { IPositionManager }             from './interfaces/position/IPositionManager.sol';
@@ -32,7 +31,7 @@ import { Maths } from './libraries/internal/Maths.sol';
  *          - `claim` rewards
  *          - `unstake` token
  */
-contract RewardsManager is IRewardsManager, ReentrancyGuard {
+contract RewardsManager is IRewardsManager {
 
     using SafeERC20 for IERC20;
 
