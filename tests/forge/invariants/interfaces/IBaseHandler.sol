@@ -11,6 +11,7 @@ interface IBaseHandler {
     function actors(uint256) external view returns(address);
 
     function numberOfCalls(bytes memory) external view returns(uint256);
+    function numberOfActions(bytes memory) external view returns(uint256);
 
     function fenwickSumAtIndex(uint256) external view returns(uint256);
     function fenwickTreeSum() external view returns(uint256); 

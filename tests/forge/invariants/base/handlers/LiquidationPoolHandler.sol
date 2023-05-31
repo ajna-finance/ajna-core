@@ -53,14 +53,29 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
     ) external useRandomActor(takerIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BLiquidationHandler.takeAuction']++;
 
-        // Prepare test phase
         address borrower;
-        address taker       = _actor;
-        (amount_, borrower) = _preTake(amount_, borrowerIndex_, takerIndex_, skippedTime_);
+        // try to take from head auction if any
+        (, , , , , , address headAuction, , , ) = _pool.auctionInfo(address(0));
+        if (headAuction != address(0)) {
+            (, uint256 auctionedCollateral, ) = _poolInfo.borrowerInfo(address(_pool), headAuction);
+            borrower = headAuction;
+            amount_  = auctionedCollateral / 2;
 
-        // Action phase
-        changePrank(taker);
-        _takeAuction(borrower, amount_, taker);
+            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
+            // skip to make auction takeable
+            if (block.timestamp - kickTime < 1 hours) {
+                vm.warp(block.timestamp + 61 minutes);
+            }
+
+        } else {
+            address taker = _actor;
+            // no head auction, prepare take action
+            (amount_, borrower) = _preTake(amount_, borrowerIndex_, takerIndex_);
+            _actor = taker;
+            changePrank(taker);
+        }
+
+        _takeAuction(borrower, amount_, _actor);
     }
 
     function bucketTake(
@@ -72,12 +87,29 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
     ) external useRandomActor(takerIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BLiquidationHandler.bucketTake']++;
 
-        // Prepare test phase
-        address taker                           = _actor;
-        (address borrower, uint256 bucketIndex) = _preBucketTake(borrowerIndex_, takerIndex_, bucketIndex_, skippedTime_);
+        bucketIndex_ = constrictToRange(bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
 
-        changePrank(taker);
-        _bucketTake(taker, borrower, depositTake_, bucketIndex);
+        address borrower;
+        // try to take from head auction if any
+        (, , , , , , address headAuction, , , ) = _pool.auctionInfo(address(0));
+        if (headAuction != address(0)) {
+            borrower = headAuction;
+
+            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
+            // skip to make auction takeable
+            if (block.timestamp - kickTime < 1 hours) {
+                vm.warp(block.timestamp + 61 minutes);
+            }
+
+        } else {
+            address taker = _actor;
+            // no head auction, prepare take action
+            borrower = _preBucketTake(borrowerIndex_, takerIndex_);
+            _actor = taker;
+            changePrank(taker);
+        }
+
+        _bucketTake(_actor, borrower, depositTake_, bucketIndex_);
     }
 
     /******************************/
@@ -92,13 +124,20 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BLiquidationHandler.settleAuction']++;
 
-        // prepare phase
-        address actor                        = _actor;
-        (address borrower, uint256 maxDepth) = _preSettleAuction(borrowerIndex_, kickerIndex_);
+        address borrower;
+        // try to settle head auction if any
+        (, , , , , , address headAuction, , , ) = _pool.auctionInfo(address(0));
+        if (headAuction != address(0)) {
+            borrower = headAuction;
+        } else {
+            address settler = _actor;
+            // no head auction, prepare take action
+            borrower = _preSettleAuction(borrowerIndex_, kickerIndex_);
+            _actor = settler;
+            changePrank(settler);
+        }
 
-        // Action phase
-        changePrank(actor);
-        _settleAuction(borrower, maxDepth);
+        _settleAuction(borrower, LENDER_MAX_BUCKET_INDEX - LENDER_MIN_BUCKET_INDEX);
 
         // Cleanup phase
         _auctionSettleStateReset(borrower);
@@ -135,26 +174,21 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         }
     }
 
-    function _preTake(uint256 amount_, uint256 borrowerIndex_, uint256 kickerIndex_, uint256 skipTime_) internal returns(uint256 boundedAmount_, address borrower_){
+    function _preTake(uint256 amount_, uint256 borrowerIndex_, uint256 kickerIndex_) internal returns(uint256 boundedAmount_, address borrower_){
         boundedAmount_ = _constrictTakeAmount(amount_);
         borrower_      = _kickAuction(borrowerIndex_, boundedAmount_ * 100, kickerIndex_);
 
         // skip time to make auction takeable
-        skipTime_ = constrictToRange(skipTime_, 2 hours, 71 hours);
-        vm.warp(block.timestamp + skipTime_);
+        vm.warp(block.timestamp + 61 minutes);
     }
 
-    function _preBucketTake(uint256 borrowerIndex_, uint256 kickerIndex_, uint256 bucketIndex_, uint256 skipTime_) internal returns(address borrower_, uint256 bucket_) {
-        bucket_   = constrictToRange(bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+    function _preBucketTake(uint256 borrowerIndex_, uint256 kickerIndex_) internal returns(address borrower_) {
         borrower_ = _kickAuction(borrowerIndex_, 1e24, kickerIndex_);
-
         // skip time to make auction takeable
-        skipTime_ = constrictToRange(skipTime_, 2 hours, 71 hours);
-        vm.warp(block.timestamp + skipTime_);
+        vm.warp(block.timestamp + 61 minutes);
     }
 
-    function _preSettleAuction(uint256 borrowerIndex_, uint256 kickerIndex_) internal returns(address borrower_, uint256 maxDepth_) {
-        maxDepth_ = LENDER_MAX_BUCKET_INDEX - LENDER_MIN_BUCKET_INDEX;
+    function _preSettleAuction(uint256 borrowerIndex_, uint256 kickerIndex_) internal returns(address borrower_) {
         borrower_ = _kickAuction(borrowerIndex_, 1e24, kickerIndex_);
 
         // skip time to make auction clearable

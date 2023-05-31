@@ -5,7 +5,7 @@ pragma solidity 0.8.18;
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
-import { ERC721Pool }        from 'src/ERC721Pool.sol';
+import { ERC721Pool } from 'src/ERC721Pool.sol';
 
 import { NFTCollateralToken } from '../../../../utils/Tokens.sol';
 
@@ -91,6 +91,28 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
         }
 
         return actorsAddress;
+    }
+
+    function _repayBorrowerDebt(address borrower_, uint256 amount_) internal override {
+
+        (
+            uint256 kickTimeBefore,
+            uint256 borrowerCollateralBefore, , ,
+            uint256 auctionPrice,
+        ) = _poolInfo.auctionStatus(address(_erc721Pool), borrower_);
+
+        try _erc721Pool.repayDebt(borrower_, amount_, 0, borrower_, 7388) {
+
+            _recordSettleBucket(
+                borrower_,
+                borrowerCollateralBefore,
+                kickTimeBefore,
+                auctionPrice
+            );
+
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
+        }
     }
 
 }

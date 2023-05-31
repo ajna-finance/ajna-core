@@ -118,6 +118,10 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         ERC20PoolFactory erc20Factory_,
         ERC721PoolFactory erc721Factory_
     ) PermitERC721("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {
+        if (
+            address(erc20Factory_) == address(0) || address(erc721Factory_) == address(0)
+        ) revert DeployWithZeroAddress();
+
         erc20PoolFactory  = erc20Factory_;
         erc721PoolFactory = erc721Factory_;
     }
@@ -236,10 +240,10 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     function mint(
         MintParams calldata params_
     ) external override nonReentrant returns (uint256 tokenId_) {
-        tokenId_ = _nextId++;
-
         // revert if the address is not a valid Ajna pool
         if (!_isAjnaPool(params_.pool, params_.poolSubsetHash)) revert NotAjnaPool();
+
+        tokenId_ = _nextId++;
 
         // record which pool the tokenId was minted in
         poolKey[tokenId_] = params_.pool;
@@ -270,7 +274,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      */
     function moveLiquidity(
         MoveLiquidityParams calldata params_
-    ) external override mayInteract(params_.pool, params_.tokenId) nonReentrant {
+    ) external override nonReentrant mayInteract(params_.pool, params_.tokenId) {
         Position storage fromPosition = positions[params_.tokenId][params_.fromIndex];
 
         MoveLiquidityLocalVars memory vars;
@@ -385,7 +389,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
 
             Position memory position = positions[params_.tokenId][index];
 
-            if (position.depositTime == 0 || position.lps == 0) revert RemovePositionFailed();
+            if (position.lps == 0 || position.depositTime == 0) revert RemovePositionFailed();
 
             // check that bucket didn't go bankrupt after memorialization
             if (_bucketBankruptAfterDeposit(pool, index, position.depositTime)) revert BucketBankrupt();
@@ -439,8 +443,16 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         address collateralAddress = IPool(pool_).collateralAddress();
         address quoteAddress      = IPool(pool_).quoteTokenAddress();
 
-        address erc20DeployedPoolAddress  = erc20PoolFactory.deployedPools(subsetHash_, collateralAddress, quoteAddress);
-        address erc721DeployedPoolAddress = erc721PoolFactory.deployedPools(subsetHash_, collateralAddress, quoteAddress);
+        address erc20DeployedPoolAddress  = erc20PoolFactory.deployedPools(
+            subsetHash_,
+            collateralAddress,
+            quoteAddress
+        );
+        address erc721DeployedPoolAddress = erc721PoolFactory.deployedPools(
+            subsetHash_,
+            collateralAddress,
+            quoteAddress
+        );
 
         return (pool_ == erc20DeployedPoolAddress || pool_ == erc721DeployedPoolAddress);
     }
@@ -545,16 +557,18 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     function tokenURI(
         uint256 tokenId_
     ) public view override returns (string memory) {
-        require(_exists(tokenId_));
+        if (!_exists(tokenId_)) revert NoToken();
 
-        address collateralTokenAddress = IPool(poolKey[tokenId_]).collateralAddress();
-        address quoteTokenAddress      = IPool(poolKey[tokenId_]).quoteTokenAddress();
+        address pool = poolKey[tokenId_];
+
+        address collateralTokenAddress = IPool(pool).collateralAddress();
+        address quoteTokenAddress      = IPool(pool).quoteTokenAddress();
 
         PositionNFTSVG.ConstructTokenURIParams memory params = PositionNFTSVG.ConstructTokenURIParams({
             collateralTokenSymbol: tokenSymbol(collateralTokenAddress),
             quoteTokenSymbol:      tokenSymbol(quoteTokenAddress),
             tokenId:               tokenId_,
-            pool:                  poolKey[tokenId_],
+            pool:                  pool,
             owner:                 ownerOf(tokenId_),
             indexes:               positionIndexes[tokenId_].values()
         });

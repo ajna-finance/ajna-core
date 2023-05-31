@@ -239,7 +239,7 @@ library Buckets {
     /****************************/
 
     /**
-     *  @notice Returns the exchange rate for a given bucket.
+     *  @notice Returns the exchange rate for a given bucket (conversion of 1 lp to quote token).
      *  @param  bucketCollateral_ Amount of collateral in bucket.
      *  @param  bucketLP_         Amount of `LP` in bucket.
      *  @param  bucketDeposit_    The amount of quote tokens deposited in the given bucket.
@@ -251,7 +251,13 @@ library Buckets {
         uint256 bucketDeposit_,
         uint256 bucketPrice_
     ) internal pure returns (uint256) {
-        return bucketLP_ == 0 ? Maths.WAD :
-            Maths.wdiv(bucketDeposit_ + Maths.wmul(bucketPrice_, bucketCollateral_), bucketLP_);
+        return lpToQuoteTokens(
+            bucketCollateral_,
+            bucketLP_,
+            bucketDeposit_,
+            Maths.WAD,
+            bucketPrice_,
+            Math.Rounding.Up
+        );
     }
 }

@@ -313,7 +313,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         // find pending debt after interest accumulation
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              1_508.860066921599065131 * 1e18,
+            borrowerDebt:              1_508.860066921599065132 * 1e18,
             borrowerCollateral:        3 * 1e18,
             borrowert0Np:              1_051.009615384615385100 * 1e18,
             borrowerCollateralization: 5.986423966420065589 * 1e18
@@ -332,7 +332,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             from:             _borrower,
             borrower:         _borrower,
             amountToRepay:    type(uint256).max,
-            amountRepaid:     1_508.860066921599065131 * 1e18,
+            amountRepaid:     1_508.860066921599065132 * 1e18,
             collateralToPull: 3,
             newLup:           MAX_PRICE
         });
@@ -343,8 +343,8 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         assertEq(_collateral.balanceOf(_borrower),      52);
         assertEq(_collateral.balanceOf(address(_pool)), 0);
 
-        assertEq(_quote.balanceOf(address(_pool)), 30_008.860066921599065131 * 1e18);
-        assertEq(_quote.balanceOf(_borrower),      991.139933078400934869 * 1e18);
+        assertEq(_quote.balanceOf(address(_pool)), 30_008.860066921599065132 * 1e18);
+        assertEq(_quote.balanceOf(_borrower),      991.139933078400934868 * 1e18);
 
         // check pool state after fully repay
         _assertPool(
@@ -887,7 +887,7 @@ contract ERC721ScaledQuoteTokenBorrowAndRepayTest is ERC721NDecimalsHelperContra
         // find pending debt after interest accumulation
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              1_508.860066921599065131 * 1e18,
+            borrowerDebt:              1_508.860066921599065132 * 1e18,
             borrowerCollateral:        3 * 1e18,
             borrowert0Np:              1_051.009615384615385100 * 1e18,
             borrowerCollateralization: 5.986423966420065589 * 1e18
@@ -906,7 +906,7 @@ contract ERC721ScaledQuoteTokenBorrowAndRepayTest is ERC721NDecimalsHelperContra
             from:             _borrower,
             borrower:         _borrower,
             amountToRepay:    type(uint256).max,
-            amountRepaid:     1_508.860066921599065131 * 1e18,
+            amountRepaid:     1_508.860066921599065132 * 1e18,
             collateralToPull: 3,
             newLup:           MAX_PRICE
         });

@@ -40,9 +40,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         uint256 kickerBondBefore = _getKickerBond(_actor);
 
         try _pool.kick(borrower_, 7388) {
+            numberOfActions['kick']++;
 
             // **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
-            increaseInReserves += Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
+            increaseInReserves += Maths.wdiv(Maths.wmul(borrowerDebt, interestRate), 4 * 1e18);
 
             uint256 kickerBondAfter = _getKickerBond(_actor);
 
@@ -70,6 +71,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         _ensureQuoteAmount(_actor, borrowerDebt);
 
         try _pool.kickWithDeposit(bucketIndex_, 7388) {
+            numberOfActions['kickWithDeposit']++;
 
             ( , , , uint256 depositAfterAction, ) = _pool.bucketInfo(bucketIndex_);
 
@@ -142,6 +144,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         _ensureQuoteAmount(taker_, 1e45);
 
         try _pool.take(borrower_, amount_, taker_, bytes("")) {
+            numberOfActions['take']++;
 
             (uint256 borrowerDebtAfterTake, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
             uint256 totalBondAfterTake          = _getKickerBond(kicker);
@@ -206,13 +209,14 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
 
-        (address kicker, , , , , , , , , )     = _pool.auctionInfo(borrower_);
-        ( , , , , uint256 auctionPrice, )      = _poolInfo.auctionStatus(address(_pool), borrower_);
-        uint256 auctionBucketIndex             = auctionPrice < MIN_PRICE ? 7388 : (auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionPrice));
+        (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
+        ( , , , , uint256 auctionPrice, )  = _poolInfo.auctionStatus(address(_pool), borrower_);
+        uint256 auctionBucketIndex         = auctionPrice < MIN_PRICE ? 7388 : (auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionPrice));
         
         LocalBucketTakeVars memory beforeBucketTakeVars = getBucketTakeInfo(bucketIndex_, kicker, _actor, auctionBucketIndex, borrower_);
 
         try _pool.bucketTake(borrower_, depositTake_, bucketIndex_) {
+            numberOfActions['bucketTake']++;
 
             LocalBucketTakeVars memory afterBucketTakeVars = getBucketTakeInfo(bucketIndex_, kicker, _actor, auctionBucketIndex, borrower_);
 
@@ -271,11 +275,12 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         (uint256 inflator, ) = _pool.inflatorInfo();
 
         try _pool.settle(borrower_, maxDepth_) {
+            numberOfActions['settle']++;
 
             // settle borrower debt with exchanging borrower collateral with quote tokens starting from hpb
             while (maxDepth_ != 0 && borrowerT0Debt != 0 && collateral != 0) {
                 uint256 bucketIndex       = fenwickIndexForSum(1);
-                uint256 maxSettleableDebt = Maths.wmul(collateral, _priceAt(bucketIndex));
+                uint256 maxSettleableDebt = Maths.floorWmul(collateral, _priceAt(bucketIndex));
                 uint256 fenwickDeposit    = fenwickDeposits[bucketIndex];
                 uint256 borrowerDebt      = Maths.wmul(borrowerT0Debt, inflator);
 
@@ -290,20 +295,20 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                         // enough deposit in bucket and collateral avail to settle entire debt
                         if (fenwickDeposit >= borrowerDebt && maxSettleableDebt >= borrowerDebt) {
                             fenwickDeposits[bucketIndex] -= borrowerDebt;
-                            collateral                   -= Maths.wdiv(borrowerDebt, _priceAt(bucketIndex));
+                            collateral                   -= Maths.ceilWdiv(borrowerDebt, _priceAt(bucketIndex));
                             borrowerT0Debt               = 0;
                         }
                         // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
                         else if (maxSettleableDebt >= fenwickDeposit) {
                             fenwickDeposits[bucketIndex] = 0;
-                            collateral                   -= Maths.wdiv(fenwickDeposit, _priceAt(bucketIndex));
-                            borrowerT0Debt               -= Maths.wdiv(fenwickDeposit, inflator);
+                            collateral                   -= Maths.ceilWdiv(fenwickDeposit, _priceAt(bucketIndex));
+                            borrowerT0Debt               -= Maths.floorWdiv(fenwickDeposit, inflator);
                         }
                         // exchange all collateral with deposit
                         else {
                             fenwickDeposits[bucketIndex] -= maxSettleableDebt;
                             collateral                   = 0;
-                            borrowerT0Debt               -= Maths.wdiv(maxSettleableDebt, inflator);
+                            borrowerT0Debt               -= Maths.floorWdiv(maxSettleableDebt, inflator);
                         }
                     } else {
                         collateral = 0;
@@ -338,7 +343,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                         // debt is greater than bucket deposit
                         if (borrowerDebt > fenwickDeposit) {
                             fenwickDeposits[bucketIndex] = 0;
-                            borrowerT0Debt               -= Maths.wdiv(fenwickDeposit, inflator);
+                            borrowerT0Debt               -= Maths.floorWdiv(fenwickDeposit, inflator);
                         }
                         // bucket deposit is greater than debt
                         else {

@@ -91,7 +91,7 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function _preAddQuoteToken(
         uint256 amountToAdd_
     ) internal view returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToAdd_, Maths.max(_pool.quoteTokenDust(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
+        boundedAmount_ = constrictToRange(amountToAdd_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
     }
 
     function _preRemoveQuoteToken(

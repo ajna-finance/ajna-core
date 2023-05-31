@@ -48,7 +48,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         uint256 currentPoolInflator = Maths.wmul(poolInflator, factor);
 
         // Calculate current debt of borrower, rounding up to token precision
-        uint256 currentDebt = Maths.wmul(currentPoolInflator, borrowerT0debt);
+        uint256 currentDebt = Maths.ceilWmul(currentPoolInflator, borrowerT0debt);
         uint256 tokenDebt   = _roundUpToScale(currentDebt, ERC20Pool(address(_pool)).quoteTokenScale());
 
         // mint quote tokens to borrower address equivalent to the current debt
@@ -520,7 +520,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         address quote,
         uint256 interestRate
     ) internal {
-        vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
+        address deployed = ERC20PoolFactory(poolFactory).deployedPools(
+            keccak256("ERC20_NON_SUBSET_HASH"),
+            collateral,
+            quote
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(bytes4(keccak256("PoolAlreadyExists(address)")),
+            deployed)
+        );
         ERC20PoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
     }
 
