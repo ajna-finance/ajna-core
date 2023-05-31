@@ -84,7 +84,7 @@ import { Maths }    from '../internal/Maths.sol';
     function _revertOnExpiry(
         uint256 expiry_
     ) view {
-        if (block.timestamp >= expiry_) revert TransactionExpired();
+        if (block.timestamp > expiry_) revert TransactionExpired();
     }
 
     /**
