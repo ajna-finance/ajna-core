@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.18;
 
+import { Math } from '@openzeppelin/contracts/utils/math/Math.sol';
+
 import { DepositsState } from '../../interfaces/pool/commons/IPoolState.sol';
 
 import { _priceAt, MAX_FENWICK_INDEX } from '../helpers/PoolHelper.sol';
@@ -101,7 +103,13 @@ library Deposits {
             // Compute sum up to sumIndex_ + i
             scaledValue =
                 lowerIndexSum +
-                (scaling != 0 ?  (runningScale * scaling * value + 5e35) / 1e36 : Maths.wmul(runningScale, value));
+                (
+                    scaling != 0 ? Math.mulDiv(
+                        runningScale * scaling,
+                        value,
+                        1e36
+                    ) : Maths.wmul(runningScale, value)
+                );
 
             if (scaledValue  < targetSum_) {
                 // Target value is too small, need to consider increasing sumIndex_ still
@@ -258,7 +266,12 @@ library Deposits {
                 uint256 value = deposits_.values[curIndex];
 
                 // Accumulate in sum_, recall that scaled==0 means that the scale factor is actually 1
-                sum_  += scaled != 0 ? (runningScale * scaled * value + 5e35) / 1e36 : Maths.wmul(runningScale, value);
+                sum_  += scaled != 0 ? Math.mulDiv(
+                    runningScale * scaled,
+                    value,
+                    1e36
+                ) : Maths.wmul(runningScale, value);
+
                 // Build up index bit by bit
                 index = curIndex;
 

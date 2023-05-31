@@ -190,7 +190,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
             rate:   0.0405 * 1e18                   // dropping at 4.05%
         });
         (, , , depositEma) = _pool.emasInfo();
-        assertEq(depositEma, 17_664.344669688571758689 * 1e18);         // still moving toward 20_000
+        assertEq(depositEma, 17_664.344669688571758688 * 1e18);         // still moving toward 20_000
 
         _skipAndAccrue({
             time:   2 days,                         // 3 days since liquidity was added
@@ -199,7 +199,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
             rate:   0.03645 * 1e18                  // second interest rate drop
         });                  
         (, , , depositEma) = _pool.emasInfo();
-        assertEq(depositEma, 19_855.532581473734007629 * 1e18);         // reached (sort of) 20_000
+        assertEq(depositEma, 19_855.532581473734007628 * 1e18);         // reached (sort of) 20_000
         _assertPool(
             PoolParams({
                 htp:                  1_159.575642053959188547 * 1e18,
