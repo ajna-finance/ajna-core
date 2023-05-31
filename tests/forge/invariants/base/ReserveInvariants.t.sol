@@ -4,6 +4,8 @@ pragma solidity 0.8.18;
 
 import "@std/console.sol";
 
+import { Maths } from "src/libraries/internal/Maths.sol";
+
 import { IBaseHandler }          from '../interfaces/IBaseHandler.sol';
 import { LiquidationInvariants } from './LiquidationInvariants.t.sol';
 
@@ -25,7 +27,7 @@ abstract contract ReserveInvariants is LiquidationInvariants {
         requireWithinDiff(
             currentReserves,
             previousReserves + increaseInReserves - decreaseInReserves,
-            1e12,
+            Maths.max(_pool.quoteTokenScale(), 1e12),
             "Incorrect Reserves change"
         );
     }
