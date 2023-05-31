@@ -22,6 +22,11 @@ interface IPoolFactory {
     error DeployWithZeroAddress();
 
     /**
+     *  @notice Can't deploy with token that has no decimals method
+     */
+    error TokenInvalidNoDecimals();
+
+    /**
      *  @notice Pool with this combination of quote and collateral already exists.
      *  @param  pool_ The address of deployed pool.
      */

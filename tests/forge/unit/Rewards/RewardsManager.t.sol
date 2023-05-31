@@ -2154,7 +2154,7 @@ contract RewardsManagerTest is RewardsHelperContract {
 
     function testRoguePoolAttack_report_151() external {
         address mal = makeAddr("mal");
-        vm.startPrank(mal);
+        changePrank(mal);
 
         uint256 rewardsManagerBalance = _ajnaToken.balanceOf(address(_rewardsManager));
         uint256 malBalance = _ajnaToken.balanceOf(mal);
