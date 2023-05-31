@@ -935,8 +935,8 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         vm.expectRevert(IPositionManagerErrors.TransferLockedByRedeem.selector);
         _positionManager.safeTransferFrom(alice, bob, tokenId);
 
-        // alice transfer NFT to bob after 1 hour passed since last redeem
-        skip(61 minutes);
+        // alice transfer NFT to bob after 15 minutes lock period since last redeem
+        skip(16 minutes);
         _positionManager.safeTransferFrom(alice, bob, tokenId);
 
         // bob owns position NFT

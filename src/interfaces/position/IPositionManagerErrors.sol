@@ -48,7 +48,7 @@ interface IPositionManagerErrors {
     error RemovePositionFailed();
 
     /**
-     * @notice User cannot transfer a position NFT redeemed in an interval less than 1 hour since last redeem.
+     * @notice User cannot transfer a position NFT redeemed in an interval less than 15 minutes since last redeem.
      */
     error TransferLockedByRedeem();
 
