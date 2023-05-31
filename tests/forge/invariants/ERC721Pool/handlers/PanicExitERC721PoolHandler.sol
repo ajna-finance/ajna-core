@@ -5,15 +5,13 @@ pragma solidity 0.8.18;
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
-import 'src/ERC20Pool.sol';
-
 import { TokenWithNDecimals } from '../../../utils/Tokens.sol';
 
-import { BaseERC20PoolHandler }            from './unbounded/BaseERC20PoolHandler.sol';
-import { UnboundedBasicERC20PoolHandler }  from './unbounded/UnboundedBasicERC20PoolHandler.sol';
+import { BaseERC721PoolHandler }           from './unbounded/BaseERC721PoolHandler.sol';
+import { UnboundedBasicERC721PoolHandler } from './unbounded/UnboundedBasicERC721PoolHandler.sol';
 import { UnboundedLiquidationPoolHandler } from '../../base/handlers/unbounded/UnboundedLiquidationPoolHandler.sol';
 
-contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBasicERC20PoolHandler {
+contract PanicExitERC721PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBasicERC721PoolHandler {
     using EnumerableSet for EnumerableSet.UintSet;
 
     address[] internal _lenders;
@@ -33,7 +31,7 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
         address collateral_,
         address poolInfo_,
         address testContract_
-    ) BaseERC20PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, 0, testContract_) {
+    ) BaseERC721PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, 0, testContract_) {
         numberOfBuckets = buckets.length();
         setUp();
     }

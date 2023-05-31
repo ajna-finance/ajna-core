@@ -62,6 +62,7 @@ abstract contract BaseHandler is Test {
 
     address[] public actors;
     mapping(bytes => uint256)   public numberOfCalls;  // Logging
+    mapping(bytes => uint256)   public numberOfActions;  // Logging
     mapping(address => uint256[]) public touchedBuckets; // Bucket tracking
 
     // exchange rate invariant test state
@@ -130,150 +131,70 @@ abstract contract BaseHandler is Test {
      * @dev Skips some time before each action
      */
     modifier skipTime(uint256 time_) {
-        time_ = constrictToRange(time_, 0, vm.envOr("SKIP_TIME", uint256(24 hours)));
-        vm.warp(block.timestamp + time_);
+        address currentActor = _actor;
 
-        _;
-    }
+        // clear head auction if more than 72 hours passed
+        (, , , , , , address headAuction, , , ) = _pool.auctionInfo(address(0));
+        if (headAuction != address(0)) {
+            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(headAuction);
+            if (block.timestamp - kickTime > 72 hours) {
+                (uint256 auctionedDebt, , ) = _poolInfo.borrowerInfo(address(_pool), headAuction);
 
-    modifier writeLogs() {
-        _;
-        if (logFileVerbosity > 0) {
-            if (numberOfCalls["Write logs"]++ == 0) vm.writeFile(path, "");
-            string memory data = string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " =================="));
-            printInNextLine(data);
-            writePoolStateLogs();
-            if (logFileVerbosity > 1) writeAuctionLogs();
-            if (logFileVerbosity > 2) writeBucketsLogs();
-            if (logFileVerbosity > 3) writeLenderLogs();
-            if (logFileVerbosity > 4) writeBorrowerLogs();
-        }
-    }
-
-    function writePoolStateLogs() internal {
-        printInNextLine("== Pool State ==");
-
-        uint256 pledgedCollateral = _pool.pledgedCollateral();
-        printLog("Pledged Collateral       = ", pledgedCollateral);
-
-        uint256 totalT0debt = _pool.totalT0Debt();
-        printLog("Total t0 debt            = ", totalT0debt);
-
-        (, , , uint256 pendingInflator, ) = _poolInfo.poolLoansInfo(address(_pool));
-        printLog("Total debt               = ", Maths.wmul(totalT0debt, pendingInflator));
-
-        uint256 totalAuctions = _pool.totalAuctionsInPool();
-        printLog("Total Auctions           = ", totalAuctions);
-
-        uint256 totalT0debtInAuction = _pool.totalT0DebtInAuction();
-        printLog("Total t0 debt in auction = ", totalT0debtInAuction);
-
-        printLog("Total debt in auction    = ", Maths.wmul(totalT0debtInAuction, pendingInflator));
-
-        uint256 depositSize = _pool.depositSize();
-        printLog("Total deposits           = ", depositSize);
-
-        (uint256 totalBond, , , ) = _pool.reservesInfo();
-        printLog("Total bond escrowed      = ", totalBond);
-
-        (uint256 interestRate, ) = _pool.interestRateInfo();
-        printLog("Interest Rate            = ", interestRate);
-
-        printInNextLine("=======================");
-    }
-
-    function writeLenderLogs() internal {
-        printInNextLine("== Lenders Details ==");
-        string memory data;
-        for (uint256 i = 0; i < actors.length; i++) {
-            printLine("");
-            printLog("Actor ", i + 1);
-            for (uint256 j = 0; j < buckets.length(); j++) {
-                uint256 bucketIndex = buckets.at(j);
-                (uint256 lenderLps, ) = _pool.lenderInfo(bucketIndex, actors[i]);
-                if (lenderLps != 0) {
-                    data = string(abi.encodePacked("Lps at ", Strings.toString(bucketIndex), " = ", Strings.toString(lenderLps)));
-                    printLine(data);
+                try vm.startPrank(headAuction) {
+                } catch {
+                    changePrank(headAuction);
                 }
+
+                _ensureQuoteAmount(headAuction, auctionedDebt);
+                _repayBorrowerDebt(headAuction, auctionedDebt);
+                _auctionSettleStateReset(headAuction);
             }
         }
-        printInNextLine("=======================");
-    }
 
-    function writeBorrowerLogs() internal {
-        printInNextLine("== Borrowers Details ==");
-        for (uint256 i = 0; i < actors.length; i++) {
-            printLine("");
-            printLog("Actor ", i + 1);
-            (uint256 debt, uint256 pledgedCollateral, ) = _poolInfo.borrowerInfo(address(_pool), actors[i]);
-            if (debt != 0 || pledgedCollateral != 0) {
-                printLog("Debt               = ", debt);
-                printLog("Pledged collateral = ", pledgedCollateral);
+        uint256 maxPoolDebt = uint256(vm.envOr("MAX_POOL_DEBT", uint256(1e55)));
+        (uint256 poolDebt, , ,) = _pool.debtInfo();
+
+        // skip time only if max debt not exceeded (to prevent additional interest accumulation)
+        if (maxPoolDebt > poolDebt) {
+            time_ = constrictToRange(time_, 0, vm.envOr("SKIP_TIME", uint256(24 hours)));
+            vm.warp(block.timestamp + time_);
+        } else {
+            // repay from loans if pool debt exceeds configured max debt
+            // max repayments that can be done to prevent running out of gas
+            uint256 maxLoansRepayments = 5;
+
+            while (maxPoolDebt < poolDebt && maxLoansRepayments > 0) {
+                (address borrower, , ) = _pool.loansInfo();
+
+                if (borrower != address(0)) {
+                    (uint256 debt, , )     = _poolInfo.borrowerInfo(address(_pool), borrower);
+
+                    try vm.startPrank(borrower) {
+                    } catch {
+                        changePrank(borrower);
+                    }
+
+                    _ensureQuoteAmount(borrower, debt);
+                    _repayBorrowerDebt(borrower, debt);
+                } else {
+                    // max borrower is 0x address, exit loop
+                    break;
+                }
+
+                (poolDebt, , ,) = _pool.debtInfo();
+
+                --maxLoansRepayments;
             }
         }
-        printInNextLine("=======================");
-    }
 
-    function writeBucketsLogs() internal {
-        printInNextLine("== Buckets Detail ==");
-        for (uint256 i = 0; i < buckets.length(); i++) {
-            printLine("");
-            uint256 bucketIndex = buckets.at(i);
-            printLog("Bucket:", bucketIndex);
-            (
-                ,
-                uint256 quoteTokens,
-                uint256 collateral,
-                uint256 bucketLP,
-                uint256 scale,
-                uint256 exchangeRate
-            ) = _poolInfo.bucketInfo(address(_pool), bucketIndex);
+        _actor = currentActor;
 
-            printLog("Quote tokens  = ", quoteTokens);
-            printLog("Collateral    = ", collateral);
-            printLog("Bucket Lps    = ", bucketLP);
-            printLog("Scale         = ", scale);
-            printLog("Exchange Rate = ", exchangeRate);
+        try vm.startPrank(currentActor) {
+        } catch {
+            changePrank(currentActor);
         }
-        printInNextLine("=======================");
-    }
 
-    function writeAuctionLogs() internal {
-        printInNextLine("== Auctions Details ==");
-        string memory data;
-        address nextBorrower;
-        uint256 kickTime;
-        uint256 kickMomp;
-        uint256 bondFactor;
-        uint256 bondSize;
-        uint256 neutralPrice;
-        (,,,,,, nextBorrower,,,) = _pool.auctionInfo(address(0));
-        while (nextBorrower != address(0)) {
-            data = string(abi.encodePacked("Borrower ", Strings.toHexString(uint160(nextBorrower), 20), " Auction Details :"));
-            printInNextLine(data);
-            (, bondFactor, bondSize, kickTime, kickMomp, neutralPrice,, nextBorrower,,) = _pool.auctionInfo(nextBorrower);
-
-            printLog("Bond Factor   = ", bondFactor);
-            printLog("Bond Size     = ", bondSize);
-            printLog("Kick Time     = ", kickTime);
-            printLog("Kick Momp     = ", kickMomp);
-            printLog("Neutral Price = ", neutralPrice);
-        }
-        printInNextLine("=======================");
-    }
-
-    function printLog(string memory key, uint256 value) internal {
-        string memory data = string(abi.encodePacked(key, Strings.toString(value)));
-        printLine(data);
-    }
-
-    function printLine(string memory data) internal {
-        vm.writeLine(path, data);
-    }
-
-    function printInNextLine(string memory data) internal {
-        printLine("");
-        printLine(data);
+        _;
     }
 
     /**
@@ -283,9 +204,7 @@ abstract contract BaseHandler is Test {
         _updateLocalFenwick();
         _fenwickAccrueInterest();
         _updatePoolState();
-
         _resetAndRecordReservesAndExchangeRate();
-
         _;
     }
 
@@ -318,28 +237,38 @@ abstract contract BaseHandler is Test {
         _;
     }
 
+    modifier writeLogs() {
+        _;
+        if (logFileVerbosity > 0) {
+            if (numberOfCalls["Write logs"]++ == 0) vm.writeFile(path, "");
+            string memory data = string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " =================="));
+            printInNextLine(data);
+            writePoolStateLogs();
+            if (logFileVerbosity > 1) writeAuctionLogs();
+            if (logFileVerbosity > 2) writeBucketsLogs();
+            if (logFileVerbosity > 3) writeLenderLogs();
+            if (logFileVerbosity > 4) writeBorrowerLogs();
+        }
+    }
+
     /*****************************/
     /*** Pool Helper Functions ***/
     /*****************************/
+
+    function _getKickSkipTime() internal returns (uint256) {
+        return vm.envOr("SKIP_TIME_TO_KICK", uint256(200 days));
+    }
 
     function _ensureQuoteAmount(address actor_, uint256 amount_) internal {
         uint256 normalizedActorBalance = _quote.balanceOf(actor_) * _pool.quoteTokenScale();
         if (amount_> normalizedActorBalance) {
             _quote.mint(actor_, amount_ - normalizedActorBalance);
         }
-        _quote.approve(address(_pool), amount_);
+        _quote.approve(address(_pool), _quote.balanceOf(actor_));
     }
 
     function _updatePoolState() internal {
         _pool.updateInterest();
-    }
-
-    function _getKickSkipTime() internal returns (uint256) {
-        return vm.envOr("SKIP_TIME_TO_KICK", uint256(200 days));
-    }
-
-    function _getKickReserveTime() internal returns (uint256) {
-        return vm.envOr("SKIP_TIME_TO_KICK_RESERVE", uint256(24 hours));
     }
 
     /**
@@ -564,6 +493,170 @@ abstract contract BaseHandler is Test {
         }
     }
 
+    /********************************/
+    /*** Logging Helper Functions ***/
+    /********************************/
+
+    function writePoolStateLogs() internal {
+        uint256 pledgedCollateral    = _pool.pledgedCollateral();
+        uint256 totalT0debt          = _pool.totalT0Debt();
+        uint256 totalAuctions        = _pool.totalAuctionsInPool();
+        uint256 totalT0debtInAuction = _pool.totalT0DebtInAuction();
+        uint256 depositSize          = _pool.depositSize();
+        (uint256 interestRate, )     = _pool.interestRateInfo();
+        uint256 currentEpoch         = _pool.currentBurnEpoch();
+
+        (
+            uint256 totalBond,
+            uint256 reserveUnclaimed, ,
+            uint256 totalInterest
+        ) = _pool.reservesInfo();
+
+        (
+            ,
+            uint256 noOfLoans,
+            address maxBorrower,
+            uint256 pendingInflator,
+        ) = _poolInfo.poolLoansInfo(address(_pool));
+
+        (
+            , , , , , ,
+            address headAuction, , ,
+        ) = _pool.auctionInfo(address(0));
+
+        printLog("Time                     = ", block.timestamp);
+        printLog("Quote pool Balance       = ", _quote.balanceOf(address(_pool)));
+        printLog("Total deposits           = ", depositSize);
+        printLog("Pledged Collateral       = ", pledgedCollateral);
+        printLog("Interest Rate            = ", interestRate);
+        printLine("");
+        printLog("Total t0 debt            = ", totalT0debt);
+        printLog("Total t0 debt in auction = ", totalT0debtInAuction);
+        printLog("Total debt               = ", Maths.wmul(totalT0debt, pendingInflator));
+        printLog("Total debt in auction    = ", Maths.wmul(totalT0debtInAuction, pendingInflator));
+        printLog("Total bond escrowed      = ", totalBond);
+        printLine("");
+        printLog("Total Loans              = ", noOfLoans);
+        printLog("Total Auctions           = ", totalAuctions);
+        printLine(
+            string(
+                abi.encodePacked("Max Borrower             = ", Strings.toHexString(uint160(maxBorrower), 20), "")
+            )
+        );
+        printLine(
+            string(
+                abi.encodePacked("Head Auction             = ", Strings.toHexString(uint160(headAuction), 20), "")
+            )
+        );
+        printLine("");
+
+        printLog("Current Epoch            = ", currentEpoch);
+        printLog("Total reserves unclaimed = ", reserveUnclaimed);
+        printLog("Total interest earned    = ", totalInterest);
+        printLine("");
+        printLog("Successful kicks         = ", numberOfActions["kick"]);
+        printLog("Successful deposit kicks = ", numberOfActions["kickWithDeposit"]);
+        printLog("Successful takes         = ", numberOfActions["take"]);
+        printLog("Successful bucket takes  = ", numberOfActions["bucketTake"]);
+        printLog("Successful settles       = ", numberOfActions["settle"]);
+
+        printInNextLine("=======================");
+    }
+
+    function writeLenderLogs() internal {
+        printInNextLine("== Lenders Details ==");
+        string memory data;
+        for (uint256 i = 0; i < actors.length; i++) {
+            printLine("");
+            printLog("Actor ", i + 1);
+            for (uint256 j = 0; j < buckets.length(); j++) {
+                uint256 bucketIndex = buckets.at(j);
+                (uint256 lenderLps, ) = _pool.lenderInfo(bucketIndex, actors[i]);
+                if (lenderLps != 0) {
+                    data = string(abi.encodePacked("Lps at ", Strings.toString(bucketIndex), " = ", Strings.toString(lenderLps)));
+                    printLine(data);
+                }
+            }
+        }
+        printInNextLine("=======================");
+    }
+
+    function writeBorrowerLogs() internal {
+        printInNextLine("== Borrowers Details ==");
+        for (uint256 i = 0; i < actors.length; i++) {
+            printLine("");
+            printLog("Actor ", i + 1);
+            (uint256 debt, uint256 pledgedCollateral, ) = _poolInfo.borrowerInfo(address(_pool), actors[i]);
+            if (debt != 0 || pledgedCollateral != 0) {
+                printLog("Debt               = ", debt);
+                printLog("Pledged collateral = ", pledgedCollateral);
+            }
+        }
+        printInNextLine("=======================");
+    }
+
+    function writeBucketsLogs() internal {
+        printInNextLine("== Buckets Detail ==");
+        for (uint256 i = 0; i < buckets.length(); i++) {
+            printLine("");
+            uint256 bucketIndex = buckets.at(i);
+            printLog("Bucket:", bucketIndex);
+            (
+                ,
+                uint256 quoteTokens,
+                uint256 collateral,
+                uint256 bucketLP,
+                uint256 scale,
+                uint256 exchangeRate
+            ) = _poolInfo.bucketInfo(address(_pool), bucketIndex);
+
+            printLog("Quote tokens  = ", quoteTokens);
+            printLog("Collateral    = ", collateral);
+            printLog("Bucket Lps    = ", bucketLP);
+            printLog("Scale         = ", scale);
+            printLog("Exchange Rate = ", exchangeRate);
+        }
+        printInNextLine("=======================");
+    }
+
+    function writeAuctionLogs() internal {
+        printInNextLine("== Auctions Details ==");
+        string memory data;
+        address nextBorrower;
+        uint256 kickTime;
+        uint256 kickMomp;
+        uint256 bondFactor;
+        uint256 bondSize;
+        uint256 neutralPrice;
+        (,,,,,, nextBorrower,,,) = _pool.auctionInfo(address(0));
+        while (nextBorrower != address(0)) {
+            data = string(abi.encodePacked("Borrower ", Strings.toHexString(uint160(nextBorrower), 20), " Auction Details :"));
+            printInNextLine(data);
+            (, bondFactor, bondSize, kickTime, kickMomp, neutralPrice,, nextBorrower,,) = _pool.auctionInfo(nextBorrower);
+
+            printLog("Bond Factor   = ", bondFactor);
+            printLog("Bond Size     = ", bondSize);
+            printLog("Kick Time     = ", kickTime);
+            printLog("Kick Momp     = ", kickMomp);
+            printLog("Neutral Price = ", neutralPrice);
+        }
+        printInNextLine("=======================");
+    }
+
+    function printLog(string memory key, uint256 value) internal {
+        string memory data = string(abi.encodePacked(key, Strings.toString(value)));
+        printLine(data);
+    }
+
+    function printLine(string memory data) internal {
+        vm.writeLine(path, data);
+    }
+
+    function printInNextLine(string memory data) internal {
+        printLine("");
+        printLine(data);
+    }
+
     /**********************************/
     /*** Fenwick External Functions ***/
     /**********************************/
@@ -642,5 +735,7 @@ abstract contract BaseHandler is Test {
     function getBuckets() public view returns(uint256[] memory) {
         return buckets.values();
     }
+
+    function _repayBorrowerDebt(address borrower_, uint256 amount_) internal virtual;
 
 }

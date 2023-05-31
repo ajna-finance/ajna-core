@@ -4,17 +4,18 @@ pragma solidity 0.8.18;
 
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
-import { ERC20Pool }                         from 'src/ERC20Pool.sol';
-import { ERC20PoolFactory }                  from 'src/ERC20PoolFactory.sol';
-import { PoolInfoUtils }                     from 'src/PoolInfoUtils.sol';
+import { ERC20Pool }        from 'src/ERC20Pool.sol';
+import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
+import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
 import { 
     _borrowFeeRate,
     _depositFeeRate,
     _indexOf,
+    _roundToScale,
     MIN_PRICE,
     MAX_PRICE 
-}                                            from 'src/libraries/helpers/PoolHelper.sol';
-import { Maths }                             from "src/libraries/internal/Maths.sol";
+}                           from 'src/libraries/helpers/PoolHelper.sol';
+import { Maths }            from "src/libraries/internal/Maths.sol";
 
 import { UnboundedBasicPoolHandler } from "../../../base/handlers/unbounded/UnboundedBasicPoolHandler.sol";
 import { BaseERC721PoolHandler }     from './BaseERC721PoolHandler.sol';
@@ -192,6 +193,8 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
             increaseInReserves += Maths.wmul(
                 amount_, _borrowFeeRate(interestRate)
             );
+            // rounding in favour of pool goes to reserves
+            increaseInReserves += amount_ - _roundToScale(amount_, _pool.quoteTokenScale());
 
             _recordSettleBucket(
                 _actor,
@@ -231,7 +234,10 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
     }
 
     function _ensureCollateralAmount(address actor_, uint256 amount_) internal {
-        _collateral.mint(actor_, amount_);
+        uint256 actorBalance = _collateral.balanceOf(actor_);
+        if (amount_> actorBalance ) {
+            _collateral.mint(actor_, amount_ - actorBalance);
+        }
         _collateral.setApprovalForAll(address(_pool), true);
     }
 }

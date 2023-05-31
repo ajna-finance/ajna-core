@@ -4,6 +4,8 @@ pragma solidity 0.8.18;
 
 import "@std/console.sol";
 
+import { Maths } from "src/libraries/internal/Maths.sol";
+
 import { IBaseHandler }          from '../interfaces/IBaseHandler.sol';
 import { LiquidationInvariants } from './LiquidationInvariants.t.sol';
 
@@ -25,7 +27,7 @@ abstract contract ReserveInvariants is LiquidationInvariants {
         requireWithinDiff(
             currentReserves,
             previousReserves + increaseInReserves - decreaseInReserves,
-            1e15,
+            Maths.max(_pool.quoteTokenScale(), 1e12),
             "Incorrect Reserves change"
         );
     }
@@ -93,7 +95,13 @@ abstract contract ReserveInvariants is LiquidationInvariants {
             IBaseHandler(_handler).numberOfCalls("BReserveHandler.kickReserveAuction") +
             IBaseHandler(_handler).numberOfCalls("BReserveHandler.takeReserves")
         );
-
+        console.log("------------------");
+        console.log("--Successful liquidation actions----");
+        console.log("kick:              ",  IBaseHandler(_handler).numberOfActions("kick"));
+        console.log("kick with deposit: ",  IBaseHandler(_handler).numberOfActions("kickWithDeposit"));
+        console.log("take:              ",  IBaseHandler(_handler).numberOfActions("take"));
+        console.log("bucket take:       ",  IBaseHandler(_handler).numberOfActions("bucketTake"));
+        console.log("settle             ",  IBaseHandler(_handler).numberOfActions("settle"));
         uint256 currentEpoch = _pool.currentBurnEpoch();
         console.log("Current epoch", currentEpoch);
         for (uint256 epoch = 0; epoch <= currentEpoch; epoch++) {

@@ -4,38 +4,32 @@ pragma solidity 0.8.18;
 
 import "@std/console.sol";
 
-import { LiquidationInvariants }     from '../base/LiquidationInvariants.t.sol';
-import { BaseInvariants }            from '../base/BaseInvariants.sol';
-import { BasicInvariants }           from '../base/BasicInvariants.t.sol';
-import { PanicExitERC20PoolHandler } from './handlers/PanicExitERC20PoolHandler.sol';
-import { BasicERC20PoolInvariants }  from './BasicERC20PoolInvariants.t.sol';
+import { BaseInvariants }                 from '../base/BaseInvariants.sol';
+import { ReserveInvariants }              from '../base/ReserveInvariants.t.sol';
+import { ReserveERC20PoolHandler }        from './handlers/ReserveERC20PoolHandler.sol';
+import { LiquidationERC20PoolInvariants } from './LiquidationERC20PoolInvariants.t.sol';
 
-contract PanicExitERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationInvariants {
-    
-    PanicExitERC20PoolHandler internal _panicExitERC20PoolHandler;
+contract RealWorldScenarioInvariants is ReserveInvariants, LiquidationERC20PoolInvariants {
 
-    address[] internal _lenders;
-    address[] internal _borrowers;
+    ReserveERC20PoolHandler internal _reserveERC20PoolHandler;
 
-    uint16 internal constant LENDERS     = 2_000;
-    uint16 internal constant LOANS_COUNT = 8_000;
-
-    function setUp() public override(BaseInvariants, BasicERC20PoolInvariants) virtual {
+    function setUp() public override(BaseInvariants, LiquidationERC20PoolInvariants) virtual {
 
         super.setUp();
 
-        excludeContract(address(_basicERC20PoolHandler));
+        excludeContract(address(_liquidationERC20PoolHandler));
 
-        _panicExitERC20PoolHandler = new PanicExitERC20PoolHandler(
+        _reserveERC20PoolHandler = new ReserveERC20PoolHandler(
             address(_erc20pool),
             address(_ajna),
             address(_quote),
             address(_collateral),
             address(_poolInfo),
+            _numOfActors,
             address(this)
         );
 
-        _handler = address(_panicExitERC20PoolHandler);
+        _handler = address(_reserveERC20PoolHandler);
     }
 
     function invariant_all_erc20() public useCurrentTimestamp {
@@ -77,10 +71,12 @@ contract PanicExitERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationIn
         _invariant_A6();
         _invariant_A7();
 
+        invariant_reserves();
+
         invariant_call_summary();
     }
 
-    function invariant_call_summary() public virtual override(BasicInvariants, LiquidationInvariants) useCurrentTimestamp {
+    function invariant_call_summary() public virtual override(LiquidationERC20PoolInvariants, ReserveInvariants) useCurrentTimestamp {
         super.invariant_call_summary();
     }
 
