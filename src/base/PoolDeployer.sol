@@ -4,6 +4,9 @@ pragma solidity 0.8.18;
 
 import { IPoolFactory } from '../interfaces/pool/IPoolFactory.sol';
 
+
+import '@std/console.sol';
+
 /**
  *  @title  Pool Deployer base contract
  *  @notice Base contract for Pool Deployer, contains logic used by both ERC20 and ERC721 Pool Factories.
@@ -67,8 +70,11 @@ abstract contract PoolDeployer {
         return deployedPoolsList.length;
     }
 
-    function hasMethod(address contract_, bytes4 methodHash_) internal view returns (bool methodExists_) {
-        (methodExists_,) = contract_.staticcall(abi.encodePacked(methodHash_));
+    function hasDecimalsMethod(address contract_) internal view returns (bool methodExists_) {
+        // 0x313ce567 = bytes4(keccak256("decimals()""))
+        (methodExists_,) = contract_.staticcall(abi.encodePacked(bytes4(0x313ce567)));
     }
+
+
 
 }
