@@ -71,7 +71,4 @@ abstract contract PoolDeployer {
         // 0x313ce567 = bytes4(keccak256("decimals()""))
         (methodExists_,) = contract_.staticcall(abi.encodePacked(bytes4(0x313ce567)));
     }
-
-
-
 }
