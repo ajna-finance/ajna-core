@@ -15,9 +15,9 @@ interface IERC721PoolFactory is IPoolFactory {
     /**************/
 
     /**
-     *  @notice User tried to deploy a pool with an array of `tokenIds` that weren't sorted, or contained duplicates.
+     *  @notice User attempted to make pool with non supported `NFT` contract as collateral.
      */
-    error TokenIdSubsetInvalid();
+    error NFTNotSupported();
 
     /**************************/
     /*** External Functions ***/
@@ -38,9 +38,4 @@ interface IERC721PoolFactory is IPoolFactory {
         uint256[] memory tokenIds_,
         uint256 interestRate_
     ) external returns (address pool_);
-
-    /**
-     *  @notice User attempted to make pool with non supported `NFT` contract as collateral.
-     */
-    error NFTNotSupported();
 }

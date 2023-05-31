@@ -102,6 +102,9 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         if (noOfTokens != 0) {
             // add subset of tokenIds allowed in the pool
             for (uint256 id = 0; id < noOfTokens;) {
+                // Check that the array of token ids is sorted in ascending order, else revert.
+                if (id < (noOfTokens - 1) && tokenIds_[id] >= tokenIds_[id + 1]) revert TokenIdSubsetInvalid();
+
                 tokenIdsAllowed_[tokenIds_[id]] = true;
 
                 unchecked { ++id; }

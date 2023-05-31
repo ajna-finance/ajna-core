@@ -5,10 +5,10 @@ import { ERC721HelperContract }      from './ERC721DSTestPlus.sol';
 import { NFTCollateralToken, TokenWithNDecimals } from '../../utils/Tokens.sol';
 
 import { ERC721Pool }        from 'src/ERC721Pool.sol';
+import { IERC721PoolErrors } from 'src/interfaces/pool/erc721/IERC721PoolErrors.sol';
 import { ERC721PoolFactory } from 'src/ERC721PoolFactory.sol';
 import { IPoolErrors }       from 'src/interfaces/pool/commons/IPoolErrors.sol';
 import { IPoolFactory }      from 'src/interfaces/pool/IPoolFactory.sol';
-import { IERC721PoolFactory } from 'src/interfaces/pool/erc721/IERC721PoolFactory.sol';
 
 contract ERC721PoolFactoryTest is ERC721HelperContract {
     address            internal _NFTCollectionPoolAddress;
@@ -203,7 +203,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
     /*** ERC721 Collection Subset Tests ***/
     /**************************************/
 
-    function testGetNFTSubsetHashTokenOrdering() external {
+    function testDeployERC721SubsetPoolWithIncorrectTokenOrdering() external {
         uint256[] memory tokenIdsOne = new uint256[](3);
         tokenIdsOne[0] = 1;
         tokenIdsOne[1] = 70;
@@ -211,22 +211,22 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         uint256[] memory tokenIdsTwo = new uint256[](3);
         tokenIdsTwo[0] = 1;
         tokenIdsTwo[1] = 2;
-        tokenIdsTwo[2] = 3;
+        tokenIdsTwo[2] = 2;
         uint256[] memory tokenIdsThree = new uint256[](3);
         tokenIdsThree[0] = 1;
         tokenIdsThree[1] = 2;
-        tokenIdsThree[2] = 2;
+        tokenIdsThree[2] = 3;
 
-        // check sort order
-        vm.expectRevert(IERC721PoolFactory.TokenIdSubsetInvalid.selector);
-        _factory.getNFTSubsetHash(tokenIdsOne);
+        // should revert if trying to deploy with incorrect token ids order
+        vm.expectRevert(IERC721PoolErrors.TokenIdSubsetInvalid.selector);
+        _factory.deployPool(address(_collateral), address(_quote), tokenIdsOne, 0.05 * 10**18);
 
-        // check valid subset hash
-        assertEq(_factory.getNFTSubsetHash(tokenIdsTwo), keccak256(abi.encode(tokenIdsTwo)));
+        // should revert if trying to deploy with two same token ids
+        vm.expectRevert(IERC721PoolErrors.TokenIdSubsetInvalid.selector);
+        _factory.deployPool(address(_collateral), address(_quote), tokenIdsTwo, 0.05 * 10**18);
 
-        // check for duplicate tokenIds
-        vm.expectRevert(IERC721PoolFactory.TokenIdSubsetInvalid.selector);
-        _factory.getNFTSubsetHash(tokenIdsThree);
+        // ensure pool is deployed with correct token ids order
+        _factory.deployPool(address(_collateral), address(_quote), tokenIdsThree, 0.05 * 10**18);
     }
 
     function testDeployERC721SubsetPoolWithZeroAddress() external {
