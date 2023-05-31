@@ -44,9 +44,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         _collateralPrecision = uint256(10) ** collateralPrecisionDecimals_;
         _quotePrecision = uint256(10) ** quotePrecisionDecimals_;
-        _quoteDust      = _pool.quoteTokenDust();
-        assertEq(_quoteDust, _pool.quoteTokenScale());
-        assertEq(_quoteDust, 10 ** (18 - quotePrecisionDecimals_));
+        _quoteDust      = _pool.quoteTokenScale();
 
         _startTest();
 
@@ -510,7 +508,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 quoteAmount         = bound(uint256(quoteAmount_),                 1, maxQuoteAmountBound);
 
         uint256 quoteScale = _pool.quoteTokenScale();
-        uint256 quoteDust  = _pool.quoteTokenDust();
+        uint256 quoteDust  = _pool.quoteTokenScale();
         if (quoteAmount < quoteDust) quoteAmount = quoteDust;
 
         uint256 colScale      = ERC20Pool(address(_pool)).collateralScale();
@@ -572,7 +570,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 quoteAmount         = 10795;
 
         uint256 quoteScale = _pool.quoteTokenScale();
-        uint256 quoteDust  = _pool.quoteTokenDust();
+        uint256 quoteDust  = _pool.quoteTokenScale();
         if (quoteAmount < quoteDust) quoteAmount = quoteDust;
 
         uint256 colScale      = ERC20Pool(address(_pool)).collateralScale();

@@ -24,12 +24,8 @@ interface IPoolImmutables {
 
     /**
      *  @notice Returns the `quoteTokenScale` state variable.
+     *  @notice Token scale is also the minimum amount a lender may have in a bucket (dust amount).
      *  @return The precision of the quote `ERC20` token based on decimals.
      */
     function quoteTokenScale() external pure returns (uint256);
-
-    /**
-     *  @notice Returns the minimum amount of quote token a lender may have in a bucket.
-     */
-    function quoteTokenDust() external pure returns (uint256);
 }
