@@ -52,7 +52,7 @@ import {
 import {
     _revertIfAuctionDebtLocked,
     _revertIfAuctionClearable,
-    _revertOnExpiry
+    _revertAfterExpiry
 }                               from '../libraries/helpers/RevertsHelper.sol';
 
 import { Buckets }  from '../libraries/internal/Buckets.sol';
@@ -148,7 +148,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 index_,
         uint256 expiry_
     ) external override nonReentrant returns (uint256 bucketLP_) {
-        _revertOnExpiry(expiry_);
+        _revertAfterExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         // round to token precision
@@ -179,7 +179,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 toIndex_,
         uint256 expiry_
     ) external override nonReentrant returns (uint256 fromBucketLP_, uint256 toBucketLP_, uint256 movedAmount_) {
-        _revertOnExpiry(expiry_);
+        _revertAfterExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         _revertIfAuctionDebtLocked(deposits, poolState.t0DebtInAuction, fromIndex_, poolState.inflator);
