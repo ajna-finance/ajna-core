@@ -512,7 +512,7 @@ library TakerActions {
             loans_,
             poolState_.debt,
             borrowerDebt,
-            poolState_.quoteDustLimit
+            poolState_.quoteTokenScale
         );
 
         // calculate new lup with repaid debt from take
