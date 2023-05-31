@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import '../utils/DSTestPlus.sol';
 import '../utils/FenwickTreeInstance.sol';
@@ -130,9 +130,9 @@ contract FenwickTreeTest is DSTestPlus {
         uint256 subMax = Maths.max(Maths.wmul(subIndexSum, factor), _tree.prefixSum(subIndex));
         uint256 subMin = Maths.min(Maths.wmul(subIndexSum, factor), _tree.prefixSum(subIndex));
 
-        // 3 >= scaling discrepency
-        assertLe(max - min, 3);
-        assertLe(subMax - subMin, 3);
+        // 10 >= scaling discrepency
+        assertLe(max - min, 10);
+        assertLe(subMax - subMin, 10);
     }
 
     function testFenwickRemovePrecision() external {

@@ -64,6 +64,7 @@ Invariant test scenarios can be externally configured by customizing following e
 | BUCKET_INDEX_ERC721 | ERC721 | 850 | First bucket index to be used in ERC721 pool actions |
 | MIN_DEBT_AMOUNT | ERC20 ERC721 | 0 | The min amount of debt that can be taken in a single pool action |
 | MAX_DEBT_AMOUNT | ERC20 ERC721 | 1e28 | The max amount of debt that can be taken in a single pool action |
+| MAX_POOL_DEBT | ERC20 ERC721 | 1e45 | The max amount of debt that can be taken from the pool. If debt goes above this amount, borrower debt will be repaid |
 | SKIP_TIME | ERC20 ERC721 | 24 hours | The upper limit of time that can be skipped after a pool action (fuzzed) |
 | SKIP_TIME_TO_KICK | ERC20 ERC721 | 200 days | The time to be skipped and drive a new loan undercollateralized. Use a big value to ensure a successful kick |
 | FOUNDRY_INVARIANT_RUNS | ERC20 ERC721 | 10 | The number of runs for each scenario |
@@ -98,6 +99,30 @@ make test-invariant MT=invariant SCENARIO=active-pool
 To test all invariants for a pool with reduced usage (actions happening once in a 24 hours interval, defined by `SKIP_TIME`):
 ```bash
 make test-invariant MT=invariant SCENARIO=inactive-pool
+```
+
+To test all invariants for a pool with more depth (Time skip after kick actions are 0 and `SKIP_TIME` between actions is maximum 5 mins):
+```bash
+make test-invariant MT=invariant SCENARIO=no-skip
+```
+To test all invariants (lend/borrow, liquidations and reserve auctions) for a real-world like pool simulation:
+```bash
+make test-rw-simulation-erc20 SCENARIO=<rw-scenario>
+make test-rw-simulation-erc721 SCENARIO=<rw-scenario>
+```
+where `<rw-scenario>` is the configured setup (two sample provided as `rw-1` and `rw-2`). Real-time pool statistics are written in `logfile.txt`
+
+To test invariants for an ERC20 auctioned pool with 200 lenders and 500 borrowers:
+```bash
+make test-liquidations-load-erc20 SCENARIO=panic-exit
+```
+or for ERC721 pool:
+```bash
+make test-liquidations-load-erc721 SCENARIO=panic-exit
+```
+To test invariants for swapping quote for colalteral in an ERC20 pool with 200 lenders and 500 borrowers:
+```bash
+make test-swap-load-erc20 SCENARIO=trading-pool
 ```
 
 #### Commands

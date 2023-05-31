@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
@@ -46,7 +46,8 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         // revert on zero amount
         vm.expectRevert(IPoolErrors.InvalidAmount.selector);
         _pool.removeQuoteToken(0, 1000);
-        // revert on zero index
+        // revert on zero index when enough quote available
+        deal(address(_quote), address(_pool), 5000);
         vm.expectRevert(IPoolErrors.NoClaim.selector);
         _pool.removeQuoteToken(1000, 0);
         // revert on index greater than max index

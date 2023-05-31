@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 /**
  * @title Pool Taker Actions
@@ -22,7 +22,7 @@ interface IPoolTakerActions {
     /**
      *  @notice Called by actors to purchase collateral from the auction in exchange for quote token.
      *  @param  borrowerAddress_  Address of the borower take is being called upon.
-     *  @param  maxAmount_        Max amount of collateral that will be taken from the auction (max number of `NFT`s in case of `ERC721` pool).
+     *  @param  maxAmount_        Max amount of collateral that will be taken from the auction (`WAD` precision for `ERC20` pools, max number of `NFT`s for `ERC721` pools).
      *  @param  callee_           Identifies where collateral should be sent and where quote token should be obtained.
      *  @param  data_             If provided, take will assume the callee implements `IERC*Taker`.  Take will send collateral to 
      *                            callee before passing this data to `IERC*Taker.atomicSwapCallback`.  If not provided, 
@@ -41,8 +41,8 @@ interface IPoolTakerActions {
 
     /**
      *  @notice Purchases claimable reserves during a `CRA` using `Ajna` token.
-     *  @param  maxAmount_ Maximum amount of quote token to purchase at the current auction price.
-     *  @return amount_    Actual amount of reserves taken.
+     *  @param  maxAmount_ Maximum amount of quote token to purchase at the current auction price (`WAD` precision).
+     *  @return amount_    Actual amount of reserves taken (`WAD` precision).
      */
     function takeReserves(
         uint256 maxAmount_

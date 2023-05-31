@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
@@ -78,6 +78,14 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
         }
 
         return actorsAddress;
+    }
+
+    function _repayBorrowerDebt(address borrower_, uint256 amount_) internal override {
+        try _erc20Pool.repayDebt(borrower_, amount_, 0, borrower_, 7388) {
+
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
+        }
     }
 
 }

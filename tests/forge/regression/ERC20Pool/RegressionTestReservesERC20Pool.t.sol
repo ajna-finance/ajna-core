@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { ReserveERC20PoolInvariants } from "../../invariants/ERC20Pool/ReserveERC20PoolInvariants.t.sol";
 
@@ -958,5 +958,47 @@ contract RegressionTestReserveWith10BucketsERC20Pool is ReserveERC20PoolInvarian
         _reserveERC20PoolHandler.kickWithDeposit(16859, 23442, 2222);
 
         invariant_fenwick();
+    }
+}
+
+contract RegressionTestReserveWithMinDebtAmountERC20Pool is ReserveERC20PoolInvariants { 
+
+    function setUp() public override {
+        vm.setEnv("MIN_DEBT_AMOUNT", "1000");
+        super.setUp();
+    }
+
+    /*
+        Test failed because there was not enough quote balance in pool for the calculated rewards.
+        Fixed by not allowing draw debt / remove quote tokens actions to use unclaimed rewards and auction bonds amounts.
+    */
+    function test_regression_reserves_evm_revert_2() external {
+        _reserveERC20PoolHandler.kickAuction(115792089237316195423570985008687907853269984665640564039457584007913129639933, 2, 91325230633814398717429910100117206750783558549035123181702119, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
+        _reserveERC20PoolHandler.drawDebt(115010764850365438892405937, 99266, 5629612810546441);
+        _reserveERC20PoolHandler.takeAuction(3, 506252187686489913395361995, 17164053241942561945173805142, 614104279766114463662318087446225395238344193500787687172585968162);
+        _reserveERC20PoolHandler.takeReserves(5223, 1039866472752662341, 959205933404025228743315025);
+    }
+}
+
+contract RegressionTestReserveWith12CollateralPrecisionERC20Pool is ReserveERC20PoolInvariants {
+
+    function setUp() public override {
+        vm.setEnv("COLLATERAL_PRECISION", "12");
+        super.setUp();
+    }
+
+    /*
+        Test failed because calculated claimable reserves on reserve auction kicked did not accounted guaranteed funds in pool (already kicked reserves and escrowed auction bond).
+        Fixed by capping claimable reserves at available quote token amount (pool balance without kicked reserves not claimed and escrowed auction bonds).
+    */
+    function test_regression_reserves_QT3() external {
+        _reserveERC20PoolHandler.removeQuoteToken(1113521085121132368768304231458008366452480816650014, 518010775851214258829944481483992375293627503745004580402566336003, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 48867430425743212060722974487977454079436894);
+        _reserveERC20PoolHandler.takeAuction(133562452276145897713007937331793075692999633506787708362, 13036850826973277279, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 1486209174712829345536041338613223241477);
+        _reserveERC20PoolHandler.transferLps(701, 29085, 956, 3134, 639);
+        _reserveERC20PoolHandler.kickReserveAuction(1700813423553818493920759581891205508896009573139033389568178370182784, 2);
+        _reserveERC20PoolHandler.kickAuction(4661934629046, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 1);
+        _reserveERC20PoolHandler.takeAuction(115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 3, 649482141532206195204383530931172995008638628921329782413);
+        _reserveERC20PoolHandler.kickReserveAuction(11114, 133084258667509499441);
+        invariant_quote();
     }
 }

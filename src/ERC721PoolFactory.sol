@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { ClonesWithImmutableArgs } from '@clones/ClonesWithImmutableArgs.sol';
 import { IERC165 }                 from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
@@ -55,7 +55,9 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
         address collateral_, address quote_, uint256[] memory tokenIds_, uint256 interestRate_
     ) external canDeploy(collateral_, quote_, interestRate_) returns (address pool_) {
         bytes32 subsetHash = getNFTSubsetHash(tokenIds_);
-        if (deployedPools[subsetHash][collateral_][quote_] != address(0)) revert IPoolFactory.PoolAlreadyExists();
+
+        address existingPool = deployedPools[subsetHash][collateral_][quote_];
+        if (existingPool != address(0)) revert IPoolFactory.PoolAlreadyExists(existingPool);
 
         uint256 quoteTokenScale = 10**(18 - IERC20Token(quote_).decimals());
 

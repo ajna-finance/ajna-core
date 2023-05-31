@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { PoolType } from '../../interfaces/pool/IPool.sol';
 
@@ -25,7 +25,8 @@ import {
     _indexOf,
     _priceAt,
     MAX_FENWICK_INDEX,
-    MIN_PRICE
+    MIN_PRICE,
+    DEPOSIT_BUFFER   
 }  from '../helpers/PoolHelper.sol';
 
 import { Buckets }  from '../internal/Buckets.sol';
@@ -131,8 +132,14 @@ library SettlerActions {
 
         if (borrower.t0Debt != 0 && borrower.collateral == 0) {
             // 2. settle debt with pool reserves
-            uint256 assets      = Maths.wmul(poolState_.t0Debt - result_.t0DebtSettled + borrower.t0Debt, poolState_.inflator) + params_.poolBalance;
-            uint256 liabilities = Deposits.treeSum(deposits_) + auctions_.totalBondEscrowed + reserveAuction_.unclaimed;
+            uint256 assets = Maths.floorWmul(poolState_.t0Debt - result_.t0DebtSettled + borrower.t0Debt, poolState_.inflator) + params_.poolBalance;
+
+            uint256 liabilities =
+                // require 1.0 + 1e-9 deposit buffer (extra margin) for deposits
+                Maths.wmul(DEPOSIT_BUFFER, Deposits.treeSum(deposits_)) +
+                auctions_.totalBondEscrowed +
+                reserveAuction_.unclaimed;
+
             // settle debt from reserves (assets - liabilities) if reserves positive, round reserves down however
             if (assets > liabilities) {
                 borrower.t0Debt -= Maths.min(borrower.t0Debt, Maths.floorWdiv(assets - liabilities, poolState_.inflator));
@@ -352,14 +359,14 @@ library SettlerActions {
                 if (vars.scaledDeposit >= vars.debt && vars.maxSettleableDebt >= vars.debt) {
                     // remove only what's needed to settle the debt
                     vars.unscaledDeposit = Maths.wdiv(vars.debt, vars.scale);
-                    vars.collateralUsed  = Maths.wdiv(vars.debt, vars.price);
+                    vars.collateralUsed  = Maths.ceilWdiv(vars.debt, vars.price);
 
                     // settle the entire debt
                     remainingt0Debt_ = 0;
                 }
                 // 2) bucket deposit can not cover all of loan's remaining debt, bucket deposit is the constraint
                 else if (vars.maxSettleableDebt >= vars.scaledDeposit) {
-                    vars.collateralUsed = Maths.wdiv(vars.scaledDeposit, vars.price);
+                    vars.collateralUsed = Maths.ceilWdiv(vars.scaledDeposit, vars.price);
 
                     // subtract from debt the corresponding t0 amount of deposit
                     remainingt0Debt_ -= Maths.floorWdiv(vars.scaledDeposit, inflator_);

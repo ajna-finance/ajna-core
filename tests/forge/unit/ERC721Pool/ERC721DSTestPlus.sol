@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { ERC20 } from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
@@ -52,7 +52,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         uint256 factor = PoolCommons.pendingInterestFactor(interestRate, block.timestamp - lastInflatorUpdate);
 
         // Calculate current debt of borrower (currentPoolInflator * borrowerT0Debt)
-        uint256 currentDebt = Maths.wmul(Maths.wmul(poolInflator, factor), borrowerT0debt);
+        uint256 currentDebt = Maths.ceilWmul(Maths.wmul(poolInflator, factor), borrowerT0debt);
         uint256 tokenDebt   = _roundUpToScale(currentDebt, ERC721Pool(address(_pool)).quoteTokenScale());
 
         // mint quote tokens to borrower address equivalent to the current debt
@@ -509,7 +509,15 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         uint256 interestRate
     ) internal {
         uint256[] memory tokenIds;
-        vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
+        address deployed = ERC721PoolFactory(poolFactory).deployedPools(
+            keccak256("ERC721_NON_SUBSET_HASH"),
+            collateral,
+            quote
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(bytes4(keccak256("PoolAlreadyExists(address)")),
+            deployed)
+        );
         ERC721PoolFactory(poolFactory).deployPool(collateral, quote, tokenIds, interestRate);
     }
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
@@ -48,7 +48,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         uint256 currentPoolInflator = Maths.wmul(poolInflator, factor);
 
         // Calculate current debt of borrower, rounding up to token precision
-        uint256 currentDebt = Maths.wmul(currentPoolInflator, borrowerT0debt);
+        uint256 currentDebt = Maths.ceilWmul(currentPoolInflator, borrowerT0debt);
         uint256 tokenDebt   = _roundUpToScale(currentDebt, ERC20Pool(address(_pool)).quoteTokenScale());
 
         // mint quote tokens to borrower address equivalent to the current debt
@@ -164,6 +164,17 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         uint256 amount
     ) internal override {
         vm.expectEmit(true, true, false, true);
+
+        uint256 transferAmount = Maths.ceilDiv(amount, _pool.quoteTokenScale());
+        emit Transfer(from, to, transferAmount);
+    }
+
+    function _assertQuoteTokenTransferEventDrawDebt(
+        address from,
+        address to,
+        uint256 amount
+    ) internal {
+        vm.expectEmit(true, true, false, true);
         emit Transfer(from, to, amount / _pool.quoteTokenScale());
     }
 
@@ -263,7 +274,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
         // borrow quote
         if (amountToBorrow != 0) {
-            _assertQuoteTokenTransferEvent(address(_pool), from, amountToBorrow);
+            _assertQuoteTokenTransferEventDrawDebt(address(_pool), from, amountToBorrow);
         }
 
         ERC20Pool(address(_pool)).drawDebt(borrower, amountToBorrow, limitIndex, collateralToPledge);
@@ -499,7 +510,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         address quote,
         uint256 interestRate
     ) internal {
-        vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
+        address deployed = ERC20PoolFactory(poolFactory).deployedPools(
+            keccak256("ERC20_NON_SUBSET_HASH"),
+            collateral,
+            quote
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(bytes4(keccak256("PoolAlreadyExists(address)")),
+            deployed)
+        );
         ERC20PoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
     }
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 interface IBaseHandler {
 
@@ -11,6 +11,7 @@ interface IBaseHandler {
     function actors(uint256) external view returns(address);
 
     function numberOfCalls(bytes memory) external view returns(uint256);
+    function numberOfActions(bytes memory) external view returns(uint256);
 
     function fenwickSumAtIndex(uint256) external view returns(uint256);
     function fenwickTreeSum() external view returns(uint256); 
@@ -26,6 +27,10 @@ interface IBaseHandler {
     function previousReserves() external view returns(uint256);
     function increaseInReserves() external view returns(uint256);
     function decreaseInReserves() external view returns(uint256);
+
+    function previousTotalBonds() external view returns(uint256);
+    function increaseInBonds() external view returns(uint256);
+    function decreaseInBonds() external view returns(uint256);
 
     function firstTake() external view returns(bool);
     function alreadyTaken(address) external view returns(bool);

@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
-import { ERC20Pool }                         from 'src/ERC20Pool.sol';
-import { ERC20PoolFactory }                  from 'src/ERC20PoolFactory.sol';
-import { PoolInfoUtils }                     from 'src/PoolInfoUtils.sol';
-import { _borrowFeeRate, _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
-import { Maths }                             from "src/libraries/internal/Maths.sol";
+import { ERC20Pool }        from 'src/ERC20Pool.sol';
+import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
+import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
+import {
+    _borrowFeeRate,
+    _depositFeeRate,
+    _roundToScale
+}                           from 'src/libraries/helpers/PoolHelper.sol';
+import { Maths }            from "src/libraries/internal/Maths.sol";
 
 import { UnboundedBasicPoolHandler } from "../../../base/handlers/unbounded/UnboundedBasicPoolHandler.sol";
 import { BaseERC20PoolHandler }      from './BaseERC20PoolHandler.sol';
@@ -135,6 +139,8 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
             increaseInReserves += Maths.wmul(
                 amount_, _borrowFeeRate(interestRate)
             );
+            // rounding in favour of pool goes to reserves
+            increaseInReserves += amount_ - _roundToScale(amount_, _pool.quoteTokenScale());
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -146,8 +152,10 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
+        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+
         // ensure actor always has amount of quote to repay
-        _ensureQuoteAmount(_actor, 1e45);
+        _ensureQuoteAmount(_actor, borrowerDebt + 10 * 1e18);
 
         try _erc20Pool.repayDebt(_actor, amountToRepay_, 0, _actor, 7388) {
 
@@ -157,10 +165,10 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
     }
 
     function _ensureCollateralAmount(address actor_, uint256 amount_) internal {
-        uint256 actorBalance = _collateral.balanceOf(actor_);
-        if (amount_> actorBalance ) {
-            _collateral.mint(actor_, amount_ - actorBalance);
+        uint256 normalizedActorBalance = _collateral.balanceOf(actor_) * _erc20Pool.collateralScale();
+        if (amount_> normalizedActorBalance ) {
+            _collateral.mint(actor_, amount_ - normalizedActorBalance);
         }
-        _collateral.approve(address(_pool), amount_);
+        _collateral.approve(address(_pool), _collateral.balanceOf(actor_));
     }
 }

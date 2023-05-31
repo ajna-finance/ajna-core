@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 /**
  * @title Pool State
@@ -336,7 +336,7 @@ struct PoolState {
     uint256 inflator;             // [WAD] current pool inflator
     bool    isNewInterestAccrued; // true if new interest already accrued in current block
     uint256 rate;                 // [WAD] pool's current interest rate
-    uint256 quoteDustLimit;       // [WAD] quote token dust limit of the pool
+    uint256 quoteTokenScale;      // [WAD] quote token scale of the pool. Same as quote token dust.
 }
 
 /*********************/

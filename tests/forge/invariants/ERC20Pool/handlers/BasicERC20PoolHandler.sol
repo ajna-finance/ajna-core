@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { PoolInfoUtils }               from 'src/PoolInfoUtils.sol';
 import { Maths }                       from 'src/libraries/internal/Maths.sol';
@@ -179,12 +179,12 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         (uint256 debt, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
         (uint256 minDebt, , , ) = _poolInfo.poolUtilizationInfo(address(_pool));
 
-        if (boundedAmount_ < minDebt) boundedAmount_ = minDebt + 1;
+        if (boundedAmount_ < minDebt && minDebt < MAX_DEBT_AMOUNT) boundedAmount_ = minDebt + 1;
 
         // 2. pool needs sufficent quote token to draw debt
-        uint256 poolQuoteBalance = _quote.balanceOf(address(_pool));
+        uint256 normalizedPoolBalance = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
 
-        if (boundedAmount_ > poolQuoteBalance) {
+        if (boundedAmount_ > normalizedPoolBalance) {
             _addQuoteToken(boundedAmount_ * 2, LENDER_MAX_BUCKET_INDEX);
         }
 
@@ -200,6 +200,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
             _repayDebt(type(uint256).max);
 
             (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+            _pullCollateral(collateral);
 
             require(debt == 0, "borrower has debt");
         }
@@ -208,7 +209,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
     function _preRepayDebt(
         uint256 amountToRepay_
     ) internal returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToRepay_, Maths.max(_pool.quoteTokenDust(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
+        boundedAmount_ = constrictToRange(amountToRepay_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
 
         // ensure actor has debt to repay
         (uint256 debt, , ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);

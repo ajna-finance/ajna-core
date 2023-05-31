@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import {
     IERC721Token,
@@ -156,6 +156,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             deposits,
             loans,
             poolState,
+            _availableQuoteToken(),
             borrowerAddress_,
             amountToBorrow_,
             limitIndex_,
@@ -228,7 +229,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         // ensure accounting is performed using the appropriate token scale
         if (maxQuoteTokenAmountToRepay_ != type(uint256).max)
-            maxQuoteTokenAmountToRepay_ = _roundToScale(maxQuoteTokenAmountToRepay_, _getArgUint256(QUOTE_SCALE));
+            maxQuoteTokenAmountToRepay_ = _roundToScale(maxQuoteTokenAmountToRepay_, poolState.quoteTokenScale);
 
         RepayDebtResult memory result = BorrowerActions.repayDebt(
             auctions,
@@ -472,7 +473,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         if (data_.length != 0) {
             IERC721Taker(callee_).atomicSwapCallback(
                 tokensTaken,
-                totalQuoteTokenAmount  / _getArgUint256(QUOTE_SCALE),
+                totalQuoteTokenAmount  / poolState.quoteTokenScale,
                 data_
             );
         }

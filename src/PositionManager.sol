@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { ERC20 }           from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import { IERC20 }          from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import { ERC721 }          from '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import { EnumerableSet }   from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import { Multicall }       from '@openzeppelin/contracts/utils/Multicall.sol';
 import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
@@ -39,7 +38,7 @@ import { PositionNFTSVG } from './libraries/external/PositionNFTSVG.sol';
  *          - `redeem` positions for given buckets
  *          - `burn` positions `NFT`
  */
-contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, ReentrancyGuard {
+contract PositionManager is PermitERC721, IPositionManager, Multicall, ReentrancyGuard {
 
     using EnumerableSet for EnumerableSet.UintSet;
     using SafeERC20     for ERC20;
@@ -60,8 +59,6 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
     /// @dev Mapping of `token id => ajna pool address` for which token was minted.
     mapping(uint256 => mapping(uint256 => Position)) internal positions;
-    /// @dev Mapping of `token id => nonce` value used for permit.
-    mapping(uint256 => uint96)                       internal nonces;
     /// @dev Mapping of `token id => bucket indexes` associated with position.
     mapping(uint256 => EnumerableSet.UintSet)        internal positionIndexes;
     /// @dev Mapping of `token id => last redeem timestamp`.
@@ -89,7 +86,9 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         uint256 bucketCollateral; // [WAD] amount of collateral in from bucket
         uint256 bankruptcyTime;   // from bucket bankruptcy time
         uint256 bucketDeposit;    // [WAD] from bucket deposit
-        uint256 depositTime;      // lender deposit time in from bucekt
+        uint256 fromDepositTime;  // lender deposit time in from bucket
+        uint256 fromLP;           // [WAD] the LP memorialized in from position
+        uint256 toDepositTime;    // lender deposit time in to bucket
         uint256 maxQuote;         // [WAD] max amount that can be moved from bucket
         uint256 lpbAmountFrom;    // [WAD] the LP redeemed from bucket
         uint256 lpbAmountTo;      // [WAD] the LP awarded in to bucket
@@ -126,6 +125,10 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         ERC20PoolFactory erc20Factory_,
         ERC721PoolFactory erc721Factory_
     ) PermitERC721("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {
+        if (
+            address(erc20Factory_) == address(0) || address(erc721Factory_) == address(0)
+        ) revert DeployWithZeroAddress();
+
         erc20PoolFactory  = erc20Factory_;
         erc721PoolFactory = erc721Factory_;
     }
@@ -137,7 +140,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     /**
      *  @inheritdoc IPositionManagerOwnerActions
      *  @dev    === Write state ===
-     *  @dev    `nonces`: remove `tokenId` nonce
+     *  @dev    `_nonces`: remove `tokenId` nonce
      *  @dev    `poolKey`: remove `tokenId => pool` mapping
      *  @dev    === Revert on ===
      *  @dev    - `mayInteract`:
@@ -155,7 +158,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         if (positionIndexes[params_.tokenId].length() != 0) revert LiquidityNotRemoved();
 
         // remove permit nonces and pool mapping for burned token
-        delete nonces[params_.tokenId];
+        delete _nonces[params_.tokenId];
         delete poolKey[params_.tokenId];
         delete lastRedeemTime[params_.tokenId];
 
@@ -173,16 +176,19 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *  @dev    `positionIndexes`: add bucket index
      *  @dev    `positions`: update `tokenId => bucket id` position
      *  @dev    === Revert on ===
-     *  @dev    positions token to burn has liquidity `LiquidityNotRemoved()`
+     *  @dev    - `mayInteract`:
+     *  @dev       token id is not a valid / minted id
+     *  @dev       sender is not owner `NoAuth()`
+     *  @dev       token id not minted for given pool `WrongPool()`
      *  @dev    === Emit events ===
      *  @dev    - `MemorializePosition`
      */
     function memorializePositions(
         MemorializePositionsParams calldata params_
-    ) external override {
+    ) external mayInteract(params_.pool, params_.tokenId) override {
         EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
 
-        IPool   pool  = IPool(poolKey[params_.tokenId]);
+        IPool   pool  = IPool(params_.pool);
         address owner = ownerOf(params_.tokenId);
 
         uint256 indexesLength = params_.indexes.length;
@@ -196,6 +202,11 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             positionIndex.add(index);
 
             (uint256 lpBalance, uint256 depositTime) = pool.lenderInfo(index, owner);
+
+            // check that specified allowance is at least equal to the lp balance
+            uint256 allowance = pool.lpAllowance(index, address(this), owner);
+
+            if (allowance < lpBalance) revert AllowanceTooLow();
 
             Position memory position = positions[params_.tokenId][index];
 
@@ -237,10 +248,10 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     function mint(
         MintParams calldata params_
     ) external override nonReentrant returns (uint256 tokenId_) {
-        tokenId_ = _nextId++;
-
         // revert if the address is not a valid Ajna pool
         if (!_isAjnaPool(params_.pool, params_.poolSubsetHash)) revert NotAjnaPool();
+
+        tokenId_ = _nextId++;
 
         // record which pool the tokenId was minted in
         poolKey[tokenId_] = params_.pool;
@@ -271,14 +282,15 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      */
     function moveLiquidity(
         MoveLiquidityParams calldata params_
-    ) external override mayInteract(params_.pool, params_.tokenId) nonReentrant {
+    ) external override nonReentrant mayInteract(params_.pool, params_.tokenId) {
         Position storage fromPosition = positions[params_.tokenId][params_.fromIndex];
 
         MoveLiquidityLocalVars memory vars;
-        vars.depositTime = fromPosition.depositTime;
+        vars.fromDepositTime = fromPosition.depositTime;
+        vars.fromLP = fromPosition.lps;
 
-        // handle the case where owner attempts to move liquidity after they've already done so
-        if (vars.depositTime == 0) revert RemovePositionFailed();
+        // owner attempts to move liquidity from index without LP or they've already moved it
+        if (vars.fromDepositTime == 0) revert RemovePositionFailed();
 
         // ensure bucketDeposit accounts for accrued interest
         IPool(params_.pool).updateInterest();
@@ -291,27 +303,18 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             vars.bucketDeposit,
         ) = IPool(params_.pool).bucketInfo(params_.fromIndex);
 
-        // check that bucket hasn't gone bankrupt since memorialization
-        if (vars.depositTime <= vars.bankruptcyTime) revert BucketBankrupt();
+        // check that from bucket hasn't gone bankrupt since memorialization
+        if (vars.fromDepositTime <= vars.bankruptcyTime) revert BucketBankrupt();
 
         // calculate the max amount of quote tokens that can be moved, given the tracked LP
         vars.maxQuote = _lpToQuoteToken(
             vars.bucketLP,
             vars.bucketCollateral,
             vars.bucketDeposit,
-            fromPosition.lps,
+            vars.fromLP,
             vars.bucketDeposit,
             _priceAt(params_.fromIndex)
         );
-
-        EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
-
-        // remove bucket index from which liquidity is moved from tracked positions
-        if (!positionIndex.remove(params_.fromIndex)) revert RemovePositionFailed();
-
-        // update bucket set at which a position has liquidity
-        // slither-disable-next-line unused-return
-        positionIndex.add(params_.toIndex);
 
         // move quote tokens in pool
         (
@@ -324,13 +327,31 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             params_.expiry
         );
 
-        Position storage toPosition = positions[params_.tokenId][params_.toIndex];
+        EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
 
-        // update position LP state
-        fromPosition.lps -= vars.lpbAmountFrom;
-        toPosition.lps   += vars.lpbAmountTo;
-        // update position deposit time to the from bucket deposit time
-        toPosition.depositTime = vars.depositTime;
+        // 1. update FROM memorialized position
+        if (!positionIndex.remove(params_.fromIndex)) revert RemovePositionFailed(); // revert if FROM position is not in memorialized indexes
+        if (vars.fromLP != vars.lpbAmountFrom)        revert RemovePositionFailed(); // bucket has collateral and quote therefore LP is not redeemable for full quote token amount
+
+        delete positions[params_.tokenId][params_.fromIndex]; // remove memorialized FROM position
+
+        // 2. update TO memorialized position
+        // slither-disable-next-line unused-return
+        positionIndex.add(params_.toIndex); // record the TO memorialized position
+
+        Position storage toPosition = positions[params_.tokenId][params_.toIndex];
+        vars.toDepositTime = toPosition.depositTime;
+
+        // reset LP in TO memorialized position if bucket went bankrupt after memorialization
+        if (_bucketBankruptAfterDeposit(IPool(params_.pool), params_.toIndex, vars.toDepositTime)) {
+            toPosition.lps = vars.lpbAmountTo;
+        } else {
+            toPosition.lps += vars.lpbAmountTo;
+        }
+
+        // update TO memorialized position deposit time with the renewed to bucket deposit time
+        (, vars.toDepositTime) = IPool(params_.pool).lenderInfo(params_.toIndex, address(this));
+        toPosition.depositTime = vars.toDepositTime;
 
         emit MoveLiquidity(
             ownerOf(params_.tokenId),
@@ -359,7 +380,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *  @dev    === Emit events ===
      *  @dev    - `RedeemPosition`
      */
-    function reedemPositions(
+    function redeemPositions(
         RedeemPositionsParams calldata params_
     ) external override mayInteract(params_.pool, params_.tokenId) {
         EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
@@ -376,7 +397,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
             Position memory position = positions[params_.tokenId][index];
 
-            if (position.depositTime == 0 || position.lps == 0) revert RemovePositionFailed();
+            if (position.lps == 0 || position.depositTime == 0) revert RemovePositionFailed();
 
             // check that bucket didn't go bankrupt after memorialization
             if (_bucketBankruptAfterDeposit(pool, index, position.depositTime)) revert BucketBankrupt();
@@ -421,21 +442,10 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         // burning is not constrained by any redeem action
         if (to_ != address(0)) {
             // revert transfer in case token positions were redeem in the last transfer lock period
-            if (block.timestamp - lastRedeemTime[tokenId_] < TRANSFER_LOCK_PERIOD) revert TransferLockedByRedeem();
+            if (block.timestamp - lastRedeemTime[tokenId_] <= TRANSFER_LOCK_PERIOD) revert TransferLockedByRedeem();
 
             delete lastRedeemTime[tokenId_];
         }
-    }
-
-    /**
-     *  @notice Retrieves token's next nonce for permit.
-     *  @param  tokenId_ Address of the `Ajna` pool to retrieve accumulators of.
-     *  @return Incremented token permit nonce.
-     */
-    function _getAndIncrementNonce(
-        uint256 tokenId_
-    ) internal override returns (uint256) {
-        return uint256(nonces[tokenId_]++);
     }
 
     /**
@@ -451,8 +461,16 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         address collateralAddress = IPool(pool_).collateralAddress();
         address quoteAddress      = IPool(pool_).quoteTokenAddress();
 
-        address erc20DeployedPoolAddress  = erc20PoolFactory.deployedPools(subsetHash_, collateralAddress, quoteAddress);
-        address erc721DeployedPoolAddress = erc721PoolFactory.deployedPools(subsetHash_, collateralAddress, quoteAddress);
+        address erc20DeployedPoolAddress  = erc20PoolFactory.deployedPools(
+            subsetHash_,
+            collateralAddress,
+            quoteAddress
+        );
+        address erc721DeployedPoolAddress = erc721PoolFactory.deployedPools(
+            subsetHash_,
+            collateralAddress,
+            quoteAddress
+        );
 
         return (pool_ == erc20DeployedPoolAddress || pool_ == erc721DeployedPoolAddress);
     }
@@ -462,15 +480,16 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *  @param  pool_        The address of the pool of memorialized position.
      *  @param  index_       The bucket index to check deposit time for.
      *  @param  depositTime_ The recorded deposit time of the position.
-     *  @return `True` if the bucket went bankrupt after that position memorialzied their `LP`.
+     *  @return isBankrupt_  `True` if the bucket went bankrupt after that position memorialzied their `LP`.
      */
     function _bucketBankruptAfterDeposit(
         IPool pool_,
         uint256 index_,
         uint256 depositTime_
-    ) internal view returns (bool) {
+    ) internal view returns (bool isBankrupt_) {
         (, , uint256 bankruptcyTime, , ) = pool_.bucketInfo(index_);
-        return depositTime_ <= bankruptcyTime;
+        // Only check against deposit time if bucket has gone bankrupt
+        if (bankruptcyTime != 0) isBankrupt_ = depositTime_ <= bankruptcyTime;
     }
 
     /**********************/
@@ -527,6 +546,14 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     }
 
     /// @inheritdoc IPositionManagerDerivedState
+    function isAjnaPool(
+        address pool_,
+        bytes32 subsetHash_
+    ) external override view returns (bool) {
+        return _isAjnaPool(pool_, subsetHash_);
+    }
+
+    /// @inheritdoc IPositionManagerDerivedState
     function isPositionBucketBankrupt(
         uint256 tokenId_,
         uint256 index_
@@ -547,17 +574,19 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      */
     function tokenURI(
         uint256 tokenId_
-    ) public view override(ERC721) returns (string memory) {
-        require(_exists(tokenId_));
+    ) public view override returns (string memory) {
+        if (!_exists(tokenId_)) revert NoToken();
 
-        address collateralTokenAddress = IPool(poolKey[tokenId_]).collateralAddress();
-        address quoteTokenAddress      = IPool(poolKey[tokenId_]).quoteTokenAddress();
+        address pool = poolKey[tokenId_];
+
+        address collateralTokenAddress = IPool(pool).collateralAddress();
+        address quoteTokenAddress      = IPool(pool).quoteTokenAddress();
 
         PositionNFTSVG.ConstructTokenURIParams memory params = PositionNFTSVG.ConstructTokenURIParams({
             collateralTokenSymbol: tokenSymbol(collateralTokenAddress),
             quoteTokenSymbol:      tokenSymbol(quoteTokenAddress),
             tokenId:               tokenId_,
-            pool:                  poolKey[tokenId_],
+            pool:                  pool,
             owner:                 ownerOf(tokenId_),
             indexes:               positionIndexes[tokenId_].values()
         });
