@@ -52,8 +52,6 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
 
     /// @dev Mapping of `token id => ajna pool address` for which token was minted.
     mapping(uint256 => mapping(uint256 => Position)) internal positions;
-    /// @dev Mapping of `token id => nonce` value used for permit.
-    mapping(uint256 => uint96)                       internal nonces;
     /// @dev Mapping of `token id => bucket indexes` associated with position.
     mapping(uint256 => EnumerableSet.UintSet)        internal positionIndexes;
 
@@ -133,7 +131,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     /**
      *  @inheritdoc IPositionManagerOwnerActions
      *  @dev    === Write state ===
-     *  @dev    `nonces`: remove `tokenId` nonce
+     *  @dev    `_nonces`: remove `tokenId` nonce
      *  @dev    `poolKey`: remove `tokenId => pool` mapping
      *  @dev    === Revert on ===
      *  @dev    - `mayInteract`:
@@ -151,7 +149,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         if (positionIndexes[params_.tokenId].length() != 0) revert LiquidityNotRemoved();
 
         // remove permit nonces and pool mapping for burned token
-        delete nonces[params_.tokenId];
+        delete _nonces[params_.tokenId];
         delete poolKey[params_.tokenId];
 
         _burn(params_.tokenId);
@@ -418,17 +416,6 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     /**************************/
     /*** Internal Functions ***/
     /**************************/
-
-    /**
-     *  @notice Retrieves token's next nonce for permit.
-     *  @param  tokenId_ Address of the `Ajna` pool to retrieve accumulators of.
-     *  @return Incremented token permit nonce.
-     */
-    function _getAndIncrementNonce(
-        uint256 tokenId_
-    ) internal override returns (uint256) {
-        return uint256(nonces[tokenId_]++);
-    }
 
     /**
      *  @notice Checks that a provided pool address was deployed by an `Ajna` factory.
