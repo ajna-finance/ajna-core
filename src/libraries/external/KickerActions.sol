@@ -234,7 +234,7 @@ library KickerActions {
             );
 
             uint256 unscaledAmountToRemove = Maths.min(
-                Maths.ceilWdiv(vars.amountToDebitFromDeposit, vars.bucketScale),
+                Maths.floorWdiv(vars.amountToDebitFromDeposit, vars.bucketScale),
                 vars.bucketUnscaledDeposit
             );
 
