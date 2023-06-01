@@ -24,7 +24,7 @@ interface IPoolFactory {
     /**
      *  @notice Can't deploy with token that has no decimals method or decimals greater than 18
      */
-    error DecimalNotCompliant();
+    error DecimalsNotCompliant();
 
     /**
      *  @notice Pool with this combination of quote and collateral already exists.

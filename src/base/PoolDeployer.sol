@@ -51,19 +51,21 @@ abstract contract PoolDeployer {
     /*********************************/
 
     /**
-     * @notice Checks token compliance and returns token decimals
-     * @dev    Reverts with `DecimalNotCompliant` if token decimals are more than 18 or token contract lacks `decimals` method
-     * @param  token_    Address of token
-     * @return decimals_ Token decimals 
+     * @notice Calculates `ERC20` token scale based on token decimals.
+     * @dev    Reverts with `DecimalsNotCompliant` if token decimals are more than 18 or token contract lacks `decimals` method.
+     * @param  token_  `ERC20` token address.
+     * @return scale_  Calculated token scale. 
      */
-    function _verfiyAndGetTokenDecimals(address token_) internal view returns (uint256 decimals_) {
+    function _getTokenScale(address token_) internal view returns (uint256 scale_) {
         try IERC20Token(token_).decimals() returns (uint8 tokenDecimals_) {
             // revert if token decimals is more than 18
-            if (tokenDecimals_ > 18) revert IPoolFactory.DecimalNotCompliant();
-            decimals_ = tokenDecimals_;
+            if (tokenDecimals_ > 18) revert IPoolFactory.DecimalsNotCompliant();
+
+            // scale calculated at pool precision (18)
+            scale_ = 10 ** (18 - tokenDecimals_);
         } catch {
             // revert if token contract lack `decimals` method
-            revert IPoolFactory.DecimalNotCompliant();
+            revert IPoolFactory.DecimalsNotCompliant();
         }
     }
 
