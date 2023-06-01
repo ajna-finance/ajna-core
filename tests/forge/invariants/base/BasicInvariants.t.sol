@@ -403,7 +403,7 @@ abstract contract BasicInvariants is BaseInvariants {
             uint256 bucketIndex = buckets[i];
             (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
             uint256 prefixSum               = _pool.depositUpToIndex(bucketIndex);
-            uint256 bucketIndexFromDeposit  = _pool.depositIndex(Maths.wmul(prefixSum, 1e18 + 1e1));
+            uint256 bucketIndexFromDeposit  = _pool.depositIndex(Maths.ceilWmul(prefixSum, 1e18 + 1e1));
 
             if (depositAtIndex != 0) {
                 console.log("===================Bucket Index : ", bucketIndex, " ===================");

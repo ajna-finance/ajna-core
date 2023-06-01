@@ -444,7 +444,11 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         invariant_exchange_rate();
     }
 
-	function test_regression_removeQuote_unexpected_error_roundings() external {
+    /**
+        Test failing due to Fenwick rounding change to mulDiv added with https://github.com/ajna-finance/contracts/commit/c9d02cac61719c6fa5a0528578b37b23ec442ee2
+        Fixed by updating _invariant_F3 to use ceilWmul instead wmul
+     */
+    function test_regression_removeQuote_unexpected_error_roundings() external {
         _basicERC20PoolHandler.failed();
         _basicERC20PoolHandler.transferLps(890167980584982013986877333004, 2713067345438868404572, 8921364168581080226774840568, 1000078569090566833, 353537210282);
         _basicERC20PoolHandler.addCollateral(2, 1, 923897528878347406287558239338201320129238, 1);
@@ -464,7 +468,7 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.removeQuoteToken(1000000000000000000000001628709, 1000132022000300974, 11652, 3817251874958918198);
 
         invariant_fenwick();
-	}
+    }
 
 }
 
