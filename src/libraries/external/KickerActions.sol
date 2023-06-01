@@ -233,7 +233,10 @@ library KickerActions {
                 Math.Rounding.Up
             );
 
-            uint256 unscaledAmountToRemove = Maths.ceilWdiv(vars.amountToDebitFromDeposit, vars.bucketScale);
+            uint256 unscaledAmountToRemove = Maths.min(
+                Maths.ceilWdiv(vars.amountToDebitFromDeposit, vars.bucketScale),
+                vars.bucketUnscaledDeposit
+            );
 
             // revert if calculated unscaled amount is 0
             if (unscaledAmountToRemove == 0) revert InsufficientLiquidity();

@@ -810,7 +810,8 @@ library LenderActions {
             unscaledRemovedAmount = unscaledDepositAvailable;
         }
 
-        unscaledRemaining_ = unscaledDepositAvailable - unscaledRemovedAmount;
+        unscaledRemovedAmount = Maths.min(unscaledRemovedAmount, unscaledDepositAvailable);
+        unscaledRemaining_    = unscaledDepositAvailable - unscaledRemovedAmount;
 
         // revert if (due to rounding) required LP is 0
         if (redeemedLP_ == 0) revert InsufficientLP();
