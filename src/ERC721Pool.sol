@@ -150,6 +150,9 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
+        // ensure the borrower is not charged for additional debt that they did not receive
+        amountToBorrow_ = _roundToScale(amountToBorrow_, poolState.quoteTokenScale);
+
         DrawDebtResult memory result = BorrowerActions.drawDebt(
             auctions,
             buckets,

@@ -134,13 +134,13 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
         (uint256 interestRate, ) = _erc20Pool.interestRateInfo();
 
         try _erc20Pool.drawDebt(_actor, amount_, 7388, collateralToPledge) {
+            // amount is rounded by pool to token scale
+            amount_ = _roundToScale(amount_, _pool.quoteTokenScale());
 
             // **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
             increaseInReserves += Maths.wmul(
                 amount_, _borrowFeeRate(interestRate)
             );
-            // rounding in favour of pool goes to reserves
-            increaseInReserves += amount_ - _roundToScale(amount_, _pool.quoteTokenScale());
 
         } catch (bytes memory err) {
             _ensurePoolError(err);

@@ -136,6 +136,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
+        // ensure the borrower is not charged for additional debt that they did not receive
+        amountToBorrow_     = _roundToScale(amountToBorrow_, poolState.quoteTokenScale);
         // ensure the borrower is not credited with a fractional amount of collateral smaller than the token scale
         collateralToPledge_ = _roundToScale(collateralToPledge_, _getArgUint256(COLLATERAL_SCALE));
 
