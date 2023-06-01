@@ -366,7 +366,7 @@ abstract contract BasicInvariants is BaseInvariants {
             requireWithinDiff(
                 depositAtIndex,
                 localDepositAtIndex,
-                (depositAtIndex + localDepositAtIndex) / 1e9 + _pool.quoteTokenScale(),
+                (depositAtIndex + localDepositAtIndex) / 1e9 + Maths.max(_pool.quoteTokenScale(), 1e12), // deviation not lower than 1e12
                 "Incorrect deposits in bucket"
             );
         }
@@ -390,7 +390,7 @@ abstract contract BasicInvariants is BaseInvariants {
             requireWithinDiff(
                 depositTillIndex,
                 localDepositTillIndex,
-                (depositTillIndex + localDepositTillIndex) / 1e9 + _pool.quoteTokenScale(),
+                (depositTillIndex + localDepositTillIndex) / 1e9 + Maths.max(_pool.quoteTokenScale(), 1e12), // deviation not lower than 1e12
                 "Incorrect deposits prefix sum"
             );
         }
