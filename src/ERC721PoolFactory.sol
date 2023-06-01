@@ -93,6 +93,16 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
         pool.initialize(tokenIds_, interestRate_);
     }
 
+    /**
+     *  @dev                Create a new pool that accepts any token in a NFT collection
+     *  @param collateral_  The NFT collateral token address
+     *  @param quote_       The borrower quote token address
+     *  @return pool_       The address of the new pool
+     */
+    function deployPool(address collateral_, address quote_, uint256 interestRate_) public returns (address pool_) {
+        pool_ = this.deployPool(collateral_, quote_, new uint256[](0), interestRate_);
+    }
+
     /*******************************/
     /*** Pool Creation Functions ***/
     /*******************************/
