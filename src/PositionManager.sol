@@ -62,7 +62,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     /// @dev Mapping of `token id => bucket indexes` associated with position.
     mapping(uint256 => EnumerableSet.UintSet)        internal positionIndexes;
     /// @dev Mapping of `token id => last redeem timestamp`.
-    mapping(uint256 => uint256)                      internal lastRedeemTime;
+    mapping(uint256 => uint256)                      internal adjustmentTime;
 
     /// @dev Id of the next token that will be minted. Skips `0`.
     uint176 private _nextId = 1;
@@ -117,6 +117,17 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         _;
     }
 
+    /**
+     *  @dev   Modifier used to record time when a position is adjusted through positions NFT.
+     *  @dev   Position adjustment can be done by redeeming or moving liquidity.
+     *  @param tokenId_ Id of positions `NFT`.
+     */
+    modifier recordAdjustmentTime(uint256 tokenId_) {
+        _;
+
+        adjustmentTime[tokenId_] = block.timestamp;
+    }
+
     /*******************/
     /*** Constructor ***/
     /*******************/
@@ -160,7 +171,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         // remove permit nonces and pool mapping for burned token
         delete _nonces[params_.tokenId];
         delete poolKey[params_.tokenId];
-        delete lastRedeemTime[params_.tokenId];
+        delete adjustmentTime[params_.tokenId];
 
         _burn(params_.tokenId);
 
@@ -282,7 +293,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      */
     function moveLiquidity(
         MoveLiquidityParams calldata params_
-    ) external override nonReentrant mayInteract(params_.pool, params_.tokenId) {
+    ) external override nonReentrant mayInteract(params_.pool, params_.tokenId) recordAdjustmentTime(params_.tokenId) {
         Position storage fromPosition = positions[params_.tokenId][params_.fromIndex];
 
         MoveLiquidityLocalVars memory vars;
@@ -382,7 +393,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      */
     function redeemPositions(
         RedeemPositionsParams calldata params_
-    ) external override mayInteract(params_.pool, params_.tokenId) {
+    ) external override mayInteract(params_.pool, params_.tokenId) recordAdjustmentTime(params_.tokenId) {
         EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
 
         IPool pool = IPool(params_.pool);
@@ -413,8 +424,6 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
             unchecked { ++i; }
         }
 
-        lastRedeemTime[params_.tokenId] = block.timestamp;
-
         address owner = ownerOf(params_.tokenId);
         // approve owner to take over the LP ownership (required for transferLP pool call)
         pool.increaseLPAllowance(owner, params_.indexes, lpAmounts);
@@ -431,7 +440,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     /**
      *  @dev Called before the NFT position transfer, reverts if transfer attempted in less than one hour since last redeem.
      *  @dev    === Revert on ===
-     *  @dev    - positions redeemed in the last hour `TransferLockedByRedeem()`
+     *  @dev    - positions changed in the last hour `TransferLocked()`
      */
     function _beforeTokenTransfer(
         address,
@@ -442,9 +451,9 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         // burning is not constrained by any redeem action
         if (to_ != address(0)) {
             // revert transfer in case token positions were redeem in the last transfer lock period
-            if (block.timestamp - lastRedeemTime[tokenId_] <= TRANSFER_LOCK_PERIOD) revert TransferLockedByRedeem();
+            if (block.timestamp - adjustmentTime[tokenId_] <= TRANSFER_LOCK_PERIOD) revert TransferLocked();
 
-            delete lastRedeemTime[tokenId_];
+            delete adjustmentTime[tokenId_];
         }
     }
 

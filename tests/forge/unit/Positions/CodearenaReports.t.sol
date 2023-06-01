@@ -880,7 +880,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         Fixed by recording block of last redeem and revert if same as transfer block.
      */
-    function testRedeemBeforeTransfer_report_196() external {
+    function testAdjustPositionBeforeTransfer_report_196() external {
         // generate addresses and set test params
         address alice = makeAddr("alice");
         address bob   = makeAddr("bob");
@@ -923,6 +923,27 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         );
         _positionManager.memorializePositions(memorializeParams);
 
+        /*******************************/
+        /*** Move liquidity scenario ***/
+        /*******************************/
+
+        uint256 beforeMove = vm.snapshot();
+        // alice moves positions from bucket before transferring NFT to bob
+        IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
+            tokenId, address(_pool), 2551, 5000, block.timestamp + 5 hours
+        );
+        _positionManager.moveLiquidity(moveLiquidityParams);
+
+        // alice transfer NFT to bob in the same block as move liquidity, transfer should fail
+        _positionManager.approve(address(this), tokenId);
+        vm.expectRevert(IPositionManagerErrors.TransferLocked.selector);
+        _positionManager.safeTransferFrom(alice, bob, tokenId);
+        vm.revertTo(beforeMove);
+
+        /*******************************/
+        /*** Redeem position scenario ***/
+        /*******************************/
+
         // alice redeems positions from a bucket before transferring NFT to bob
         _pool.approveLPTransferors(transferors);
         IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
@@ -932,7 +953,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         // alice transfer NFT to bob in the same block as redeem, transfer should fail
         _positionManager.approve(address(this), tokenId);
-        vm.expectRevert(IPositionManagerErrors.TransferLockedByRedeem.selector);
+        vm.expectRevert(IPositionManagerErrors.TransferLocked.selector);
         _positionManager.safeTransferFrom(alice, bob, tokenId);
 
         // alice transfer NFT to bob after 15 minutes lock period since last redeem
