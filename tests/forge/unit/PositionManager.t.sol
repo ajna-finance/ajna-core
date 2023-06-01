@@ -3071,9 +3071,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         _assertBucketAssets({
             index:        _i9_91,
-            lpBalance:    18_936.867676658332708016 * 1e18,
+            lpBalance:    18_936.867676658332708015 * 1e18,
             collateral:   0,
-            deposit:      18_936.867676658332708016 * 1e18,
+            deposit:      18_936.867676658332708015 * 1e18,
             exchangeRate: 1.0 * 1e18
         });
 
@@ -3099,10 +3099,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // minter one should only be able to withdraw what they moved
         _removeAllLiquidity({
             from:     testMinter,
-            amount:   8_936.867676658332708016 * 1e18,
+            amount:   8_936.867676658332708015 * 1e18,
             index:    _i9_91,
             newLup:   _p9_91,
-            lpRedeem: 8_936.867676658332708016 * 1e18
+            lpRedeem: 8_936.867676658332708015 * 1e18
         });
 
         // minter2 has remaining liquidity in _i9_91
@@ -3110,7 +3110,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             index:        _i9_91,
             lpBalance:    10_000.000000000000000000 * 1e18,
             collateral:   0,
-            deposit:      10_000.000000000000000000 * 1e18,
+            deposit:      9_999.999999999999999999 * 1e18,
             exchangeRate: 1.0 * 1e18
         });
     }

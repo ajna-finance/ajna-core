@@ -341,13 +341,13 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
             debtColEma:     3_412_160.847313164565839074 * 1e18,
             lupt0DebtEma:   4_025_493.853024754985190842 * 1e18,
             debtEma:        7_278.073513801178223507 * 1e18,
-            depositEma:     10_452.403764437541109496 * 1e18            // moving down back to 10_000
+            depositEma:     10_452.403764437541109495 * 1e18            // moving down back to 10_000
         });
         _assertPool(
             PoolParams({
                 htp:                  1_276.209765166823398404 * 1e18,
                 lup:                  _p1505_26,
-                poolSize:             15_002.177276783057210001 * 1e18,
+                poolSize:             15_002.177276783057210000 * 1e18,
                 pledgedCollateral:    6 * 1e18,
                 encumberedCollateral: 5.086988044805126619 * 1e18,
                 poolDebt:             7_657.258591000940390423 * 1e18,  // 7_647 principal plus some interest
