@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import { ERC721HelperContract }      from './ERC721DSTestPlus.sol';
+import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
+
 import { NFTCollateralToken, TokenWithNDecimals } from '../../utils/Tokens.sol';
+import { ERC20NoDecimals }                        from '../../utils/ContractERC20NoDecimals.sol';
 
 import { ERC721Pool }        from 'src/ERC721Pool.sol';
 import { ERC721PoolFactory } from 'src/ERC721PoolFactory.sol';
@@ -110,11 +112,24 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         assertEq(_factory.getNumberOfDeployedPools(), 3);
     }
 
+    function testDeployERC721PoolWithNoDecimals() external {
+
+        ERC20NoDecimals noDecToken = new ERC20NoDecimals("NoDec", "ND");
+
+        // should revert if trying to deploy with token that doesn't have decimals() method
+        _assertTokenInvalidNoDecimals({
+            poolFactory:  address(_poolFactory),
+            collateral:   address(_collateral),
+            quote:        address(noDecToken),
+            interestRate: 0.05 * 10**18
+        });
+    }
+
     function testDeployERC721CollectionPoolWithInvalidRate() external {
         // should revert if trying to deploy with interest rate lower than accepted
         _assertDeployWithInvalidRateRevert({
             poolFactory:  address(_factory),
-            collateral:   address(new NFTCollateralToken()),
+            collateral:   address(_collateral),
             quote:        address(_quote),
             interestRate: 10**18
         });
@@ -122,7 +137,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         // should revert if trying to deploy with interest rate higher than accepted
         _assertDeployWithInvalidRateRevert({
             poolFactory:  address(_factory),
-            collateral:   address(new NFTCollateralToken()),
+            collateral:   address(_collateral),
             quote:        address(_quote),
             interestRate: 2 * 10**18
         });

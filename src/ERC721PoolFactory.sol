@@ -45,6 +45,7 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
      *  @dev    - `deployedPoolsList` array
      *  @dev    === Reverts on ===
      *  @dev    - `0x` address provided as quote or collateral `DeployWithZeroAddress()`
+     *  @dev    - quote lacks `decimals()` method `TokenInvalidNoDecimals()`
      *  @dev    - pool with provided quote / collateral pair already exists `PoolAlreadyExists()`
      *  @dev    - invalid interest rate provided `PoolInterestRateInvalid()`
      *  @dev    - not supported `NFT` provided `NFTNotSupported()`
@@ -58,6 +59,9 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
 
         address existingPool = deployedPools[subsetHash][collateral_][quote_];
         if (existingPool != address(0)) revert IPoolFactory.PoolAlreadyExists(existingPool);
+
+        // quote token must have decimals() method or pool is invalid
+        if (!hasDecimalsMethod(quote_)) revert IPoolFactory.TokenInvalidNoDecimals();
 
         uint256 quoteTokenScale = 10**(18 - IERC20Token(quote_).decimals());
 

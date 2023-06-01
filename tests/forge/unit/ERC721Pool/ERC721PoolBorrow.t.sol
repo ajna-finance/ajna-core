@@ -658,7 +658,7 @@ contract ERC721ScaledQuoteTokenBorrowTest is ERC721NDecimalsHelperContract(4) {
 
     function testMinDebtBelowDustLimitCheck() external tearDown {
         // should revert if borrower tries to draw debt below dust limit
-        _assertBorrowDustRevert({
+        _assertBorrowInvalidAmountRevert({
             from:       _borrower,
             amount:     0.00005 * 1e18,
             indexLimit: 2550
@@ -670,7 +670,7 @@ contract ERC721ScaledQuoteTokenBorrowTest is ERC721NDecimalsHelperContract(4) {
         }
 
         // should still revert if borrower tries to draw debt below dust limit
-        _assertBorrowDustRevert({
+        _assertBorrowInvalidAmountRevert({
             from:       _borrower,
             amount:     0.000075 * 1e18,
             indexLimit: 2550

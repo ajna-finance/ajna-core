@@ -765,7 +765,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             // ensure illegitimate amounts revert
             if (i < 10) {
                 if (quoteDecimals < 18) {
-                    _assertBorrowDustRevert({
+                    _assertBorrowInvalidAmountRevert({
                         from:       _borrower,
                         amount:     1,
                         indexLimit: bucketId

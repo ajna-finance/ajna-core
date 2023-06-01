@@ -33,7 +33,7 @@ import { _roundToScale }     from './libraries/helpers/PoolHelper.sol';
 
 import {
     _revertIfAuctionClearable,
-    _revertOnExpiry
+    _revertAfterExpiry
 }                               from './libraries/helpers/RevertsHelper.sol';
 
 import { Maths }    from './libraries/internal/Maths.sol';
@@ -149,6 +149,9 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256[] calldata tokenIdsToPledge_
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
+
+        // ensure the borrower is not charged for additional debt that they did not receive
+        amountToBorrow_ = _roundToScale(amountToBorrow_, poolState.quoteTokenScale);
 
         DrawDebtResult memory result = BorrowerActions.drawDebt(
             auctions,
@@ -301,7 +304,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256 index_,
         uint256 expiry_
     ) external override nonReentrant returns (uint256 bucketLP_) {
-        _revertOnExpiry(expiry_);
+        _revertAfterExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         bucketLP_ = LenderActions.addCollateral(
