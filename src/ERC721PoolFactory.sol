@@ -37,41 +37,8 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
         implementation = new ERC721Pool();
     }
 
-    /// @inheritdoc IERC721PoolFactory
-    function deploySubsetPool(
-        address collateral_,
-        address quote_,
-        uint256[] memory tokenIds_,
-        uint256 interestRate_
-    ) external override returns (address pool_) {
-        pool_ = _deployPool(
-            collateral_,
-            quote_,
-            tokenIds_,
-            interestRate_
-        );
-    }
-
-    /// @inheritdoc IERC721PoolFactory
-    function deployCollectionPool(
-        address collateral_,
-        address quote_,
-        uint256 interestRate_
-    ) external override returns (address pool_) {
-        pool_ = _deployPool(
-            collateral_,
-            quote_,
-            new uint256[](0),
-            interestRate_
-        );
-    }
-
-    /*******************************/
-    /*** Pool Creation Functions ***/
-    /*******************************/
-
     /**
-     *  @notice Helper function to create collection and subset pools (empty tokenIds array).
+     *  @inheritdoc IERC721PoolFactory
      *  @dev  immutable args: pool type; ajna, collateral and quote address; quote scale; number of token ids in subset
      *  @dev    === Write state ===
      *  @dev    - `deployedPools` mapping
@@ -83,18 +50,10 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
      *  @dev    - not supported `NFT` provided `NFTNotSupported()`
      *  @dev    === Emit events ===
      *  @dev    - `PoolCreated`
-     *  @param  collateral_   Address of `NFT` collateral token.
-     *  @param  quote_        Address of `NFT` quote token.
-     *  @param  tokenIds_     Ids of subset `NFT` tokens (empty for subset pool).
-     *  @param  interestRate_ Initial interest rate of the pool.
-     *  @return pool_         Address of the newly created pool.
      */
-    function _deployPool(
-        address collateral_,
-        address quote_,
-        uint256[] memory tokenIds_,
-        uint256 interestRate_
-    ) internal canDeploy(collateral_, quote_, interestRate_) returns (address pool_) {
+    function deployPool(
+        address collateral_, address quote_, uint256[] memory tokenIds_, uint256 interestRate_
+    ) external canDeploy(collateral_, quote_, interestRate_) returns (address pool_) {
         bytes32 subsetHash = getNFTSubsetHash(tokenIds_);
         if (deployedPools[subsetHash][collateral_][quote_] != address(0)) revert IPoolFactory.PoolAlreadyExists();
 
@@ -127,6 +86,20 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
 
         pool.initialize(tokenIds_, interestRate_);
     }
+
+    /**
+     *  @dev                Create a new pool that accepts any token in a NFT collection
+     *  @param collateral_  The NFT collateral token address
+     *  @param quote_       The borrower quote token address
+     *  @return pool_       The address of the new pool
+     */
+    function deployPool(address collateral_, address quote_, uint256 interestRate_) public returns (address pool_) {
+        pool_ = this.deployPool(collateral_, quote_, new uint256[](0), interestRate_);
+    }
+
+    /*******************************/
+    /*** Pool Creation Functions ***/
+    /*******************************/
 
     /**
      *  @notice Get the hash of the subset of `NFT`s that will be used to create the pool.

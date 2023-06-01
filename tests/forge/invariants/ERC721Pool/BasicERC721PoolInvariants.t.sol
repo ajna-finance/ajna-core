@@ -30,10 +30,11 @@ contract BasicERC721PoolInvariants is BasicInvariants {
 
         super.setUp();
 
+        uint256[] memory tokenIds;
         _collateral        = new NFTCollateralToken();
         _erc721poolFactory = new ERC721PoolFactory(address(_ajna));
         _impl              = _erc721poolFactory.implementation();
-        _erc721pool        = ERC721Pool(_erc721poolFactory.deployCollectionPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        _erc721pool        = ERC721Pool(_erc721poolFactory.deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18));
         _pool              = Pool(address(_erc721pool));
 
         _basicERC721PoolHandler = new BasicERC721PoolHandler(

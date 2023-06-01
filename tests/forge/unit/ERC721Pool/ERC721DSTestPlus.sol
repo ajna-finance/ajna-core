@@ -473,8 +473,9 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         address quote,
         uint256 interestRate
     ) internal {
+        uint256[] memory tokenIds;
         vm.expectRevert(IPoolFactory.DeployWithZeroAddress.selector);
-        ERC721PoolFactory(poolFactory).deployCollectionPool(collateral, quote, interestRate);
+        ERC721PoolFactory(poolFactory).deployPool(collateral, quote, tokenIds, interestRate);
     }
 
     function _assertDeployWithInvalidRateRevert(
@@ -483,8 +484,9 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         address quote,
         uint256 interestRate
     ) internal {
+        uint256[] memory tokenIds;
         vm.expectRevert(IPoolFactory.PoolInterestRateInvalid.selector);
-        ERC721PoolFactory(poolFactory).deployCollectionPool(collateral, quote, interestRate);
+        ERC721PoolFactory(poolFactory).deployPool(collateral, quote, tokenIds, interestRate);
     }
 
     function _assertDeployWithNonNFTRevert(
@@ -493,8 +495,9 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         address quote,
         uint256 interestRate
     ) internal {
+        uint256[] memory tokenIds;
         vm.expectRevert(abi.encodeWithSignature('NFTNotSupported()'));
-        ERC721PoolFactory(poolFactory).deployCollectionPool(collateral, quote, interestRate);
+        ERC721PoolFactory(poolFactory).deployPool(collateral, quote, tokenIds, interestRate);
     }
 
     function _assertDeployMultipleTimesRevert(
@@ -503,8 +506,9 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         address quote,
         uint256 interestRate
     ) internal {
+        uint256[] memory tokenIds;
         vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
-        ERC721PoolFactory(poolFactory).deployCollectionPool(collateral, quote, interestRate);
+        ERC721PoolFactory(poolFactory).deployPool(collateral, quote, tokenIds, interestRate);
     }
 
     function _assertPledgeCollateralNotInSubsetRevert(
@@ -676,23 +680,15 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
 
     function _deployCollectionPool() internal returns (ERC721Pool) {
         _startTime = block.timestamp;
-        address contractAddress = _poolFactory.deployCollectionPool(
-            address(_collateral),
-            address(_quote),
-            0.05 * 10**18
-        );
+        uint256[] memory tokenIds;
+        address contractAddress = _poolFactory.deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
         vm.makePersistent(contractAddress);
         return ERC721Pool(contractAddress);
     }
 
     function _deploySubsetPool(uint256[] memory subsetTokenIds_) internal returns (ERC721Pool) {
         _startTime = block.timestamp;
-        return ERC721Pool(_poolFactory.deploySubsetPool(
-            address(_collateral),
-            address(_quote),
-            subsetTokenIds_,
-            0.05 * 10**18
-        ));
+        return ERC721Pool(_poolFactory.deployPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
     }
 
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
@@ -758,12 +754,8 @@ abstract contract ERC721NDecimalsHelperContract is ERC721DSTestPlus {
         vm.makePersistent(address(_poolFactory));
 
         _startTime = block.timestamp;
-
-        address contractAddress = _poolFactory.deployCollectionPool(
-            address(_collateral),
-            address(_quote),
-            0.05 * 10**18
-        );
+        uint256[] memory tokenIds;
+        address contractAddress = _poolFactory.deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
         vm.makePersistent(contractAddress);
         _pool = ERC721Pool(contractAddress);
     }
@@ -818,22 +810,14 @@ abstract contract ERC721FuzzyHelperContract is ERC721DSTestPlus {
 
     function _deployCollectionPool() internal returns (ERC721Pool) {
         _startTime = block.timestamp;
-        address contractAddress = _poolFactory.deployCollectionPool(
-            address(_collateral),
-            address(_quote),
-            0.05 * 10**18
-        );
+        uint256[] memory tokenIds;
+        address contractAddress = _poolFactory.deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
         return ERC721Pool(contractAddress);
     }
 
     function _deploySubsetPool(uint256[] memory subsetTokenIds_) internal returns (ERC721Pool) {
         _startTime = block.timestamp;
-        return ERC721Pool(_poolFactory.deploySubsetPool(
-            address(_collateral),
-            address(_quote),
-            subsetTokenIds_,
-            0.05 * 10**18
-        ));
+        return ERC721Pool(_poolFactory.deployPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
     }
 
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
