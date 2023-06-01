@@ -36,13 +36,6 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
 
     uint256 internal REWARDS_CAP = 0.8 * 1e18;
 
-    struct MintAndMemorializeParams {
-        uint256[] indexes;
-        address minter;
-        uint256 mintAmount;
-        IPool pool;
-    }
-
     struct TriggerReserveAuctionParams {
         address borrower;
         uint256 borrowAmount;
@@ -389,8 +382,7 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         collateral.approve(address(pool), type(uint256).max);
         quote.approve(address(pool), type(uint256).max);
 
-        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(minter, address(pool), keccak256("ERC20_NON_SUBSET_HASH"));
-        tokenId_ = _positionManager.mint(mintParams);
+        tokenId_ = _positionManager.mint(address(pool), minter, keccak256("ERC20_NON_SUBSET_HASH"));
 
         uint256[] memory lpBalances = new uint256[](indexes.length);
 
@@ -401,12 +393,7 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
 
         ERC20Pool(address(pool)).increaseLPAllowance(address(_positionManager), indexes, lpBalances);
 
-        // construct memorialize params struct
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId_, address(pool), indexes
-        );
-
-        _positionManager.memorializePositions(memorializeParams);
+        _positionManager.memorializePositions(pool, tokenId_, indexes);
 
         // register position manager as lender at memorialized indexes (for LP test assertions)
         _registerLender(address(_positionManager), indexes);
