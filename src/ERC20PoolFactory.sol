@@ -4,9 +4,9 @@ pragma solidity 0.8.18;
 
 import { ClonesWithImmutableArgs } from '@clones/ClonesWithImmutableArgs.sol';
 
-import { IERC20PoolFactory }     from './interfaces/pool/erc20/IERC20PoolFactory.sol';
-import { IPoolFactory }          from './interfaces/pool/IPoolFactory.sol';
-import { IERC20Token, PoolType } from './interfaces/pool/IPool.sol';
+import { IERC20PoolFactory } from './interfaces/pool/erc20/IERC20PoolFactory.sol';
+import { IPoolFactory }      from './interfaces/pool/IPoolFactory.sol';
+import { PoolType }          from './interfaces/pool/IPool.sol';
 
 import { ERC20Pool }    from './ERC20Pool.sol';
 import { PoolDeployer } from './base/PoolDeployer.sol';

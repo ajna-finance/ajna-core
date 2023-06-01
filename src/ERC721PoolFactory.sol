@@ -5,9 +5,9 @@ pragma solidity 0.8.18;
 import { ClonesWithImmutableArgs } from '@clones/ClonesWithImmutableArgs.sol';
 import { IERC165 }                 from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 
-import { IERC721PoolFactory }    from './interfaces/pool/erc721/IERC721PoolFactory.sol';
-import { IPoolFactory }          from './interfaces/pool/IPoolFactory.sol';
-import { IERC20Token, PoolType } from './interfaces/pool/IPool.sol';
+import { IERC721PoolFactory } from './interfaces/pool/erc721/IERC721PoolFactory.sol';
+import { IPoolFactory }       from './interfaces/pool/IPoolFactory.sol';
+import { PoolType }           from './interfaces/pool/IPool.sol';
 
 import { ERC721Pool }   from './ERC721Pool.sol';
 import { PoolDeployer } from './base/PoolDeployer.sol';
