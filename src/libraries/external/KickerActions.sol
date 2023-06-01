@@ -169,7 +169,7 @@ library KickerActions {
         vars.bucketPrice           = _priceAt(index_);
         vars.bucketUnscaledDeposit = Deposits.unscaledValueAt(deposits_, index_);
         vars.bucketScale           = Deposits.scale(deposits_, index_);
-        vars.bucketDeposit         = Maths.floorWmul(vars.bucketUnscaledDeposit, vars.bucketScale);
+        vars.bucketDeposit         = Maths.wmul(vars.bucketUnscaledDeposit, vars.bucketScale);
 
         // calculate amount to remove based on lender LP in bucket
         vars.amountToDebitFromDeposit = Buckets.lpToQuoteTokens(

@@ -744,7 +744,7 @@ library LenderActions {
         if (unscaledDepositAvailable == 0) revert InsufficientLiquidity();
 
         uint256 depositScale           = Deposits.scale(deposits_, params_.index);
-        uint256 scaledDepositAvailable = Maths.floorWmul(unscaledDepositAvailable, depositScale);
+        uint256 scaledDepositAvailable = Maths.wmul(unscaledDepositAvailable, depositScale);
 
         // Below is pseudocode explaining the logic behind finding the constrained amount of deposit and LPB
         // scaledRemovedAmount is constrained by the scaled maxAmount(in QT), the scaledDeposit constraint, and
@@ -776,7 +776,7 @@ library LenderActions {
                 Math.Rounding.Up
             );
             redeemedLP_ = Maths.min(redeemedLP_, params_.lpConstraint);
-            unscaledRemovedAmount = Maths.ceilWdiv(removedAmount_, depositScale);
+            unscaledRemovedAmount = Maths.wdiv(removedAmount_, depositScale);
         } else if (scaledDepositAvailable < scaledLpConstraint) {
             // scaledDeposit is binding constraint
             removedAmount_ = scaledDepositAvailable;
@@ -801,7 +801,7 @@ library LenderActions {
                 params_.price,
                 Math.Rounding.Down
             );
-            unscaledRemovedAmount = Maths.ceilWdiv(removedAmount_, depositScale);
+            unscaledRemovedAmount = Maths.wdiv(removedAmount_, depositScale);
         }
 
         // If clearing out the bucket deposit, ensure it's zeroed out
