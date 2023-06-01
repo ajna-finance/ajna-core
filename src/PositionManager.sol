@@ -85,6 +85,13 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         uint256 lpbAmountTo;      // [WAD] the LP awarded in to bucket
     }
 
+    /// @dev Struct used for `memorializePositions` function Lenders Local vars
+    struct LendersBucketLocalVars {
+        uint256 lpBalance;   // Lender lp balance in a bucket
+        uint256 depositTime; // Lender deposit time in a bucket
+        uint256 allowance;   // Lp allowance for a bucket
+    }
+
     /*****************/
     /*** Modifiers ***/
     /*****************/
@@ -143,18 +150,19 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *  @dev    - `Burn`
      */
     function burn(
-        BurnParams calldata params_
-    ) external override mayInteract(params_.pool, params_.tokenId) {
+        address pool_,
+        uint256 tokenId_
+    ) external override mayInteract(pool_, tokenId_) {
         // revert if trying to burn an positions token that still has liquidity
-        if (positionIndexes[params_.tokenId].length() != 0) revert LiquidityNotRemoved();
+        if (positionIndexes[tokenId_].length() != 0) revert LiquidityNotRemoved();
 
         // remove permit nonces and pool mapping for burned token
-        delete _nonces[params_.tokenId];
-        delete poolKey[params_.tokenId];
+        delete _nonces[tokenId_];
+        delete poolKey[tokenId_];
 
-        _burn(params_.tokenId);
+        _burn(tokenId_);
 
-        emit Burn(msg.sender, params_.tokenId);
+        emit Burn(msg.sender, tokenId_);
     }
 
     /**
@@ -174,31 +182,34 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *  @dev    - `MemorializePosition`
      */
     function memorializePositions(
-        MemorializePositionsParams calldata params_
-    ) external mayInteract(params_.pool, params_.tokenId) override {
-        EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
+        address pool_,
+        uint256 tokenId_,
+        uint256[] calldata indexes_
+    ) external mayInteract(pool_, tokenId_) override {
+        EnumerableSet.UintSet storage positionIndex = positionIndexes[tokenId_];
 
-        IPool   pool  = IPool(params_.pool);
-        address owner = ownerOf(params_.tokenId);
+        IPool   pool  = IPool(pool_);
+        address owner = ownerOf(tokenId_);
+        LendersBucketLocalVars memory vars;
 
-        uint256 indexesLength = params_.indexes.length;
+        uint256 indexesLength = indexes_.length;
         uint256 index;
 
         for (uint256 i = 0; i < indexesLength; ) {
-            index = params_.indexes[i];
+            index = indexes_[i];
 
             // record bucket index at which a position has added liquidity
             // slither-disable-next-line unused-return
             positionIndex.add(index);
 
-            (uint256 lpBalance, uint256 depositTime) = pool.lenderInfo(index, owner);
+            (vars.lpBalance, vars.depositTime) = pool.lenderInfo(index, owner);
 
             // check that specified allowance is at least equal to the lp balance
-            uint256 allowance = pool.lpAllowance(index, address(this), owner);
+            vars.allowance = pool.lpAllowance(index, address(this), owner);
 
-            if (allowance < lpBalance) revert AllowanceTooLow();
+            if (vars.allowance < vars.lpBalance) revert AllowanceTooLow();
 
-            Position memory position = positions[params_.tokenId][index];
+            Position memory position = positions[tokenId_][index];
 
             // check for previous deposits
             if (position.depositTime != 0) {
@@ -210,20 +221,20 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
             }
 
             // update token position LP
-            position.lps += lpBalance;
+            position.lps += vars.lpBalance;
             // set token's position deposit time to the original lender's deposit time
-            position.depositTime = depositTime;
+            position.depositTime = vars.depositTime;
 
             // save position in storage
-            positions[params_.tokenId][index] = position;
+            positions[tokenId_][index] = position;
 
             unchecked { ++i; }
         }
 
         // update pool LP accounting and transfer ownership of LP to PositionManager contract
-        pool.transferLP(owner, address(this), params_.indexes);
+        pool.transferLP(owner, address(this), indexes_);
 
-        emit MemorializePosition(owner, params_.tokenId, params_.indexes);
+        emit MemorializePosition(owner, tokenId_, indexes_);
     }
 
     /**
@@ -236,19 +247,21 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *  @dev    - `Mint`
      */
     function mint(
-        MintParams calldata params_
+        address pool_,
+        address recipient_,
+        bytes32 poolSubsetHash_
     ) external override nonReentrant returns (uint256 tokenId_) {
         // revert if the address is not a valid Ajna pool
-        if (!_isAjnaPool(params_.pool, params_.poolSubsetHash)) revert NotAjnaPool();
+        if (!_isAjnaPool(pool_, poolSubsetHash_)) revert NotAjnaPool();
 
         tokenId_ = _nextId++;
 
         // record which pool the tokenId was minted in
-        poolKey[tokenId_] = params_.pool;
+        poolKey[tokenId_] = pool_;
 
-        _mint(params_.recipient, tokenId_);
+        _mint(recipient_, tokenId_);
 
-        emit Mint(params_.recipient, params_.pool, tokenId_);
+        emit Mint(recipient_, pool_, tokenId_);
     }
 
     /**
@@ -271,9 +284,13 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *  @dev    - `MoveLiquidity`
      */
     function moveLiquidity(
-        MoveLiquidityParams calldata params_
-    ) external override nonReentrant mayInteract(params_.pool, params_.tokenId) {
-        Position storage fromPosition = positions[params_.tokenId][params_.fromIndex];
+        address pool_,
+        uint256 tokenId_,
+        uint256 fromIndex_,
+        uint256 toIndex_,
+        uint256 expiry_
+    ) external override nonReentrant mayInteract(pool_, tokenId_) {
+        Position storage fromPosition = positions[tokenId_][fromIndex_];
 
         MoveLiquidityLocalVars memory vars;
         vars.fromDepositTime = fromPosition.depositTime;
@@ -283,7 +300,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         if (vars.fromDepositTime == 0) revert RemovePositionFailed();
 
         // ensure bucketDeposit accounts for accrued interest
-        IPool(params_.pool).updateInterest();
+        IPool(pool_).updateInterest();
 
         // retrieve info of bucket from which liquidity is moved  
         (
@@ -291,7 +308,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
             vars.bucketCollateral,
             vars.bankruptcyTime,
             vars.bucketDeposit,
-        ) = IPool(params_.pool).bucketInfo(params_.fromIndex);
+        ) = IPool(pool_).bucketInfo(fromIndex_);
 
         // check that from bucket hasn't gone bankrupt since memorialization
         if (vars.fromDepositTime <= vars.bankruptcyTime) revert BucketBankrupt();
@@ -303,51 +320,51 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
             vars.bucketDeposit,
             vars.fromLP,
             vars.bucketDeposit,
-            _priceAt(params_.fromIndex)
+            _priceAt(fromIndex_)
         );
 
         // move quote tokens in pool
         (
             vars.lpbAmountFrom,
             vars.lpbAmountTo,
-        ) = IPool(params_.pool).moveQuoteToken(
+        ) = IPool(pool_).moveQuoteToken(
             vars.maxQuote,
-            params_.fromIndex,
-            params_.toIndex,
-            params_.expiry
+            fromIndex_,
+            toIndex_,
+            expiry_
         );
 
-        EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
+        EnumerableSet.UintSet storage positionIndex = positionIndexes[tokenId_];
 
         // 1. update FROM memorialized position
-        if (!positionIndex.remove(params_.fromIndex)) revert RemovePositionFailed(); // revert if FROM position is not in memorialized indexes
-        if (vars.fromLP != vars.lpbAmountFrom)        revert RemovePositionFailed(); // bucket has collateral and quote therefore LP is not redeemable for full quote token amount
+        if (!positionIndex.remove(fromIndex_)) revert RemovePositionFailed(); // revert if FROM position is not in memorialized indexes
+        if (vars.fromLP != vars.lpbAmountFrom) revert RemovePositionFailed(); // bucket has collateral and quote therefore LP is not redeemable for full quote token amount
 
-        delete positions[params_.tokenId][params_.fromIndex]; // remove memorialized FROM position
+        delete positions[tokenId_][fromIndex_]; // remove memorialized FROM position
 
         // 2. update TO memorialized position
         // slither-disable-next-line unused-return
-        positionIndex.add(params_.toIndex); // record the TO memorialized position
+        positionIndex.add(toIndex_); // record the TO memorialized position
 
-        Position storage toPosition = positions[params_.tokenId][params_.toIndex];
+        Position storage toPosition = positions[tokenId_][toIndex_];
         vars.toDepositTime = toPosition.depositTime;
 
         // reset LP in TO memorialized position if bucket went bankrupt after memorialization
-        if (_bucketBankruptAfterDeposit(IPool(params_.pool), params_.toIndex, vars.toDepositTime)) {
+        if (_bucketBankruptAfterDeposit(IPool(pool_), toIndex_, vars.toDepositTime)) {
             toPosition.lps = vars.lpbAmountTo;
         } else {
             toPosition.lps += vars.lpbAmountTo;
         }
 
         // update TO memorialized position deposit time with the renewed to bucket deposit time
-        (, vars.toDepositTime) = IPool(params_.pool).lenderInfo(params_.toIndex, address(this));
+        (, vars.toDepositTime) = IPool(pool_).lenderInfo(toIndex_, address(this));
         toPosition.depositTime = vars.toDepositTime;
 
         emit MoveLiquidity(
-            ownerOf(params_.tokenId),
-            params_.tokenId,
-            params_.fromIndex,
-            params_.toIndex,
+            ownerOf(tokenId_),
+            tokenId_,
+            fromIndex_,
+            toIndex_,
             vars.lpbAmountFrom,
             vars.lpbAmountTo
         );
@@ -371,21 +388,23 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *  @dev    - `RedeemPosition`
      */
     function redeemPositions(
-        RedeemPositionsParams calldata params_
-    ) external override mayInteract(params_.pool, params_.tokenId) {
-        EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
+        address pool_,
+        uint256 tokenId_,
+        uint256[] calldata indexes_
+    ) external override mayInteract(pool_, tokenId_) {
+        EnumerableSet.UintSet storage positionIndex = positionIndexes[tokenId_];
 
-        IPool pool = IPool(params_.pool);
+        IPool pool = IPool(pool_);
 
-        uint256 indexesLength = params_.indexes.length;
+        uint256 indexesLength = indexes_.length;
         uint256[] memory lpAmounts = new uint256[](indexesLength);
 
         uint256 index;
 
         for (uint256 i = 0; i < indexesLength; ) {
-            index = params_.indexes[i];
+            index = indexes_[i];
 
-            Position memory position = positions[params_.tokenId][index];
+            Position memory position = positions[tokenId_][index];
 
             if (position.lps == 0 || position.depositTime == 0) revert RemovePositionFailed();
 
@@ -398,19 +417,19 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
             lpAmounts[i] = position.lps;
 
             // remove LP tracked by position manager at bucket index
-            delete positions[params_.tokenId][index];
+            delete positions[tokenId_][index];
 
             unchecked { ++i; }
         }
 
-        address owner = ownerOf(params_.tokenId);
+        address owner = ownerOf(tokenId_);
 
         // approve owner to take over the LP ownership (required for transferLP pool call)
-        pool.increaseLPAllowance(owner, params_.indexes, lpAmounts);
+        pool.increaseLPAllowance(owner, indexes_, lpAmounts);
         // update pool lps accounting and transfer ownership of lps from PositionManager contract
-        pool.transferLP(address(this), owner, params_.indexes);
+        pool.transferLP(address(this), owner, indexes_);
 
-        emit RedeemPosition(owner, params_.tokenId, params_.indexes);
+        emit RedeemPosition(owner, tokenId_, indexes_);
     }
 
     /**************************/

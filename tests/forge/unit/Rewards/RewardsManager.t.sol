@@ -218,13 +218,8 @@ contract RewardsManagerTest is RewardsHelperContract {
         lpBalances[0] = lpBalance;
         changePrank(_minterOne);
         _pool.increaseLPAllowance(address(_positionManager), indexes, lpBalances);
-        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(
-            _minterOne, address(_pool), keccak256("ERC20_NON_SUBSET_HASH"));
-        uint256 tokenId = _positionManager.mint(mintParams);
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, address(_pool), indexes
-        );
-        _positionManager.memorializePositions(memorializeParams);
+        uint256 tokenId = _positionManager.mint(address(_pool), _minterOne, keccak256("ERC20_NON_SUBSET_HASH"));
+        _positionManager.memorializePositions(address(_pool), tokenId, indexes);
         _registerLender(address(_positionManager), indexes);
         skip(4 days);
 
