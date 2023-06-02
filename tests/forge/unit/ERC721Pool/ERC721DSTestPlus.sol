@@ -480,14 +480,14 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         ERC721PoolFactory(poolFactory).deployPool(collateral, quote, tokenIds, interestRate);
     }
 
-    function _assertTokenInvalidNoDecimals(
+    function _assertTokenDecimalsNotCompliant(
         address poolFactory,
         address collateral,
         address quote,
         uint256 interestRate
     ) internal {
         uint256[] memory tokenIds;
-        vm.expectRevert(IPoolFactory.TokenInvalidNoDecimals.selector);
+        vm.expectRevert(IPoolFactory.DecimalsNotCompliant.selector);
         ERC721PoolFactory(poolFactory).deployPool(collateral, quote, tokenIds, interestRate);
     }
 

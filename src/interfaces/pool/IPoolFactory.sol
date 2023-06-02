@@ -22,9 +22,9 @@ interface IPoolFactory {
     error DeployWithZeroAddress();
 
     /**
-     *  @notice Can't deploy with token that has no decimals method
+     *  @notice Can't deploy with token that has no decimals method or decimals greater than 18
      */
-    error TokenInvalidNoDecimals();
+    error DecimalsNotCompliant();
 
     /**
      *  @notice Pool with this combination of quote and collateral already exists.

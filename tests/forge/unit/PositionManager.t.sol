@@ -3299,7 +3299,8 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
 
-        // approve and transfer NFT to testAddress2 address
+        // approve and transfer NFT to testAddress2 address after 1 hour locked time
+        skip(61 minutes);
         _positionManager.approve(address(this), tokenId);
         _positionManager.safeTransferFrom(testAddress1, testAddress2, tokenId);
 

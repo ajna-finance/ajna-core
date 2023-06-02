@@ -3,6 +3,7 @@
 pragma solidity 0.8.18;
 
 import { IPoolFactory } from '../interfaces/pool/IPoolFactory.sol';
+import { IERC20Token }  from '../interfaces/pool/IPool.sol';
 
 /**
  *  @title  Pool Deployer base contract
@@ -45,6 +46,29 @@ abstract contract PoolDeployer {
         _;
     }
 
+    /*********************************/
+    /*** Internal Helper Functions ***/
+    /*********************************/
+
+    /**
+     * @notice Calculates `ERC20` token scale based on token decimals.
+     * @dev    Reverts with `DecimalsNotCompliant` if token decimals are more than 18 or token contract lacks `decimals` method.
+     * @param  token_  `ERC20` token address.
+     * @return scale_  Calculated token scale. 
+     */
+    function _getTokenScale(address token_) internal view returns (uint256 scale_) {
+        try IERC20Token(token_).decimals() returns (uint8 tokenDecimals_) {
+            // revert if token decimals is more than 18
+            if (tokenDecimals_ > 18) revert IPoolFactory.DecimalsNotCompliant();
+
+            // scale calculated at pool precision (18)
+            scale_ = 10 ** (18 - tokenDecimals_);
+        } catch {
+            // revert if token contract lack `decimals` method
+            revert IPoolFactory.DecimalsNotCompliant();
+        }
+    }
+
     /*******************************/
     /*** External View Functions ***/
     /*******************************/
@@ -65,10 +89,5 @@ abstract contract PoolDeployer {
      */
     function getNumberOfDeployedPools() external view returns (uint256) {
         return deployedPoolsList.length;
-    }
-
-    function hasDecimalsMethod(address contract_) internal view returns (bool methodExists_) {
-        // 0x313ce567 = bytes4(keccak256("decimals()""))
-        (methodExists_,) = contract_.staticcall(abi.encodePacked(bytes4(0x313ce567)));
     }
 }
