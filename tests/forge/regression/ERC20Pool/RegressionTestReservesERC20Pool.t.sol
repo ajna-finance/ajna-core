@@ -824,6 +824,23 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         invariant_reserves();
     }
 
+    /**
+        Test was failing because pool state (interest accrued) wasn't updated when repaying borrower debt.
+        Fixed by using updateLocalStateAndPoolInterest modifier on _repayBorrowerDebt functions.
+     */
+    function test_regression_failure_takeReserves_F1() external {
+        _reserveERC20PoolHandler.bucketTake(8133180731752238771811412, 2712455524425212829985, false, 676668306530713167580483133679, 1000071978024180465);
+        _reserveERC20PoolHandler.addQuoteToken(14036311948084606882143641577, 6114726890383846519464348356, 27440, 124577843671240731663191476069661363485564336329605232166988892654002);
+        _reserveERC20PoolHandler.transferLps(9872990784377414306547041, 999999999999999999999989641217604218267494373, 1672536439, 10027, 2533);
+        _reserveERC20PoolHandler.drawDebt(3, 14972137663886333686802900321, 523892674);
+        _reserveERC20PoolHandler.kickWithDeposit(1000130943059863910, 6131, 1017224451143915959);
+        _reserveERC20PoolHandler.kickAuction(16612, 9052172837629344905112030283, 149277958556264141173760145, 16812);
+        _reserveERC20PoolHandler.takeReserves(3, 101612373222750572528253027191156910463885519243511875272520449979009, 266614003985374887564348479277741231124260919310742954767943555991);
+        _reserveERC20PoolHandler.takeReserves(607548627652618511385002408008383549076778857, 1, 429966741527392416);
+
+        _invariant_F1();
+    }
+
 }
 
 contract RegressionTestReserveWith10BucketsERC20Pool is ReserveERC20PoolInvariants { 
