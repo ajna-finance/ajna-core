@@ -549,9 +549,7 @@ contract RewardsManager is IRewardsManager {
         uint256 lastClaimedEpoch_,
         uint256 burnEpochToStartClaim_
     ) internal pure returns (uint256[] memory burnEpochsClaimed_) {
-        uint256 numEpochsClaimed = burnEpochToStartClaim_ - lastClaimedEpoch_;
-
-        burnEpochsClaimed_ = new uint256[](numEpochsClaimed);
+        burnEpochsClaimed_ = new uint256[](burnEpochToStartClaim_ - lastClaimedEpoch_);
 
         uint256 i;
         uint256 claimEpoch = ++lastClaimedEpoch_;
