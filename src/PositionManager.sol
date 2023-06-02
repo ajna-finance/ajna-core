@@ -121,6 +121,8 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         // revert if the token id is not minted for given pool address
         if (pool_ != poolKey[tokenId_]) revert WrongPool();
 
+        // TODO: verify that the pool is a valid ajna pool: https://github.com/code-423n4/2023-05-ajna-findings/blob/main/data/Bason-Q.md#-l-01--not-verifying-that-params_pool-is-valid-pool-address----------------------------------------------
+
         _;
     }
 
@@ -199,7 +201,9 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *  @dev       token id is not a valid / minted id
      *  @dev       sender is not owner `NoAuth()`
      *  @dev       token id not minted for given pool `WrongPool()`
+     *  @dev    - owner supplied insufficient allowance for the lp transfer `AllowanceTooLow()`
      *  @dev    === Emit events ===
+     *  @dev    - `TransferLP`
      *  @dev    - `MemorializePosition`
      */
     function memorializePositions(
@@ -266,6 +270,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *  @dev    provided pool not valid `NotAjnaPool()`
      *  @dev    === Emit events ===
      *  @dev    - `Mint`
+     *  @dev    - `Transfer`
      */
     function mint(
         address pool_,
@@ -300,8 +305,10 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *  @dev      token id is not a valid / minted id
      *  @dev      sender is not owner `NoAuth()`
      *  @dev      token id not minted for given pool `WrongPool()`
-     *  @dev    - positions token to burn has liquidity `LiquidityNotRemoved()`
+     *  @dev    - positions token to burn has liquidity `RemovePositionFailed()`
+     *  @dev    - tried to move from bankrupt bucket `BucketBankrupt()`
      *  @dev    === Emit events ===
+     *  @dev    - `MoveQuoteToken`
      *  @dev    - `MoveLiquidity`
      */
     function moveLiquidity(
@@ -404,8 +411,10 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *  @dev      token id is not a valid / minted id
      *  @dev      sender is not owner `NoAuth()`
      *  @dev      token id not minted for given pool `WrongPool()`
-     *  @dev    - position not tracked `RemoveLiquidityFailed()`
+     *  @dev    - position not tracked `RemovePositionFailed()`
+     *  @dev    - tried to redeem bankrupt bucket `BucketBankrupt()`
      *  @dev    === Emit events ===
+     *  @dev    - `TransferLP`
      *  @dev    - `RedeemPosition`
      */
     function redeemPositions(

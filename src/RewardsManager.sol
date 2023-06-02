@@ -91,6 +91,11 @@ contract RewardsManager is IRewardsManager {
     /*** Constructor ***/
     /*******************/
 
+    /**
+     *  @notice Deploys the RewardsManager contract.
+     *  @param ajnaToken_ Address of the token which will be distributed to staked Position owners.
+     *  @param positionManager_ Address of the PositionManager contract.
+     */
     constructor(address ajnaToken_, IPositionManager positionManager_) {
         if (
             ajnaToken_ == address(0) || address(positionManager_) == address(0)
