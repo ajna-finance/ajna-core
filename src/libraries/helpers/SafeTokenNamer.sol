@@ -64,11 +64,11 @@ pragma solidity 0.8.18;
                 charCount++;
             }
         }
-        bytes memory bytesStringTrimmed = new bytes(charCount);
-        for (uint256 j = 0; j < charCount; j++) {
-            bytesStringTrimmed[j] = bytesString[j];
+        assembly {
+            // Trim the bytes array to the correct length
+            mstore(bytesString, charCount)
         }
-        return string(bytesStringTrimmed);
+        return string(bytesString);
     }
 
     // converts an address to the uppercase hex string, extracting only len bytes (up to 20, multiple of 2)

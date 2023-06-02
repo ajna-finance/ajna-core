@@ -494,6 +494,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         ERC20PoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
     }
 
+    function _assertTokenDecimalsNotCompliant(
+        address poolFactory,
+        address collateral,
+        address quote,
+        uint256 interestRate
+    ) internal {
+        vm.expectRevert(IPoolFactory.DecimalsNotCompliant.selector);
+        ERC20PoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
+    }
+
     function _assertDeployWithInvalidRateRevert(
         address poolFactory,
         address collateral,
@@ -692,13 +702,13 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
     }
 
-    function _assertBorrowDustRevert(
+    function _assertBorrowInvalidAmountRevert(
         address from,
         uint256 amount,
         uint256 indexLimit
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
+        vm.expectRevert(IPoolErrors.InvalidAmount.selector);
         ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
     }
 

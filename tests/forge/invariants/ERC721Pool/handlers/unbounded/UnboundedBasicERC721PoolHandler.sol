@@ -188,13 +188,13 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         (uint256 kickTimeBefore, , , , uint256 auctionPrice, ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
 
         try _erc721Pool.drawDebt(_actor, amount_, 7388, tokenIds) {
+            // amount is rounded by pool to token scale
+            amount_ = _roundToScale(amount_, _pool.quoteTokenScale());
 
             // **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
             increaseInReserves += Maths.wmul(
                 amount_, _borrowFeeRate(interestRate)
             );
-            // rounding in favour of pool goes to reserves
-            increaseInReserves += amount_ - _roundToScale(amount_, _pool.quoteTokenScale());
 
             _recordSettleBucket(
                 _actor,

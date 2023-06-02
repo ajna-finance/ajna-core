@@ -42,7 +42,7 @@ import {
 }                                               from './libraries/helpers/PoolHelper.sol';
 import { 
     _revertIfAuctionClearable,
-    _revertOnExpiry 
+    _revertAfterExpiry 
 }                               from './libraries/helpers/RevertsHelper.sol';
 
 import { Loans }    from './libraries/internal/Loans.sol';
@@ -136,6 +136,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
+        // ensure the borrower is not charged for additional debt that they did not receive
+        amountToBorrow_     = _roundToScale(amountToBorrow_, poolState.quoteTokenScale);
         // ensure the borrower is not credited with a fractional amount of collateral smaller than the token scale
         collateralToPledge_ = _roundToScale(collateralToPledge_, _getArgUint256(COLLATERAL_SCALE));
 
@@ -285,7 +287,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         uint256 index_,
         uint256 expiry_
     ) external override nonReentrant returns (uint256 bucketLP_) {
-        _revertOnExpiry(expiry_);
+        _revertAfterExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         // revert if the dust amount was not exceeded, but round on the scale amount
