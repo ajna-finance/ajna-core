@@ -4,9 +4,9 @@ pragma solidity 0.8.18;
 
 import { ClonesWithImmutableArgs } from '@clones/ClonesWithImmutableArgs.sol';
 
-import { IERC20PoolFactory }     from './interfaces/pool/erc20/IERC20PoolFactory.sol';
-import { IPoolFactory }          from './interfaces/pool/IPoolFactory.sol';
-import { IERC20Token, PoolType } from './interfaces/pool/IPool.sol';
+import { IERC20PoolFactory } from './interfaces/pool/erc20/IERC20PoolFactory.sol';
+import { IPoolFactory }      from './interfaces/pool/IPoolFactory.sol';
+import { PoolType }          from './interfaces/pool/IPool.sol';
 
 import { ERC20Pool }    from './ERC20Pool.sol';
 import { PoolDeployer } from './base/PoolDeployer.sol';
@@ -43,7 +43,7 @@ contract ERC20PoolFactory is PoolDeployer, IERC20PoolFactory {
      *  @dev    - `deployedPoolsList` array
      *  @dev    === Reverts on ===
      *  @dev    - `0x` address provided as quote or collateral `DeployWithZeroAddress()`
-     *  @dev    - quote or collateral lacks `decimals()` method `TokenInvalidNoDecimals()`
+     *  @dev    - quote or collateral lacks `decimals()` method `DecimalsNotCompliant()`
      *  @dev    - pool with provided quote / collateral pair already exists `PoolAlreadyExists()`
      *  @dev    - invalid interest rate provided `PoolInterestRateInvalid()`
      *  @dev    === Emit events ===
@@ -55,11 +55,8 @@ contract ERC20PoolFactory is PoolDeployer, IERC20PoolFactory {
         address existingPool = deployedPools[ERC20_NON_SUBSET_HASH][collateral_][quote_];
         if (existingPool != address(0)) revert IPoolFactory.PoolAlreadyExists(existingPool);
 
-        // quote and collateral tokens must have decimals() method or pool is invalid
-        if (!hasDecimalsMethod(quote_) || !hasDecimalsMethod(collateral_)) revert IPoolFactory.TokenInvalidNoDecimals();
-
-        uint256 quoteTokenScale = 10 ** (18 - IERC20Token(quote_).decimals());
-        uint256 collateralScale = 10 ** (18 - IERC20Token(collateral_).decimals());
+        uint256 quoteTokenScale = _getTokenScale(quote_);
+        uint256 collateralScale = _getTokenScale(collateral_);
 
         bytes memory data = abi.encodePacked(
             PoolType.ERC20,

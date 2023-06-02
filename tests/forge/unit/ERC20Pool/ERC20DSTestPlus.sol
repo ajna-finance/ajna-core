@@ -494,13 +494,13 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         ERC20PoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
     }
 
-    function _assertTokenInvalidNoDecimals(
+    function _assertTokenDecimalsNotCompliant(
         address poolFactory,
         address collateral,
         address quote,
         uint256 interestRate
     ) internal {
-        vm.expectRevert(IPoolFactory.TokenInvalidNoDecimals.selector);
+        vm.expectRevert(IPoolFactory.DecimalsNotCompliant.selector);
         ERC20PoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
     }
 
