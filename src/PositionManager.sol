@@ -48,7 +48,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     /*****************/
 
     /// @dev Period of time the token transfer is locked after redeeming from.
-    uint256 internal constant TRANSFER_LOCK_PERIOD = 15 minutes;
+    uint256 internal constant TRANSFER_LOCK_PERIOD = 1 hours;
 
     /***********************/
     /*** State Variables ***/

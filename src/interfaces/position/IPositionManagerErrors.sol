@@ -48,7 +48,7 @@ interface IPositionManagerErrors {
     error RemovePositionFailed();
 
     /**
-     * @notice User cannot transfer a position NFT in an interval less than 15 minutes since last change.
+     * @notice User cannot transfer a position NFT in an interval less than 1 hour since last change.
      */
     error TransferLocked();
 
