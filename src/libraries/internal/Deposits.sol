@@ -10,6 +10,8 @@ import { _priceAt, MAX_FENWICK_INDEX } from '../helpers/PoolHelper.sol';
 
 import { Maths } from './Maths.sol';
 
+import '@std/console.sol';
+
 /**
     @title  Deposits library
     @notice Internal library containing common logic for deposits management.
@@ -304,11 +306,15 @@ library Deposits {
         // We operate with unscaledRemoveAmount_ here instead of a scaled quantity to avoid duplicate computation of scale factor
         // (thus redundant iterations through the Fenwick tree), and ALSO so that we can set the value of a given deposit exactly
         // to 0.
+        console.log("dep here");
         
         while (index_ <= SIZE) {
             // Decrement deposits_ at index_ for removeAmount, storing new value in value
+            console.log("dep here 01", deposits_.values[index_]);
+            console.log("dep here 01", unscaledRemoveAmount_);
             uint256 value   = (deposits_.values[index_] -= unscaledRemoveAmount_);
             uint256 scaling = deposits_.scaling[index_];
+            console.log("worked!");
 
             // If scale factor != 1, we need to adjust unscaledRemoveAmount by scale factor to adjust values further up in tree
             // On the line below, it would be tempting to replace this with:

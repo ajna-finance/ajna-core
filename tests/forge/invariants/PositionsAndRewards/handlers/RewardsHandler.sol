@@ -12,6 +12,8 @@ import { UnboundedRewardsHandler } from './unbounded/UnboundedRewardsHandler.sol
 import { ReserveERC20PoolHandler } from '../../ERC20Pool/handlers/ReserveERC20PoolHandler.sol';
 import { PositionHandlerAbstract } from './PositionHandlerAbstract.sol';
 
+import '@std/console.sol';
+
 contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, ReserveERC20PoolHandler {
 
     constructor(
@@ -64,10 +66,6 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         // Action phase
         _unstake(tokenId);
 
-
-        // Post action
-        // check token was transferred from rewards contract to actor
-        assertEq(_position.ownerOf(tokenId), _actor);
     }
 
     function updateExchangeRate(

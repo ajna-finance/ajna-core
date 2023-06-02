@@ -41,10 +41,16 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
         uint256 tokenId_
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBRewardsHandler.unstake']++;
-
+        
+        address ownerPreAction          = _position.ownerOf(tokenId_); 
         uint256 actorBalanceBeforeClaim = _quote.balanceOf(_actor);
 
+        assertEq(ownerPreAction, address(_rewards));
+
         try _rewards.unstake(tokenId_) {
+            
+            // ownership is transfered back to caller
+            assertEq(_position.ownerOf(tokenId_), _actor);
 
             // add to total rewards if actor received reward
             if ((_quote.balanceOf(_actor) - actorBalanceBeforeClaim) != 0) {

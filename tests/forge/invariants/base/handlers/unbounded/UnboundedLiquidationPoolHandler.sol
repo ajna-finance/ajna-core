@@ -10,6 +10,8 @@ import { MAX_FENWICK_INDEX }                        from 'src/libraries/helpers/
 
 import { BaseHandler } from './BaseHandler.sol';
 
+import '@std/console.sol';
+
 abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
     using EnumerableSet for EnumerableSet.UintSet;
@@ -68,11 +70,16 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         uint256 kickerBondBefore = _getKickerBond(_actor);
 
+        console.log("here");
+
         // ensure actor always has the amount to add for kick
         _ensureQuoteAmount(_actor, borrowerDebt);
 
+        console.log("here 1");
+
         try _pool.kickWithDeposit(bucketIndex_, 7388) {
             numberOfActions['kickWithDeposit']++;
+            console.log("here 2");
 
             ( , , , uint256 depositAfterAction, ) = _pool.bucketInfo(bucketIndex_);
 
@@ -80,11 +87,13 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             increaseInReserves += Maths.wdiv(Maths.wmul(borrowerDebt, interestRate), 4 * 1e18);
 
             uint256 kickerBondAfter = _getKickerBond(_actor);
+            console.log("here 3");
 
             // **A7**: totalBondEscrowed should increase when auctioned kicked with the difference needed to cover the bond 
             increaseInBonds += kickerBondAfter - kickerBondBefore;
 
             _fenwickRemove(depositBeforeAction - depositAfterAction, bucketIndex_);
+            console.log("here 4");
 
         } catch (bytes memory err) {
             _ensurePoolError(err);

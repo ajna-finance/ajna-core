@@ -67,6 +67,8 @@ import { KickerActions }   from '../libraries/external/KickerActions.sol';
 import { TakerActions }    from '../libraries/external/TakerActions.sol';
 import { PoolCommons }     from '../libraries/external/PoolCommons.sol';
 
+import '@std/console.sol';
+
 /**
  *  @title  Pool Contract
  *  @dev    Base contract and entrypoint for commong logic of both `ERC20` and `ERC721` pools.
@@ -322,6 +324,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 index_,
         uint256 npLimitIndex_
     ) external override nonReentrant {
+        console.log("here here");
         PoolState memory poolState = _accruePoolInterest();
 
         // kick auctions
@@ -335,10 +338,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             npLimitIndex_
         );
 
+        console.log("here here 1");
+
         // update in memory pool state struct
         poolState.debt            =  Maths.wmul(result.t0PoolDebt, poolState.inflator);
         poolState.t0Debt          =  result.t0PoolDebt;
         poolState.t0DebtInAuction += result.t0KickedDebt;
+        console.log("here here 2");
 
         // adjust t0Debt2ToCollateral ratio
         _updateT0Debt2ToCollateral(
@@ -347,6 +353,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             result.collateralPreAction,
             0 // collateral post kick (for loan in auction) not taken into account
         );
+        console.log("here here 3");
 
         // update pool balances state
         poolBalances.t0Debt          = poolState.t0Debt;
@@ -354,6 +361,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // update pool interest rate state
         _updateInterestState(poolState, result.lup);
+        console.log("here here 3");
 
         // transfer from kicker to pool the difference to cover bond
         if (result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);

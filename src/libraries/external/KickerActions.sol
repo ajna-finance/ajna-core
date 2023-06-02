@@ -42,6 +42,7 @@ import { Buckets }  from '../internal/Buckets.sol';
 import { Deposits } from '../internal/Deposits.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
+import '@std/console.sol';
 
 /**
     @title  Auctions kicker actions library
@@ -238,6 +239,7 @@ library KickerActions {
             // revert if calculated unscaled amount is 0
             if (unscaledAmountToRemove == 0) revert InsufficientLiquidity();
 
+            console.log("last rem");
             Deposits.unscaledRemove(deposits_, index_, unscaledAmountToRemove);
             vars.bucketUnscaledDeposit -= unscaledAmountToRemove;
         }
