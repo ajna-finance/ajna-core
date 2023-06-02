@@ -738,7 +738,7 @@ contract RewardsManager is IRewardsManager {
                 uint256 burnFactor = Maths.wmul(totalBurned_, bucketDeposit);
 
                 // calculate rewards earned for updating bucket exchange rate 
-                rewards_ += interestEarned_ == 0 ? 0 : Maths.wdiv(
+                rewards_ = interestEarned_ == 0 ? 0 : Maths.wdiv(
                     Maths.wmul(
                         UPDATE_CLAIM_REWARD,
                         Maths.wmul(
