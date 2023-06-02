@@ -554,7 +554,7 @@ contract RewardsManager is IRewardsManager {
         burnEpochsClaimed_ = new uint256[](numEpochsClaimed);
 
         uint256 i;
-        uint256 claimEpoch = lastClaimedEpoch_ + 1;
+        uint256 claimEpoch = ++lastClaimedEpoch_;
         while (claimEpoch <= burnEpochToStartClaim_) {
             burnEpochsClaimed_[i] = claimEpoch;
 
@@ -595,7 +595,7 @@ contract RewardsManager is IRewardsManager {
                 ,
                 uint256 totalInterestPrev,
                 uint256 totalBurnedPrev
-            ) = IPool(pool_).burnInfo(epoch_ - 1);
+            ) = IPool(pool_).burnInfo(--epoch_);
 
             // calculate total tokens burned and interest earned in epoch
             tokensBurned_   = totalBurnedLatest   != 0 ? totalBurnedLatest   - totalBurnedPrev   : 0;
@@ -726,7 +726,7 @@ contract RewardsManager is IRewardsManager {
             bucketExchangeRates[pool_][bucketIndex_][burnEpoch_] = curBucketExchangeRate;
 
             // retrieve the bucket exchange rate at the previous epoch
-            uint256 prevBucketExchangeRate = bucketExchangeRates[pool_][bucketIndex_][burnEpoch_ - 1];
+            uint256 prevBucketExchangeRate = bucketExchangeRates[pool_][bucketIndex_][--burnEpoch_];
 
             // skip reward calculation if update at the previous epoch was missed and if exchange rate decreased due to bad debt
             // prevents excess rewards from being provided from using a 0 value as an input to the interestFactor calculation below.
