@@ -527,9 +527,10 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         uint256 tokenId_,
         uint256 index_
     ) external view override returns (uint256, uint256) {
+        Position memory position = positions[tokenId_][index_];
         return (
-            positions[tokenId_][index_].lps,
-            positions[tokenId_][index_].depositTime
+            position.lps,
+            position.depositTime
         );
     }
 
