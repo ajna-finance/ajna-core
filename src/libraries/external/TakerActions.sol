@@ -659,7 +659,6 @@ library TakerActions {
         }
 
         // remove quote tokens from bucket’s deposit
-        vars.unscaledQuoteTokenAmount = Maths.min(vars.unscaledQuoteTokenAmount, vars.unscaledDeposit);
         Deposits.unscaledRemove(deposits_, bucketIndex_, vars.unscaledQuoteTokenAmount);
 
         // total rewarded LP are added to the bucket LP balance
