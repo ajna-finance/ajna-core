@@ -386,11 +386,12 @@ contract RewardsManager is IRewardsManager {
         uint256 bucketIndex;
         uint256 interestEarned;
 
-        // iterate through all buckets and calculate epoch rewards for
+        // iterate through all buckets and calculate epoch rewards for each bucket
+        StakeInfo storage _stakeInfo = stakes[tokenId_];
         uint256 noOfPositions = positionIndexes_.length;
         for (uint256 i = 0; i < noOfPositions; ) {
             bucketIndex = positionIndexes_[i];
-            BucketState storage bucketSnapshot = stakes[tokenId_].snapshot[bucketIndex];
+            BucketState storage bucketSnapshot = _stakeInfo.snapshot[bucketIndex];
 
             uint256 bucketRate;
             if (epoch_ != stakingEpoch_) {

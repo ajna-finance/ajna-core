@@ -217,9 +217,12 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         address owner = ownerOf(tokenId_);
         LendersBucketLocalVars memory vars;
 
-        uint256 indexesLength = indexes_.length;
+        // local vars used in for loop for reduced gas
         uint256 index;
+        uint256 indexesLength = indexes_.length;
+        mapping(uint256 => Position) storage _position = positions[tokenId_];
 
+        // loop through all bucket indexes and memorialize lp balance and deposit time to the Position.
         for (uint256 i = 0; i < indexesLength; ) {
             index = indexes_[i];
 
@@ -234,7 +237,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
 
             if (vars.allowance < vars.lpBalance) revert AllowanceTooLow();
 
-            Position memory position = positions[tokenId_][index];
+            Position memory position = _position[index];
 
             // check for previous deposits
             if (position.depositTime != 0) {
@@ -251,7 +254,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
             position.depositTime = vars.depositTime;
 
             // save position in storage
-            positions[tokenId_][index] = position;
+            _position[index] = position;
 
             unchecked { ++i; }
         }
@@ -426,15 +429,17 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
 
         IPool pool = IPool(pool_);
 
+        // local vars used in for loop for reduced gas
+        uint256 index;
         uint256 indexesLength = indexes_.length;
         uint256[] memory lpAmounts = new uint256[](indexesLength);
+        mapping(uint256 => Position) storage _position = positions[tokenId_];
 
-        uint256 index;
-
+        // retrieve LP amounts from each bucket index associated with token id
         for (uint256 i = 0; i < indexesLength; ) {
             index = indexes_[i];
 
-            Position memory position = positions[tokenId_][index];
+            Position memory position = _position[index];
 
             if (position.lps == 0 || position.depositTime == 0) revert RemovePositionFailed();
 
@@ -447,7 +452,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
             lpAmounts[i] = position.lps;
 
             // remove LP tracked by position manager at bucket index
-            delete positions[tokenId_][index];
+            delete _position[index];
 
             unchecked { ++i; }
         }
