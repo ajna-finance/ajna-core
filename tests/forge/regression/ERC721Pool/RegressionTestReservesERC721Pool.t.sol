@@ -445,6 +445,10 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
         invariant_bucket();
     }
 
+    /**
+        Tx reverted in kick with deposit when calculated unscaled amount to remove from index was higher (due to roundings) than unscaled amount at index.
+        Fixed by using floorWdiv instead ceilWdiv when unscaled amount is calculated and by removing the min of calculated and available amount.
+     */
     function test_regression_kickDeposit_unexpected_error_roundings() external {
         _reserveERC721PoolHandler.addCollateral(39752105256555369182172961527074949384813458136560968631546463782408606100571, 3108305920668418845952519846264486996691059921547700, 501923220810808828, 14214414699937032731798557);
         _reserveERC721PoolHandler.repayDebt(88827291404079698668721230880260160559290269665158672048614475775631968917916, 57962805750915449247599791, 6315327163222565648560566862);
