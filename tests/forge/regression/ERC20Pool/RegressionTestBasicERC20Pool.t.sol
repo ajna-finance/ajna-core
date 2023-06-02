@@ -489,6 +489,10 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         invariant_fenwick();
     }
 
+    /**
+        Test failing due tighten F1 and F2 invariants in https://github.com/ajna-finance/contracts/commit/c64058c775d806e0693308247b6b2eb59a748f36#diff-2d6f15f173d5215b0579447b607a778c3a1f31f18caf370e516c603cdddad35bR369
+        since using quote token scale means 18 decimal deviation equals 1. Fixed by updating invariants to use a min deviation of 1e12.
+     */
     function test_regression_removeQuote_unexpected_error_roundings_2() external {
         _basicERC20PoolHandler.drawDebt(2276458491362276216117814291, 1811389658421886693669, 22761);
         _basicERC20PoolHandler.pullCollateral(688169278021103712794373831144550092872894496810421399363662677745689088, 612986856634992664893744504, 1103042729736385164325032282);

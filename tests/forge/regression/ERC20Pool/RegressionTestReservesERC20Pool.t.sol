@@ -801,6 +801,9 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         _reserveERC20PoolHandler.kickAuction(1098806786891021651, 2703083511076243960929986926113, 214140657945115341322668164538079, 1000099538589911222);
     }
 
+    /**
+        Test was failing because it required a deviation of 1e13. Updated reserves invariant deviation to 1e13 (and inline with QT1 invariant).
+     */
     function test_regression_invariant_reserves_removeQuote1() external {
         _reserveERC20PoolHandler.pullCollateral(0, 5871969820778926, 1);
         _reserveERC20PoolHandler.pledgeCollateral(4714, 687973989128864692730989368863221890875625519472204040673170653989568512, 7025);
