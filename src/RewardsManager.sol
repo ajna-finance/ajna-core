@@ -390,7 +390,7 @@ contract RewardsManager is IRewardsManager {
         uint256 noOfPositions = positionIndexes_.length;
         for (uint256 i = 0; i < noOfPositions; ) {
             bucketIndex = positionIndexes_[i];
-            BucketState memory bucketSnapshot = stakes[tokenId_].snapshot[bucketIndex];
+            BucketState storage bucketSnapshot = stakes[tokenId_].snapshot[bucketIndex];
 
             uint256 bucketRate;
             if (epoch_ != stakingEpoch_) {
@@ -692,14 +692,16 @@ contract RewardsManager is IRewardsManager {
         uint256 bucketIndex_,
         uint256 burnEpoch_
     ) internal {
-        uint256 burnExchangeRate = bucketExchangeRates[pool_][bucketIndex_][burnEpoch_];
+        // cache storage pointer for reduced gas
+        mapping(uint256 => uint256) storage _bucketExchangeRates = bucketExchangeRates[pool_][bucketIndex_];
+        uint256 burnExchangeRate = _bucketExchangeRates[burnEpoch_];
 
         // update bucket exchange rate at epoch only if it wasn't previously updated
         if (burnExchangeRate == 0) {
             uint256 curBucketExchangeRate = IPool(pool_).bucketExchangeRate(bucketIndex_);
 
             // record bucket exchange rate at epoch
-            bucketExchangeRates[pool_][bucketIndex_][burnEpoch_] = curBucketExchangeRate;
+            _bucketExchangeRates[burnEpoch_] = curBucketExchangeRate;
         }
     }
 
@@ -719,17 +721,19 @@ contract RewardsManager is IRewardsManager {
         uint256 totalBurned_,
         uint256 interestEarned_
     ) internal returns (uint256 rewards_) {
-        uint256 burnExchangeRate = bucketExchangeRates[pool_][bucketIndex_][burnEpoch_];
+        // cache storage pointer for reduced gas
+        mapping(uint256 => uint256) storage _bucketExchangeRates = bucketExchangeRates[pool_][bucketIndex_];
+        uint256 burnExchangeRate = _bucketExchangeRates[burnEpoch_];
 
         // update bucket exchange rate at epoch only if it wasn't previously updated
         if (burnExchangeRate == 0) {
             uint256 curBucketExchangeRate = IPool(pool_).bucketExchangeRate(bucketIndex_);
 
             // record bucket exchange rate at epoch
-            bucketExchangeRates[pool_][bucketIndex_][burnEpoch_] = curBucketExchangeRate;
+            _bucketExchangeRates[burnEpoch_] = curBucketExchangeRate;
 
             // retrieve the bucket exchange rate at the previous epoch
-            uint256 prevBucketExchangeRate = bucketExchangeRates[pool_][bucketIndex_][--burnEpoch_];
+            uint256 prevBucketExchangeRate = _bucketExchangeRates[--burnEpoch_];
 
             // skip reward calculation if update at the previous epoch was missed and if exchange rate decreased due to bad debt
             // prevents excess rewards from being provided from using a 0 value as an input to the interestFactor calculation below.
