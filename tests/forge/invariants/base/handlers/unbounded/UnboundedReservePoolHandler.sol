@@ -20,14 +20,10 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
         (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
         if (claimableReserves == 0) return;
 
-        // execute kick reserves only if there's enough quote tokens to reward kicker
-        uint256 reward = Maths.wmul(0.01 * 1e18, claimableReserves);
-        if (_quote.balanceOf(address(_pool)) < reward) return;
-
         try _pool.kickReserveAuction() {
 
             // **RE11**:  Reserves increase by claimableReserves by kickReserveAuction
-            decreaseInReserves += claimableReserves;            
+            decreaseInReserves += claimableReserves;
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }

@@ -200,6 +200,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
             _repayDebt(type(uint256).max);
 
             (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+            _pullCollateral(collateral);
 
             require(debt == 0, "borrower has debt");
         }
@@ -208,7 +209,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
     function _preRepayDebt(
         uint256 amountToRepay_
     ) internal returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToRepay_, Maths.max(_pool.quoteTokenDust(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
+        boundedAmount_ = constrictToRange(amountToRepay_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
 
         // ensure actor has debt to repay
         (uint256 debt, , ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);

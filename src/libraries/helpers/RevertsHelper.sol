@@ -81,10 +81,10 @@ import { Maths }    from '../internal/Maths.sol';
      *  @dev    Reverts with `TransactionExpired` if expired.
      *  @param  expiry_ Expiration provided by user when creating the transaction.
      */
-    function _revertOnExpiry(
+    function _revertAfterExpiry(
         uint256 expiry_
     ) view {
-        if (block.timestamp >= expiry_) revert TransactionExpired();
+        if (block.timestamp > expiry_) revert TransactionExpired();
     }
 
     /**

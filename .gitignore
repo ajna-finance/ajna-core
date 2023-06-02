@@ -16,3 +16,10 @@ report/
 keystore/
 broadcast/
 logFile.txt
+tests/invariants/trace.log
+
+# Certora
+.certora_internal/
+.certora_recent_jobs.json
+.zip-output-url.txt
+*.zip

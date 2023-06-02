@@ -201,5 +201,12 @@ abstract contract LiquidationInvariants is BasicInvariants {
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.withdrawBonds") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickWithDeposit")
         );
+        console.log("------------------");
+        console.log("--Successful liquidation actions----");
+        console.log("kick:              ",  IBaseHandler(_handler).numberOfActions("kick"));
+        console.log("kick with deposit: ",  IBaseHandler(_handler).numberOfActions("kickWithDeposit"));
+        console.log("take:              ",  IBaseHandler(_handler).numberOfActions("take"));
+        console.log("bucket take:       ",  IBaseHandler(_handler).numberOfActions("bucketTake"));
+        console.log("settle             ",  IBaseHandler(_handler).numberOfActions("settle"));
     }
 }

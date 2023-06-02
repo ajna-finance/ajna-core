@@ -114,10 +114,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         transferors[0] = address(_positionManager);
         _pool.approveLPTransferors(transferors);
 
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, address(_pool), indexes1
-        );
-        _positionManager.memorializePositions(memorializeParams);
+        _positionManager.memorializePositions(address(_pool), tokenId, indexes1);
 
         // testMinter2 memorialize position _i9_52
         uint256 tokenId2 = _mintNFT(testMinter2, testMinter2, address(_pool));
@@ -129,10 +126,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _pool.approveLPTransferors(transferors);
 
-        memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId2, address(_pool), indexes2
-        );
-        _positionManager.memorializePositions(memorializeParams);
+        _positionManager.memorializePositions(address(_pool), tokenId2, indexes2);
 
         /*************************/
         /*** Bucket Bankruptcy ***/
@@ -193,15 +187,12 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         assertEq(_positionManager.getLP(tokenId2, _i9_52), 10_000 * 1e18);
 
         changePrank(testMinter2);
-        IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-            tokenId2, address(_pool), _i9_52, _i9_91, block.timestamp + 5 hours
-        );
         vm.expectRevert(IPoolErrors.BucketBankruptcyBlock.selector);
-        _positionManager.moveLiquidity(moveLiquidityParams);
+        _positionManager.moveLiquidity(address(_pool), tokenId2, _i9_52, _i9_91, block.timestamp + 5 hours);
 
         // skip time to avoid move in same block as bucket bankruptcy
         skip(1 hours);
-        _positionManager.moveLiquidity(moveLiquidityParams);
+        _positionManager.moveLiquidity(address(_pool), tokenId2, _i9_52, _i9_91, block.timestamp + 5 hours);
 
         // report 494: testMinter2 position at _i9_91 should not be bankrupt
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId2, _i9_91));
@@ -221,19 +212,13 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         changePrank(testMinter);
 
         // testMinter1 moves liquidity from bankrupt _i9_91 deposit to healthy deposit _i9_52
-        moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-            tokenId, address(_pool), _i9_91, _i9_52, block.timestamp + 5 hours
-        );
         // call reverts as cannot move from bankrupt bucket
         vm.expectRevert(IPositionManagerErrors.BucketBankrupt.selector);
-        _positionManager.moveLiquidity(moveLiquidityParams);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_91, _i9_52, block.timestamp + 5 hours);
 
         // testMinter1 moves liquidity from healthy deposit _i9_52 to bankrupt _i9_91
         // _i9_52 should remain with 0 LP, _i9_91 should have 30_000
-        moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-            tokenId, address(_pool), _i9_52, _i9_91, block.timestamp + 5 hours
-        );
-        _positionManager.moveLiquidity(moveLiquidityParams);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_52, _i9_91, block.timestamp + 5 hours);
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, _i9_91));
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, _i9_52));
 
@@ -266,11 +251,8 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
         // memorialize positions of testAddress1
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId1, address(_pool), indexes
-        );
         changePrank(testAddress1);
-        _positionManager.memorializePositions(memorializeParams);
+        _positionManager.memorializePositions(address(_pool), tokenId1, indexes);
 
         // check from and to positions before move
         (uint256 fromLp, uint256 fromDepositTime) = _positionManager.getPositionInfo(tokenId1, mintIndex);
@@ -280,16 +262,11 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         assertEq(fromDepositTime, block.timestamp);
         assertEq(toDepositTime,   0);
 
-        // construct move liquidity params
-        IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-            tokenId1, address(_pool), mintIndex, moveIndex, block.timestamp + 30
-        );
-
         // move liquidity called by testAddress1 owner
         vm.expectEmit(true, true, true, true);
         emit MoveLiquidity(testAddress1, tokenId1, mintIndex, moveIndex, 2_500 * 1e18, 2_500 * 1e18);
         changePrank(address(testAddress1));
-        _positionManager.moveLiquidity(moveLiquidityParams);
+        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30);
 
         // check from and to positions after move
         // from position should have 0 LP and 0 deposit time (FROM Position struct is deleted)
@@ -339,11 +316,8 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
         // memorialize positions of testAddress1
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId1, address(_pool), indexes
-        );
         changePrank(testAddress1);
-        _positionManager.memorializePositions(memorializeParams);
+        _positionManager.memorializePositions(address(_pool), tokenId1, indexes);
 
         _removeAllCollateral({
             from:     testAddress2,
@@ -360,17 +334,12 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         assertEq(fromDepositTime, block.timestamp);
         assertEq(toDepositTime,   0);
 
-        // construct move liquidity params
-        IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-            tokenId1, address(_pool), mintIndex, moveIndex, block.timestamp + 30
-        );
-
         // move liquidity called by testAddress1 owner
         // This protects LP owner of losing LP because position manager tried to move 2661558999339261847178.534720637400665211 memorialized LP
         // but the amount of LP that can be moved (constrained by available max quote token) is only 200002500
         changePrank(address(testAddress1));
         vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
-        _positionManager.moveLiquidity(moveLiquidityParams);
+        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30);
     }
 
     /**
@@ -483,10 +452,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
             );
 
             // Memorialize quote tokens into minted NFT.
-            IPositionManagerOwnerActions.MemorializePositionsParams
-                memory memorializeParams = IPositionManagerOwnerActions
-                    .MemorializePositionsParams(tokenId, address(_pool), indexes);
-            try _positionManager.memorializePositions(memorializeParams) { } catch { }
+            try _positionManager.memorializePositions(address(_pool), tokenId, indexes) { } catch { }
 
             // Get new Pool lp balances.
             (poolLPBalanceIndex1, ) = _pool.lenderInfo(
@@ -570,25 +536,15 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         // Alice
 
-        // alice memorialize params struct
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParamsAlice = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenIdAlice, address(_pool), indexes
-        );
-
         // alice allow position manager to take ownership of the position
         changePrank(alice);
         _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
-        _positionManager.memorializePositions(memorializeParamsAlice);
+        _positionManager.memorializePositions(address(_pool), tokenIdAlice, indexes);
 
         // check memorialization success for Alice
         assertEq(_positionManager.getLP(tokenIdAlice, indexes[0]), 3000 * 1e18);
 
         // Bob
-
-        // bob memorialize params struct
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParamsBob = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenIdBob, address(_pool), indexes
-        );
 
         // bob memorialize quote tokens into minted NFT but with allowance of 1000e18 instead of 3000e18
         uint256[] memory allowanceAmountsBob = new uint256[](1);
@@ -596,7 +552,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         changePrank(bob);
         _pool.increaseLPAllowance(address(_positionManager), indexes, allowanceAmountsBob);
         vm.expectRevert(IPositionManagerErrors.AllowanceTooLow.selector);
-        _positionManager.memorializePositions(memorializeParamsBob);
+        _positionManager.memorializePositions(address(_pool), tokenIdBob, indexes);
         
         // check memorialization success for Bob
         assertEq(_positionManager.getLP(tokenIdBob, indexes[0]), 0); // bob LP balance not inflated
@@ -604,31 +560,25 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         // bob memorialize one more time to inflate even more LP balance in position manager
         _pool.increaseLPAllowance(address(_positionManager), indexes, allowanceAmountsBob);
         vm.expectRevert(IPositionManagerErrors.AllowanceTooLow.selector);
-        _positionManager.memorializePositions(memorializeParamsBob);
+        _positionManager.memorializePositions(address(_pool), tokenIdBob, indexes);
         
         // check memorialization success for Bob
         assertEq(_positionManager.getLP(tokenIdBob, indexes[0]), 0); // bob LP balance not inflated
         
         // bob cannot redeem as no LP memorialized
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
-            tokenIdBob, address(_pool), indexes
-        );
         _pool.approveLPTransferors(transferors);
 
         vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
-        _positionManager.redeemPositions(reedemParams);
+        _positionManager.redeemPositions(address(_pool), tokenIdBob, indexes);
 
         (uint256 lpBalanceBobAfter,) = _pool.lenderInfo(indexes[0], bob);
         console.log("Balance of Bob: ", lpBalanceBobAfter);
 
         // alice redeem NFT and get nothing
         changePrank(alice);
-        reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
-            tokenIdAlice, address(_pool), indexes
-        );
 
         _pool.approveLPTransferors(transferors);
-        _positionManager.redeemPositions(reedemParams);
+        _positionManager.redeemPositions(address(_pool), tokenIdAlice, indexes);
 
         (uint256 lpBalanceAliceAfter,) = _pool.lenderInfo(indexes[0], alice);
         console.log("Balance of Alice: ", lpBalanceAliceAfter);
@@ -741,10 +691,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         transferors[0] = address(_positionManager);
         _pool.approveLPTransferors(transferors);
 
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, address(_pool), indexes1
-        );
-        _positionManager.memorializePositions(memorializeParams);
+        _positionManager.memorializePositions(address(_pool), tokenId, indexes1);
 
         // testMinter2 memorialize position _i9_52
         uint256 tokenId2 = _mintNFT(testMinter2, testMinter2, address(_pool));
@@ -756,10 +703,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _pool.approveLPTransferors(transferors);
 
-        memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId2, address(_pool), indexes2
-        );
-        _positionManager.memorializePositions(memorializeParams);
+        _positionManager.memorializePositions(address(_pool), tokenId2, indexes2);
 
         _assertPool(
             PoolParams({
@@ -791,20 +735,14 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         // Move positiion upwards from _i9_81 to _i9_91
         changePrank(testMinter);
-        IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-            tokenId, address(_pool), _i9_81, _i9_91, block.timestamp + 5 hours
-        );
-        _positionManager.moveLiquidity(moveLiquidityParams);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_81, _i9_91, block.timestamp + 5 hours);
 
         vm.revertTo(preMoveUpState);
 
         uint256 preMoveDownState = vm.snapshot();
 
         // Move positiion downwards from _i9_91 to _i9_81
-        moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-            tokenId, address(_pool), _i9_91, _i9_81, block.timestamp + 5 hours
-        );
-        _positionManager.moveLiquidity(moveLiquidityParams);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_91, _i9_81, block.timestamp + 5 hours);
 
         vm.revertTo(preMoveDownState);
 
@@ -826,10 +764,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
             exchangeRate: 1e18
         });
 
-        moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-            tokenId, address(_pool), _i9_81, _i9_52, block.timestamp + 5 hours
-        );
-        _positionManager.moveLiquidity(moveLiquidityParams);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_81, _i9_52, block.timestamp + 5 hours);
 
         _assertBucketAssets({
             index: _i9_81,

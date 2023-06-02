@@ -286,7 +286,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             lpBalance:    32_653.714287304439450796 * 1e18,
             collateral:   Maths.wad(4),
             deposit:      0,
-            exchangeRate: 1.000080444343832501 * 1e18
+            exchangeRate: 1.000080444343832502 * 1e18
         });
 
         // bidder withdraws unused collateral
@@ -330,7 +330,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             lpBalance:    16_326.857143652219725398 * 1e18,
             collateral:   Maths.wad(2),
             deposit:      0,
-            exchangeRate: 1.000080444343832501 * 1e18
+            exchangeRate: 1.000080444343832502 * 1e18
         });
 
         // should revert if lender2 attempts to remove more collateral than lp is available for

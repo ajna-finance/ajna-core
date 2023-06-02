@@ -31,7 +31,6 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
 
         // Rewards manager
         _rewards = RewardsManager(rewards_);
-
     }
 
     /*******************************/
@@ -143,8 +142,7 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         // trigger reserve auction
         _kickReserveAuction(); 
 
-        uint256 boundedAmount = _preTakeReserves(amountToAdd_);
-        _takeReserves(boundedAmount);
+        _takeReserves(amountToAdd_);
 
         //TODO: Update exchange rates to ensure staked position has rewards        
     }

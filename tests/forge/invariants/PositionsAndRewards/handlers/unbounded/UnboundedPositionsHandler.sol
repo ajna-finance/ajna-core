@@ -50,7 +50,7 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
         }
 
-        try _position.memorializePositions(IPositionManagerOwnerActions.MemorializePositionsParams(tokenId_, address(_pool), indexes_)) {
+        try _position.memorializePositions(address(_pool), tokenId_, indexes_) {
             
             // TODO: store memorialized position's tokenIds in mapping, for reuse in unstake and redeem calls
 
@@ -93,7 +93,7 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
     function _mint() internal returns (uint256 tokenIdResult) {
         numberOfCalls['UBPositionHandler.mint']++;
-        try _position.mint(IPositionManagerOwnerActions.MintParams(_actor, address(_pool), keccak256("ERC20_NON_SUBSET_HASH"))) returns (uint256 tokenId) {
+        try _position.mint(address(_pool), _actor, keccak256("ERC20_NON_SUBSET_HASH")) returns (uint256 tokenId) {
 
             tokenIdResult = tokenId;
 
@@ -136,11 +136,7 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
             require(posPreActionLps > 0);
         } 
 
-        try _position.redeemPositions(IPositionManagerOwnerActions.RedeemPositionsParams({
-            tokenId: tokenId_,
-            pool:    address(_pool),
-            indexes: indexes_
-         })) {
+        try _position.redeemPositions(address(_pool), tokenId_, indexes_) {
             // remove tracked positions
             for ( uint256 i = 0; i < indexes_.length; i++) {
                 bucketIndexesWithPosition.remove(indexes_[i]); 
@@ -242,7 +238,7 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
         *  @notice Struct holding parameters for moving the liquidity of a position.
         */
 
-        try _position.moveLiquidity(IPositionManagerOwnerActions.MoveLiquidityParams(tokenId_, address(_pool), fromIndex_, toIndex_, block.timestamp + 30)) {
+        try _position.moveLiquidity(address(_pool), tokenId_, fromIndex_, toIndex_, block.timestamp + 30) {
 
             // TODO: store memorialized position's tokenIds in mapping, for reuse in unstake and redeem calls
 
@@ -287,7 +283,7 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
         uint256 tokenId_
     ) internal {
         numberOfCalls['UBPositionHandler.burn']++;
-        try _position.burn(IPositionManagerOwnerActions.BurnParams(tokenId_, address(_pool))) {
+        try _position.burn(address(_pool), tokenId_) {
             // Post Action Checks //
             // should revert if token id is burned
             vm.expectRevert("ERC721: invalid token ID");

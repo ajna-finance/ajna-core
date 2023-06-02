@@ -165,14 +165,14 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         );
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              5_069.682183392068152308 * 1e18,
+            borrowerDebt:              5_069.682183392068152309 * 1e18,
             borrowerCollateral:        2 * 1e18,
             borrowert0Np:              2_627.524038461538462750 * 1e18,
             borrowerCollateralization: 1.524219558190194493 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              5_069.682183392068152308 * 1e18,
+            borrowerDebt:              5_069.682183392068152309 * 1e18,
             borrowerCollateral:        3 * 1e18,
             borrowert0Np:              1_751.682692307692308500 * 1e18,
             borrowerCollateralization: 2.286329337285291739 * 1e18
@@ -198,7 +198,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 totalBondEscrowed: 3_002.884615384615386000 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     10_134.735576923076927750 * 1e18,
-                thresholdPrice:    1_689.894061130689384102 * 1e18,
+                thresholdPrice:    1_689.894061130689384103 * 1e18,
                 neutralPrice:      1_751.682692307692308500 * 1e18
             })
         );
@@ -229,7 +229,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 kickMomp:          0,
                 totalBondEscrowed: 3_002.884615384615386000 * 1e18,
                 auctionPrice:      0,
-                debtInAuction:     5_069.682183392068152308 * 1e18,
+                debtInAuction:     5_069.682183392068152309 * 1e18,
                 thresholdPrice:    0,
                 neutralPrice:      0
             })
@@ -302,9 +302,9 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         _assertBucket({
             index:        MAX_FENWICK_INDEX,
             lpBalance:    0.000000137345389190 * 1e18,
-            collateral:   1.375706158271934624 * 1e18,
+            collateral:   1.375706158271934622 * 1e18,
             deposit:      0,
-            exchangeRate: 1.000000000007280914 * 1e18
+            exchangeRate: 1.000000000005475091 * 1e18
         });
 
         assertEq(_quote.balanceOf(address(_pool)), 6_000 * 1e18);
@@ -317,7 +317,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
             from:    _lender,
             amount:  100 * 1e18,
             index:   MAX_FENWICK_INDEX,
-            lpAward: 99.999999999452490779 * 1e18,
+            lpAward: 99.999999999452490925 * 1e18,
             newLup:  MAX_PRICE
         });
 
@@ -371,10 +371,10 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
 
         _assertBucket({
             index:        2500,
-            lpBalance:    1_860.819465331537771072 * 1e18,
+            lpBalance:    1_860.819465331537769873 * 1e18,
             collateral:   0,
             deposit:      1_861.382770397052268844 * 1e18,
-            exchangeRate: 1.000302718816096507 * 1e18
+            exchangeRate: 1.000302718816096508 * 1e18
         });
     }
 
@@ -404,7 +404,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 kickMomp:          0,
                 totalBondEscrowed: 3_002.884615384615386000 * 1e18,
                 auctionPrice:      0,
-                debtInAuction:     5_069.682183392068152308 * 1e18,
+                debtInAuction:     5_069.682183392068152309 * 1e18,
                 thresholdPrice:    0,
                 neutralPrice:      0
             })

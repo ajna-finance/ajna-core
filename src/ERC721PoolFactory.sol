@@ -45,6 +45,7 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
      *  @dev    - `deployedPoolsList` array
      *  @dev    === Reverts on ===
      *  @dev    - `0x` address provided as quote or collateral `DeployWithZeroAddress()`
+     *  @dev    - quote lacks `decimals()` method `TokenInvalidNoDecimals()`
      *  @dev    - pool with provided quote / collateral pair already exists `PoolAlreadyExists()`
      *  @dev    - invalid interest rate provided `PoolInterestRateInvalid()`
      *  @dev    - not supported `NFT` provided `NFTNotSupported()`
@@ -55,7 +56,12 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
         address collateral_, address quote_, uint256[] memory tokenIds_, uint256 interestRate_
     ) external canDeploy(collateral_, quote_, interestRate_) returns (address pool_) {
         bytes32 subsetHash = getNFTSubsetHash(tokenIds_);
-        if (deployedPools[subsetHash][collateral_][quote_] != address(0)) revert IPoolFactory.PoolAlreadyExists();
+
+        address existingPool = deployedPools[subsetHash][collateral_][quote_];
+        if (existingPool != address(0)) revert IPoolFactory.PoolAlreadyExists(existingPool);
+
+        // quote token must have decimals() method or pool is invalid
+        if (!hasDecimalsMethod(quote_)) revert IPoolFactory.TokenInvalidNoDecimals();
 
         uint256 quoteTokenScale = 10**(18 - IERC20Token(quote_).decimals());
 
@@ -85,6 +91,16 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
         emit PoolCreated(pool_);
 
         pool.initialize(tokenIds_, interestRate_);
+    }
+
+    /**
+     *  @dev                Create a new pool that accepts any token in a NFT collection
+     *  @param collateral_  The NFT collateral token address
+     *  @param quote_       The borrower quote token address
+     *  @return pool_       The address of the new pool
+     */
+    function deployPool(address collateral_, address quote_, uint256 interestRate_) public returns (address pool_) {
+        pool_ = this.deployPool(collateral_, quote_, new uint256[](0), interestRate_);
     }
 
     /*******************************/

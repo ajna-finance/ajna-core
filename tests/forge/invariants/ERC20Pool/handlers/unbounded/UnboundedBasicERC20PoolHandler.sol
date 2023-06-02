@@ -2,11 +2,15 @@
 
 pragma solidity 0.8.18;
 
-import { ERC20Pool }                         from 'src/ERC20Pool.sol';
-import { ERC20PoolFactory }                  from 'src/ERC20PoolFactory.sol';
-import { PoolInfoUtils }                     from 'src/PoolInfoUtils.sol';
-import { _borrowFeeRate, _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
-import { Maths }                             from "src/libraries/internal/Maths.sol";
+import { ERC20Pool }        from 'src/ERC20Pool.sol';
+import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
+import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
+import {
+    _borrowFeeRate,
+    _depositFeeRate,
+    _roundToScale
+}                           from 'src/libraries/helpers/PoolHelper.sol';
+import { Maths }            from "src/libraries/internal/Maths.sol";
 
 import { UnboundedBasicPoolHandler } from "../../../base/handlers/unbounded/UnboundedBasicPoolHandler.sol";
 import { BaseERC20PoolHandler }      from './BaseERC20PoolHandler.sol';
@@ -130,6 +134,8 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
         (uint256 interestRate, ) = _erc20Pool.interestRateInfo();
 
         try _erc20Pool.drawDebt(_actor, amount_, 7388, collateralToPledge) {
+            // amount is rounded by pool to token scale
+            amount_ = _roundToScale(amount_, _pool.quoteTokenScale());
 
             // **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
             increaseInReserves += Maths.wmul(
@@ -163,6 +169,6 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
         if (amount_> normalizedActorBalance ) {
             _collateral.mint(actor_, amount_ - normalizedActorBalance);
         }
-        _collateral.approve(address(_pool), amount_);
+        _collateral.approve(address(_pool), _collateral.balanceOf(actor_));
     }
 }

@@ -244,7 +244,7 @@ library LenderActions {
             revert InvalidAmount();
         if (params_.fromIndex == params_.toIndex)
             revert MoveToSameIndex();
-        if (params_.maxAmountToMove != 0 && params_.maxAmountToMove < poolState_.quoteDustLimit)
+        if (params_.maxAmountToMove != 0 && params_.maxAmountToMove < poolState_.quoteTokenScale)
             revert DustAmountNotExceeded();
         if (params_.toIndex == 0 || params_.toIndex > MAX_FENWICK_INDEX) 
             revert InvalidIndex();
@@ -278,7 +278,7 @@ library LenderActions {
                 bucketCollateral:  vars.fromBucketCollateral,
                 price:             vars.fromBucketPrice,
                 index:             params_.fromIndex,
-                dustLimit:         poolState_.quoteDustLimit
+                dustLimit:         poolState_.quoteTokenScale
             })
         );
 
@@ -401,7 +401,7 @@ library LenderActions {
         removeParams.bucketLP          = bucket.lps;
         removeParams.bucketCollateral  = bucket.collateral;
         removeParams.index             = params_.index;
-        removeParams.dustLimit         = poolState_.quoteDustLimit;
+        removeParams.dustLimit         = poolState_.quoteTokenScale;
 
         uint256 unscaledRemaining;
 
@@ -506,7 +506,7 @@ library LenderActions {
             amount_ = bucketCollateral;
         }
 
-        bucketCollateral  -= Maths.min(bucketCollateral, amount_);
+        bucketCollateral  -= amount_;
         bucket.collateral = bucketCollateral;
 
         // check if bucket healthy after collateral remove - set bankruptcy if collateral and deposit are 0 but there's still LP

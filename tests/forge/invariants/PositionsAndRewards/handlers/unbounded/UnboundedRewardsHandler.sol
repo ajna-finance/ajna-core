@@ -85,7 +85,7 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
     ) internal {
         numberOfCalls['UBRewardsHandler.claimRewards']++;
 
-        try _rewards.claimRewards(tokenId_, epoch_) {
+        try _rewards.claimRewards(tokenId_, epoch_, 0) {
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }

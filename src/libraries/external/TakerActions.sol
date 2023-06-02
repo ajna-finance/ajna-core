@@ -293,7 +293,7 @@ library TakerActions {
             uint256 price     = _reserveAuctionPrice(kicked);
 
             amount_       = Maths.min(unclaimed, maxAmount_);
-            ajnaRequired_ = Maths.wmul(amount_, price);
+            ajnaRequired_ = Maths.ceilWmul(amount_, price);
 
             unclaimed -= amount_;
 
@@ -512,7 +512,7 @@ library TakerActions {
             loans_,
             poolState_.debt,
             borrowerDebt,
-            poolState_.quoteDustLimit
+            poolState_.quoteTokenScale
         );
 
         // calculate new lup with repaid debt from take

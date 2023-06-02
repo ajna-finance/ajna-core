@@ -11,8 +11,8 @@ interface IERC20PoolEvents {
      *  @notice Emitted when actor adds claimable collateral to a bucket.
      *  @param  actor     Recipient that added collateral.
      *  @param  index     Index at which collateral were added.
-     *  @param  amount    Amount of collateral added to the pool.
-     *  @param  lpAwarded Amount of `LP` awarded for the deposit. 
+     *  @param  amount    Amount of collateral added to the pool (`WAD` precision).
+     *  @param  lpAwarded Amount of `LP` awarded for the deposit (`WAD` precision).
      */
     event AddCollateral(
         address indexed actor,
@@ -24,8 +24,8 @@ interface IERC20PoolEvents {
     /**
      *  @notice Emitted when borrower draws debt from the pool, or adds collateral to the pool.
      *  @param  borrower          The borrower to whom collateral was pledged, and/or debt was drawn for.
-     *  @param  amountBorrowed    Amount of quote tokens borrowed from the pool.
-     *  @param  collateralPledged Amount of collateral locked in the pool.
+     *  @param  amountBorrowed    Amount of quote tokens borrowed from the pool (`WAD` precision).
+     *  @param  collateralPledged Amount of collateral locked in the pool (`WAD` precision).
      *  @param  lup               `LUP` after borrow.
      */
     event DrawDebt(

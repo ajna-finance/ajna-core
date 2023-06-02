@@ -10,12 +10,15 @@ interface IRewardsManagerOwnerActions {
     /**
      *  @notice Claim `Ajna` token rewards that have accrued to a staked `LP` `NFT`.
      *  @dev    Updates exchange rates for each bucket the `NFT` is associated with.
+     *  @dev    Reverts with `InsufficientLiquidity` if calculated rewards or contract balance is below specified min amount to receive limit.
      *  @param  tokenId_      `ID` of the staked `LP` `NFT`.
      *  @param  epochToClaim_ The burn epoch to claim rewards for.
+     *  @param  minAmount_    Minimum amount to be received by rewards claimer.
      */
     function claimRewards(
         uint256 tokenId_,
-        uint256 epochToClaim_
+        uint256 epochToClaim_,
+        uint256 minAmount_
     ) external;
 
     /**
