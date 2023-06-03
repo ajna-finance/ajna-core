@@ -156,7 +156,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *  @inheritdoc IPositionManagerOwnerActions
      *  @dev    === Write state ===
      *  @dev    `_nonces`: remove `tokenId` nonce
-     *  @dev    `tokenInfo`: remove `tokenId => TokenINfo` mapping
+     *  @dev    `tokenInfo`: remove `tokenId => TokenInfo` mapping
      *  @dev    === Revert on ===
      *  @dev    - `mayInteract`:
      *  @dev       token id is not a valid / minted id
