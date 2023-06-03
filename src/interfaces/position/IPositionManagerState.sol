@@ -10,6 +10,16 @@ import { EnumerableSet } from '@openzeppelin/contracts/utils/structs/EnumerableS
 interface IPositionManagerState {
 
     /**
+    * @dev Struct holding Position `LP` state.
+    * @param lps         [WAD] position LP.
+    * @param depositTime Deposit time for position
+    */
+    struct Position {
+        uint256 lps;
+        uint256 depositTime;
+    }
+
+    /**
     * @dev Struct tracking a position token info.
     * @param pool            The pool address associated with the position.
     * @param adjustmentTime  The time of last adjustment to the position.
@@ -21,16 +31,6 @@ interface IPositionManagerState {
         uint96 adjustmentTime;
         EnumerableSet.UintSet positionIndexes;
         mapping(uint256 index => Position) positions;
-    }
-
-    /**
-    * @dev Struct holding Position `LP` state.
-    * @param lps         [WAD] position LP.
-    * @param depositTime Deposit time for position
-    */
-    struct Position {
-        uint256 lps;
-        uint256 depositTime;
     }
 
 }
