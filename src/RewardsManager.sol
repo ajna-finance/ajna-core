@@ -91,6 +91,11 @@ contract RewardsManager is IRewardsManager {
     /*** Constructor ***/
     /*******************/
 
+    /**
+     *  @notice Deploys the RewardsManager contract.
+     *  @param ajnaToken_ Address of the token which will be distributed to staked Position owners.
+     *  @param positionManager_ Address of the PositionManager contract.
+     */
     constructor(address ajnaToken_, IPositionManager positionManager_) {
         if (
             ajnaToken_ == address(0) || address(positionManager_) == address(0)
@@ -157,13 +162,13 @@ contract RewardsManager is IRewardsManager {
         stakeInfo.owner    = msg.sender;
         stakeInfo.ajnaPool = ajnaPool;
 
-        uint256 curBurnEpoch = IPool(ajnaPool).currentBurnEpoch();
+        uint96 curBurnEpoch = uint96(IPool(ajnaPool).currentBurnEpoch());
 
         // record the staking epoch
-        stakeInfo.stakingEpoch = uint96(curBurnEpoch);
+        stakeInfo.stakingEpoch = curBurnEpoch;
 
         // initialize last time interaction at staking epoch
-        stakeInfo.lastClaimedEpoch = uint96(curBurnEpoch);
+        stakeInfo.lastClaimedEpoch = curBurnEpoch;
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
         uint256 noOfPositions = positionIndexes.length;
@@ -381,11 +386,12 @@ contract RewardsManager is IRewardsManager {
         uint256 bucketIndex;
         uint256 interestEarned;
 
-        // iterate through all buckets and calculate epoch rewards for
+        // iterate through all buckets and calculate epoch rewards for each bucket
+        StakeInfo storage _stakeInfo = stakes[tokenId_];
         uint256 noOfPositions = positionIndexes_.length;
         for (uint256 i = 0; i < noOfPositions; ) {
             bucketIndex = positionIndexes_[i];
-            BucketState memory bucketSnapshot = stakes[tokenId_].snapshot[bucketIndex];
+            BucketState storage bucketSnapshot = _stakeInfo.snapshot[bucketIndex];
 
             uint256 bucketRate;
             if (epoch_ != stakingEpoch_) {
@@ -549,12 +555,10 @@ contract RewardsManager is IRewardsManager {
         uint256 lastClaimedEpoch_,
         uint256 burnEpochToStartClaim_
     ) internal pure returns (uint256[] memory burnEpochsClaimed_) {
-        uint256 numEpochsClaimed = burnEpochToStartClaim_ - lastClaimedEpoch_;
-
-        burnEpochsClaimed_ = new uint256[](numEpochsClaimed);
+        burnEpochsClaimed_ = new uint256[](burnEpochToStartClaim_ - lastClaimedEpoch_);
 
         uint256 i;
-        uint256 claimEpoch = lastClaimedEpoch_ + 1;
+        uint256 claimEpoch = ++lastClaimedEpoch_;
         while (claimEpoch <= burnEpochToStartClaim_) {
             burnEpochsClaimed_[i] = claimEpoch;
 
@@ -595,7 +599,7 @@ contract RewardsManager is IRewardsManager {
                 ,
                 uint256 totalInterestPrev,
                 uint256 totalBurnedPrev
-            ) = IPool(pool_).burnInfo(epoch_ - 1);
+            ) = IPool(pool_).burnInfo(--epoch_);
 
             // calculate total tokens burned and interest earned in epoch
             tokensBurned_   = totalBurnedLatest   != 0 ? totalBurnedLatest   - totalBurnedPrev   : 0;
@@ -689,14 +693,16 @@ contract RewardsManager is IRewardsManager {
         uint256 bucketIndex_,
         uint256 burnEpoch_
     ) internal {
-        uint256 burnExchangeRate = bucketExchangeRates[pool_][bucketIndex_][burnEpoch_];
+        // cache storage pointer for reduced gas
+        mapping(uint256 => uint256) storage _bucketExchangeRates = bucketExchangeRates[pool_][bucketIndex_];
+        uint256 burnExchangeRate = _bucketExchangeRates[burnEpoch_];
 
         // update bucket exchange rate at epoch only if it wasn't previously updated
         if (burnExchangeRate == 0) {
             uint256 curBucketExchangeRate = IPool(pool_).bucketExchangeRate(bucketIndex_);
 
             // record bucket exchange rate at epoch
-            bucketExchangeRates[pool_][bucketIndex_][burnEpoch_] = curBucketExchangeRate;
+            _bucketExchangeRates[burnEpoch_] = curBucketExchangeRate;
         }
     }
 
@@ -716,17 +722,19 @@ contract RewardsManager is IRewardsManager {
         uint256 totalBurned_,
         uint256 interestEarned_
     ) internal returns (uint256 rewards_) {
-        uint256 burnExchangeRate = bucketExchangeRates[pool_][bucketIndex_][burnEpoch_];
+        // cache storage pointer for reduced gas
+        mapping(uint256 => uint256) storage _bucketExchangeRates = bucketExchangeRates[pool_][bucketIndex_];
+        uint256 burnExchangeRate = _bucketExchangeRates[burnEpoch_];
 
         // update bucket exchange rate at epoch only if it wasn't previously updated
         if (burnExchangeRate == 0) {
             uint256 curBucketExchangeRate = IPool(pool_).bucketExchangeRate(bucketIndex_);
 
             // record bucket exchange rate at epoch
-            bucketExchangeRates[pool_][bucketIndex_][burnEpoch_] = curBucketExchangeRate;
+            _bucketExchangeRates[burnEpoch_] = curBucketExchangeRate;
 
             // retrieve the bucket exchange rate at the previous epoch
-            uint256 prevBucketExchangeRate = bucketExchangeRates[pool_][bucketIndex_][burnEpoch_ - 1];
+            uint256 prevBucketExchangeRate = _bucketExchangeRates[--burnEpoch_];
 
             // skip reward calculation if update at the previous epoch was missed and if exchange rate decreased due to bad debt
             // prevents excess rewards from being provided from using a 0 value as an input to the interestFactor calculation below.
@@ -738,7 +746,7 @@ contract RewardsManager is IRewardsManager {
                 uint256 burnFactor = Maths.wmul(totalBurned_, bucketDeposit);
 
                 // calculate rewards earned for updating bucket exchange rate 
-                rewards_ += interestEarned_ == 0 ? 0 : Maths.wdiv(
+                rewards_ = interestEarned_ == 0 ? 0 : Maths.wdiv(
                     Maths.wmul(
                         UPDATE_CLAIM_REWARD,
                         Maths.wmul(
