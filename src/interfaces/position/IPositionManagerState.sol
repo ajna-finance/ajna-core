@@ -2,25 +2,35 @@
 
 pragma solidity 0.8.18;
 
+import { EnumerableSet } from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+
 /**
  * @title Positions Manager State
  */
 interface IPositionManagerState {
 
     /**
-     * @dev Struct tracking a Position's global state.
-     * @param pool The pool address associated with the position.
-     * @param adjustmentTime The time of last adjustment to the position.
-     */
+    * @dev Struct tracking a position token info.
+    * @param pool            The pool address associated with the position.
+    * @param adjustmentTime  The time of last adjustment to the position.
+    * @param positionIndexes Mapping tracking indexes to which a position is associated.
+    * @param positions       Mapping tracking a positions state in a bucket index.
+    */
     struct TokenInfo {
-        address pool;       // pool address associated with the position
-        uint96 adjustmentTime; // time of last adjustment to the position
+        address pool;
+        uint96 adjustmentTime;
+        EnumerableSet.UintSet positionIndexes;
+        mapping(uint256 index => Position) positions;
     }
 
-}
+    /**
+    * @dev Struct holding Position `LP` state.
+    * @param lps         [WAD] position LP.
+    * @param depositTime Deposit time for position
+    */
+    struct Position {
+        uint256 lps;
+        uint256 depositTime;
+    }
 
-/// @dev Struct holding Position `LP` state.
-struct Position {
-    uint256 lps;         // [WAD] position LP
-    uint256 depositTime; // deposit time for position
 }
