@@ -182,8 +182,8 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *  @dev    - `lenderInfo()`: get lender position in bucket
      *  @dev    - `transferLP()`: transfer `LP` ownership to `PositionManager` contract
      *  @dev    === Write state ===
-     *  @dev    `positionIndexes`: add bucket index
-     *  @dev    `positions`: update `tokenId => bucket id` position
+     *  @dev    `TokenInfo.positionIndexes`: add bucket index
+     *  @dev    `TokenInfo.positions`: update `tokenId => bucket id` position
      *  @dev    === Revert on ===
      *  @dev    - `mayInteract`:
      *  @dev       token id is not a valid / minted id
@@ -288,10 +288,10 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *  @dev    `bucketInfo()`: get from bucket info
      *  @dev    `moveQuoteToken()`: move liquidity between buckets
      *  @dev    === Write state ===
-     *  @dev    `positionIndexes`: remove from bucket index
-     *  @dev    `positionIndexes`: add to bucket index
-     *  @dev    `positions`: update from bucket position
-     *  @dev    `positions`: update to bucket position
+     *  @dev    `TokenInfo.positionIndexes`: remove from bucket index
+     *  @dev    `TokenInfo.positionIndexes`: add to bucket index
+     *  @dev    `TokenInfo.positions`: update from bucket position
+     *  @dev    `TokenInfo.positions`: update to bucket position
      *  @dev    === Revert on ===
      *  @dev    - `mayInteract`:
      *  @dev      token id is not a valid / minted id
