@@ -8,13 +8,15 @@ pragma solidity 0.8.18;
 interface IPositionManagerState {
 
     /**
-     *  @notice Returns the pool address associated with a positions `NFT`.
-     *  @param  tokenId_ The token id of the positions `NFT`.
-     *  @return Pool address associated with the `NFT`.
+     * @dev Struct tracking a Position's global state.
+     * @param pool The pool address associated with the position.
+     * @param adjustmentTime The time of last adjustment to the position.
      */
-    function poolKey(
-        uint256 tokenId_
-    ) external view returns (address);
+    struct TokenInfo {
+        address pool;       // pool address associated with the position
+        uint96 adjustmentTime; // time of last adjustment to the position
+    }
+
 }
 
 /// @dev Struct holding Position `LP` state.

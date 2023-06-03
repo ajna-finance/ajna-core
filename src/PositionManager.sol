@@ -54,17 +54,12 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     /*** State Variables ***/
     /***********************/
 
-    // /// @dev Mapping of `token id => ajna pool address` for which token was minted.
-    // mapping(uint256 => address) public override poolKey;
-
-    /// @dev Mapping of `token id => index` for which token was minted.
-    mapping(uint256 => mapping(uint256 => Position)) internal positions;
-    /// @dev Mapping of `token id => bucket indexes` associated with position.
-    mapping(uint256 => EnumerableSet.UintSet)        internal positionIndexes;
-    // /// @dev Mapping of `token id => last redeem timestamp`.
-    // mapping(uint256 => uint256)                      internal adjustmentTime;
-
-    mapping(uint256 => TokenInfo) tokenInfo;
+    /// @dev Mapping tracking a positions state in a bucket index.
+    mapping(uint256 tokenId => mapping(uint256 index => Position)) internal positions;
+    /// @dev Mapping tracking indexes to which a position is associated.
+    mapping(uint256 tokenId => EnumerableSet.UintSet)              internal positionIndexes;
+    /// @dev Mapping tracking information about a position.
+    mapping(uint256 tokenId => TokenInfo)                          internal tokenInfo;
 
     /// @dev Id of the next token that will be minted. Skips `0`.
     uint176 private _nextId = 1;
@@ -101,11 +96,6 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         uint256 lpBalance;   // Lender lp balance in a bucket
         uint256 depositTime; // Lender deposit time in a bucket
         uint256 allowance;   // Lp allowance for a bucket
-    }
-
-    struct TokenInfo {
-        address pool;       // pool address associated with the position
-        uint96 adjustmentTime; // time of last adjustment to the position
     }
 
     /*****************/
@@ -166,7 +156,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *  @inheritdoc IPositionManagerOwnerActions
      *  @dev    === Write state ===
      *  @dev    `_nonces`: remove `tokenId` nonce
-     *  @dev    `poolKey`: remove `tokenId => pool` mapping
+     *  @dev    `tokenInfo`: remove `tokenId => TokenINfo` mapping
      *  @dev    === Revert on ===
      *  @dev    - `mayInteract`:
      *  @dev       token id is not a valid / minted id
@@ -272,7 +262,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     /**
      *  @inheritdoc IPositionManagerOwnerActions
      *  @dev    === Write state ===
-     *  @dev    `poolKey`: update `tokenId => pool` mapping
+     *  @dev    `tokenInfo`: update `tokenId => TokenInfo` mapping
      *  @dev    === Revert on ===
      *  @dev    provided pool not valid `NotAjnaPool()`
      *  @dev    === Emit events ===
@@ -594,7 +584,8 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         );
     }
 
-    function poolKey(uint256 tokenId_) external view returns (address) {
+    /// @inheritdoc IPositionManagerDerivedState
+    function poolKey(uint256 tokenId_) external view override returns (address) {
         return tokenInfo[tokenId_].pool;
     }
 
