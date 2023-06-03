@@ -121,8 +121,6 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         // revert if the token id is not minted for given pool address
         if (pool_ != poolKey[tokenId_]) revert WrongPool();
 
-        // TODO: verify that the pool is a valid ajna pool: https://github.com/code-423n4/2023-05-ajna-findings/blob/main/data/Bason-Q.md#-l-01--not-verifying-that-params_pool-is-valid-pool-address----------------------------------------------
-
         _;
     }
 
