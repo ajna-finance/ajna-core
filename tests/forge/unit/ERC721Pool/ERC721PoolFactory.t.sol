@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
-import { ERC721HelperContract }      from './ERC721DSTestPlus.sol';
+import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
+
 import { NFTCollateralToken, TokenWithNDecimals } from '../../utils/Tokens.sol';
+import { ERC20NoDecimals }                        from '../../utils/ContractERC20NoDecimals.sol';
 
 import { ERC721Pool }        from 'src/ERC721Pool.sol';
 import { ERC721PoolFactory } from 'src/ERC721PoolFactory.sol';
@@ -84,6 +86,16 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         _NFTSubsetOnePool.initialize(_tokenIdsSubsetOne, 0.05 * 10**18);
     }
 
+    function testDeployERC721CollectionPoolWithNoSubset() external {
+        _collateral  = new NFTCollateralToken();
+        _quote       = new TokenWithNDecimals("Quote", "Q", 18);
+
+        address _pool = _factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+
+        assertTrue(_pool != address(0), "ERC721PoolFactory/pool-not-created");
+        assertEq(_factory.getNumberOfDeployedPools(),  4, "ERC721PoolFactory/pool-value-incorrect");
+    }
+
     /*******************************/
     /*** ERC721 Collection Tests ***/
     /*******************************/
@@ -104,17 +116,39 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
             quote:        address(0),
             interestRate: 0.05 * 10**18
         });
-        
+
         // check tracking of deployed pools
         assertEq(_factory.getDeployedPoolsList().length,  3);
         assertEq(_factory.getNumberOfDeployedPools(), 3);
+    }
+
+    function testDeployERC721PoolWithNoncompliantDecimals() external {
+
+        ERC20NoDecimals noDecToken = new ERC20NoDecimals("NoDec", "ND");
+
+        // should revert if trying to deploy with token that doesn't have decimals() method
+        _assertTokenDecimalsNotCompliant({
+            poolFactory:  address(_poolFactory),
+            collateral:   address(_collateral),
+            quote:        address(noDecToken),
+            interestRate: 0.05 * 10**18
+        });
+
+        // should revert if trying to deploy with token with more than 18 decimals
+        TokenWithNDecimals nonCompliantToken = new TokenWithNDecimals("NonCompliant", "NC", 19);
+        _assertTokenDecimalsNotCompliant({
+            poolFactory:  address(_poolFactory),
+            collateral:   address(_collateral),
+            quote:        address(nonCompliantToken),
+            interestRate: 0.05 * 10**18
+        });
     }
 
     function testDeployERC721CollectionPoolWithInvalidRate() external {
         // should revert if trying to deploy with interest rate lower than accepted
         _assertDeployWithInvalidRateRevert({
             poolFactory:  address(_factory),
-            collateral:   address(new NFTCollateralToken()),
+            collateral:   address(_collateral),
             quote:        address(_quote),
             interestRate: 10**18
         });
@@ -122,7 +156,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         // should revert if trying to deploy with interest rate higher than accepted
         _assertDeployWithInvalidRateRevert({
             poolFactory:  address(_factory),
-            collateral:   address(new NFTCollateralToken()),
+            collateral:   address(_collateral),
             quote:        address(_quote),
             interestRate: 2 * 10**18
         });
@@ -154,9 +188,9 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
     function testDeployERC721PoolWithMinRate() external {
         _factory.deployPool(
-            address(new NFTCollateralToken()), 
-            address(new TokenWithNDecimals("Quote", "Q1", 18)), 
-            tokenIds, 
+            address(new NFTCollateralToken()),
+            address(new TokenWithNDecimals("Quote", "Q1", 18)),
+            tokenIds,
             0.01 * 10**18
         );
 
@@ -167,9 +201,9 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
     function testDeployERC721PoolWithMaxRate() external {
         _factory.deployPool(
-            address(new NFTCollateralToken()), 
-            address(new TokenWithNDecimals("Quote", "Q1", 18)), 
-            tokenIds, 
+            address(new NFTCollateralToken()),
+            address(new TokenWithNDecimals("Quote", "Q1", 18)),
+            tokenIds,
             0.1 * 10**18
         );
 
@@ -278,7 +312,15 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         assertEq(_factory.getDeployedPoolsList()[3],     poolAddress);
         assertEq(_factory.deployedPoolsList(3),          poolAddress);
 
-        vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
+        address deployed = _factory.deployedPools(
+            keccak256(abi.encode(tokenIdsTestSubset)),
+            address(_collateral),
+            address(_quote)
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(bytes4(keccak256("PoolAlreadyExists(address)")),
+            deployed)
+        );
         _factory.deployPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.05 * 10**18);
 
         assertEq(_factory.getDeployedPoolsList().length,  4);
@@ -323,9 +365,9 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
         vm.expectRevert(IPoolFactory.DeployQuoteCollateralSameToken.selector);
         _factory.deployPool(
-            address(NFTCollectionAddress), 
-            address(NFTCollectionAddress), 
-            tokenIds, 
+            address(NFTCollectionAddress),
+            address(NFTCollectionAddress),
+            tokenIds,
             0.5 * 10**18
         );
     }

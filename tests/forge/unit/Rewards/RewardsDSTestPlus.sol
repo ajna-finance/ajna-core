@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import 'src/RewardsManager.sol';
 import 'src/PoolInfoUtils.sol';
@@ -36,13 +36,6 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
 
     uint256 internal REWARDS_CAP = 0.8 * 1e18;
 
-    struct MintAndMemorializeParams {
-        uint256[] indexes;
-        address minter;
-        uint256 mintAmount;
-        IPool pool;
-    }
-
     struct TriggerReserveAuctionParams {
         address borrower;
         uint256 borrowAmount;
@@ -75,56 +68,67 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         uint256[] memory indexes,
         uint256 updateExchangeRatesReward
     ) internal {
-
         changePrank(owner);
+
+        // unstake using emergency (without claiming rewards)
+        uint256 preEmergency = vm.snapshot();
+        _emergencyUnstakeToken(owner, pool, tokenId);
+        _assertUnstakeInvariants(owner, tokenId);
+        vm.revertTo(preEmergency);
+
+        // unstake gracefully (with claimed rewards)
+        _unstakeTokenGracefully(
+            owner,
+            pool,
+            claimedArray,
+            tokenId,
+            reward,
+            indexes,
+            updateExchangeRatesReward
+        );
+        _assertUnstakeInvariants(owner, tokenId);
+    }
+
+    function _unstakeTokenGracefully(
+        address owner,
+        address pool,
+        uint256[] memory claimedArray,
+        uint256 tokenId,
+        uint256 reward,
+        uint256[] memory indexes,
+        uint256 updateExchangeRatesReward
+    ) internal {
 
         // when the token is unstaked updateExchangeRates emits
         vm.expectEmit(true, true, true, true);
         emit UpdateExchangeRates(owner, pool, indexes, updateExchangeRatesReward);
 
-        // when the token is unstaked claimRewards emits
-        vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(owner, pool,  tokenId, claimedArray, reward);
+        if (claimedArray.length != 0) {
+            // when the token is unstaked claimRewards emits
+            vm.expectEmit(true, true, true, true);
+            emit ClaimRewards(owner, pool,  tokenId, claimedArray, reward);
+        }
 
         // when the token is unstaked unstake emits
         vm.expectEmit(true, true, true, true);
         emit Unstake(owner, address(pool), tokenId);
         _rewardsManager.unstake(tokenId);
-        assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId), owner);
 
-        // check token was transferred from rewards contract to minter
-        assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId), owner);
-
-        // invariant: all bucket snapshots are removed for the token id that was unstaken
-        for (uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
-            (uint256 lps, uint256 rate) = _rewardsManager.getBucketStateStakeInfo(tokenId, bucketIndex);
-            assertEq(lps, 0);
-            assertEq(rate, 0);
-        }
-
-        (address ownerInf, address poolInf, uint256 interactionBlockInf) = _rewardsManager.getStakeInfo(tokenId);
-        assertEq(ownerInf, address(0));
-        assertEq(poolInf, address(0));
-        assertEq(interactionBlockInf, 0);
+        // check exchange rates were updated
+        uint256 updateEpoch = IPool(pool).currentBurnEpoch();
+        _assertBucketsUpdated(pool, indexes, updateEpoch);
     }
 
-    function _assertBurn(
+    function _emergencyUnstakeToken(
+        address owner,
         address pool,
-        uint256 epoch,
-        uint256 timestamp,
-        uint256 interest,
-        uint256 burned,
-        uint256 tokensToBurn
-        ) internal {
-
-        (uint256 bETimestamp, uint256 bEInterest, uint256 bEBurned) = IPool(pool).burnInfo(epoch);
-
-        assertEq(bETimestamp, timestamp);
-        assertEq(bEInterest,  interest);
-        assertEq(bEBurned,    burned);
-        assertEq(burned,      tokensToBurn);
+        uint256 tokenId
+    ) internal {
+        // when the token is unstaked in emergency mode then no cliam event is emitted
+        vm.expectEmit(true, true, true, true);
+        emit Unstake(owner, address(pool), tokenId);
+        _rewardsManager.emergencyUnstake(tokenId);
     }
-
 
     function _updateExchangeRates(
         address updater,
@@ -135,9 +139,12 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         changePrank(updater);
         vm.expectEmit(true, true, true, true);
         emit UpdateExchangeRates(updater, pool, indexes, reward);
-        _rewardsManager.updateBucketExchangeRatesAndClaim(pool, indexes);
-    }
+        _rewardsManager.updateBucketExchangeRatesAndClaim(pool, keccak256("ERC20_NON_SUBSET_HASH"), indexes);
 
+        // check exchange rates were updated
+        uint256 updateEpoch = IPool(pool).currentBurnEpoch();
+        _assertBucketsUpdated(pool, indexes, updateEpoch);
+    }
 
     function _epochsClaimedArray(uint256 numberOfAuctions_, uint256 lastClaimed_) internal pure returns (uint256[] memory epochsClaimed_) {
         epochsClaimed_ = new uint256[](numberOfAuctions_);
@@ -153,49 +160,72 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         address from,
         address pool,
         uint256 tokenId,
+        uint256 minAmountToReceive,
         uint256 reward,
         uint256[] memory epochsClaimed
     ) internal {
         changePrank(from);
-        uint256 fromAjnaBal = _ajnaToken.balanceOf(from);
+        uint256 fromAjnaBal       = _ajnaToken.balanceOf(from);
+
+        uint256 managerBalance    = _ajnaToken.balanceOf(address(_rewardsManager));
+        uint256 rewardTransferred = Maths.min(reward, managerBalance);
 
         uint256 currentBurnEpoch = IPool(pool).currentBurnEpoch();
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(from, pool, tokenId, epochsClaimed, reward);
-        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch, minAmountToReceive);
 
-        assertEq(_ajnaToken.balanceOf(from), fromAjnaBal + reward);
+        assertEq(_ajnaToken.balanceOf(from), fromAjnaBal + rewardTransferred);
     }
 
-    function _moveStakedLiquidity(
-        address from,
-        uint256 tokenId,
-        uint256[] memory fromIndexes,
-        uint256[] memory lpsRedeemed,
-        bool fromIndStaked,
-        uint256[] memory toIndexes,
-        uint256[] memory lpsAwarded,
-        uint256 expiry
+    /***************/
+    /*** Asserts ***/
+    /***************/
+
+    function _assertUnstakeInvariants(address owner_, uint256 tokenId_) internal {
+        assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId_), owner_);
+
+        // check token was transferred from rewards contract to minter
+        assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId_), owner_);
+
+        // invariant: all bucket snapshots are removed for the token id that was unstaked
+        for (uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
+            (uint256 lps, uint256 rate) = _rewardsManager.getBucketStateStakeInfo(tokenId_, bucketIndex);
+            assertEq(lps, 0);
+            assertEq(rate, 0);
+        }
+
+        (address ownerInf, address poolInf, uint256 interactionBlockInf) = _rewardsManager.getStakeInfo(tokenId_);
+        assertEq(ownerInf, address(0));
+        assertEq(poolInf, address(0));
+        assertEq(interactionBlockInf, 0);
+    }
+
+    function _assertBurn(
+        address pool,
+        uint256 epoch,
+        uint256 timestamp,
+        uint256 interest,
+        uint256 burned,
+        uint256 tokensToBurn
     ) internal {
-        
-        changePrank(from);
+        (uint256 bETimestamp, uint256 bEInterest, uint256 bEBurned) = IPool(pool).burnInfo(epoch);
 
-        // check MoveLiquidity emits
-        for (uint256 i = 0; i < fromIndexes.length; ++i) {
-            vm.expectEmit(true, true, true, true);
-            emit MoveLiquidity(address(_rewardsManager), tokenId, fromIndexes[i], toIndexes[i], lpsRedeemed[i], lpsAwarded[i]);
+        assertEq(bETimestamp, timestamp);
+        assertEq(bEInterest,  interest);
+        assertEq(bEBurned,    burned);
+        assertEq(burned,      tokensToBurn);
+    }
+
+    // check that an array of bucket indexes had their exchange rates updated
+    function _assertBucketsUpdated(
+        address pool_,
+        uint256[] memory indexes_,
+        uint256 epoch_
+    ) internal {
+        for (uint256 i = 0; i < indexes_.length; ++i) {
+            assertTrue(_rewardsManager.isBucketUpdated(pool_, indexes_[i], epoch_));
         }
-
-        vm.expectEmit(true, true, true, true);
-        emit MoveStakedLiquidity(tokenId, fromIndexes, toIndexes);
-
-        if (fromIndStaked) {
-            // check exchange rates are updated
-            vm.expectEmit(true, true, true, true);
-            emit UpdateExchangeRates(_minterOne, address(_pool), toIndexes, 0);
-        }
-        _rewardsManager.moveStakedLiquidity(tokenId, fromIndexes, toIndexes, expiry);
-
     }
 
     function _assertNotOwnerOfDepositRevert(address from , uint256 tokenId) internal {
@@ -203,23 +233,37 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         changePrank(from);
         uint256 currentBurnEpoch = _pool.currentBurnEpoch();
         vm.expectRevert(IRewardsManagerErrors.NotOwnerOfDeposit.selector);
-        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch, 0);
     }
 
     function _assertNotOwnerOfDepositUnstakeRevert(address from , uint256 tokenId) internal {
-        // check only deposit owner can claim rewards
+        // check only deposit owner can unstake
         changePrank(from);
-        uint256 currentBurnEpoch = _pool.currentBurnEpoch();
         vm.expectRevert(IRewardsManagerErrors.NotOwnerOfDeposit.selector);
-        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+        _rewardsManager.unstake(tokenId);
     }
 
     function _assertAlreadyClaimedRevert(address from , uint256 tokenId) internal {
-        // check only deposit owner can claim rewards
+        // check if rewards can only be claimed once
         changePrank(from);
         uint256 currentBurnEpoch = _pool.currentBurnEpoch();
         vm.expectRevert(IRewardsManagerErrors.AlreadyClaimed.selector);
-        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch, 0);
+    }
+
+    function _assertUnstakeInsufficientLiquidityRevert(address from, uint256 tokenId) internal {
+        // should revert if token balance is less than rewards to claim
+        changePrank(from);
+        vm.expectRevert(IRewardsManagerErrors.InsufficientLiquidity.selector);
+        _rewardsManager.unstake(tokenId);
+    }
+
+    function _assertClaimRewardsInsufficientLiquidityRevert(address from, uint256 tokenId, uint256 minRewardToClaim) internal {
+        // should revert if token balance is less than rewards to claim
+        changePrank(from);
+        uint256 currentBurnEpoch = _pool.currentBurnEpoch();
+        vm.expectRevert(IRewardsManagerErrors.InsufficientLiquidity.selector);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch, minRewardToClaim);
     }
 
     function _assertStake(
@@ -338,8 +382,7 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         collateral.approve(address(pool), type(uint256).max);
         quote.approve(address(pool), type(uint256).max);
 
-        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(minter, address(pool), keccak256("ERC20_NON_SUBSET_HASH"));
-        tokenId_ = _positionManager.mint(mintParams);
+        tokenId_ = _positionManager.mint(address(pool), minter, keccak256("ERC20_NON_SUBSET_HASH"));
 
         uint256[] memory lpBalances = new uint256[](indexes.length);
 
@@ -350,12 +393,7 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
 
         ERC20Pool(address(pool)).increaseLPAllowance(address(_positionManager), indexes, lpBalances);
 
-        // construct memorialize params struct
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId_, indexes
-        );
-
-        _positionManager.memorializePositions(memorializeParams);
+        _positionManager.memorializePositions(pool, tokenId_, indexes);
 
         // register position manager as lender at memorialized indexes (for LP test assertions)
         _registerLender(address(_positionManager), indexes);

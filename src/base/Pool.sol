@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { Clone }           from '@clones/Clone.sol';
 import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
@@ -52,7 +52,7 @@ import {
 import {
     _revertIfAuctionDebtLocked,
     _revertIfAuctionClearable,
-    _revertOnExpiry
+    _revertAfterExpiry
 }                               from '../libraries/helpers/RevertsHelper.sol';
 
 import { Buckets }  from '../libraries/internal/Buckets.sol';
@@ -72,7 +72,6 @@ import { PoolCommons }     from '../libraries/external/PoolCommons.sol';
  *  @dev    Base contract and entrypoint for commong logic of both `ERC20` and `ERC721` pools.
  */
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
-
     using SafeERC20 for IERC20;
 
     /*****************/
@@ -138,10 +137,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return _getArgUint256(QUOTE_SCALE);
     }
 
-    function quoteTokenDust() external pure override returns (uint256) {
-        return _getArgUint256(QUOTE_SCALE);
-    }
-
 
     /*********************************/
     /*** Lender External Functions ***/
@@ -153,11 +148,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 index_,
         uint256 expiry_
     ) external override nonReentrant returns (uint256 bucketLP_) {
-        _revertOnExpiry(expiry_);
+        _revertAfterExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         // round to token precision
-        amount_ = _roundToScale(amount_, poolState.quoteDustLimit);
+        amount_ = _roundToScale(amount_, poolState.quoteTokenScale);
 
         uint256 newLup;
         (bucketLP_, newLup) = LenderActions.addQuoteToken(
@@ -184,7 +179,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 toIndex_,
         uint256 expiry_
     ) external override nonReentrant returns (uint256 fromBucketLP_, uint256 toBucketLP_, uint256 movedAmount_) {
-        _revertOnExpiry(expiry_);
+        _revertAfterExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         _revertIfAuctionDebtLocked(deposits, poolState.t0DebtInAuction, fromIndex_, poolState.inflator);
@@ -232,7 +227,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             poolState,
             RemoveQuoteParams({
-                maxAmount:      maxAmount_,
+                maxAmount:      Maths.min(maxAmount_, _availableQuoteToken()),
                 index:          index_,
                 thresholdPrice: Loans.getMax(loans).thresholdPrice
             })
@@ -376,9 +371,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override nonReentrant {
         uint256 claimable = auctions.kickers[msg.sender].claimable;
 
-        // the amount to claim is constrained by the claimable balance of sender and by pool balance
+        // the amount to claim is constrained by the claimable balance of sender
+        // claiming escrowed bonds is not constraiend by the pool balance
         maxAmount_ = Maths.min(maxAmount_, claimable);
-        maxAmount_ = Maths.min(maxAmount_, _getNormalizedPoolQuoteTokenBalance());
 
         // revert if no amount to claim
         if (maxAmount_ == 0) revert InsufficientLiquidity();
@@ -547,7 +542,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolState_.inflator        = inflatorState.inflator;
         poolState_.rate            = interestState.interestRate;
         poolState_.poolType        = _getArgUint8(POOL_TYPE);
-        poolState_.quoteDustLimit  = _getArgUint256(QUOTE_SCALE);
+        poolState_.quoteTokenScale = _getArgUint256(QUOTE_SCALE);
 
 	    // check if t0Debt is not equal to 0, indicating that there is debt to be tracked for the pool
         if (poolState_.t0Debt != 0) {
@@ -697,21 +692,34 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /**
-     *  @notice Helper function to transfer amount of quote tokens (in quote token precision) from sender to pool contract.
+     *  @notice Helper function to transfer amount of quote tokens from sender to pool contract.
      *  @param  from_    Sender address.
-     *  @param  amount_  Amount to transfer from sender.
+     *  @param  amount_  Amount to transfer from sender (`WAD` precision). Scaled to quote token precision before transfer.
      */
     function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
-        IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransferFrom(from_, address(this), amount_ / _getArgUint256(QUOTE_SCALE));
+        // Transfer amount in favour of the pool
+        uint256 transferAmount = Maths.ceilDiv(amount_, _getArgUint256(QUOTE_SCALE));
+        IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransferFrom(from_, address(this), transferAmount);
     }
 
     /**
-     *  @notice Helper function to transfer amount of quote tokens (in quote token precision) from pool contract.
+     *  @notice Helper function to transfer amount of quote tokens from pool contract.
      *  @param  to_     Receiver address.
-     *  @param  amount_ Amount to transfer to receiver.
+     *  @param  amount_ Amount to transfer to receiver (`WAD` precision). Scaled to quote token precision before transfer.
      */
     function _transferQuoteToken(address to_, uint256 amount_) internal {
         IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransfer(to_, amount_ / _getArgUint256(QUOTE_SCALE));
+    }
+
+    /**
+     *  @notice Returns the quote token amount available to take loans or to be removed from pool.
+     *          Ensures claimable reserves and auction bonds are not used when taking loans.
+     */
+    function _availableQuoteToken() internal view returns (uint256 quoteAvailable_) {
+        uint256 poolBalance     = _getNormalizedPoolQuoteTokenBalance();
+        uint256 escrowedAmounts = auctions.totalBondEscrowed + reserveAuction.unclaimed;
+
+        if (poolBalance > escrowedAmounts) quoteAvailable_ = poolBalance - escrowedAmounts;
     }
 
     /**
@@ -819,9 +827,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             interestState.interestRate
         );
         return (
-            Maths.wmul(poolBalances.t0Debt, pendingInflator),
-            Maths.wmul(poolBalances.t0Debt, inflatorState.inflator),
-            Maths.wmul(poolBalances.t0DebtInAuction, inflatorState.inflator),
+            Maths.ceilWmul(poolBalances.t0Debt, pendingInflator),
+            Maths.ceilWmul(poolBalances.t0Debt, inflatorState.inflator),
+            Maths.ceilWmul(poolBalances.t0DebtInAuction, inflatorState.inflator),
             interestState.t0Debt2ToCollateral
         );
     }

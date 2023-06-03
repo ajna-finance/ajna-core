@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { BasicERC721PoolInvariants } from "../../invariants/ERC721Pool/BasicERC721PoolInvariants.t.sol";
 import "@std/console.sol";
@@ -15,7 +15,7 @@ contract RegressionTestBasicERC721Pool is BasicERC721PoolInvariants {
         _basicERC721PoolHandler.drawDebt(6251, 2506, 0);
         _basicERC721PoolHandler.drawDebt(5442742850703661819442539517113510923065138686636336073122798635, 3, 0);
 
-        invariant_total_interest_earned_I2();
+        invariant_interest_rate();
     }
 
     function test_regression_evm_revert_1() external {

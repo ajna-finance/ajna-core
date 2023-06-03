@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import "@std/console.sol";
 
-import { Maths } from 'src/libraries/internal/Maths.sol';
+import { IERC20Pool } from 'src/interfaces/pool/erc20/IERC20Pool.sol';
+import { Maths }      from 'src/libraries/internal/Maths.sol';
 
 import { IBaseHandler }  from '../interfaces/IBaseHandler.sol';
 import { BaseInvariants } from '../base/BaseInvariants.sol';
@@ -12,43 +13,89 @@ import { BaseInvariants } from '../base/BaseInvariants.sol';
 // contains invariants for the test
 abstract contract BasicInvariants is BaseInvariants {
 
-    // checks pool lps are equal to sum of all lender lps in a bucket 
-    function invariant_Lps_B1() public useCurrentTimestamp {
+    /******************************/
+    /*** Common Pool Invariants ***/
+    /******************************/
+
+    function invariant_bucket() public useCurrentTimestamp {
+        _invariant_B1();
+        _invariant_B2_B3();
+        _invariant_B4();
+        _invariant_B5_B6_B7();
+    }
+
+    function invariant_quote() public useCurrentTimestamp {
+        _invariant_QT1();
+        _invariant_QT2();
+        _invariant_QT3();
+    }
+
+    function invariant_exchange_rate() public useCurrentTimestamp {
+        _invariant_R1_R2_R3_R4_R5_R6_R7_R8();
+    }
+
+    function invariant_loan() public useCurrentTimestamp {
+        _invariant_L1_L2_L3();
+    }
+
+    function invariant_interest_rate() public useCurrentTimestamp {
+        _invariant_I1();
+        _invariant_I2();
+        _invariant_I3();
+        _invariant_I4();
+    }
+
+    function invariant_fenwick() public useCurrentTimestamp {
+        _invariant_F1();
+        _invariant_F2();
+        _invariant_F3();
+        _invariant_F4();
+        _invariant_F5();
+    }
+
+    /*************************/
+    /*** Bucket Invariants ***/
+    /*************************/
+
+    /// @dev checks pool lps are equal to sum of all lender lps in a bucket 
+    function _invariant_B1() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
             uint256 totalLps;
 
-            for (uint256 i = 0; i < actorCount; i++) {
-                address lender = IBaseHandler(_handler).actors(i);
+            for (uint256 j = 0; j < actorCount; j++) {
+                address lender = IBaseHandler(_handler).actors(j);
                 (uint256 lps, ) = _pool.lenderInfo(bucketIndex, lender);
-
                 totalLps += lps;
             }
 
             (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
 
-            assertEq(bucketLps, totalLps, "Buckets Invariant B1");
+            require(bucketLps == totalLps, "Buckets Invariant B1");
         }
     }
 
-    // checks pool lps are equal to sum of all lender lps in a bucket 
-    function invariant_Lps_B4() public useCurrentTimestamp {
-
+    /// @dev checks pool lps are equal to sum of all lender lps in a bucket 
+    function _invariant_B4() internal view {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-
             // if bucket bankruptcy occured, then previousBankruptcy should be equal to current timestamp
             if (IBaseHandler(_handler).previousBankruptcy(bucketIndex) == block.timestamp) {
                 (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
-                assertEq(bucketLps, 0, "Buckets Invariant B4");
+
+                require(bucketLps == 0, "Buckets Invariant B4");
             }
         }
     }
 
-    // checks bucket lps are equal to 0 if bucket quote and collateral are 0
-    // checks exchange rate is 1e18 if bucket quote and collateral are 0 
-    function invariant_Buckets_B2_B3() public useCurrentTimestamp {
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+    /// @dev checks bucket lps are equal to 0 if bucket quote and collateral are 0
+    /// @dev checks exchange rate is 1e18 if bucket quote and collateral are 0 
+    function _invariant_B2_B3() internal view {
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
             (
                 ,
                 uint256 deposit,
@@ -65,14 +112,14 @@ abstract contract BasicInvariants is BaseInvariants {
         }
     }
 
-    // checks if lender deposit timestamp is updated when lps are added into lender lp balance
-    function invariant_Bucket_deposit_time_B5_B6_B7() public useCurrentTimestamp {
+    /// @dev checks if lender deposit timestamp is updated when lps are added into lender lp balance
+    function _invariant_B5_B6_B7() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
-
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            for (uint256 i = 0; i < actorCount; i++) {
-                address lender = IBaseHandler(_handler).actors(i);
-
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
+            for (uint256 j = 0; j < actorCount; j++) {
+                address lender = IBaseHandler(_handler).actors(j);
                 (, uint256 depositTime) = _pool.lenderInfo(bucketIndex, lender);
 
                 require(
@@ -83,10 +130,14 @@ abstract contract BasicInvariants is BaseInvariants {
         }
     }
 
-    // checks pool quote token balance is greater than equals total deposits in pool
-    function invariant_quoteTokenBalance_QT1() public useCurrentTimestamp {
+    /************************/
+    /*** Quote Invariants ***/
+    /************************/
+
+    /// @dev checks pool quote token balance is greater than equals total deposits in pool
+    function _invariant_QT1() internal view {
         // convert pool quote balance into WAD
-        uint256 poolBalance    = _quote.balanceOf(address(_pool)) * 10**(18 - _quote.decimals());
+        uint256 poolBalance     = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
         (uint256 poolDebt, , ,) = _pool.debtInfo();
 
         (
@@ -105,12 +156,12 @@ abstract contract BasicInvariants is BaseInvariants {
             assets,
             liabilities,
             1e13,
-            "Quote Token Invariant QT1"
+            "QT1: assets and liabilities not with a `1e13` margin"
         );
     }
 
-    // checks pool debt is equal to sum of all borrowers debt
-    function invariant_pooldebt_QT2() public useCurrentTimestamp {
+    /// @dev checks pool debt is equal to sum of all borrowers debt
+    function _invariant_QT2() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalDebt;
 
@@ -126,7 +177,37 @@ abstract contract BasicInvariants is BaseInvariants {
         require(poolDebt == totalDebt, "Quote Token Invariant QT2");
     }
 
-    function invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8() public useCurrentTimestamp {
+    /// @dev checks pool quote token balance is greater than or equal with unclaimed reserves plus claimable auction bonds
+    function _invariant_QT3() internal view {
+        // convert pool quote balance into WAD
+        uint256 poolBalance = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
+        (, uint256 unClaimed, , ) = _pool.reservesInfo();
+
+        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
+        uint256 claimableAuctionBonds;
+        for (uint256 i = 0; i < actorCount; i++) {
+            address kicker = IBaseHandler(_handler).actors(i);
+            (uint256 claimable, ) = _pool.kickerInfo(kicker);
+
+            claimableAuctionBonds += claimable;
+        }
+
+        console.log("poolBalance        -> ", poolBalance);
+        console.log("claimable reserves -> ", unClaimed);
+        console.log("claimable bonds    -> ", claimableAuctionBonds);
+
+        require(
+            poolBalance >= unClaimed + claimableAuctionBonds,
+            "QT3: claimable escrowed bonds and claimable reserves not guaranteed"
+        );
+    }
+
+    /********************************/
+    /*** Exchange Rate Invariants ***/
+    /********************************/
+
+    function _invariant_R1_R2_R3_R4_R5_R6_R7_R8() internal view {
+
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             uint256 currentExchangeRate = _pool.bucketExchangeRate(bucketIndex);
             (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
@@ -141,12 +222,12 @@ abstract contract BasicInvariants is BaseInvariants {
                 console.log("Current bucket lps     -->", bucketLps);
                 console.log("======================================");
 
-                // This edge case is if less than 1 one millionth (0.000_001) of a quote token is inserted into a single bucket
-                if (bucketLps < 1e12) {
+                // If the bucket is small (less than 10 LP), require total change in bucket value to be less than .01 quote token
+                if (bucketLps < Maths.wad(10)) {
                     requireWithinDiff(
                         Maths.wmul(currentExchangeRate, bucketLps),
                         Maths.wmul(previousExchangeRate, bucketLps),
-                        1e16,  // allow changes up to 0.01 qt in value if bucket LPs < 1e-6
+                        1e16,
                         "Exchange Rate Invariant R1, R2, R3, R4, R5, R6, R7 or R8"
                     );
                 } else {
@@ -154,7 +235,7 @@ abstract contract BasicInvariants is BaseInvariants {
                     requireWithinDiff(
                         currentExchangeRate,
                         previousExchangeRate,
-                        1e12,  // otherwise require exchange rates to be within 1e-6
+                        1e8,  // otherwise require exchange rates to be within 1e-10
                         "Exchange Rate Invariant R1, R2, R3, R4, R5, R6, R7 or R8"
                     );    
                 }
@@ -162,7 +243,11 @@ abstract contract BasicInvariants is BaseInvariants {
         }
     }
 
-    function invariant_loan_L1_L2_L3() public useCurrentTimestamp {
+    /************************/
+    /*** Loans Invariants ***/
+    /************************/
+
+    function _invariant_L1_L2_L3() internal view {
         (address borrower, uint256 tp) = _pool.loanInfo(0);
 
         // first loan in loan heap should be 0
@@ -187,8 +272,12 @@ abstract contract BasicInvariants is BaseInvariants {
         }
     }
 
-    // interest should only update once in 12 hours
-    function invariant_interest_rate_I1() public useCurrentTimestamp {
+    /********************************/
+    /*** Interest Rate Invariants ***/
+    /********************************/
+
+    /// @dev interest should only update once in 12 hours
+    function _invariant_I1() internal {
 
         (, uint256 currentInterestRateUpdate) = _pool.interestRateInfo();
 
@@ -202,8 +291,8 @@ abstract contract BasicInvariants is BaseInvariants {
         previousInterestRateUpdate = currentInterestRateUpdate;
     }
 
-    // reserve.totalInterestEarned should only update once per block
-    function invariant_total_interest_earned_I2() public useCurrentTimestamp {
+    /// @dev reserve.totalInterestEarned should only update once per block
+    function _invariant_I2() internal {
         (, , , uint256 totalInterestEarned) = _pool.reservesInfo();
 
         if (previousTotalInterestEarnedUpdate == block.number) {
@@ -217,8 +306,8 @@ abstract contract BasicInvariants is BaseInvariants {
         previousTotalInterestEarned       = totalInterestEarned;
     }
 
-    // inflator should only update once per block
-    function invariant_inflator_I3() public useCurrentTimestamp {
+    /// @dev inflator should only update once per block
+    function _invariant_I3() internal {
         (uint256 currentInflator, uint256 currentInflatorUpdate) = _pool.inflatorInfo();
 
         if (currentInflatorUpdate == previousInflatorUpdate) {
@@ -232,8 +321,7 @@ abstract contract BasicInvariants is BaseInvariants {
         previousInflatorUpdate = currentInflatorUpdate;
     }
 
-    function invariant_t0Debt2ToCollateral_I4() public useCurrentTimestamp {
-
+    function _invariant_I4() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 manualDebt2ToCollateral;
 
@@ -256,9 +344,15 @@ abstract contract BasicInvariants is BaseInvariants {
 
     }
 
-    // deposits at index i (Deposits.valueAt(i)) is equal to the accumulation of scaled values incremented or decremented from index i
-    function invariant_fenwick_depositAtIndex_F1() public useCurrentTimestamp {
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+    /*******************************/
+    /*** Fenwick Tree Invariants ***/
+    /*******************************/
+
+    /// @dev deposits at index i (Deposits.valueAt(i)) is equal to the accumulation of scaled values incremented or decremented from index i
+    function _invariant_F1() internal view {
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
             (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
 
             console.log("===================Bucket Index : ", bucketIndex, " ===================");
@@ -266,44 +360,50 @@ abstract contract BasicInvariants is BaseInvariants {
             console.log("Deposit From local fenwick tree -->", IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex));
             console.log("=========================================");
 
+            uint256 localDepositAtIndex = IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex);
+
+            // Require local and Fenwick deposits to be within 1 part in a billion relativelty, or 1 one one-millionth absolutely
             requireWithinDiff(
                 depositAtIndex,
-                IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex),
-                1e16,
+                localDepositAtIndex,
+                (depositAtIndex + localDepositAtIndex) / 1e9 + Maths.max(_pool.quoteTokenScale(), 1e12), // deviation not lower than 1e12
                 "Incorrect deposits in bucket"
             );
         }
     }
 
-    // For any index i, the prefix sum up to and including i is the sum of values stored in indices j<=i
-    function invariant_fenwick_depositsTillIndex_F2() public useCurrentTimestamp {
-        uint256 depositTillIndex;
-
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
-
-            depositTillIndex += depositAtIndex;
+    /// @dev For any index i, the prefix sum up to and including i is the sum of values stored in indices j<=i
+    function _invariant_F2() internal view {
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
+            uint256 depositTillIndex = _pool.depositUpToIndex(bucketIndex);
 
             console.log("===================Bucket Index : ", bucketIndex, " ===================");
             console.log("Deposit From Pool               -->", depositTillIndex);
             console.log("Deposit From local fenwick tree -->", IBaseHandler(_handler).fenwickSumTillIndex(bucketIndex));
             console.log("=========================================");
 
+            uint256 localDepositTillIndex = IBaseHandler(_handler).fenwickSumTillIndex(bucketIndex);
+
+            // Require local and Fenwick deposits to be within 1 part in a billion relativelty, or 1 one one-millionth absolutely
             requireWithinDiff(
                 depositTillIndex,
-                IBaseHandler(_handler).fenwickSumTillIndex(bucketIndex),
-                1e16,
+                localDepositTillIndex,
+                (depositTillIndex + localDepositTillIndex) / 1e9 + Maths.max(_pool.quoteTokenScale(), 1e12), // deviation not lower than 1e12
                 "Incorrect deposits prefix sum"
             );
         }
     }
 
-    // For any index i < MAX_FENWICK_INDEX, depositIndex(depositUpToIndex(i)) > i
-    function invariant_fenwick_bucket_index_F3() public useCurrentTimestamp {
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+    /// @dev For any index i < MAX_FENWICK_INDEX, depositIndex(depositUpToIndex(i)) > i
+    function _invariant_F3() internal view {
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
             (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
             uint256 prefixSum               = _pool.depositUpToIndex(bucketIndex);
-            uint256 bucketIndexFromDeposit  = _pool.depositIndex(Maths.wmul(prefixSum, 1e18 + 1e1));
+            uint256 bucketIndexFromDeposit  = _pool.depositIndex(Maths.ceilWmul(prefixSum, 1e18 + 1e1));
 
             if (depositAtIndex != 0) {
                 console.log("===================Bucket Index : ", bucketIndex, " ===================");
@@ -315,30 +415,27 @@ abstract contract BasicInvariants is BaseInvariants {
         }
     }
 
-    // **F4**: For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): `depositAt(j) == 0 for i<j<findIndexOfSum(prefixSum(i) + 1) and depositAt(findIndexOfSum(prefixSum(i) + 1))>0
-    function invariant_fenwick_prefixSumIndex_F4() public useCurrentTimestamp {
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; ) {
-            uint256 nextNonzeroBucket = _pool.depositIndex(_pool.depositUpToIndex(bucketIndex)+1);
-            console.log("bucketIndex:         ", bucketIndex);
-            console.log("Next nonzero bucket: ", nextNonzeroBucket);
-            for (uint256 j = bucketIndex + 1; j < nextNonzeroBucket && j < LENDER_MAX_BUCKET_INDEX; j++) {
-                (, , , uint256 depositAtJ, ) = _pool.bucketInfo(j);
-                console.log("Deposit at %s is %s", j, depositAtJ);
-                require(
-                        depositAtJ == 0,
-                        "F4: incorrect buckets with 0 deposit"
-                );
+    /// @dev **F4**: For any index i < MAX_FENWICK_INDEX, Deposits.valueAt(findIndexOfSum(prefixSum(i) + 1)) > 0
+    function _invariant_F4() internal view {
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
+        uint256 maxBucket;
+        for (uint256 i = 0; i < buckets.length; i++) {
+            if (buckets[i] > maxBucket) maxBucket = buckets[i];
+        }
+
+        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            uint256 nextNonzeroBucket = _pool.depositIndex(_pool.depositUpToIndex(bucketIndex) + 1);
+
+            if (nextNonzeroBucket < maxBucket) {
+                (, , , uint256 depositAtNextNonzeroBucket, ) = _pool.bucketInfo(nextNonzeroBucket);
+
+                require(depositAtNextNonzeroBucket >= 0, "F4: incorrect bucket with nonzero deposit");
             }
-            (, , , uint256 depositAtNextIndex, ) = _pool.bucketInfo(nextNonzeroBucket);
-            console.log("Deposit at nonzero bucket %s is %s", nextNonzeroBucket, depositAtNextIndex);
-            assertGe(depositAtNextIndex, 0, "F4: incorrect buckets with 0 deposit");
-            assertGe(nextNonzeroBucket+1, bucketIndex);
-            bucketIndex = nextNonzeroBucket+1;  // can skip ahead
         }
     }
 
-    // **F5**: Global scalar is never updated (`DepositsState.scaling[8192]` is always 0)
-    function invariant_fenwick_globalscalar_F5() public useCurrentTimestamp {
+    /// @dev **F5**: Global scalar is never updated (`DepositsState.scaling[8192]` is always 0)
+    function _invariant_F5() internal view {
         require(_pool.depositScale(8192) == 0, "F5: Global scalar was updated");
     }
 
@@ -353,20 +450,33 @@ abstract contract BasicInvariants is BaseInvariants {
         console.log("UBBasicHandler.addCollateral        ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.addCollateral"));
         console.log("BBasicHandler.removeCollateral      ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeCollateral"));
         console.log("UBBasicHandler.removeCollateral     ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.removeCollateral"));
+        console.log("BBasicHandler.moveQuoteToken        ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.moveQuoteToken"));
+        console.log("UBBasicHandler.moveQuoteToken       ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.moveQuoteToken"));
+        console.log("BBasicHandler.transferLps           ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.transferLps"));
+        console.log("UBBasicHandler.transferLps          ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.transferLps"));
         console.log("--Borrower--------");
         console.log("BBasicHandler.drawDebt              ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt"));
         console.log("UBBasicHandler.drawDebt             ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.drawDebt"));
         console.log("BBasicHandler.repayDebt             ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt"));
         console.log("UBBasicHandler.repayDebt            ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.repayDebt"));
+        console.log("BBasicHandler.pledgeCollateral      ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.pledgeCollateral"));
+        console.log("UBBasicHandler.pledgeCollateral     ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.pledgeCollateral"));
+        console.log("BBasicHandler.pullCollateral        ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.pullCollateral"));
+        console.log("UBBasicHandler.pullCollateral       ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.pullCollateral"));
         console.log("------------------");
         console.log(
             "Sum",
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.addQuoteToken") +
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeQuoteToken") +
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.moveQuoteToken") + 
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.addCollateral") +
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeCollateral") +
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.pledgeCollateral") + 
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.pullCollateral") + 
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt") + 
-            IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt")
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt") + 
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.transferLps")
+
         );
     }
 

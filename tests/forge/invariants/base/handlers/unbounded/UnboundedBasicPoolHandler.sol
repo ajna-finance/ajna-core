@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
-import { _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
-import { Maths }             from "src/libraries/internal/Maths.sol";
+import {
+    _depositFeeRate,
+    _roundToScale
+}                   from 'src/libraries/helpers/PoolHelper.sol';
+import { Maths }    from "src/libraries/internal/Maths.sol";
 
 import { BaseHandler } from './BaseHandler.sol';
 
@@ -29,7 +32,13 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         uint256 lupIndex          = _pool.depositIndex(poolDebt);
         (uint256 interestRate, )  = _pool.interestRateInfo();
 
+        // ensure actor always has amount of quote to add
+        _ensureQuoteAmount(_actor, amount_);
+
         try _pool.addQuoteToken(amount_, bucketIndex_, block.timestamp + 1 minutes) {
+
+            // amount is rounded in pool to token scale
+            amount_ = _roundToScale(amount_, _pool.quoteTokenScale());
         
             // **B5**: when adding quote tokens: lender deposit time  = timestamp of block when deposit happened
             lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
@@ -66,11 +75,17 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
 
+        ( , , , uint256 deposit, ) = _pool.bucketInfo(bucketIndex_);
+        fenwickDeposits[bucketIndex_] = deposit;
+
         try _pool.removeQuoteToken(amount_, bucketIndex_) returns (uint256 removedAmount_, uint256) {
             // **R4**: Exchange rates are unchanged by withdrawing deposit (quote token) from a bucket
             exchangeRateShouldNotChange[bucketIndex_] = true;
 
             _fenwickRemove(removedAmount_, bucketIndex_);
+
+            // rounding in favour of pool goes to reserves
+            increaseInReserves += removedAmount_ - _roundToScale(removedAmount_, _pool.quoteTokenScale());
 
             // Post action condition
             (uint256 lpBalanceAfterAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
@@ -86,6 +101,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         uint256 fromIndex_,
         uint256 toIndex_
     ) internal updateLocalStateAndPoolInterest {
+        numberOfCalls['UBBasicHandler.moveQuoteToken']++;
+
+        ( , , , uint256 fromDeposit, ) = _pool.bucketInfo(fromIndex_);
+        fenwickDeposits[fromIndex_] = fromDeposit;
 
         try _pool.moveQuoteToken(
             amount_,
@@ -116,6 +135,8 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         uint256 bucketIndex_,
         uint256 amount_
     ) internal updateLocalStateAndPoolInterest {
+        numberOfCalls['UBBasicHandler.increaseLPAllowance']++;
+
         // approve as transferor
         address[] memory transferors = new address[](1);
         transferors[0] = receiver_;
@@ -133,6 +154,8 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         address receiver_,
         uint256 bucketIndex_
     ) internal updateLocalStateAndPoolInterest {
+        numberOfCalls['UBBasicHandler.transferLps']++;
+
         uint256[] memory buckets = new uint256[](1);
         buckets[0] = bucketIndex_;
 

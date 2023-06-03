@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import '@std/Test.sol';
 import '@std/Vm.sol';
@@ -90,6 +90,13 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     EnumerableSet.AddressSet lenders;
     EnumerableSet.AddressSet borrowers;
     EnumerableSet.UintSet bucketsUsed;
+
+    /**
+     *  @dev fake start prank in order to avoid https://github.com/foundry-rs/foundry/issues/4835
+     **/
+    function _startTest() internal {
+        vm.startPrank(address(this));
+    }
 
     function _registerLender(
         address lender,
@@ -570,6 +577,20 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 deposit,
         uint256 exchangeRate
     ) internal {
+        _assertBucketAssets(index, lpBalance, collateral, deposit, exchangeRate);
+
+        // validate bucket is healthy / LP consistent with assets 
+        _validateBucketLp(index, lpBalance);
+        _validateBucketQuantities(index);
+    }
+
+    function _assertBucketAssets(
+        uint256 index,
+        uint256 lpBalance,
+        uint256 collateral,
+        uint256 deposit,
+        uint256 exchangeRate
+    ) internal {
         (
             ,
             uint256 curDeposit,
@@ -582,9 +603,6 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(availableCollateral, collateral);
         assertEq(curDeposit,          deposit);
         assertEq(rate,                exchangeRate);
-
-        _validateBucketLp(index, lpBalance);
-        _validateBucketQuantities(index);
     }
 
     function _validateBucketLp(
@@ -1349,6 +1367,9 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         (hpb_, , , , , ) = _poolUtils.poolPricesInfo(address(_pool));
     }
 
+    function _availableQuoteToken() internal view returns (uint256) {
+        return _poolUtils.availableQuoteTokenAmount(address(_pool));
+    }
 
     /********************/
     /*** Pool Depoyer ***/

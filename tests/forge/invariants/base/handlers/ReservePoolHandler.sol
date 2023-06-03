@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { Maths } from 'src/libraries/internal/Maths.sol';
 
@@ -16,7 +16,13 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
     function kickReserveAuction(
         uint256 actorIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
+        numberOfCalls['BReserveHandler.kickReserveAuction']++;
+
+        // take all reserves if available
+        (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
+        _takeReserves(claimableReservesRemaining);
+
         // Action phase
         _kickReserveAuction();
     }
@@ -25,29 +31,21 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
         uint256 actorIndex_,
         uint256 amountToTake_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
-        // Prepare test phase
-        uint256 boundedAmount = _preTakeReserves(amountToTake_);
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
+        numberOfCalls['BReserveHandler.takeReserves']++;
 
-        // Action phase
-        _takeReserves(boundedAmount);
-    }
+        // kick reserve auction if claimable reserves available
+        (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
+        if (claimableReserves != 0) {
+            _kickReserveAuction();
+        }
 
-    /*******************************/
-    /*** Prepare Tests Functions ***/
-    /*******************************/
-
-    function _preTakeReserves(
-        uint256 amountToTake_
-    ) internal returns (uint256 boundedAmount_) {
+        // take reserve auction if remaining claimable reserves
         (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
-        if (claimableReservesRemaining == 0) _kickReserveAuction();
-
-        // skip enough time for auction price to decrease
-        skip(24 hours);
-
-        (, , claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
-        boundedAmount_ = constrictToRange(amountToTake_, 0, Maths.min(MIN_QUOTE_AMOUNT, claimableReservesRemaining));
+        if (claimableReservesRemaining != 0) {
+            uint256 boundedAmount = constrictToRange(amountToTake_, claimableReservesRemaining / 2, claimableReservesRemaining);
+            _takeReserves(boundedAmount);
+        }
     }
 
 }

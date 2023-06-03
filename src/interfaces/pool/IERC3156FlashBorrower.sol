@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 interface IERC3156FlashBorrower {
 
@@ -8,7 +8,7 @@ interface IERC3156FlashBorrower {
      * @dev    Receive a flash loan.
      * @param  initiator The initiator of the loan.
      * @param  token     The loan currency.
-     * @param  amount    The amount of tokens lent.
+     * @param  amount    The amount of tokens lent (token precision).
      * @param  fee       The additional amount of tokens to repay.
      * @param  data      Arbitrary data structure, intended to contain user-defined parameters.
      * @return The `keccak256` hash of `ERC3156FlashBorrower.onFlashLoan`

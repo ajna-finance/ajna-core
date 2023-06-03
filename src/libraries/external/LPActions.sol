@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { Bucket, Lender } from '../../interfaces/pool/commons/IPoolState.sol';
 
@@ -44,7 +44,7 @@ library LPActions {
     /***************************/
 
     /**
-     *  @notice See `IPoolLenderActions` for descriptions
+     *  @notice See `IPoolLPActions` for descriptions
      *  @dev    === Write state ===
      *  @dev    increment `LP` allowances
      *  @dev    === Reverts on ===
@@ -80,7 +80,7 @@ library LPActions {
     }
 
     /**
-     *  @notice See `IPoolLenderActions` for descriptions
+     *  @notice See `IPoolLPActions` for descriptions
      *  @dev    === Write state ===
      *  @dev    decrement `LP` allowances
      *  @dev    === Reverts on ===
@@ -117,7 +117,7 @@ library LPActions {
     }
 
     /**
-     *  @notice See `IPoolLenderActions` for descriptions
+     *  @notice See `IPoolLPActions` for descriptions
      *  @dev    === Write state ===
      *  @dev    decrement `LP` allowances
      *  @dev    === Emit events ===
@@ -147,7 +147,7 @@ library LPActions {
     }
 
     /**
-     *  @notice See `IPoolLenderActions` for descriptions
+     *  @notice See `IPoolLPActions` for descriptions
      *  @dev    === Write state ===
      *  @dev    `approvedTransferors` mapping
      *  @dev    === Emit events ===
@@ -171,7 +171,7 @@ library LPActions {
     }
 
     /**
-     *  @notice See `IPoolLenderActions` for descriptions
+     *  @notice See `IPoolLPActions` for descriptions
      *  @dev    === Write state ===
      *  @dev    `approvedTransferors` mapping
      *  @dev    === Emit events ===
@@ -195,7 +195,7 @@ library LPActions {
     }
 
     /**
-     *  @notice See `IPoolLenderActions` for descriptions
+     *  @notice See `IPoolLPActions` for descriptions
      *  @dev    === Write state ===
      *  @dev    delete allowance mapping
      *  @dev    increment new `lender.lps` accumulator and `lender.depositTime` state
@@ -257,8 +257,10 @@ library LPActions {
                     newOwner.lps = allowedAmount;
                 }
 
-                owner.lps     -= allowedAmount; // remove amount of LP from old owner
-                lpTransferred += allowedAmount; // add amount of LP to total LP transferred
+                // remove amount of LP from old owner
+                owner.lps     -= allowedAmount;
+                // add amount of LP to total LP transferred
+                lpTransferred += allowedAmount;
 
                 // set the deposit time as the max of transferred deposit and current deposit time
                 newOwner.depositTime = Maths.max(ownerDepositTime, newOwnerDepositTime);

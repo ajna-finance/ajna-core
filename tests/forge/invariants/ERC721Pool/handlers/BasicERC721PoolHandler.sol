@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
-import { PoolInfoUtils, _collateralization } from 'src/PoolInfoUtils.sol';
-import { Maths }                             from 'src/libraries/internal/Maths.sol';
+import { PoolInfoUtils }               from 'src/PoolInfoUtils.sol';
+import { Maths }                       from 'src/libraries/internal/Maths.sol';
+import { _priceAt, _isCollateralized } from 'src/libraries/helpers/PoolHelper.sol';
 
 import { BORROWER_MIN_BUCKET_INDEX }       from '../../base/handlers/unbounded/BaseHandler.sol';
 import { BasicPoolHandler }                from '../../base/handlers/BasicPoolHandler.sol';
@@ -39,7 +40,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         uint256 amountToAdd_,
         uint256 bucketIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.addCollateral']++;
 
         // Prepare test phase
@@ -54,7 +55,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         uint256 amountToRemove_,
         uint256 bucketIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.removeCollateral']++;
 
         // Prepare test phase
@@ -62,6 +63,19 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
 
         // Action phase
         _removeCollateral(boundedAmount, _lenderBucketIndex);
+    }
+    
+    function mergeCollateral(
+        uint256 actorIndex_,
+        uint256 skippedTime_
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
+        numberOfCalls['BBasicHandler.mergeCollateral']++;
+
+        // Prepare test phase
+        (uint256 NFTAmount, uint256[] memory bucketIndexes) = _preMergeCollateral();
+
+        // Action phase
+        _mergeCollateral(NFTAmount, bucketIndexes);
     }
 
     /*******************************/
@@ -72,7 +86,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         uint256 actorIndex_,
         uint256 amountToPledge_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.pledgeCollateral']++;
 
         // Prepare test phase
@@ -89,7 +103,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         uint256 actorIndex_,
         uint256 amountToPull_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.pullCollateral']++;
 
         // Prepare test phase
@@ -103,7 +117,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         uint256 actorIndex_,
         uint256 amountToBorrow_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.drawDebt']++;
 
         // Prepare test phase
@@ -120,7 +134,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         uint256 actorIndex_,
         uint256 amountToRepay_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.repayDebt']++;
 
         // Prepare test phase
@@ -153,6 +167,25 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         if (lpBalanceBefore == 0) _addCollateral(boundedAmount_, _lenderBucketIndex);
     }
 
+    function _preMergeCollateral() internal returns(uint256 NFTAmount_, uint256[] memory bucketIndexes_) {
+        bucketIndexes_ = getBuckets();
+        
+        for (uint256 i = 0; i < bucketIndexes_.length; i++) {
+            uint256 bucketIndex = bucketIndexes_[i];
+
+            // Add Quote token in each bucket such that user has enough lps in each bucket to merge collateral
+            uint256 price = _poolInfo.indexToPrice(bucketIndex);
+            _addQuoteToken(price, bucketIndex);
+
+            (uint256 lenderLps, )    = _erc721Pool.lenderInfo(bucketIndex, _actor);
+            uint256 collateralAmount =_poolInfo.lpToCollateral(address(_erc721Pool), lenderLps, bucketIndex);
+            NFTAmount_               += collateralAmount;
+        }
+
+        // Round collateral amount
+        NFTAmount_ = NFTAmount_ / 1e18;
+    }
+
     function _prePledgeCollateral(
         uint256 amountToPledge_
     ) internal view returns (uint256 boundedAmount_) {
@@ -168,7 +201,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
     function _preDrawDebt(
         uint256 amountToBorrow_
     ) internal override returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToBorrow_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
+        boundedAmount_ = constrictToRange(amountToBorrow_, MIN_DEBT_AMOUNT, MAX_DEBT_AMOUNT);
 
         // Pre Condition
         // 1. borrower's debt should exceed minDebt
@@ -179,25 +212,28 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         (uint256 debt, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
         (uint256 minDebt, , , ) = _poolInfo.poolUtilizationInfo(address(_pool));
 
-        if (boundedAmount_ < minDebt) boundedAmount_ = minDebt + 1;
-
-        // TODO: Need to constrain amount so LUP > HTP
+        if (boundedAmount_ < minDebt && minDebt < MAX_DEBT_AMOUNT) boundedAmount_ = minDebt + 1;
 
         // 2. pool needs sufficent quote token to draw debt
-        uint256 poolQuoteBalance = _quote.balanceOf(address(_pool));
+        uint256 normalizedPoolBalance = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
 
-        if (boundedAmount_ > poolQuoteBalance) {
+        if (boundedAmount_ > normalizedPoolBalance) {
             _addQuoteToken(boundedAmount_ * 2, LENDER_MAX_BUCKET_INDEX);
         }
 
-        // 3. drawing of addition debt will make them under collateralized
-        uint256 lup = _poolInfo.lup(address(_pool));
+        // 3. check if drawing of addition debt will make borrower undercollateralized
+        // recalculate lup with new amount to be borrowed and check borrower collateralization at new lup
+        (uint256 currentPoolDebt, , , ) = _pool.debtInfo();
+        uint256 nextPoolDebt = currentPoolDebt + boundedAmount_;
+        uint256 newLup = _priceAt(_pool.depositIndex(nextPoolDebt));
         (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
 
-        if (_collateralization(debt, collateral, lup) < 1) {
-            _repayDebt(debt);
+        // repay debt if borrower becomes undercollateralized with new debt at new lup
+        if (!_isCollateralized(debt + boundedAmount_, collateral, newLup, _pool.poolType())) {
+            _repayDebt(type(uint256).max);
 
             (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+            _pullCollateral(collateral);
 
             require(debt == 0, "borrower has debt");
         }
@@ -206,7 +242,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
     function _preRepayDebt(
         uint256 amountToRepay_
     ) internal returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToRepay_, Maths.max(_pool.quoteTokenDust(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
+        boundedAmount_ = constrictToRange(amountToRepay_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
 
         // ensure actor has debt to repay
         (uint256 debt, , ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);

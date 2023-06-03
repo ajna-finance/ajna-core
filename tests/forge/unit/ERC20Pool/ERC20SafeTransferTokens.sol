@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
@@ -23,6 +23,8 @@ contract ERC20SafeTransferTokens is ERC20HelperContract {
     address internal USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
 
     function setUp() external {
+        _startTest();
+
         _lender      = makeAddr("lender");
         _borrower    = makeAddr("borrower");
         usdt         = IUSDT(USDT);

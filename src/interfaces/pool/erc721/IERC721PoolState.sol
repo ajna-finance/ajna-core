@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 /**
  * @title ERC721 Pool State
@@ -28,7 +28,7 @@ interface IERC721PoolState {
     ) external view returns (uint256 tokenId);
 
     /**
-     *  @notice Returns the token id of an `NFT`added in pool bucket (claimable from pool).
+     *  @notice Returns the token id of an `NFT` added in pool bucket (claimable from pool).
      *  @param  nftIndex `NFT` index in bucket's token ids array.
      *  @return tokenId  Token id of the `NFT`.
      */

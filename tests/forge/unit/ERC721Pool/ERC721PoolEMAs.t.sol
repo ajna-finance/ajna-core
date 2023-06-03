@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
@@ -12,6 +12,8 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
     address internal _lender;
 
     function setUp() external {
+        _startTest();
+
         _lender    = makeAddr("lender");
         _borrower  = makeAddr("borrower");
         _attacker  = makeAddr("attacker");
@@ -76,10 +78,10 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
                 poolSize:             15_000 * 1e18,
                 pledgedCollateral:    6 * 1e18,
                 encumberedCollateral: 4.620028820788372636 * 1e18,      // 6 / 1.3 = 4.62
-                poolDebt:             6_954.361808414458420694 * 1e18,
+                poolDebt:             6_954.361808414458420695 * 1e18,
                 actualUtilization:    0.000000000000000000 * 1e18,      // moving -> 6_947 / 10_000 (meaningful) = 0.7
                 targetUtilization:    1.000000000000000000 * 1e18,
-                minDebtAmount:        695.436180841445842069 * 1e18,    // debt / 10; only one loan, so not enforced
+                minDebtAmount:        695.436180841445842070 * 1e18,    // debt / 10; only one loan, so not enforced
                 loans:                1,
                 maxBorrower:          address(_borrower),
                 interestRate:         0.05 * 1e18,
@@ -188,7 +190,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
             rate:   0.0405 * 1e18                   // dropping at 4.05%
         });
         (, , , depositEma) = _pool.emasInfo();
-        assertEq(depositEma, 17_664.344669688571758689 * 1e18);         // still moving toward 20_000
+        assertEq(depositEma, 17_664.344669688571758688 * 1e18);         // still moving toward 20_000
 
         _skipAndAccrue({
             time:   2 days,                         // 3 days since liquidity was added
@@ -197,7 +199,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
             rate:   0.03645 * 1e18                  // second interest rate drop
         });                  
         (, , , depositEma) = _pool.emasInfo();
-        assertEq(depositEma, 19_855.532581473734007629 * 1e18);         // reached (sort of) 20_000
+        assertEq(depositEma, 19_855.532581473734007628 * 1e18);         // reached (sort of) 20_000
         _assertPool(
             PoolParams({
                 htp:                  1_159.575642053959188547 * 1e18,
@@ -205,7 +207,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
                 poolSize:             25_002.955913967460376246 * 1e18, // reflects additional 10_000 deposit
                 pledgedCollateral:    6 * 1e18,
                 encumberedCollateral: 4.622082975054377226 * 1e18,
-                poolDebt:             6_957.453852323755131280 * 1e18,
+                poolDebt:             6_957.453852323755131281 * 1e18,
                 actualUtilization:    0.348388356770742011 * 1e18,      // dropped to 35% as expected
                 targetUtilization:    0.770135325994564531 * 1e18,
                 minDebtAmount:        695.745385232375513128* 1e18,
@@ -217,7 +219,6 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
         );
 
         // draw additional debt
-        vm.stopPrank();
         _mintAndApproveCollateralTokens(_borrower,  6);
         uint256[] memory tokenIdsToAdd = new uint256[](6);
         for (uint i=0; i<6; ++i) {
@@ -265,10 +266,10 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
                 poolSize:             25_010.141517477798670592 * 1e18,
                 pledgedCollateral:    12 * 1e18,                        // 6 additional NFTs deposited
                 encumberedCollateral: 11.940259472915000621 * 1e18,     // all 12 NFTs are encumbered
-                poolDebt:             17_973.239493088145201104 * 1e18, // includes new debt
+                poolDebt:             17_973.239493088145201105 * 1e18, // includes new debt
                 actualUtilization:    0.897069303670436098 * 1e18,
                 targetUtilization:    0.966852816219664605 * 1e18,
-                minDebtAmount:        1_797.323949308814520110 * 1e18,
+                minDebtAmount:        1_797.323949308814520111 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower),
                 interestRate:         0.032805 * 1e18,
@@ -310,7 +311,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
         _pool.updateInterest();     // not really needed, since removing liquidity will trigger rate update
         _removeAllLiquidity({
             from:     _attacker,
-            amount:   150_000.003062917635863985 * 1e18,
+            amount:   150_000.003062917635863984 * 1e18,
             index:    _i1505_26,
             newLup:   _p1505_26,
             lpRedeem: 149_973.669906855426845472 * 1e18
@@ -340,16 +341,16 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
             debtColEma:     3_412_160.847313164565839074 * 1e18,
             lupt0DebtEma:   4_025_493.853024754985190842 * 1e18,
             debtEma:        7_278.073513801178223507 * 1e18,
-            depositEma:     10_452.403764437541109495 * 1e18            // moving down back to 10_000
+            depositEma:     10_452.403764437541109496 * 1e18            // moving down back to 10_000
         });
         _assertPool(
             PoolParams({
                 htp:                  1_276.209765166823398404 * 1e18,
                 lup:                  _p1505_26,
-                poolSize:             15_002.177276783057210000 * 1e18,
+                poolSize:             15_002.177276783057210001 * 1e18,
                 pledgedCollateral:    6 * 1e18,
                 encumberedCollateral: 5.086988044805126619 * 1e18,
-                poolDebt:             7_657.258591000940390422 * 1e18,  // 7_647 principal plus some interest
+                poolDebt:             7_657.258591000940390423 * 1e18,  // 7_647 principal plus some interest
                 actualUtilization:    0.696306196911713144 * 1e18,
                 targetUtilization:    0.847637823306888876 * 1e18,
                 minDebtAmount:        765.725859100094039042 * 1e18,

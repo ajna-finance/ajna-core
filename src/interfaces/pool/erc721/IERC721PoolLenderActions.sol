@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 /**
  * @title ERC721 Pool Lender Actions
@@ -25,8 +25,8 @@ interface IERC721PoolLenderActions {
      *  @param  removalIndexes_   Array of bucket indexes to remove all collateral that the caller has ownership over.
      *  @param  noOfNFTsToRemove_ Intergral number of `NFT`s to remove if collateral amount is met `noOfNFTsToRemove_`, else merge at bucket index, `toIndex_`.
      *  @param  toIndex_          The bucket index to which merge collateral into.
-     *  @return collateralMerged_ Amount of collateral merged into `toIndex_`.
-     *  @return bucketLP_         If non-zero, amount of `LP` in `toIndex_` when collateral is merged into bucket. If `0`, no collateral is merged.
+     *  @return collateralMerged_ Amount of collateral merged into `toIndex_` (`WAD` precision).
+     *  @return bucketLP_         If non-zero, amount of `LP` in `toIndex_` when collateral is merged into bucket (`WAD` precision). If `0`, no collateral is merged.
      */
     function mergeOrRemoveCollateral(
         uint256[] calldata removalIndexes_,

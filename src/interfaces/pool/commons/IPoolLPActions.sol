@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 /**
  * @title Pool `LP` Actions
@@ -12,7 +12,7 @@ interface IPoolLPActions {
      *  @dev    Intended for use by the `PositionManager` contract.
      *  @param  spender_ The new owner of the `LP`.
      *  @param  indexes_ Bucket indexes from where `LP` are transferred.
-     *  @param  amounts_ The amounts of `LP` approved to transfer.
+     *  @param  amounts_ The amounts of `LP` approved to transfer (`WAD` precision).
      */
     function increaseLPAllowance(
         address spender_,
@@ -25,7 +25,7 @@ interface IPoolLPActions {
      *  @dev    Intended for use by the `PositionManager` contract.
      *  @param  spender_ The new owner of the `LP`.
      *  @param  indexes_ Bucket indexes from where `LP` are transferred.
-     *  @param  amounts_ The amounts of `LP` disapproved to transfer.
+     *  @param  amounts_ The amounts of `LP` disapproved to transfer (`WAD` precision).
      */
     function decreaseLPAllowance(
         address spender_,

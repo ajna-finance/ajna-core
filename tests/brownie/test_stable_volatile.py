@@ -86,7 +86,6 @@ def pool_helper(ajna_protocol, scaled_pool, lenders, borrowers, test_utils, chai
 
 def add_initial_liquidity(lenders, pool_helper, chain):
     # Lenders 0-9 will be "new to the pool" upon actual testing
-    # TODO: determine this non-arbitrarily
     deposit_amount = MIN_PARTICIPATION * 10**18
     first_lender = 0 if len(lenders) <= 10 else 10
     for i in range(first_lender, len(lenders) - 1):

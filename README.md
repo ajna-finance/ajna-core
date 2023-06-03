@@ -10,7 +10,7 @@ The Ajna protocol is a non-custodial, peer-to-peer, permissionless lending, borr
 - The following types of tokens are incompatible with Ajna, and no countermeasures exist to explicitly prevent creating a pool with such tokens, actors should use them at their own risk:
   - NFT and fungible tokens which charge a fee on transfer.
   - Fungible tokens whose balance rebases.
-  - Fungible tokens with more than 18 decimals or 0 decimals.
+  - Fungible tokens with more than 18 decimals or 0 decimals, whose `decimals()` function does not return a constant value, or which do not implement the optional [decimals()](https://eips.ethereum.org/EIPS/eip-20#decimals) function.
 - Borrowers cannot draw debt from a pool in the same block as when the pool was created.
 - With the exception of quantized prices, pool inputs and most accumulators are not explicitly limited.  The pool will stop functioning when the bounds of a `uint256` need to be exceeded to process a request.
 
@@ -130,9 +130,9 @@ bash ./check-code-coverage.sh
 ```bash
 pip install slither-analyzer
 ```
-- Make sure the default `solc` version is set to the same version as contracts (currently 0.8.14). This can be done by installing and using `solc-select`:
+- Make sure the default `solc` version is set to the same version as contracts (currently 0.8.18). This can be done by installing and using `solc-select`:
 ```bash
-pip install solc-select && solc-select install 0.8.14 && solc-select use 0.8.14
+pip install solc-select && solc-select install 0.8.18 && solc-select use 0.8.18
 ```
 - Run `analyze`
 

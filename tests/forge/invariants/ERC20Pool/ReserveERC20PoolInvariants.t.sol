@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { BaseInvariants }                 from '../base/BaseInvariants.sol';
 import { LiquidationInvariants }          from '../base/LiquidationInvariants.t.sol';
@@ -24,13 +24,15 @@ contract ReserveERC20PoolInvariants is ReserveInvariants, LiquidationERC20PoolIn
             address(_quote),
             address(_collateral),
             address(_poolInfo),
-            NUM_ACTORS,
+            _numOfActors,
             address(this)
         );
 
         _handler = address(_reserveERC20PoolHandler);
     }
 
-    function invariant_call_summary() public virtual override( LiquidationInvariants, LiquidationERC20PoolInvariants) useCurrentTimestamp {}
+    function invariant_call_summary() public virtual override(LiquidationERC20PoolInvariants, ReserveInvariants) useCurrentTimestamp {
+        super.invariant_call_summary();
+    }
 
 }

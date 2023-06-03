@@ -213,7 +213,6 @@ class _BasePoolStateMachine:
     ############## Teardown ##############
 
     def teardown(self):
-        # TODO: verify pool invariants / health at the end of each run
         print('Tear down')
 
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 /**
  * @title Positions Manager Derived State
@@ -50,9 +50,28 @@ interface IPositionManagerDerivedState {
         uint256 index_
     ) external view returns (uint256, uint256);
 
+    /**
+     *  @notice Returns the pool address associated with a positions `NFT`.
+     *  @param  tokenId_ The token id of the positions `NFT`.
+     *  @return Pool address associated with the `NFT`.
+     */
+    function poolKey(
+        uint256 tokenId_
+    ) external view returns (address);
 
     /**
-     *  @notice Checks if a given `tokenId` has a given position bucket
+     *  @notice Checks if a given `pool_` address is an Ajna pool.
+     *  @param  pool_       Address of the `Ajna` pool.
+     *  @param  subsetHash_ Factory's subset hash pool.
+     *  @return isAjnaPool_ `True` if the address to check is an Ajna pool.
+    */
+    function isAjnaPool(
+        address pool_,
+        bytes32 subsetHash_
+    ) external view returns (bool isAjnaPool_);
+
+    /**
+     *  @notice Checks if a given `tokenId` has a given position bucket.
      *  @param  tokenId_           Unique `ID` of token.
      *  @param  index_             Index of bucket to check if in position buckets.
      *  @return bucketInPosition_  `True` if tokenId has the position bucket.

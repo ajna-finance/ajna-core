@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { ClonesWithImmutableArgs } from '@clones/ClonesWithImmutableArgs.sol';
 import { IERC165 }                 from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 
-import { IERC721PoolFactory }    from './interfaces/pool/erc721/IERC721PoolFactory.sol';
-import { IPoolFactory }          from './interfaces/pool/IPoolFactory.sol';
-import { IERC20Token, PoolType } from './interfaces/pool/IPool.sol';
+import { IERC721PoolFactory } from './interfaces/pool/erc721/IERC721PoolFactory.sol';
+import { IPoolFactory }       from './interfaces/pool/IPoolFactory.sol';
+import { PoolType }           from './interfaces/pool/IPool.sol';
 
 import { ERC721Pool }   from './ERC721Pool.sol';
 import { PoolDeployer } from './base/PoolDeployer.sol';
@@ -45,6 +45,7 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
      *  @dev    - `deployedPoolsList` array
      *  @dev    === Reverts on ===
      *  @dev    - `0x` address provided as quote or collateral `DeployWithZeroAddress()`
+     *  @dev    - quote lacks `decimals()` method `DecimalsNotCompliant()`
      *  @dev    - pool with provided quote / collateral pair already exists `PoolAlreadyExists()`
      *  @dev    - invalid interest rate provided `PoolInterestRateInvalid()`
      *  @dev    - not supported `NFT` provided `NFTNotSupported()`
@@ -55,9 +56,11 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
         address collateral_, address quote_, uint256[] memory tokenIds_, uint256 interestRate_
     ) external canDeploy(collateral_, quote_, interestRate_) returns (address pool_) {
         bytes32 subsetHash = getNFTSubsetHash(tokenIds_);
-        if (deployedPools[subsetHash][collateral_][quote_] != address(0)) revert IPoolFactory.PoolAlreadyExists();
 
-        uint256 quoteTokenScale = 10**(18 - IERC20Token(quote_).decimals());
+        address existingPool = deployedPools[subsetHash][collateral_][quote_];
+        if (existingPool != address(0)) revert IPoolFactory.PoolAlreadyExists(existingPool);
+
+        uint256 quoteTokenScale = _getTokenScale(quote_);
 
         try IERC165(collateral_).supportsInterface(0x80ac58cd) returns (bool supportsERC721Interface) {
             if (!supportsERC721Interface) revert NFTNotSupported();
@@ -85,6 +88,16 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
         emit PoolCreated(pool_);
 
         pool.initialize(tokenIds_, interestRate_);
+    }
+
+    /**
+     *  @dev                Create a new pool that accepts any token in a NFT collection
+     *  @param collateral_  The NFT collateral token address
+     *  @param quote_       The borrower quote token address
+     *  @return pool_       The address of the new pool
+     */
+    function deployPool(address collateral_, address quote_, uint256 interestRate_) public returns (address pool_) {
+        pool_ = this.deployPool(collateral_, quote_, new uint256[](0), interestRate_);
     }
 
     /*******************************/

@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
-import { ERC20Pool }                         from 'src/ERC20Pool.sol';
-import { ERC20PoolFactory }                  from 'src/ERC20PoolFactory.sol';
-import { PoolInfoUtils }                     from 'src/PoolInfoUtils.sol';
-import { _borrowFeeRate, _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
-import { Maths }                             from "src/libraries/internal/Maths.sol";
+import { ERC20Pool }        from 'src/ERC20Pool.sol';
+import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
+import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
+import {
+    _borrowFeeRate,
+    _depositFeeRate,
+    _roundToScale
+}                           from 'src/libraries/helpers/PoolHelper.sol';
+import { Maths }            from "src/libraries/internal/Maths.sol";
 
 import { UnboundedBasicPoolHandler } from "../../../base/handlers/unbounded/UnboundedBasicPoolHandler.sol";
 import { BaseERC20PoolHandler }      from './BaseERC20PoolHandler.sol';
@@ -27,6 +31,9 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
         uint256 bucketIndex_
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.addCollateral']++;
+
+        // ensure actor always has amount of collateral to add
+        _ensureCollateralAmount(_actor, amount_);
 
         (uint256 lpBalanceBeforeAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);
 
@@ -75,6 +82,9 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.pledgeCollateral']++;
 
+        // ensure actor always has the amount to pledge
+        _ensureCollateralAmount(_actor, amount_);
+
         // **R1**: Exchange rates are unchanged by pledging collateral
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             exchangeRateShouldNotChange[bucketIndex] = true;
@@ -110,14 +120,22 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
 
         (uint256 poolDebt, , , ) = _erc20Pool.debtInfo();
 
-        // find bucket to borrow quote token
-        uint256 bucket = _erc20Pool.depositIndex(amount_ + poolDebt) - 1;
+        // find bucket to borrow quote token, return if deposit index is 0
+        uint256 depositIndex = _erc20Pool.depositIndex(amount_ + poolDebt);
+        if (depositIndex == 0) return;
+
+        uint256 bucket = depositIndex - 1;
         uint256 price = _poolInfo.indexToPrice(bucket);
         uint256 collateralToPledge = ((amount_ * 1e18 + price / 2) / price) * 101 / 100 + 1;
 
-        try _erc20Pool.drawDebt(_actor, amount_, 7388, collateralToPledge) {
+        // ensure actor always has amount of collateral to pledge
+        _ensureCollateralAmount(_actor, collateralToPledge);
 
-            (uint256 interestRate, ) = _erc20Pool.interestRateInfo();
+        (uint256 interestRate, ) = _erc20Pool.interestRateInfo();
+
+        try _erc20Pool.drawDebt(_actor, amount_, 7388, collateralToPledge) {
+            // amount is rounded by pool to token scale
+            amount_ = _roundToScale(amount_, _pool.quoteTokenScale());
 
             // **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
             increaseInReserves += Maths.wmul(
@@ -134,10 +152,23 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
+        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+
+        // ensure actor always has amount of quote to repay
+        _ensureQuoteAmount(_actor, borrowerDebt + 10 * 1e18);
+
         try _erc20Pool.repayDebt(_actor, amountToRepay_, 0, _actor, 7388) {
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
+    }
+
+    function _ensureCollateralAmount(address actor_, uint256 amount_) internal {
+        uint256 normalizedActorBalance = _collateral.balanceOf(actor_) * _erc20Pool.collateralScale();
+        if (amount_> normalizedActorBalance ) {
+            _collateral.mint(actor_, amount_ - normalizedActorBalance);
+        }
+        _collateral.approve(address(_pool), _collateral.balanceOf(actor_));
     }
 }

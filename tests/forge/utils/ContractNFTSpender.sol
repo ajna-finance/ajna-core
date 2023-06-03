@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import '@openzeppelin/contracts/interfaces/IERC1271.sol';
@@ -18,11 +18,9 @@ contract ContractNFTSpender {
         address receiver_,
         uint256 tokenId_,
         uint256 deadline_,
-        uint8 v_,
-        bytes32 r_,
-        bytes32 s_
+        bytes memory signature_
     ) external {
-        positionManager.permit(address(this), tokenId_, deadline_, v_, r_, s_);
+        positionManager.permit(address(this), tokenId_, deadline_, signature_);
         positionManager.transferFrom(msg.sender, receiver_, tokenId_);
     }
 

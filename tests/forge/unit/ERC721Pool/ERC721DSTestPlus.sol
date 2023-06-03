@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { ERC20 } from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
@@ -15,6 +15,7 @@ import { IERC721PoolEvents } from 'src/interfaces/pool/erc721/IERC721PoolEvents.
 import 'src/interfaces/pool/erc721/IERC721Pool.sol';
 import 'src/interfaces/pool/IPoolFactory.sol';
 import 'src/interfaces/pool/IPool.sol';
+import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/PoolInfoUtils.sol';
 
 import 'src/libraries/internal/Maths.sol';
@@ -51,7 +52,8 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         uint256 factor = PoolCommons.pendingInterestFactor(interestRate, block.timestamp - lastInflatorUpdate);
 
         // Calculate current debt of borrower (currentPoolInflator * borrowerT0Debt)
-        uint256 currentDebt = Maths.wmul(Maths.wmul(poolInflator, factor), borrowerT0debt);
+        uint256 currentDebt = Maths.ceilWmul(Maths.wmul(poolInflator, factor), borrowerT0debt);
+        uint256 tokenDebt   = _roundUpToScale(currentDebt, ERC721Pool(address(_pool)).quoteTokenScale());
 
         // mint quote tokens to borrower address equivalent to the current debt
         deal(_pool.quoteTokenAddress(), borrower, currentDebt);
@@ -59,8 +61,8 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
         // repay current debt and pull all collateral
         uint256 noOfNfts = borrowerCollateral / 1e18; // round down to pull correct num of NFTs
-        if (currentDebt != 0 || noOfNfts != 0) {
-            _repayDebtNoLupCheck(borrower, borrower, currentDebt, currentDebt, noOfNfts);
+        if (tokenDebt != 0 || noOfNfts != 0) {
+            _repayDebtNoLupCheck(borrower, borrower, tokenDebt, currentDebt, noOfNfts);
         }
 
         // check borrower state after repay of loan and pull Nfts
@@ -478,6 +480,17 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         ERC721PoolFactory(poolFactory).deployPool(collateral, quote, tokenIds, interestRate);
     }
 
+    function _assertTokenDecimalsNotCompliant(
+        address poolFactory,
+        address collateral,
+        address quote,
+        uint256 interestRate
+    ) internal {
+        uint256[] memory tokenIds;
+        vm.expectRevert(IPoolFactory.DecimalsNotCompliant.selector);
+        ERC721PoolFactory(poolFactory).deployPool(collateral, quote, tokenIds, interestRate);
+    }
+
     function _assertDeployWithInvalidRateRevert(
         address poolFactory,
         address collateral,
@@ -507,7 +520,15 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         uint256 interestRate
     ) internal {
         uint256[] memory tokenIds;
-        vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
+        address deployed = ERC721PoolFactory(poolFactory).deployedPools(
+            keccak256("ERC721_NON_SUBSET_HASH"),
+            collateral,
+            quote
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(bytes4(keccak256("PoolAlreadyExists(address)")),
+            deployed)
+        );
         ERC721PoolFactory(poolFactory).deployPool(collateral, quote, tokenIds, interestRate);
     }
 
@@ -575,13 +596,13 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);        
     }
 
-    function _assertBorrowDustRevert(
+    function _assertBorrowInvalidAmountRevert(
         address from,
         uint256 amount,
         uint256 indexLimit
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
+        vm.expectRevert(IPoolErrors.InvalidAmount.selector);
         uint256[] memory emptyArray;
         ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);
     }
@@ -693,19 +714,19 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
 
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_quote), operator_, mintAmount_);
-        vm.prank(operator_);
+        changePrank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
     }
 
     function _mintAndApproveCollateralTokens(address operator_, uint256 mintAmount_) internal {
         _collateral.mint(operator_, mintAmount_);
-        vm.prank(operator_);
+        changePrank(operator_);
         _collateral.setApprovalForAll(address(_pool), true);
     }
 
     function _mintAndApproveAjnaTokens(address operator_, uint256 mintAmount_) internal {
         deal(_ajna, operator_, mintAmount_);
-        vm.prank(operator_);
+        changePrank(operator_);
         _ajnaToken.approve(address(_pool), type(uint256).max);
     }
 
@@ -762,13 +783,13 @@ abstract contract ERC721NDecimalsHelperContract is ERC721DSTestPlus {
 
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_quote), operator_, mintAmount_);
-        vm.prank(operator_);
+        changePrank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
     }
 
     function _mintAndApproveCollateralTokens(address operator_, uint256 mintAmount_) internal {
         _collateral.mint(operator_, mintAmount_);
-        vm.prank(operator_);
+        changePrank(operator_);
         _collateral.setApprovalForAll(address(_pool), true);
     }
 
@@ -779,7 +800,6 @@ abstract contract ERC721NDecimalsHelperContract is ERC721DSTestPlus {
         // _anonBorrowerCount += 1;
         
         address borrower = makeAddr(string(abi.encodePacked("anonBorrower", borrowers.length())));
-        vm.stopPrank();
         _mintAndApproveCollateralTokens(borrower, 1);
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = _collateral.totalSupply();
@@ -822,19 +842,19 @@ abstract contract ERC721FuzzyHelperContract is ERC721DSTestPlus {
 
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_quote), operator_, mintAmount_);
-        vm.prank(operator_);
+        changePrank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
     }
 
     function _mintAndApproveCollateralTokens(address operator_, uint256 mintAmount_) internal {
         _collateral.mint(operator_, mintAmount_);
-        vm.prank(operator_);
+        changePrank(operator_);
         _collateral.setApprovalForAll(address(_pool), true);
     }
 
     function _mintAndApproveAjnaTokens(address operator_, uint256 mintAmount_) internal {
         deal(_ajna, operator_, mintAmount_);
-        vm.prank(operator_);
+        changePrank(operator_);
         _ajnaToken.approve(address(_pool), type(uint256).max);
     }
 
@@ -843,7 +863,6 @@ abstract contract ERC721FuzzyHelperContract is ERC721DSTestPlus {
         changePrank(borrower_);
         tokenIds_ = new uint256[](requiredCollateral_);
         for (uint i = 0; i < requiredCollateral_; ++i) {
-            vm.stopPrank();
             _mintAndApproveCollateralTokens(borrower_, 1);
             tokenIds_[i] = _collateral.totalSupply();
         }

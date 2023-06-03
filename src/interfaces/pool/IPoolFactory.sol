@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 /**
  *  @title Pool Factory Interface.
@@ -22,9 +22,15 @@ interface IPoolFactory {
     error DeployWithZeroAddress();
 
     /**
-     *  @notice Pool with this combination of quote and collateral already exists.
+     *  @notice Can't deploy with token that has no decimals method or decimals greater than 18
      */
-    error PoolAlreadyExists();
+    error DecimalsNotCompliant();
+
+    /**
+     *  @notice Pool with this combination of quote and collateral already exists.
+     *  @param  pool_ The address of deployed pool.
+     */
+    error PoolAlreadyExists(address pool_);
 
     /**
      *  @notice Pool starting interest rate is invalid.

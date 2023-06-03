@@ -14,15 +14,17 @@
 
 ## Quote Token
 - **QT1**: pool quote token balance (`Quote.balanceOf(pool)`) >= liquidation bonds (`AuctionsState.totalBondEscrowed`) + pool deposit size (`Pool.depositSize()`) + reserve auction unclaimed amount (`reserveAuction.unclaimed`) - pool t0 debt (`PoolBalancesState.t0Debt`) (with a `1e13` margin)
-- **QT2**: pool t0 debt (`PoolBalancesState.t0Debt`) = sum of t0 debt across all borrowers (`Borrower.t0Debt`)
+- **QT2**: pool t0 debt (`PoolBalancesState.t0Debt`) = sum of t0 debt across all borrowers (`Borrower.t0Debt`)  
+- **QT3**: pool quote token balance (`Quote.balanceOf(pool)`) >= claimable liquidation bonds + reserve auction unclaimed amount (`reserveAuction.unclaimed`)
 
 ## Auctions
 - **A1**: total t0 debt auctioned (`PoolBalancesState.t0DebtInAuction`) = sum of debt across all auctioned borrowers (`Borrower.t0Debt` where borrower's `kickTime != 0`)  
-- **A2**: sum of bonds locked in auctions (`Liquidation.bondSize`) = sum of locked balances across all kickers (`Kicker.locked`) = total bond escrowed accumulator (`AuctionsState.totalBondEscrowed`)  
+- **A2**: sum of bonds locked in auctions (`Liquidation.bondSize`) = sum of locked balances across all kickers (`Kicker.locked`);  total bond escrowed accumulator (`AuctionsState.totalBondEscrowed`) = sum of kickers locked balances (`Kicker.locked`) + sum of kickers claimable balances (`Kicker.claimable`)  
 - **A3**: number of borrowers with debt (`LoansState.borrowers.length` with `t0Debt != 0`) = number of loans (`LoansState.loans.length -1`) + number of auctioned borrowers (`AuctionsState.noOfAuctions`)  
 - **A4**: number of recorded auctions (`AuctionsState.noOfAuctions`) = length of auctioned borrowers (count of borrowers in `AuctionsState.liquidations` with `kickTime != 0`)
 - **A5**: for each `Liquidation` recorded in liquidation mapping (`AuctionsState.liquidations`) the kicker address (`Liquidation.kicker`) has a locked balance (`Kicker.locked`) equal or greater than liquidation bond size (`Liquidation.bondSize`)  
 - **A6**: if a `Liquidation` is not taken then the take flag (`Liquidation.alreadyTaken`) should be `False`, if already taken then the take flag should be `True`  
+- **A7**: total bond escrowed accumulator (`AuctionsState.totalBondEscrowed`) should increase when auction is kicked with the difference needed to cover the bond and should decrease only when kicker bonds withdrawn (`Pool.withdrawBonds`). Claimable bonds should be available for withdrawal from pool at any time.  
 
 ## Loans
 - **L1**: for each `Loan` in loans array (`LoansState.loans`) starting from index 1, the corresponding address (`Loan.borrower`) is not `0x`, the threshold price (`Loan.thresholdPrice`) is different than 0 and the id mapped in indices mapping (`LoansState.indices`) equals index of loan in loans array.  
@@ -48,7 +50,7 @@
 - **F1**: Value represented at index `i` (`Deposits.valueAt(i)`) is equal to the accumulation of scaled values incremented or decremented from index `i`
 - **F2**: For any index `i`, the prefix sum up to and including `i` is the sum of values stored in indices `j<=i`
 - **F3**: For any index `i < MAX_FENWICK_INDEX`,  `findIndexOfSum(prefixSum(i)) > i`
-- **F4**: For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): `depositAtIndex(j) == 0 for i < j < findIndexOfSum(prefixSum(i)+1)`
+- **F4**: For any index `i < MAX_FENWICK_INDEX`, `Deposits.valueAt(findIndexOfSum(prefixSum(i) + 1)) > 0`
 - **F5**: Global scalar is never updated (`DepositsState.scaling[8192]` is always 0)
 
 ## Exchange rate (Margin of 1e12 - 1e16 on comparisons, dependent on amounts)
@@ -74,3 +76,6 @@
 - **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
 - **RE11**: Reserves decrease by claimableReserves by kickReserveAuction
 - **RE12**: Reserves decrease by amount of reserve used to settle a auction
+
+Rewards:
+- Can't claim rewards for an end epoch twice

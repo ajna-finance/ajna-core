@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import "@std/console.sol";
 
@@ -18,8 +18,6 @@ import { IBaseHandler }          from '../interfaces/IBaseHandler.sol';
 // contains invariants for the test
 contract BasicERC20PoolInvariants is BasicInvariants {
 
-    uint256               internal constant NUM_ACTORS = 10;
-
     TokenWithNDecimals    internal _collateral;
     ERC20Pool             internal _erc20pool;
     ERC20Pool             internal _impl;
@@ -30,7 +28,7 @@ contract BasicERC20PoolInvariants is BasicInvariants {
 
         super.setUp();
 
-        _collateral       = new TokenWithNDecimals("Collateral", "C", uint8(vm.envUint("COLLATERAL_PRECISION")));
+        _collateral       = new TokenWithNDecimals("Collateral", "C", uint8(vm.envOr("COLLATERAL_PRECISION", uint256(18))));
         _erc20poolFactory = new ERC20PoolFactory(address(_ajna));
         _impl             = _erc20poolFactory.implementation();
         _erc20pool        = ERC20Pool(_erc20poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
@@ -42,7 +40,7 @@ contract BasicERC20PoolInvariants is BasicInvariants {
             address(_quote),
             address(_collateral),
             address(_poolInfo),
-            NUM_ACTORS,
+            _numOfActors,
             address(this)
         );
 
@@ -59,19 +57,23 @@ contract BasicERC20PoolInvariants is BasicInvariants {
         LENDER_MIN_BUCKET_INDEX = IBaseHandler(_handler).LENDER_MIN_BUCKET_INDEX();
         LENDER_MAX_BUCKET_INDEX = IBaseHandler(_handler).LENDER_MAX_BUCKET_INDEX();
 
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
             ( , , , , ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_erc20pool), bucketIndex);
             previousBucketExchangeRate[bucketIndex] = exchangeRate;
         }
 
         (, previousInterestRateUpdate) = _erc20pool.interestRateInfo();
 
-        // TODO: Change once this issue is resolved -> https://github.com/foundry-rs/foundry/issues/2963
-        targetSender(address(0x1234));
     }
 
-    // checks pools collateral Balance to be equal to collateral pledged
-    function invariant_collateralBalance_CT1_CT7() public useCurrentTimestamp {
+    /***********************************/
+    /*** ERC20 Collateral Invariants ***/
+    /***********************************/
+
+    /// @dev checks pools collateral Balance to be equal to collateral pledged
+    function invariant_collateral_CT1_CT7() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         uint256 totalCollateralPledged;
@@ -83,19 +85,21 @@ contract BasicERC20PoolInvariants is BasicInvariants {
             totalCollateralPledged += borrowerCollateral;
         }
 
-        assertEq(_erc20pool.pledgedCollateral(), totalCollateralPledged, "Collateral Invariant CT7");
+        require(_erc20pool.pledgedCollateral() == totalCollateralPledged, "Collateral Invariant CT7");
 
         // convert pool collateral balance into WAD
-        uint256 collateralBalance = _collateral.balanceOf(address(_erc20pool)) * 10**(18 - _collateral.decimals());
+        uint256 normalizedCollateralBalance = _collateral.balanceOf(address(_erc20pool)) * _erc20pool.collateralScale();
         uint256 bucketCollateral;
 
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
             (, uint256 collateral, , , ) = _erc20pool.bucketInfo(bucketIndex);
 
             bucketCollateral += collateral;
         }
 
-        assertGe(collateralBalance, bucketCollateral + _erc20pool.pledgedCollateral(), "Collateral Invariant CT1");
+        require(normalizedCollateralBalance >= bucketCollateral + _erc20pool.pledgedCollateral(), "Collateral Invariant CT1");
     }
 
 }
