@@ -80,14 +80,6 @@ abstract contract BaseHandler is Test {
     uint256 public increaseInBonds;    // amount of bond increase
     uint256 public decreaseInBonds;    // amount of bond decrease
 
-    // rewards invariant test state
-    mapping(uint256 => uint256) public totalRewardPerEpoch;    // total rewards per epoch
-    uint256 public totalStakerRewPerEpoch;  // amount of reserve decrease
-    uint256 public totalUpdaterRewPerEpoch;  // amount of reserve increase
-
-    // Buckets where collateral is added when a borrower is in auction and has partial NFT
-    //EnumerableSet.UintSet internal collateralBuckets;
-
     // All Buckets used in invariant testing that also includes Buckets where collateral is added when a borrower is in auction and has partial NFT
     EnumerableSet.UintSet internal buckets;
 

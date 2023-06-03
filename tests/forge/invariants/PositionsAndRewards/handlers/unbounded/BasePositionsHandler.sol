@@ -26,7 +26,11 @@ abstract contract BasePositionsHandler is BaseERC20PoolHandler {
     PositionManager internal _position;
     RewardsManager  internal _rewards;
 
-    // positions invariant test state
+    uint256 MAX_AJNA_AMOUNT = vm.envOr("MAX_AJNA_AMOUNT_ERC20", uint256(100_000_000 * 1e18));
+
+    // Position invariant test state //
+
+    // EnumerableSet.UintSet internal tokenIdsMinted;
     // used for PM1_PM2_PM3 tracking
     mapping(uint256 => EnumerableSet.UintSet) internal tokenIdsByBucketIndex;
     EnumerableSet.UintSet internal bucketIndexesWithPosition;
@@ -35,15 +39,17 @@ abstract contract BasePositionsHandler is BaseERC20PoolHandler {
     mapping(uint256 => address) internal actorByTokenId;
     mapping(uint256 => EnumerableSet.UintSet) internal bucketIndexesByTokenId;
 
-    EnumerableSet.UintSet internal stakedTokenIds;
-
-    EnumerableSet.UintSet internal tokenIdsMinted;
-    // used to track LP changes
+    // used to track LP changes in ``
     mapping(uint256 => uint256) internal bucketIndexToActorPositionManLps;
     mapping(uint256 => uint256) internal bucketIndexToPositionManPoolLps;
     mapping(uint256 => uint256) internal bucketIndexToActorPoolLps;
     mapping(uint256 => uint256) internal bucketIndexToDepositTime;
 
+    // Rewards invariant test state //
+    EnumerableSet.UintSet internal stakedTokenIds;
+    mapping(uint256 => uint256) public totalRewardPerEpoch; // total rewards per epoch
+    uint256 public totalStakerRewPerEpoch;                  // amount of reserve decrease
+    uint256 public totalUpdaterRewPerEpoch;                 // amount of reserve increase
 
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -57,9 +63,5 @@ abstract contract BasePositionsHandler is BaseERC20PoolHandler {
 
     function getBucketIndexesByTokenId(uint256 tokenId_) public view returns(uint256[] memory) {
         return bucketIndexesByTokenId[tokenId_].values();
-    }
-
-    function getTokenIds() public view returns(uint256[] memory) {
-        return tokenIdsMinted.values();
     }
 }

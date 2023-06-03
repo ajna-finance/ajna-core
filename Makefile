@@ -51,7 +51,7 @@ test-regression-all             : test-regression-erc20 test-regression-erc721 t
 test-regression-erc20           :; forge t --mt test_regression --mc ERC20 --nmc "RealWorldRegression|Prototech"
 test-regression-erc721          :; forge t --mt test_regression --mc ERC721 --nmc "RealWorldRegression|Prototech"
 test-regression-rewards         :; forge t --mt test_regression --mc Rewards --nmc "RealWorldRegression|Prototech"
-test-regression-positions       :; forge t --mt test_regression --mc Position --nmc "RealWorldRegression|Prototech"
+test-regression-position        :; forge t --mt test_regression --mc Position --nmc "RealWorldRegression|Prototech"
 test-regression-prototech       :; forge t --mt test_regression --mc Prototech
 test-regression-rw              :; forge t --mt test_regression --mc RealWorldRegression
 test-regression                 :; forge t --mt ${MT}

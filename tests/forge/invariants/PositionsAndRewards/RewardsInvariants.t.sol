@@ -22,6 +22,9 @@ contract RewardsInvariants is PositionsInvariants {
 
         _rewards = new RewardsManager(address(_ajna), _position);
 
+        // fund the rewards manager with 100M ajna
+        _ajna.mint(address(_rewards), 100_000_000 * 1e18);
+
         excludeContract(address(_positionHandler));
         excludeContract(address(_rewards));
 
@@ -39,9 +42,7 @@ contract RewardsInvariants is PositionsInvariants {
 
         _handler = address(_rewardsHandler);
     }
-
-
-
+    
     function invariant_rewards_RW1() public useCurrentTimestamp {
         
         // get current epoch (is incremented every kickReserve() call) 
@@ -77,7 +78,6 @@ contract RewardsInvariants is PositionsInvariants {
         // check claimed rewards < rewards cap
         if (updateRewardsCap != 0) require(claimedRewards < updateRewardsCap, "Rewards invariant RW2");
     }
-
 
     function invariant_call_summary() public virtual override useCurrentTimestamp {
         console.log("\nCall Summary\n");

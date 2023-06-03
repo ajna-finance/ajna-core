@@ -45,7 +45,7 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BRewardsHandler.stake']++;
         // Pre action
-        uint256 tokenId = _preStake(_lenderBucketIndex, amountToAdd_);
+        (uint256 tokenId,) = _preStake(_lenderBucketIndex, amountToAdd_);
 
         // Action phase
         _stake(tokenId);
@@ -61,9 +61,12 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         // Pre action
         uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_);
         
+        // if rewards exceed contract balance tx will revert, return
+        uint256 reward = _rewards.calculateRewards(tokenId, _pool.currentBurnEpoch());
+        if (reward > _ajna.balanceOf(address(_rewards))) return;
+
         // Action phase
         _unstake(tokenId);
-
 
         // Post action
         // check token was transferred from rewards contract to actor
@@ -108,16 +111,15 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
     function _preStake(
         uint256 bucketIndex_,
         uint256 amountToAdd_
-    ) internal returns (uint256) {
+    ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
 
-        (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositions(bucketIndex_, amountToAdd_);
+        (tokenId_, indexes_, ) = _preMemorializePositions(bucketIndex_, amountToAdd_);
         
-        _memorializePositions(tokenId, indexes);
+        _memorializePositions(tokenId_, indexes_);
 
         // Approve rewards contract to transfer token
-        _position.approve(address(_rewards), tokenId);
+        _position.approve(address(_rewards), tokenId_);
         
-        return tokenId;
     }
 
     function _preUnstake(
@@ -125,26 +127,43 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         uint256 amountToAdd_
     ) internal returns (uint256 tokenId_) {
 
-        // Only way to check if the actor has a NFT position or a staked position is tracking events
+        // TODO: Check if the actor has a NFT position or a staked position is tracking events
         // Create a staked position
-        tokenId_ = _preStake(bucketIndex_, amountToAdd_);
+        uint256[] memory indexes;
+        (tokenId_, indexes)= _preStake(bucketIndex_, amountToAdd_);
         _stake(tokenId_);
 
+        _advanceEpochRewardStakers(amountToAdd_, indexes);
+    }
+
+    function _advanceEpochRewardStakers(
+        uint256 amountToAdd_,
+        uint256[] memory indexes_
+    ) internal {
+
         // draw some debt and then repay after some times to increase pool earning / reserves 
-        uint256 amountToBorrow = _preDrawDebt(amountToAdd_);
-        _drawDebt(amountToBorrow);
+        (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
+        if (claimableReserves == 0) {
+            uint256 amountToBorrow = _preDrawDebt(amountToAdd_);
+            _drawDebt(amountToBorrow);
 
-        skip(365 days);
-    
-        _repayDebt(type(uint256).max);
+            skip(20 days); // epochs are spaced a minimum of 14 days apart
+        
+            _repayDebt(type(uint256).max);
+        }
 
-        //TODO: Perform multiple randomized reserve auctions to ensure staked position has rewards over multiple epochs 
-        // trigger reserve auction
-        _kickReserveAuction(); 
+        (, claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
+        _kickReserveAuction();
 
-        _takeReserves(amountToAdd_);
+        // skip time for price to decrease
+        skip(60 hours);
 
-        //TODO: Update exchange rates to ensure staked position has rewards        
+        uint256 boundedTakeAmount = constrictToRange(amountToAdd_, claimableReserves / 2, claimableReserves);
+        _takeReserves(boundedTakeAmount);
+
+        // exchange rates must be updated so that rewards can be checked
+        _rewards.updateBucketExchangeRatesAndClaim(address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), indexes_);
+
     }
 
     function _preUpdateExchangeRate(

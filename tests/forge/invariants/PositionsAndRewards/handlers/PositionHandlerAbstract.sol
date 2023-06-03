@@ -20,9 +20,9 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
 
     using EnumerableSet for EnumerableSet.UintSet;
 
-    /*******************************/
+    /********************************/
     /*** Positions Test Functions ***/
-    /*******************************/
+    /********************************/
 
     function memorializePositions(
         uint256 actorIndex_,
@@ -32,7 +32,7 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BPositionHandler.memorialize']++;
         // Pre action //
-        (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositions(_lenderBucketIndex, amountToAdd_);
+        (uint256 tokenId, uint256[] memory indexes,) = _preMemorializePositions(_lenderBucketIndex, amountToAdd_);
 
         // Action phase // 
         _memorializePositions(tokenId, indexes);
@@ -110,7 +110,7 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
     function _preMemorializePositions(
         uint256 bucketIndex_,
         uint256 amountToAdd_
-    ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
+    ) internal returns (uint256 tokenId_, uint256[] memory indexes_, uint256 boundedAmount_) {
 
         // ensure actor has a position
         (uint256 lpBalanceBefore,) = _pool.lenderInfo(bucketIndex_, _actor);
@@ -118,16 +118,18 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
         // add quote token if they don't have a position
         if (lpBalanceBefore == 0) {
             // Prepare test phase
-            uint256 boundedAmount = constrictToRange(amountToAdd_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
-            _ensureQuoteAmount(_actor, boundedAmount);
-            try _pool.addQuoteToken(boundedAmount, bucketIndex_, block.timestamp + 1 minutes) {
+            boundedAmount_ = constrictToRange(amountToAdd_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
+            _ensureQuoteAmount(_actor, boundedAmount_);
+            try _pool.addQuoteToken(boundedAmount_, bucketIndex_, block.timestamp + 1 minutes) {
             } catch (bytes memory err) {
                 _ensurePoolError(err);
             }
         }
 
-        //TODO: Check for exisiting nft positions in PositionManager
-        //TODO: stake w/ multiple buckets instead of just one
+        // TODO: set bounded amount to what lender has in bucket in QT
+
+        // TODO: Check for exisiting nft positions in PositionManager
+        // TODO: stake w/ multiple buckets instead of just one
         indexes_ = new uint256[](1);
         indexes_[0] = bucketIndex_;
 
@@ -145,7 +147,7 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
         uint256 amountToAdd_
     ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
         // Pre action
-        (tokenId_, indexes_) = _preMemorializePositions(bucketIndex_, amountToAdd_);
+        (tokenId_, indexes_,) = _preMemorializePositions(bucketIndex_, amountToAdd_);
         
         // Action phase
         _memorializePositions(tokenId_, indexes_);
@@ -175,15 +177,13 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
     ) internal returns (uint256 tokenId_, uint256 boundedFromIndex_, uint256 boundedToIndex_) {
         boundedFromIndex_      = constrictToRange(fromIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
         boundedToIndex_        = constrictToRange(toIndex_,   LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
-        uint256 boundedAmount_ = constrictToRange(amountToMove_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
 
         // TODO: check if the actor has an existing position and use that one
 
         // mint a position to move
         changePrank(_actor);
         uint256[] memory indexes;
-        (tokenId_, indexes) = _preMemorializePositions(boundedFromIndex_, boundedAmount_);
-        _memorializePositions(tokenId_, indexes);
-        
+        (tokenId_, indexes,) = _preMemorializePositions(boundedFromIndex_, amountToMove_);
+        _memorializePositions(tokenId_, indexes); 
     }
 }
