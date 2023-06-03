@@ -54,15 +54,17 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     /*** State Variables ***/
     /***********************/
 
-    /// @dev Mapping of `token id => ajna pool address` for which token was minted.
-    mapping(uint256 => address) public override poolKey;
+    // /// @dev Mapping of `token id => ajna pool address` for which token was minted.
+    // mapping(uint256 => address) public override poolKey;
 
-    /// @dev Mapping of `token id => ajna pool address` for which token was minted.
+    /// @dev Mapping of `token id => index` for which token was minted.
     mapping(uint256 => mapping(uint256 => Position)) internal positions;
     /// @dev Mapping of `token id => bucket indexes` associated with position.
     mapping(uint256 => EnumerableSet.UintSet)        internal positionIndexes;
-    /// @dev Mapping of `token id => last redeem timestamp`.
-    mapping(uint256 => uint256)                      internal adjustmentTime;
+    // /// @dev Mapping of `token id => last redeem timestamp`.
+    // mapping(uint256 => uint256)                      internal adjustmentTime;
+
+    mapping(uint256 => TokenInfo) tokenInfo;
 
     /// @dev Id of the next token that will be minted. Skips `0`.
     uint176 private _nextId = 1;
@@ -101,6 +103,11 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         uint256 allowance;   // Lp allowance for a bucket
     }
 
+    struct TokenInfo {
+        address pool;       // pool address associated with the position
+        uint96 adjustmentTime; // time of last adjustment to the position
+    }
+
     /*****************/
     /*** Modifiers ***/
     /*****************/
@@ -119,7 +126,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         if (!_isApprovedOrOwner(msg.sender, tokenId_)) revert NoAuth();
 
         // revert if the token id is not minted for given pool address
-        if (pool_ != poolKey[tokenId_]) revert WrongPool();
+        if (pool_ != tokenInfo[tokenId_].pool) revert WrongPool();
 
         _;
     }
@@ -132,7 +139,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     modifier recordAdjustmentTime(uint256 tokenId_) {
         _;
 
-        adjustmentTime[tokenId_] = block.timestamp;
+        tokenInfo[tokenId_].adjustmentTime = uint96(block.timestamp);
     }
 
     /*******************/
@@ -178,8 +185,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
 
         // remove permit nonces and pool mapping for burned token
         delete _nonces[tokenId_];
-        delete poolKey[tokenId_];
-        delete adjustmentTime[tokenId_];
+        delete tokenInfo[tokenId_];
 
         _burn(tokenId_);
 
@@ -284,7 +290,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         tokenId_ = _nextId++;
 
         // record which pool the tokenId was minted in
-        poolKey[tokenId_] = pool_;
+        tokenInfo[tokenId_].pool = pool_;
 
         _mint(recipient_, tokenId_);
 
@@ -482,10 +488,11 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     ) internal override {
         // burning is not constrained by any redeem action
         if (to_ != address(0)) {
+            TokenInfo storage token = tokenInfo[tokenId_];
             // revert transfer in case token positions were redeem in the last transfer lock period
-            if (block.timestamp - adjustmentTime[tokenId_] <= TRANSFER_LOCK_PERIOD) revert TransferLocked();
+            if (block.timestamp - token.adjustmentTime <= TRANSFER_LOCK_PERIOD) revert TransferLocked();
 
-            delete adjustmentTime[tokenId_];
+            token.adjustmentTime = 0;
         }
     }
 
@@ -543,7 +550,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         uint256 index_
     ) external override view returns (uint256) {
         Position memory position = positions[tokenId_][index_];
-        return _bucketBankruptAfterDeposit(IPool(poolKey[tokenId_]), index_, position.depositTime) ? 0 : position.lps;
+        return _bucketBankruptAfterDeposit(IPool(tokenInfo[tokenId_].pool), index_, position.depositTime) ? 0 : position.lps;
     }
 
     /// @inheritdoc IPositionManagerDerivedState
@@ -563,7 +570,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         // filter out bankrupt buckets
         filteredIndexes_ = new uint256[](indexesLength);
         uint256 filteredIndexesLength = 0;
-        IPool pool = IPool(poolKey[tokenId_]);
+        IPool pool = IPool(tokenInfo[tokenId_].pool);
         for (uint256 i = 0; i < indexesLength; ) {
             if (!_bucketBankruptAfterDeposit(pool, indexes[i], positions[tokenId_][indexes[i]].depositTime)) {
                 filteredIndexes_[filteredIndexesLength++] = indexes[i];
@@ -587,6 +594,10 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         );
     }
 
+    function poolKey(uint256 tokenId_) external view returns (address) {
+        return tokenInfo[tokenId_].pool;
+    }
+
     /// @inheritdoc IPositionManagerDerivedState
     function isAjnaPool(
         address pool_,
@@ -600,7 +611,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         uint256 tokenId_,
         uint256 index_
     ) external view override returns (bool) {
-        return _bucketBankruptAfterDeposit(IPool(poolKey[tokenId_]), index_, positions[tokenId_][index_].depositTime);
+        return _bucketBankruptAfterDeposit(IPool(tokenInfo[tokenId_].pool), index_, positions[tokenId_][index_].depositTime);
     }
 
     /// @inheritdoc IPositionManagerDerivedState
@@ -619,7 +630,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     ) public view override returns (string memory) {
         if (!_exists(tokenId_)) revert NoToken();
 
-        address pool = poolKey[tokenId_];
+        address pool = tokenInfo[tokenId_].pool;
 
         address collateralTokenAddress = IPool(pool).collateralAddress();
         address quoteTokenAddress      = IPool(pool).quoteTokenAddress();
