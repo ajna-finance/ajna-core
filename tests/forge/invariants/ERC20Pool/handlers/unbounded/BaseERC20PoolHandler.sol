@@ -80,7 +80,10 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
         return actorsAddress;
     }
 
-    function _repayBorrowerDebt(address borrower_, uint256 amount_) internal override {
+    function _repayBorrowerDebt(
+        address borrower_,
+        uint256 amount_
+    ) updateLocalStateAndPoolInterest internal override {
         try _erc20Pool.repayDebt(borrower_, amount_, 0, borrower_, 7388) {
 
         } catch (bytes memory err) {

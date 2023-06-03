@@ -51,6 +51,15 @@ interface IPositionManagerDerivedState {
     ) external view returns (uint256, uint256);
 
     /**
+     *  @notice Returns the pool address associated with a positions `NFT`.
+     *  @param  tokenId_ The token id of the positions `NFT`.
+     *  @return Pool address associated with the `NFT`.
+     */
+    function poolKey(
+        uint256 tokenId_
+    ) external view returns (address);
+
+    /**
      *  @notice Checks if a given `pool_` address is an Ajna pool.
      *  @param  pool_       Address of the `Ajna` pool.
      *  @param  subsetHash_ Factory's subset hash pool.

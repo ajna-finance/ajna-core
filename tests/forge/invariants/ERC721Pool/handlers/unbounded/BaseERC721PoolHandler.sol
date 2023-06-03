@@ -93,7 +93,10 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
         return actorsAddress;
     }
 
-    function _repayBorrowerDebt(address borrower_, uint256 amount_) internal override {
+    function _repayBorrowerDebt(
+        address borrower_,
+        uint256 amount_
+    ) updateLocalStateAndPoolInterest internal override {
 
         (
             uint256 kickTimeBefore,

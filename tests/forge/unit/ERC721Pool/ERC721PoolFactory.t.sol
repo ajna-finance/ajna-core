@@ -122,15 +122,24 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         assertEq(_factory.getNumberOfDeployedPools(), 3);
     }
 
-    function testDeployERC721PoolWithNoDecimals() external {
+    function testDeployERC721PoolWithNoncompliantDecimals() external {
 
         ERC20NoDecimals noDecToken = new ERC20NoDecimals("NoDec", "ND");
 
         // should revert if trying to deploy with token that doesn't have decimals() method
-        _assertTokenInvalidNoDecimals({
+        _assertTokenDecimalsNotCompliant({
             poolFactory:  address(_poolFactory),
             collateral:   address(_collateral),
             quote:        address(noDecToken),
+            interestRate: 0.05 * 10**18
+        });
+
+        // should revert if trying to deploy with token with more than 18 decimals
+        TokenWithNDecimals nonCompliantToken = new TokenWithNDecimals("NonCompliant", "NC", 19);
+        _assertTokenDecimalsNotCompliant({
+            poolFactory:  address(_poolFactory),
+            collateral:   address(_collateral),
+            quote:        address(nonCompliantToken),
             interestRate: 0.05 * 10**18
         });
     }

@@ -3,8 +3,8 @@ pragma solidity 0.8.18;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import { Token } from '../../utils/Tokens.sol';
-import { ERC20NoDecimals } from '../../utils/ContractERC20NoDecimals.sol';
+import { Token, TokenWithNDecimals } from '../../utils/Tokens.sol';
+import { ERC20NoDecimals }           from '../../utils/ContractERC20NoDecimals.sol';
 
 import { ERC20Pool }        from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
@@ -42,12 +42,12 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         });
     }
 
-    function testDeployERC20PoolWithNoDecimals() external {
+    function testDeployERC20PoolWithNoncompliantDecimals() external {
 
         ERC20NoDecimals noDecToken = new ERC20NoDecimals("NoDec", "ND");
 
         // should revert if trying to deploy with token that doesn't have decimals() method
-        _assertTokenInvalidNoDecimals({
+        _assertTokenDecimalsNotCompliant({
             poolFactory:  address(_poolFactory),
             collateral:   address(_collateral),
             quote:        address(noDecToken),
@@ -55,10 +55,25 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         });
 
         // should revert if trying to deploy with token that doesn't have decimals() method
-        _assertTokenInvalidNoDecimals({
+        _assertTokenDecimalsNotCompliant({
             poolFactory:  address(_poolFactory),
             collateral:   address(noDecToken),
             quote:        address(_quote),
+            interestRate: 0.05 * 10**18
+        });
+
+        // should revert if trying to deploy with token with more than 18 decimals
+        TokenWithNDecimals nonCompliantToken = new TokenWithNDecimals("NonCompliant", "NC", 19);
+        _assertTokenDecimalsNotCompliant({
+            poolFactory:  address(_poolFactory),
+            collateral:   address(nonCompliantToken),
+            quote:        address(_quote),
+            interestRate: 0.05 * 10**18
+        });
+        _assertTokenDecimalsNotCompliant({
+            poolFactory:  address(_poolFactory),
+            collateral:   address(_collateral),
+            quote:        address(nonCompliantToken),
             interestRate: 0.05 * 10**18
         });
     }
