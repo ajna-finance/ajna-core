@@ -142,7 +142,7 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
     ) internal {
 
         // draw some debt and then repay after some times to increase pool earning / reserves 
-        (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
+        (, uint256 claimableReserves, , ) = _pool.reservesInfo();
         if (claimableReserves == 0) {
             uint256 amountToBorrow = _preDrawDebt(amountToAdd_);
             _drawDebt(amountToBorrow);
@@ -152,10 +152,11 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
             _repayDebt(type(uint256).max);
         }
 
-        (, claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
+        (, claimableReserves, , ) = _pool.reservesInfo();
+
         _kickReserveAuction();
 
-        // skip time for price to decrease
+        // skip time for price to decrease, large price decrease reduces chances of rewards exceeding rewards contract balance
         skip(60 hours);
 
         uint256 boundedTakeAmount = constrictToRange(amountToAdd_, claimableReserves / 2, claimableReserves);
