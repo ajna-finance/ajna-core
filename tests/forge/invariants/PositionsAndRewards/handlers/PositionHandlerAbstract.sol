@@ -126,7 +126,6 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
             }
         }
 
-        // TODO: stake w/ multiple buckets instead of just one
         indexes_ = new uint256[](1);
         indexes_[0] = bucketIndex_;
 

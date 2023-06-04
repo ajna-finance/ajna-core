@@ -32,7 +32,6 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
             // actor should loses ownership, positionManager gains it
             tokenIdsByActor[address(_rewards)].add(tokenId_);
             tokenIdsByActor[address(_actor)].remove(tokenId_);
-            stakedTokenIds.add(tokenId_);
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
