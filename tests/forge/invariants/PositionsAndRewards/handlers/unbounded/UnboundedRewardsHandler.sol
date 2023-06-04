@@ -29,7 +29,9 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
         numberOfCalls['UBRewardsHandler.stake']++;
 
         try _rewards.stake(tokenId_) {
-
+            // actor should loses ownership, positionManager gains it
+            tokenIdsByActor[address(_rewards)].add(tokenId_);
+            tokenIdsByActor[address(_actor)].remove(tokenId_);
             stakedTokenIds.add(tokenId_);
 
         } catch (bytes memory err) {
@@ -45,6 +47,10 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
         uint256 actorBalanceBeforeClaim = _quote.balanceOf(_actor);
 
         try _rewards.unstake(tokenId_) {
+
+            // actor should receive tokenId, positionManager loses ownership
+            tokenIdsByActor[address(_actor)].add(tokenId_);
+            tokenIdsByActor[address(_rewards)].remove(tokenId_);
 
             // add to total rewards if actor received reward
             if ((_quote.balanceOf(_actor) - actorBalanceBeforeClaim) != 0) {

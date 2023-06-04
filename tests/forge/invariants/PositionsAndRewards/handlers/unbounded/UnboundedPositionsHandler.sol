@@ -52,8 +52,6 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
         try _position.memorializePositions(address(_pool), tokenId_, indexes_) {
             
-            // TODO: store memorialized position's tokenIds in mapping, for reuse in unstake and redeem calls
-
             // track created positions
             for ( uint256 i = 0; i < indexes_.length; i++) {
                 // PM1_PM2_PM3 tracking
@@ -62,11 +60,11 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
                 // info used to tearDown buckets
                 bucketIndexesByTokenId[tokenId_].add(indexes_[i]);
-
             }
 
-            // info used to tearDown buckets
+            // info used track actors positions
             actorByTokenId[tokenId_] = address(_actor);
+            tokenIdsByActor[address(_actor)].add(tokenId_);
 
             // Post action Checks //
             for(uint256 i=0; i < indexes_.length; i++) {
@@ -128,8 +126,8 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
             (uint256 poolPreActionActorLps,)  = _pool.lenderInfo(indexes_[i], preActionOwner);
             (uint256 poolPreActionPosManLps,) = _pool.lenderInfo(indexes_[i], address(_position));
 
-            bucketIndexToActorPoolLps[indexes_[i]] = poolPreActionActorLps;
-            bucketIndexToPositionManPoolLps[indexes_[i]]   = poolPreActionPosManLps;
+            bucketIndexToActorPoolLps[indexes_[i]]       = poolPreActionActorLps;
+            bucketIndexToPositionManPoolLps[indexes_[i]] = poolPreActionPosManLps;
 
             // assert that the underlying LP balance in PositionManager is greater than 0 
             (uint256 posPreActionLps,) = _position.getPositionInfo(tokenId_, indexes_[i]);
@@ -146,6 +144,7 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
             // info for tear down
             delete actorByTokenId[tokenId_];
             delete bucketIndexesByTokenId[tokenId_];
+            tokenIdsByActor[address(_actor)].remove(tokenId_);
 
             // Post action Checks //
             // assert that the minter is still the owner
@@ -169,7 +168,6 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
                 (uint256 poolPosLps,) = _pool.lenderInfo(bucketIndex, address(_position));
 
                 // assert PositionsMan LP in pool matches the amount redeemed by actor 
-                // require(poolPosLps == bucketIndexToPosLps[bucketIndex] - bucketIndexToActorLps[bucketIndex]);
                 // positionMan has now == positionMan pre - actor's LP change
                 require(poolPosLps == positionManPoolLps - (poolActorLps - actorPoolLps));
 
@@ -239,8 +237,6 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
         */
 
         try _position.moveLiquidity(address(_pool), tokenId_, fromIndex_, toIndex_, block.timestamp + 30) {
-
-            // TODO: store memorialized position's tokenIds in mapping, for reuse in unstake and redeem calls
 
             bucketIndexesByTokenId[tokenId_].add(toIndex_);
             bucketIndexesByTokenId[tokenId_].remove(fromIndex_);

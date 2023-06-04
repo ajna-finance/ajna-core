@@ -30,12 +30,12 @@ abstract contract BasePositionsHandler is BaseERC20PoolHandler {
 
     // Position invariant test state //
 
-    // EnumerableSet.UintSet internal tokenIdsMinted;
     // used for PM1_PM2_PM3 tracking
     mapping(uint256 => EnumerableSet.UintSet) internal tokenIdsByBucketIndex;
     EnumerableSet.UintSet internal bucketIndexesWithPosition;
 
-    // used for removing all CT and QT to reset exchange rate
+    // used for removing all CT and QT to reset exchange rate 
+    mapping(address => EnumerableSet.UintSet) internal tokenIdsByActor;
     mapping(uint256 => address) internal actorByTokenId;
     mapping(uint256 => EnumerableSet.UintSet) internal bucketIndexesByTokenId;
 
@@ -63,5 +63,9 @@ abstract contract BasePositionsHandler is BaseERC20PoolHandler {
 
     function getBucketIndexesByTokenId(uint256 tokenId_) public view returns(uint256[] memory) {
         return bucketIndexesByTokenId[tokenId_].values();
+    }
+
+    function getTokenIdsByActor(address actor_) public view returns(uint256[] memory) {
+        return tokenIdsByActor[actor_].values();
     }
 }

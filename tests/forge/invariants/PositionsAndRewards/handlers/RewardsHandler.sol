@@ -113,7 +113,7 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         uint256 amountToAdd_
     ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
 
-        (tokenId_, indexes_, ) = _preMemorializePositions(bucketIndex_, amountToAdd_);
+        (tokenId_, indexes_) = _preMemorializePositions(bucketIndex_, amountToAdd_);
         
         _memorializePositions(tokenId_, indexes_);
 
@@ -128,6 +128,7 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
     ) internal returns (uint256 tokenId_) {
 
         // TODO: Check if the actor has a NFT position or a staked position is tracking events
+        
         // Create a staked position
         uint256[] memory indexes;
         (tokenId_, indexes)= _preStake(bucketIndex_, amountToAdd_);
