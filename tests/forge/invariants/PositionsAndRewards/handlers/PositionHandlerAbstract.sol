@@ -195,6 +195,5 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
             (tokenId_, indexes_) = _preMemorializePositions(bucketIndex_, amountToAdd_); 
             _memorializePositions(tokenId_, indexes_);
         }
-    }
-    
+    } 
 }

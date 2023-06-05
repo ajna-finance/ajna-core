@@ -174,5 +174,4 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         indexes_ = new uint256[](1);
         indexes_[0] = bucketIndex_;
     }
-
 }

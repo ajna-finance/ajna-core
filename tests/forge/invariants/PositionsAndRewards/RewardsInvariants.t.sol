@@ -92,5 +92,4 @@ contract RewardsInvariants is PositionsInvariants {
             IBaseHandler(_handler).numberOfCalls("BRewardsHandler.stake")
         );
     }
-
 }

@@ -22,6 +22,5 @@ contract PositionHandler is PositionHandlerAbstract {
 
         // Position manager
         _position = PositionManager(positions_);
-
     }
 }
