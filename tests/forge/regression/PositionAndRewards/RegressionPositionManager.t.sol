@@ -9,15 +9,21 @@ contract RegressionPositionManager is PositionsInvariants {
     function setUp() public override { 
         super.setUp();
     }
-    
+
+    // Test was failing because handler was using unbounded bucketIndex
+    // Fixed by bounding bucketIndex
     function test_regression_position_evm_revert_1() external {
         _positionHandler.memorializePositions(265065747026302585864021010218, 462486804883131506688620136159543, 43470270713791727776, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
     }
-
+    
+    // Test was failing because handler was using unbounded bucketIndex
+    // Fixed by bounding bucketIndex
     function test_regression_position_evm_revert_2() external {
         _positionHandler.burn(3492, 4670, 248, 9615);
     }
 
+    // Test was failing due to incorrect check in moveLiquidity handler
+    // Fixed by updating Lps and depositTime checks in moveLiquidity
     function test_regression_position_moveLiquidity_assertions() external {
         _positionHandler.redeemPositions(3, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 383, 55401367687647196204681805934009816110);
         _positionHandler.memorializePositions(63114273171442586497890388, 154152435409657628166549200091090874517100159073873, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 115792089237316195423570985008687907853269984665640564039457584007913129639935);

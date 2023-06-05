@@ -12,13 +12,16 @@ contract RegressionRewardsManager is RewardsInvariants {
         super.setUp();
     }
 
-
+    // Test was failing due to incorrect removal of local tracked positions(tokenIdsByBucketIndex, bucketIndexesWithPosition) in handlers
+    // Fixed by not removing local tracked positions
     function test_regression_rewards_PM1_1() public {
         _rewardsHandler.unstake(156983341, 3, 1057, 627477641256361);
         _rewardsHandler.settleAuction(2108881198342615861856429474, 922394580216134598, 4169158839, 1000000019773478651);
         invariant_positions_PM1_PM2_PM3();
     }
 
+    // Test was failing due to incorrect removal of local tracked positions(tokenIdsByBucketIndex, bucketIndexesWithPosition) in handlers
+    // Fixed by not removing local tracked positions
     function test_regression_rewards_PM1_2() public {
         _rewardsHandler.addCollateral(378299828523348996450409252968204856717337200844620995950755116109442848, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 52986329559447389847739820276326448003115507778858588690614563138365, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
         _rewardsHandler.memorializePositions(2386297678015684371711534521507, 1, 2015255596877246640, 0);
@@ -26,6 +29,8 @@ contract RegressionRewardsManager is RewardsInvariants {
         invariant_positions_PM1_PM2_PM3();
     }
 
+    // Test was failing due to incorrect removal of local tracked positions(tokenIdsByBucketIndex, bucketIndexesWithPosition) in handlers
+    // Fixed by not removing local tracked positions
     function test_regression_rewards_PM1_3() public {
         _rewardsHandler.memorializePositions(1072697513541617411598352761547948569235246260453338, 49598781763341098132796575116941537, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 59786055813720421827623480119157950185156928336);
         _rewardsHandler.drawDebt(71602122977707056985766204553433920464603022469065, 0, 3);
@@ -45,10 +50,14 @@ contract RegressionRewardsManager is RewardsInvariants {
         invariant_positions_PM1_PM2_PM3();
     }
 
+    // Invariant was failing when rewards cap is equal to zero
+    // Fixed by updating invariants to run only when rewards cap is non zero
     function test_regression_rewards_RW1() public {
         invariant_rewards_RW1();
     }
 
+    // Test was failing due to unbounded debt drawn in `_preUnstake`
+    // Fixed by bounding amount to borrow
     function test_regression_evm_revert_1() public {
         _rewardsHandler.kickAuction(4927, 15287, 1672621391, 7794);
         _rewardsHandler.removeQuoteToken(0, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 2, 3);
@@ -63,6 +72,8 @@ contract RegressionRewardsManager is RewardsInvariants {
         _rewardsHandler.claimRewards(5460042422485935527540305190804180316252530934172557782973004, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 2317020199583405169185090105199, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
     }
 
+    // Test was failing due to insufficient user token balance for `addQuoteToken` in `_preMemorializePositions`
+    // Fixed with adding minting required tokens before `addQuoteToken`.
     function test_regression_evm_revert_2() public {
         _rewardsHandler.redeemPositions(535, 10526, 16402, 90638196);
         _rewardsHandler.moveQuoteToken(3, 3, 3665933105380066469, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 35609320936341689682324970775);
