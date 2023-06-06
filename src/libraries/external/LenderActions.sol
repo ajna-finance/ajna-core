@@ -22,6 +22,8 @@ import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
 import { Maths }    from '../internal/Maths.sol';
 
+import '@std/console.sol';
+
 /**
     @title  LenderActions library
     @notice External library containing logic for lender actors:
@@ -288,6 +290,7 @@ library LenderActions {
             movedAmount_ = Maths.wmul(movedAmount_, Maths.WAD - _depositFeeRate(poolState_.rate));
         }
 
+        console.log("movedAmount: %s", movedAmount_);
         vars.toBucketUnscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.toIndex);
         vars.toBucketScale           = Deposits.scale(deposits_, params_.toIndex);
         vars.toBucketDeposit         = Maths.wmul(vars.toBucketUnscaledDeposit, vars.toBucketScale);
@@ -300,10 +303,12 @@ library LenderActions {
             vars.toBucketPrice,
             Math.Rounding.Down
         );
+        console.log("toBucketLP_: %s", toBucketLP_);
 
         // revert if (due to rounding) the awarded LP in to bucket is 0
         if (toBucketLP_ == 0) revert InsufficientLP();
 
+        console.log("toBucketLP_: %s", Maths.wdiv(movedAmount_, vars.toBucketScale));
         Deposits.unscaledAdd(deposits_, params_.toIndex, Maths.wdiv(movedAmount_, vars.toBucketScale));
 
         vars.htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
@@ -330,8 +335,10 @@ library LenderActions {
             fromBucket.lps = vars.fromBucketRemainingLP;
         }
 
+        console.log("toBucket.lps pre move", toBucket.lps);
         // update lender and bucket LP balance in target bucket
         Lender storage toBucketLender = toBucket.lenders[msg.sender];
+        console.log("toBucketLender.lps pre move", toBucketLender.lps);
 
         vars.toBucketDepositTime = toBucketLender.depositTime;
         if (vars.toBucketBankruptcyTime >= vars.toBucketDepositTime) {
@@ -342,13 +349,16 @@ library LenderActions {
             vars.toBucketDepositTime = vars.toBucketBankruptcyTime + 1;
         } else {
             toBucketLender.lps += toBucketLP_;
+            console.log("toBucketLender.lps", toBucketLender.lps);
         }
+        console.log("toBucketLender.lps post move", toBucketLender.lps);
 
         // set deposit time to the greater of the lender's from bucket and the target bucket
         toBucketLender.depositTime = Maths.max(vars.fromBucketDepositTime, vars.toBucketDepositTime);
 
         // update bucket LP balance
         toBucket.lps += toBucketLP_;
+        console.log("toBucket.lps post move", toBucket.lps);
 
         emit MoveQuoteToken(
             msg.sender,

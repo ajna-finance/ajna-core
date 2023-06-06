@@ -27,13 +27,6 @@ interface IBaseHandler {
     function previousReserves() external view returns(uint256);
     function increaseInReserves() external view returns(uint256);
     function decreaseInReserves() external view returns(uint256);
-
-    // function totalRewardPerEpoch(uint256) external view returns(uint256);
-
-    // function getBucketIndexesWithPosition() external view returns(uint256[] memory);
-    // function getTokenIdsByBucketIndex(uint256) external view returns(uint256[] memory);
-    // function getBucketIndexesByTokenId(uint256) external view returns(uint256[] memory);
-    // function getTokenIdsByActor() external view returns(uint256[] memory);
     
     function previousTotalBonds() external view returns(uint256);
     function increaseInBonds() external view returns(uint256);

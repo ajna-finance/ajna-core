@@ -15,6 +15,8 @@ import { Maths }                        from "src/libraries/internal/Maths.sol";
 import { BaseERC20PoolHandler }         from '../../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
 import { BasePositionsHandler }         from './BasePositionsHandler.sol';
 
+import '@std/console.sol';
+
 /**
  *  @dev this contract manages multiple lenders
  *  @dev methods in this contract are called in random order
@@ -270,8 +272,15 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
             uint256 postActionFromIndexQuote = _getQuoteAtIndex(fromLps, fromIndex_);
             uint256 postActionToIndexQuote   = _getQuoteAtIndex(toLps, toIndex_);
 
+            console.log("aft move toBucket lps in test", toLps);
+
             // positionManager's total QT postAction is less than or equal to preAction
             // can be less than or equal due to fee on movements above -> below LUP
+            console.log("PreActionFromIndexQuote: %s", preActionFromIndexQuote);
+            console.log("preActionToIndexQuote: %s", preActionToIndexQuote);
+            console.log("-- --");
+            console.log("postActionFromIndexQuote: %s", postActionFromIndexQuote);
+            console.log("postActionToIndexQuote: %s", postActionToIndexQuote);
 
             require(preActionFromIndexQuote + preActionToIndexQuote >= postActionFromIndexQuote + postActionToIndexQuote,
             "PM6: total quote tokens in positionManager have increased after move");
