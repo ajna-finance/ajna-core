@@ -28,10 +28,14 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBRewardsHandler.stake']++;
 
+        require(_position.ownerOf(tokenId_) == address(_actor), "RW5: owner should be actor staking");
+
         try _rewards.stake(tokenId_) {
             // actor should loses ownership, positionManager gains it
             tokenIdsByActor[address(_rewards)].add(tokenId_);
             tokenIdsByActor[address(_actor)].remove(tokenId_);
+
+            require(_position.ownerOf(tokenId_) == address(_rewards), "RW5: owner should be rewardsManager");
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -43,7 +47,8 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBRewardsHandler.unstake']++;
 
-        uint256 actorBalanceBeforeClaim = _quote.balanceOf(_actor);
+        uint256 actorAjnaBalanceBeforeClaim = _ajna.balanceOf(_actor);
+        uint256 rewardsClaimedBeforeAction  = _rewards.rewardsClaimed(tokenId_);
 
         try _rewards.unstake(tokenId_) {
 
@@ -52,12 +57,20 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
             tokenIdsByActor[address(_rewards)].remove(tokenId_);
 
             // add to total rewards if actor received reward
-            if ((_quote.balanceOf(_actor) - actorBalanceBeforeClaim) != 0) {
-                (,,uint256 lastClaimedEpoch) = _rewards.getStakeInfo(tokenId_);
-                totalRewardPerEpoch[lastClaimedEpoch] += _quote.balanceOf(_actor) - actorBalanceBeforeClaim;
+
+            (,,uint256 lastClaimedEpoch) = _rewards.getStakeInfo(tokenId_);
+
+            if ((_ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim) != 0) {
+                totalRewardPerEpoch[lastClaimedEpoch] += _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
+
+                uint256 actorAjnaGain = _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
+                uint256 rewardsClaimedGain = _rewards.rewardsClaimed(tokenId_) - rewardsClaimedBeforeAction;
+
+                require(_rewards.isEpochClaimed(tokenId_, _pool.currentBurnEpoch()) == true, "RW6: most recent epoch should be claimed");
+                require( lastClaimedEpoch == _pool.currentBurnEpoch(), "RW6: most recent epoch should be claimed");
+                require(actorAjnaGain == rewardsClaimedGain, "RW6: rewardsManager's rewards claimed increase should match actor's claim");
             }
 
-            stakedTokenIds.remove(tokenId_);
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -69,14 +82,14 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
     ) internal {
         numberOfCalls['UBRewardsHandler.exchangeRate']++;
 
-        uint256 actorBalanceBeforeClaim = _quote.balanceOf(_actor);
+        uint256 actorAjnaBalanceBeforeClaim = _ajna.balanceOf(_actor);
 
         try _rewards.updateBucketExchangeRatesAndClaim(address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), indexes_) {
 
             // add to total rewards if actor received reward
-            if ((_quote.balanceOf(_actor) - actorBalanceBeforeClaim) != 0) {
+            if ((_ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim) != 0) {
                 uint256 curBurnEpoch = _pool.currentBurnEpoch();
-                totalRewardPerEpoch[curBurnEpoch] += _quote.balanceOf(_actor) - actorBalanceBeforeClaim;
+                totalRewardPerEpoch[curBurnEpoch] += _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
             }
 
         } catch (bytes memory err) {

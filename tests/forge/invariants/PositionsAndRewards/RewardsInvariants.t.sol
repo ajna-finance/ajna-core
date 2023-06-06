@@ -79,6 +79,15 @@ contract RewardsInvariants is PositionsInvariants {
         if (updateRewardsCap != 0) require(claimedRewards < updateRewardsCap, "Rewards invariant RW2");
     }
 
+
+    // function invariant_rewards_RW3() public useCurrentTimestamp { 
+        
+    // - **RW3**: If a bucket has had it's exchange rate updated bucketExchangeRates mapping should be non-zero (`bucketExchangeRates[pool_][bucketIndex_][burnEpoch_] != 0`)
+
+    // }
+
+
+
     function invariant_call_summary() public virtual override useCurrentTimestamp {
         console.log("\nCall Summary\n");
         console.log("--Positions--------");
