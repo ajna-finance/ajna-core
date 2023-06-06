@@ -22,13 +22,11 @@ interface IPositionManagerState {
     /**
     * @dev Struct tracking a position token info.
     * @param pool            The pool address associated with the position.
-    * @param adjustmentTime  The time of last adjustment to the position.
     * @param positionIndexes Mapping tracking indexes to which a position is associated.
     * @param positions       Mapping tracking a positions state in a bucket index.
     */
     struct TokenInfo {
         address pool;
-        uint96 adjustmentTime;
         EnumerableSet.UintSet positionIndexes;
         mapping(uint256 index => Position) positions;
     }
