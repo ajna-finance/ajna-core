@@ -47,6 +47,9 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
 
         try _rewards.unstake(tokenId_) {
 
+            // check token was transferred from rewards contract to actor
+            require(_position.ownerOf(tokenId_) == _actor, "actor should receive ownership after unstaking");
+
             // actor should receive tokenId, positionManager loses ownership
             tokenIdsByActor[address(_actor)].add(tokenId_);
             tokenIdsByActor[address(_rewards)].remove(tokenId_);
@@ -56,8 +59,6 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
                 (,,uint256 lastClaimedEpoch) = _rewards.getStakeInfo(tokenId_);
                 totalRewardPerEpoch[lastClaimedEpoch] += _quote.balanceOf(_actor) - actorBalanceBeforeClaim;
             }
-
-            stakedTokenIds.remove(tokenId_);
 
         } catch (bytes memory err) {
             _ensurePoolError(err);

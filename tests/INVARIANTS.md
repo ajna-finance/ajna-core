@@ -93,3 +93,10 @@
 - **PM1**: LP balance of PositionManager in a Pool for a Bucket should be the sum of the positions[...][index].lps for all tokens/users
 - **PM2** Sum of the LP balance of the PositionManager in a Pool across all buckets should be the sum of the positions[...].[...].lps across all indexes and tokens/users
 - **PM3**: Position deposit time (`depositTime`) tracked by tokenId in PositionManager (`positions[tokenId][index]`) should always be of equal or lesser value than the PositionManager's LP at that index in the pool contract.
+- **PM4**: mint should populate `poolKey[tokenId]`, `positionIndexes` should be empty and the owner of the NFT should be the caller.
+- **PM5**: burn should reset `poolKey[tokenId]`, `positionIndexes` should be empty and the owner of the NFT should be the zero address.
+- **PM6**: moveLiquidity should remove all LP from the from index and set deposit time to zero. To index should receive increased LP and deposit time should match positionManager's deposit time. PositionManager should have less then or equal to the same quoteToken after move.
+- **PM7**: memorializePosition should transfer all pool contract LP in the provided index to the positionManager. PositionManager should take on the greater of the lender of positionManager's deposit time. PositionManager's LP in the provided index should match what the lender had in the pool contract before memorializePosition was called.
+- **PM8**: reedemPositions should maintain the preivous owner of the NFT position and pool associated with position. Remove the passed in indexes from the positionIndexes associated token. LP of redeemer should increase with same amount that LP of PositionManager decrease (by checking the pool). tokenId associated with the indexes redeemed should be zero.
+
+

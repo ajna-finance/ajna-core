@@ -67,10 +67,6 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
 
         // Action phase
         _unstake(tokenId);
-
-        // Post action
-        // check token was transferred from rewards contract to actor
-        assertEq(_position.ownerOf(tokenId), _actor);
     }
 
     function updateExchangeRate(
