@@ -10,6 +10,9 @@ import { PoolType } from '../../interfaces/pool/IPool.sol';
 import { Buckets } from '../internal/Buckets.sol';
 import { Maths }   from '../internal/Maths.sol';
 
+
+import '@std/console.sol';
+
     error BucketIndexOutOfBounds();
     error BucketPriceOutOfBounds();
 
@@ -237,7 +240,7 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 lenderLPBalance_,
         uint256 maxQuoteToken_,
         uint256 bucketPrice_
-    ) pure returns (uint256 quoteTokenAmount_) {
+    ) view returns (uint256 quoteTokenAmount_) {
         quoteTokenAmount_ = Buckets.lpToQuoteTokens(
             bucketCollateral_,
             bucketLP_,
@@ -246,6 +249,13 @@ import { Maths }   from '../internal/Maths.sol';
             bucketPrice_,
             Math.Rounding.Down
         );
+
+        console.log("-- lpToQuoteToken --");
+        console.log("lenderLpBal:      ", lenderLPBalance_);
+        console.log("quoteTokenAmount_:", quoteTokenAmount_);
+        console.log("deposit:          ", deposit_);
+        console.log("maxQuoteToken_:   ", maxQuoteToken_);
+        console.log("-- --");
 
         if (quoteTokenAmount_ > deposit_)       quoteTokenAmount_ = deposit_;
         if (quoteTokenAmount_ > maxQuoteToken_) quoteTokenAmount_ = maxQuoteToken_;
