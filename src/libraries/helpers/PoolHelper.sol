@@ -237,7 +237,7 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 lenderLPBalance_,
         uint256 maxQuoteToken_,
         uint256 bucketPrice_
-    ) view returns (uint256 quoteTokenAmount_) {
+    ) pure returns (uint256 quoteTokenAmount_) {
         quoteTokenAmount_ = Buckets.lpToQuoteTokens(
             bucketCollateral_,
             bucketLP_,
