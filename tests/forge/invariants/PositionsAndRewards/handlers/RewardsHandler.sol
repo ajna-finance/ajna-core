@@ -10,9 +10,9 @@ import { RewardsManager }               from 'src/RewardsManager.sol';
 import { UnboundedRewardsHandler } from './unbounded/UnboundedRewardsHandler.sol';
 
 import { ReserveERC20PoolHandler } from '../../ERC20Pool/handlers/ReserveERC20PoolHandler.sol';
-import { PositionHandlerAbstract } from './PositionHandlerAbstract.sol';
+import { BasePositionHandler } from './BasePositionHandler.sol';
 
-contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, ReserveERC20PoolHandler {
+contract RewardsHandler is UnboundedRewardsHandler, BasePositionHandler, ReserveERC20PoolHandler {
 
     constructor(
         address rewards_,

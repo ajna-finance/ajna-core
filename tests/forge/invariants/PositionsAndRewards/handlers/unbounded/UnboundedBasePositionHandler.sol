@@ -21,7 +21,7 @@ import { ERC20Pool }         from 'src/ERC20Pool.sol';
  *  @dev methods in this contract are called in random order
  *  @dev randomly selects a lender contract to make a txn
  */ 
-abstract contract BasePositionsHandler is BaseERC20PoolHandler {
+abstract contract UnboundedBasePositionHandler is BaseERC20PoolHandler {
 
     PositionManager internal _positionManager;
     RewardsManager  internal _rewardsManager;

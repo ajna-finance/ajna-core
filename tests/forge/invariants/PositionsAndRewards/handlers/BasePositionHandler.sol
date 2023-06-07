@@ -16,7 +16,7 @@ import { ERC20Pool }                    from 'src/ERC20Pool.sol';
 import { UnboundedPositionsHandler } from './unbounded/UnboundedPositionsHandler.sol';
 import { BaseERC20PoolHandler }      from '../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
 
-abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
+abstract contract BasePositionHandler is UnboundedPositionsHandler {
 
     using EnumerableSet for EnumerableSet.UintSet;
 
