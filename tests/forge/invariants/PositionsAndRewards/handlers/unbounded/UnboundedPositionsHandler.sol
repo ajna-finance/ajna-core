@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.18;
 
+import '../../../../utils/DSTestPlus.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionManagerOwnerActions.sol';
@@ -272,9 +273,13 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
             // positionManager's total QT postAction is less than or equal to preAction
             // can be less than or equal due to fee on movements above -> below LUP
+            greaterThanWithinDiff(
+                preActionFromIndexQuote + preActionToIndexQuote,
+                postActionFromIndexQuote + postActionToIndexQuote,
+                1,
+                "PM6: positiionManager QT balance has increased by `1` margin"
+            );
 
-            require(preActionFromIndexQuote + preActionToIndexQuote >= postActionFromIndexQuote + postActionToIndexQuote,
-            "PM6: total quote tokens in positionManager have increased after move");
 
         } catch (bytes memory err) {
             _ensurePoolError(err);

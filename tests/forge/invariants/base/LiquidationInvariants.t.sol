@@ -3,6 +3,7 @@
 pragma solidity 0.8.18;
 
 import "@std/console.sol";
+import '../../utils/DSTestPlus.sol';
 
 import { IBaseHandler }           from '../interfaces/IBaseHandler.sol';
 import { BasicInvariants }        from './BasicInvariants.t.sol';
