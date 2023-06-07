@@ -10,7 +10,7 @@ import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionM
 import { _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }             from "src/libraries/internal/Maths.sol";
 
-import { BaseERC20PoolHandler }         from '../../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
+import { BaseERC20PoolHandler } from '../../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
 
 import { PositionManager }   from 'src/PositionManager.sol';
 import { RewardsManager }    from 'src/RewardsManager.sol';
@@ -21,10 +21,10 @@ import { ERC20Pool }         from 'src/ERC20Pool.sol';
  *  @dev methods in this contract are called in random order
  *  @dev randomly selects a lender contract to make a txn
  */ 
-abstract contract BasePositionsHandler is BaseERC20PoolHandler {
+abstract contract UnboundedBasePositionHandler is BaseERC20PoolHandler {
 
-    PositionManager internal _position;
-    RewardsManager  internal _rewards;
+    PositionManager internal _positionManager;
+    RewardsManager  internal _rewardsManager;
 
     uint256 MAX_AJNA_AMOUNT = vm.envOr("MAX_AJNA_AMOUNT_ERC20", uint256(100_000_000 * 1e18));
 
@@ -34,19 +34,18 @@ abstract contract BasePositionsHandler is BaseERC20PoolHandler {
     mapping(uint256 => EnumerableSet.UintSet) internal tokenIdsByBucketIndex;
     EnumerableSet.UintSet internal bucketIndexesWithPosition;
 
-    // used for removing all CT and QT to reset exchange rate 
-    mapping(address => EnumerableSet.UintSet) internal tokenIdsByActor;
+    // used for removing all CT and QT to reset bucket exchange rate 
     mapping(uint256 => address) internal actorByTokenId;
+    mapping(address => EnumerableSet.UintSet) internal tokenIdsByActor;
     mapping(uint256 => EnumerableSet.UintSet) internal bucketIndexesByTokenId;
 
-    // used to track LP changes in ``
+    // used to track LP changes in `_redeemPositions()` and `_memorializePositions()`
     mapping(uint256 => uint256) internal bucketIndexToActorPositionManLps;
     mapping(uint256 => uint256) internal bucketIndexToPositionManPoolLps;
     mapping(uint256 => uint256) internal bucketIndexToActorPoolLps;
     mapping(uint256 => uint256) internal bucketIndexToDepositTime;
 
     // Rewards invariant test state //
-    EnumerableSet.UintSet internal stakedTokenIds;
     mapping(uint256 => uint256) public totalRewardPerEpoch; // total rewards per epoch
     uint256 public totalStakerRewPerEpoch;                  // amount of reserve decrease
     uint256 public totalUpdaterRewPerEpoch;                 // amount of reserve increase

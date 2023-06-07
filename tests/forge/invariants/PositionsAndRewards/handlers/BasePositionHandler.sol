@@ -14,9 +14,9 @@ import { PositionManager }              from 'src/PositionManager.sol';
 import { ERC20Pool }                    from 'src/ERC20Pool.sol';
 
 import { UnboundedPositionsHandler } from './unbounded/UnboundedPositionsHandler.sol';
-import { BaseERC20PoolHandler }     from '../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
+import { BaseERC20PoolHandler }      from '../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
 
-abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
+abstract contract BasePositionHandler is UnboundedPositionsHandler {
 
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -135,7 +135,7 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
         tokenId_ = _mint();
 
         (lpBalances[0], ) = _pool.lenderInfo(bucketIndex_, _actor);
-        _pool.increaseLPAllowance(address(_position), indexes_, lpBalances);
+        _pool.increaseLPAllowance(address(_positionManager), indexes_, lpBalances);
     }
 
     function _preRedeemPositions(
@@ -147,7 +147,7 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
 
         // approve positionManager to transfer LP tokens
         address[] memory transferors = new address[](1);
-        transferors[0] = address(_position);
+        transferors[0] = address(_positionManager);
 
         _pool.approveLPTransferors(transferors);
     }
@@ -169,12 +169,12 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
         uint256 fromIndex_,
         uint256 toIndex_
     ) internal returns (uint256 tokenId_, uint256 boundedFromIndex_, uint256 boundedToIndex_) {
-        boundedFromIndex_      = constrictToRange(fromIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
-        boundedToIndex_        = constrictToRange(toIndex_,   LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+        boundedFromIndex_ = constrictToRange(fromIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+        boundedToIndex_   = constrictToRange(toIndex_,   LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
 
         uint256[] memory indexes;
         (tokenId_, indexes) = _getNFTPosition(boundedFromIndex_, amountToMove_);
-        boundedFromIndex_ = indexes[0];
+        boundedFromIndex_   = indexes[0];
 
     }
 

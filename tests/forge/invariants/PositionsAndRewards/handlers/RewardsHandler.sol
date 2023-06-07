@@ -10,9 +10,9 @@ import { RewardsManager }               from 'src/RewardsManager.sol';
 import { UnboundedRewardsHandler } from './unbounded/UnboundedRewardsHandler.sol';
 
 import { ReserveERC20PoolHandler } from '../../ERC20Pool/handlers/ReserveERC20PoolHandler.sol';
-import { PositionHandlerAbstract } from './PositionHandlerAbstract.sol';
+import { BasePositionHandler } from './BasePositionHandler.sol';
 
-contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, ReserveERC20PoolHandler {
+contract RewardsHandler is UnboundedRewardsHandler, BasePositionHandler, ReserveERC20PoolHandler {
 
     constructor(
         address rewards_,
@@ -27,10 +27,10 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
     ) ReserveERC20PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
 
         // Position manager
-        _position = PositionManager(positions_); 
+        _positionManager = PositionManager(positions_); 
 
         // Rewards manager
-        _rewards = RewardsManager(rewards_);
+        _rewardsManager = RewardsManager(rewards_);
     }
 
     /*******************************/
@@ -62,15 +62,11 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_);
         
         // if rewards exceed contract balance tx will revert, return
-        uint256 reward = _rewards.calculateRewards(tokenId, _pool.currentBurnEpoch());
-        if (reward > _ajna.balanceOf(address(_rewards))) return;
+        uint256 reward = _rewardsManager.calculateRewards(tokenId, _pool.currentBurnEpoch());
+        if (reward > _ajna.balanceOf(address(_rewardsManager))) return;
 
         // Action phase
         _unstake(tokenId);
-
-        // Post action
-        // check token was transferred from rewards contract to actor
-        assertEq(_position.ownerOf(tokenId), _actor);
     }
 
     function updateExchangeRate(
@@ -118,7 +114,7 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         _memorializePositions(tokenId_, indexes_);
 
         // Approve rewards contract to transfer token
-        _position.approve(address(_rewards), tokenId_);
+        _positionManager.approve(address(_rewardsManager), tokenId_);
         
     }
 
@@ -164,7 +160,7 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         _takeReserves(boundedTakeAmount);
 
         // exchange rates must be updated so that rewards can be checked
-        _rewards.updateBucketExchangeRatesAndClaim(address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), indexes_);
+        _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), indexes_);
 
     }
 

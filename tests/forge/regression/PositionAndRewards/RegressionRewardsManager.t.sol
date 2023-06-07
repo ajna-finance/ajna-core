@@ -53,7 +53,7 @@ contract RegressionRewardsManager is RewardsInvariants {
     // Invariant was failing when rewards cap is equal to zero
     // Fixed by updating invariants to run only when rewards cap is non zero
     function test_regression_rewards_RW1() public {
-        invariant_rewards_RW1();
+        invariant_rewards_RW1_RW2();
     }
 
     // Test was failing due to unbounded debt drawn in `_preUnstake`
