@@ -21,6 +21,6 @@ contract PositionHandler is PositionHandlerAbstract {
     ) BaseERC20PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
 
         // Position manager
-        _position = PositionManager(positions_);
+        _positionManager = PositionManager(positions_);
     }
 }

@@ -28,9 +28,9 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBRewardsHandler.stake']++;
 
-        try _rewards.stake(tokenId_) {
+        try _rewardsManager.stake(tokenId_) {
             // actor should loses ownership, positionManager gains it
-            tokenIdsByActor[address(_rewards)].add(tokenId_);
+            tokenIdsByActor[address(_rewardsManager)].add(tokenId_);
             tokenIdsByActor[address(_actor)].remove(tokenId_);
 
         } catch (bytes memory err) {
@@ -45,18 +45,18 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
 
         uint256 actorBalanceBeforeClaim = _quote.balanceOf(_actor);
 
-        try _rewards.unstake(tokenId_) {
+        try _rewardsManager.unstake(tokenId_) {
 
             // check token was transferred from rewards contract to actor
-            require(_position.ownerOf(tokenId_) == _actor, "actor should receive ownership after unstaking");
+            require(_positionManager.ownerOf(tokenId_) == _actor, "actor should receive ownership after unstaking");
 
             // actor should receive tokenId, positionManager loses ownership
             tokenIdsByActor[address(_actor)].add(tokenId_);
-            tokenIdsByActor[address(_rewards)].remove(tokenId_);
+            tokenIdsByActor[address(_rewardsManager)].remove(tokenId_);
 
             // add to total rewards if actor received reward
             if ((_quote.balanceOf(_actor) - actorBalanceBeforeClaim) != 0) {
-                (,,uint256 lastClaimedEpoch) = _rewards.getStakeInfo(tokenId_);
+                (,,uint256 lastClaimedEpoch) = _rewardsManager.getStakeInfo(tokenId_);
                 totalRewardPerEpoch[lastClaimedEpoch] += _quote.balanceOf(_actor) - actorBalanceBeforeClaim;
             }
 
@@ -72,7 +72,7 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
 
         uint256 actorBalanceBeforeClaim = _quote.balanceOf(_actor);
 
-        try _rewards.updateBucketExchangeRatesAndClaim(address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), indexes_) {
+        try _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), indexes_) {
 
             // add to total rewards if actor received reward
             if ((_quote.balanceOf(_actor) - actorBalanceBeforeClaim) != 0) {
@@ -91,7 +91,7 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
     ) internal {
         numberOfCalls['UBRewardsHandler.claimRewards']++;
 
-        try _rewards.claimRewards(tokenId_, epoch_, 0) {
+        try _rewardsManager.claimRewards(tokenId_, epoch_, 0) {
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }

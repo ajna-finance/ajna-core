@@ -135,7 +135,7 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
         tokenId_ = _mint();
 
         (lpBalances[0], ) = _pool.lenderInfo(bucketIndex_, _actor);
-        _pool.increaseLPAllowance(address(_position), indexes_, lpBalances);
+        _pool.increaseLPAllowance(address(_positionManager), indexes_, lpBalances);
     }
 
     function _preRedeemPositions(
@@ -147,7 +147,7 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
 
         // approve positionManager to transfer LP tokens
         address[] memory transferors = new address[](1);
-        transferors[0] = address(_position);
+        transferors[0] = address(_positionManager);
 
         _pool.approveLPTransferors(transferors);
     }

@@ -23,8 +23,8 @@ import { ERC20Pool }         from 'src/ERC20Pool.sol';
  */ 
 abstract contract BasePositionsHandler is BaseERC20PoolHandler {
 
-    PositionManager internal _position;
-    RewardsManager  internal _rewards;
+    PositionManager internal _positionManager;
+    RewardsManager  internal _rewardsManager;
 
     uint256 MAX_AJNA_AMOUNT = vm.envOr("MAX_AJNA_AMOUNT_ERC20", uint256(100_000_000 * 1e18));
 

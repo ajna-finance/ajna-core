@@ -31,7 +31,7 @@ contract PositionsInvariants is BaseInvariants {
     ERC20PoolFactory   internal _erc20poolFactory;
     ERC721PoolFactory  internal _erc721poolFactory;
     ERC721Pool         internal _erc721impl;
-    PositionManager    internal _position;
+    PositionManager    internal _positionManager;
     PositionHandler    internal _positionHandler;
 
     function setUp() public override virtual {
@@ -44,7 +44,7 @@ contract PositionsInvariants is BaseInvariants {
         _erc721impl        = _erc721poolFactory.implementation();
         _erc20pool         = ERC20Pool(_erc20poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _pool              = Pool(address(_erc20pool));
-        _position          = new PositionManager(_erc20poolFactory, _erc721poolFactory);
+        _positionManager   = new PositionManager(_erc20poolFactory, _erc721poolFactory);
 
         excludeContract(address(_ajna));
         excludeContract(address(_collateral));
@@ -55,10 +55,10 @@ contract PositionsInvariants is BaseInvariants {
         excludeContract(address(_poolInfo));
         excludeContract(address(_erc20impl));
         excludeContract(address(_erc721impl));
-        excludeContract(address(_position));
+        excludeContract(address(_positionManager));
 
         _positionHandler = new PositionHandler(
-            address(_position),
+            address(_positionManager),
             address(_erc20pool),
             address(_ajna),
             address(_quote),
@@ -81,7 +81,7 @@ contract PositionsInvariants is BaseInvariants {
             uint256 posLpAccum;
             uint256 poolLpAccum;
 
-            (uint256 poolLp, uint256 depositTime) = _pool.lenderInfo(bucketIndex, address(_position));
+            (uint256 poolLp, uint256 depositTime) = _pool.lenderInfo(bucketIndex, address(_positionManager));
             poolLpAccum += poolLp;
 
             // loop over tokenIds in bucket indexes
@@ -89,12 +89,12 @@ contract PositionsInvariants is BaseInvariants {
             for (uint256 k = 0; k < tokenIds.length; k++) {
                 uint256 tokenId = tokenIds[k];
                 
-                (, uint256 posDepositTime) = _position.getPositionInfo(tokenId, bucketIndex);
-                uint256 posLp = _position.getLP(tokenId, bucketIndex);
+                (, uint256 posDepositTime) = _positionManager.getPositionInfo(tokenId, bucketIndex);
+                uint256 posLp = _positionManager.getLP(tokenId, bucketIndex);
                 posLpAccum += posLp;
                 mostRecentDepositTime = (posDepositTime > mostRecentDepositTime) ? posDepositTime : mostRecentDepositTime;
             }
-            require(poolLpAccum == posLpAccum, "Positions Invariant PM1 and PM2"); 
+            require(poolLpAccum == posLpAccum,            "Positions Invariant PM1 and PM2"); 
             require(depositTime >= mostRecentDepositTime, "Positions Invariant PM3");
         }
     }

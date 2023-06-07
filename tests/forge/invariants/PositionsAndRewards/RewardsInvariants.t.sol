@@ -14,24 +14,24 @@ import { PositionsInvariants }         from './PositionsInvariants.t.sol';
 
 contract RewardsInvariants is PositionsInvariants {
 
-    RewardsManager   internal _rewards;
+    RewardsManager   internal _rewardsManager;
     RewardsHandler   internal _rewardsHandler;
 
     function setUp() public override virtual {
 
         super.setUp();
 
-        _rewards = new RewardsManager(address(_ajna), _position);
+        _rewardsManager = new RewardsManager(address(_ajna), _positionManager);
 
         // fund the rewards manager with 100M ajna
-        _ajna.mint(address(_rewards), 100_000_000 * 1e18);
+        _ajna.mint(address(_rewardsManager), 100_000_000 * 1e18);
 
         excludeContract(address(_positionHandler));
-        excludeContract(address(_rewards));
+        excludeContract(address(_rewardsManager));
 
         _rewardsHandler = new RewardsHandler(
-            address(_rewards),
-            address(_position),
+            address(_rewardsManager),
+            address(_positionManager),
             address(_erc20pool),
             address(_ajna),
             address(_quote),
