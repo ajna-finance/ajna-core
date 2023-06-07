@@ -26,8 +26,8 @@ interface IBaseHandler {
 
     function previousReserves() external view returns(uint256);
     function increaseInReserves() external view returns(uint256);
-    function decreaseInReserves() external view returns(uint256);
-    
+    function decreaseInReserves() external view returns(uint256); 
+
     function previousTotalBonds() external view returns(uint256);
     function increaseInBonds() external view returns(uint256);
     function decreaseInBonds() external view returns(uint256);
