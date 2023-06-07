@@ -304,7 +304,7 @@ library KickerActions {
         uint256 curUnclaimedAuctionReserve = reserveAuction_.unclaimed;
 
         uint256 claimable = _claimableReserves(
-            Maths.wmul(params_.t0PoolDebt, params_.inflator),
+            Maths.ceilWmul(params_.t0PoolDebt, params_.inflator),
             params_.poolSize,
             auctions_.totalBondEscrowed,
             curUnclaimedAuctionReserve,

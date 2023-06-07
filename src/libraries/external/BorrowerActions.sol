@@ -136,7 +136,7 @@ library BorrowerActions {
 
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
-        vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
+        vars.borrowerDebt = Maths.ceilWmul(borrower.t0Debt, poolState_.inflator);
 
         result_.inAuction           = _inAuction(auctions_, borrowerAddress_);
         result_.debtPreAction       = borrower.t0Debt;
@@ -201,7 +201,7 @@ library BorrowerActions {
 
             borrower.t0Debt += vars.t0DebtChange;
 
-            vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
+            vars.borrowerDebt = Maths.ceilWmul(borrower.t0Debt, poolState_.inflator);
 
             // check that drawing debt doesn't leave borrower debt under pool min debt amount
             _revertOnMinDebt(
@@ -213,7 +213,7 @@ library BorrowerActions {
 
             // add debt change to pool's debt
             result_.t0PoolDebt += vars.t0DebtChange;
-            result_.poolDebt   = Maths.wmul(result_.t0PoolDebt, poolState_.inflator);
+            result_.poolDebt   = Maths.ceilWmul(result_.t0PoolDebt, poolState_.inflator);
             result_.newLup     = Deposits.getLup(deposits_, result_.poolDebt);
 
             // revert if borrow drives LUP price under the specified price limit
@@ -289,7 +289,7 @@ library BorrowerActions {
 
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
-        vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
+        vars.borrowerDebt = Maths.ceilWmul(borrower.t0Debt, poolState_.inflator);
 
         result_.inAuction           = _inAuction(auctions_, borrowerAddress_);
         result_.debtPreAction       = borrower.t0Debt;
@@ -312,7 +312,7 @@ library BorrowerActions {
             }
 
             result_.t0PoolDebt        -= vars.t0RepaidDebt;
-            result_.poolDebt          = Maths.wmul(result_.t0PoolDebt, poolState_.inflator);
+            result_.poolDebt          = Maths.ceilWmul(result_.t0PoolDebt, poolState_.inflator);
             result_.quoteTokenToRepay = Maths.ceilWmul(vars.t0RepaidDebt,  poolState_.inflator);
 
             vars.borrowerDebt = Maths.wmul(borrower.t0Debt - vars.t0RepaidDebt, poolState_.inflator);
@@ -438,7 +438,7 @@ library BorrowerActions {
         // revert if loan is not fully collateralized at current LUP
         if (
             !_isCollateralized(
-                Maths.wmul(borrower.t0Debt, poolState_.inflator), // current borrower debt
+                Maths.ceilWmul(borrower.t0Debt, poolState_.inflator), // current borrower debt
                 borrower.collateral,
                 newLup_,
                 poolState_.poolType

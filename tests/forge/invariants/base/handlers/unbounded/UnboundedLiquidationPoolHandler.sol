@@ -282,7 +282,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 uint256 bucketIndex       = fenwickIndexForSum(1);
                 uint256 maxSettleableDebt = Maths.floorWmul(collateral, _priceAt(bucketIndex));
                 uint256 fenwickDeposit    = fenwickDeposits[bucketIndex];
-                uint256 borrowerDebt      = Maths.wmul(borrowerT0Debt, inflator);
+                uint256 borrowerDebt      = Maths.ceilWmul(borrowerT0Debt, inflator);
 
                 if (fenwickDeposit == 0 && maxSettleableDebt != 0) {
                     collateral = 0;
@@ -337,7 +337,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 while (maxDepth_ != 0 && borrowerT0Debt != 0) {
                     uint256 bucketIndex    = fenwickIndexForSum(1);
                     uint256 fenwickDeposit = fenwickDeposits[bucketIndex];
-                    uint256 borrowerDebt   = Maths.wmul(borrowerT0Debt, inflator);
+                    uint256 borrowerDebt   = Maths.ceilWmul(borrowerT0Debt, inflator);
 
                     if (bucketIndex != MAX_FENWICK_INDEX) {
                         // debt is greater than bucket deposit

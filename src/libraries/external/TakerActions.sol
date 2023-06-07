@@ -169,7 +169,7 @@ library TakerActions {
         // update pool params after take
         poolState_.t0Debt += vars.t0DebtPenalty;
         poolState_.t0Debt -= vars.t0RepayAmount;
-        poolState_.debt   = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
+        poolState_.debt   = Maths.ceilWmul(poolState_.t0Debt, poolState_.inflator);
 
         // update loan after take
         (
@@ -243,7 +243,7 @@ library TakerActions {
         // update pool params after take
         poolState_.t0Debt += vars.t0DebtPenalty;
         poolState_.t0Debt -= vars.t0RepayAmount;
-        poolState_.debt   = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
+        poolState_.debt   = Maths.ceilWmul(poolState_.t0Debt, poolState_.inflator);
 
         // update loan after take
         (
