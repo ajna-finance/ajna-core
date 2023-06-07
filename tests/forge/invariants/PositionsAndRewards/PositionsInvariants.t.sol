@@ -12,11 +12,12 @@ import { ERC721PoolFactory } from 'src/ERC721PoolFactory.sol';
 import { PositionManager }   from 'src/PositionManager.sol';
 import { Maths }             from 'src/libraries/internal/Maths.sol';
 
-import { IBaseHandler }               from '../interfaces/IBaseHandler.sol';
-import { BaseInvariants }             from '../base/BaseInvariants.sol';
-import { ReserveERC20PoolInvariants } from '../ERC20Pool/ReserveERC20PoolInvariants.t.sol';
-import { ReserveERC20PoolHandler }    from '../ERC20Pool/handlers/ReserveERC20PoolHandler.sol';
-import { TokenWithNDecimals }         from '../../utils/Tokens.sol';
+import { IBaseHandler }                from '../interfaces/IBaseHandler.sol';
+import { IPositionsAndRewardsHandler } from '../interfaces/IPositionsAndRewardsHandler.sol';
+import { BaseInvariants }              from '../base/BaseInvariants.sol';
+import { ReserveERC20PoolInvariants }  from '../ERC20Pool/ReserveERC20PoolInvariants.t.sol';
+import { ReserveERC20PoolHandler }     from '../ERC20Pool/handlers/ReserveERC20PoolHandler.sol';
+import { TokenWithNDecimals }          from '../../utils/Tokens.sol';
 
 import { PositionHandler }    from './handlers/PositionHandler.sol';
 
@@ -43,7 +44,7 @@ contract PositionsInvariants is BaseInvariants {
         _erc721impl        = _erc721poolFactory.implementation();
         _erc20pool         = ERC20Pool(_erc20poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _pool              = Pool(address(_erc20pool));
-        _position         = new PositionManager(_erc20poolFactory, _erc721poolFactory);
+        _position          = new PositionManager(_erc20poolFactory, _erc721poolFactory);
 
         excludeContract(address(_ajna));
         excludeContract(address(_collateral));
@@ -71,7 +72,7 @@ contract PositionsInvariants is BaseInvariants {
     }
 
     function invariant_positions_PM1_PM2_PM3() public useCurrentTimestamp {
-        uint256[] memory bucketIndexes = IBaseHandler(_handler).getBucketIndexesWithPosition();
+        uint256[] memory bucketIndexes = IPositionsAndRewardsHandler(_handler).getBucketIndexesWithPosition();
 
         // loop over bucket indexes with positions
         for (uint256 i = 0; i < bucketIndexes.length; i++) {
@@ -84,7 +85,7 @@ contract PositionsInvariants is BaseInvariants {
             poolLpAccum += poolLp;
 
             // loop over tokenIds in bucket indexes
-            uint256[] memory tokenIds = IBaseHandler(_handler).getTokenIdsByBucketIndex(bucketIndex);
+            uint256[] memory tokenIds = IPositionsAndRewardsHandler(_handler).getTokenIdsByBucketIndex(bucketIndex);
             for (uint256 k = 0; k < tokenIds.length; k++) {
                 uint256 tokenId = tokenIds[k];
                 
