@@ -7,8 +7,7 @@ import { Maths } from 'src/libraries/internal/Maths.sol';
 import { UnboundedReservePoolHandler } from '../../base/handlers/unbounded/UnboundedReservePoolHandler.sol';
 import { LiquidationPoolHandler }      from './LiquidationPoolHandler.sol';
 
-abstract contract ReservePoolHandler is UnboundedReservePoolHandler, LiquidationPoolHandler {
-
+abstract contract ReservePoolHandler is UnboundedReservePoolHandler, LiquidationPoolHandler { 
     /*******************************/
     /*** Reserves Test Functions ***/
     /*******************************/
@@ -32,7 +31,7 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
         uint256 amountToTake_,
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
-        numberOfCalls['BReserveHandler.takeReserves']++;
+        numberOfCalls['BReserveHandler.takeReserves']++; 
 
         // kick reserve auction if claimable reserves available
         (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
@@ -47,5 +46,4 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
             _takeReserves(boundedAmount);
         }
     }
-
 }

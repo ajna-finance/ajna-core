@@ -571,43 +571,6 @@ contract RewardsManager is IRewardsManager {
     }
 
     /**
-     *  @notice Retrieve the total ajna tokens burned and total interest earned over a given epoch.
-     *  @param  pool_   Address of the `Ajna` pool to retrieve accumulators of.
-     *  @param  epoch_  time window used to identify time between Ajna burn events (kickReserve and takeReserve actions).
-     *  @return currentBurnTime_ timestamp of the latest burn event.
-     *  @return tokensBurned_    total `Ajna` tokens burned in epoch.
-     *  @return interestEarned_  total interest earned in epoch.
-     */
-    function _getEpochInfo(
-        address pool_,
-        uint256 epoch_
-    ) internal view returns (uint256 currentBurnTime_, uint256 tokensBurned_, uint256 interestEarned_) {
-
-        // 0 epoch won't have any ajna burned or interest associated with it
-        if (epoch_ != 0) {
-
-            uint256 totalInterestLatest;
-            uint256 totalBurnedLatest;
-
-            (
-                currentBurnTime_,
-                totalInterestLatest,
-                totalBurnedLatest
-            ) = IPool(pool_).burnInfo(epoch_);
-
-            (
-                ,
-                uint256 totalInterestPrev,
-                uint256 totalBurnedPrev
-            ) = IPool(pool_).burnInfo(--epoch_);
-
-            // calculate total tokens burned and interest earned in epoch
-            tokensBurned_   = totalBurnedLatest   != 0 ? totalBurnedLatest   - totalBurnedPrev   : 0;
-            interestEarned_ = totalInterestLatest != 0 ? totalInterestLatest - totalInterestPrev : 0;
-        }
-    }
-
-    /**
      *  @notice Update the exchange rate of a list of buckets.
      *  @dev    Called as part of `stake`, `unstake`, and `claimRewards`, as well as `updateBucketExchangeRatesAndClaim`.
      *  @dev    Caller can claim `5%` of the rewards that have accumulated to each bucket since the last burn event, if it hasn't already been updated.
@@ -835,5 +798,45 @@ contract RewardsManager is IRewardsManager {
             IERC20(ajnaToken).safeTransfer(msg.sender, transferAmount_);
         }
     }
-
 }
+
+    /**********************/
+    /** Rewards Utilities */
+    /**********************/
+
+    /**
+     *  @notice Retrieve the total ajna tokens burned and total interest earned over a given epoch.
+     *  @param  pool_   Address of the `Ajna` pool to retrieve accumulators of.
+     *  @param  epoch_  time window used to identify time between Ajna burn events (kickReserve and takeReserve actions).
+     *  @return currentBurnTime_ timestamp of the latest burn event.
+     *  @return tokensBurned_    total `Ajna` tokens burned in epoch.
+     *  @return interestEarned_  total interest earned in epoch.
+     */
+    function _getEpochInfo(
+        address pool_,
+        uint256 epoch_
+    ) view returns (uint256 currentBurnTime_, uint256 tokensBurned_, uint256 interestEarned_) {
+
+        // 0 epoch won't have any ajna burned or interest associated with it
+        if (epoch_ != 0) {
+
+            uint256 totalInterestLatest;
+            uint256 totalBurnedLatest;
+
+            (
+                currentBurnTime_,
+                totalInterestLatest,
+                totalBurnedLatest
+            ) = IPool(pool_).burnInfo(epoch_);
+
+            (
+                ,
+                uint256 totalInterestPrev,
+                uint256 totalBurnedPrev
+            ) = IPool(pool_).burnInfo(epoch_ - 1);
+
+            // calculate total tokens burned and interest earned in epoch
+            tokensBurned_   = totalBurnedLatest   != 0 ? totalBurnedLatest   - totalBurnedPrev   : 0;
+            interestEarned_ = totalInterestLatest != 0 ? totalInterestLatest - totalInterestPrev : 0;
+        }
+    }
