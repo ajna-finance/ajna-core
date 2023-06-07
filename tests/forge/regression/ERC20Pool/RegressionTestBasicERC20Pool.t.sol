@@ -509,7 +509,7 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
     /**
         Test was failing because LUP index calculated in PoolInfoUtils was different than the LUP index used in the pool, due to inconsistent roundings.
         This happened because in Pool.debtInfo function (used by PoolInfoUtils) the pool debt is always rounded up by using `ceilWmul` while in Pool._accruePoolInterest it was rounded to nearest (by using plain `wmul`).
-        Fixed by rounding up current pool debt when pool interest is accrued.
+        Fixed by using same way to calculate accrued interest (wmul) in debtInfo as in pool.
      */
     function test_regression_failure_LUP_mismatch() external {
         _basicERC20PoolHandler.drawDebt(4, 1, 42459383782278435142046724305658135311267691438915386859799265271);

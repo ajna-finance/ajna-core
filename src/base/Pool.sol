@@ -547,7 +547,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 	    // check if t0Debt is not equal to 0, indicating that there is debt to be tracked for the pool
         if (poolState_.t0Debt != 0) {
             // Calculate prior pool debt
-            poolState_.debt = Maths.ceilWmul(poolState_.t0Debt, poolState_.inflator);
+            poolState_.debt = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
 
 	        // calculate elapsed time since inflator was last updated
             uint256 elapsed = block.timestamp - inflatorState.inflatorUpdate;
@@ -566,7 +566,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 );
                 poolState_.inflator = newInflator;
                 // After debt owed to lenders has accrued, calculate current debt owed by borrowers
-                poolState_.debt = Maths.ceilWmul(poolState_.t0Debt, poolState_.inflator);
+                poolState_.debt = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
 
                 // update total interest earned accumulator with the newly accrued interest
                 reserveAuction.totalInterestEarned += newInterest;
@@ -827,9 +827,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             interestState.interestRate
         );
         return (
-            Maths.ceilWmul(poolBalances.t0Debt, pendingInflator),
-            Maths.ceilWmul(poolBalances.t0Debt, inflatorState.inflator),
-            Maths.ceilWmul(poolBalances.t0DebtInAuction, inflatorState.inflator),
+            Maths.wmul(poolBalances.t0Debt, pendingInflator),
+            Maths.wmul(poolBalances.t0Debt, inflatorState.inflator),
+            Maths.wmul(poolBalances.t0DebtInAuction, inflatorState.inflator),
             interestState.t0Debt2ToCollateral
         );
     }
