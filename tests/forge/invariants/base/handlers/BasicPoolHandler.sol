@@ -84,6 +84,14 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
         _transferLps(_actor, receiver, _lenderBucketIndex);
     }
 
+    function stampLoan(
+        uint256 actorIndex_,
+        uint256 skippedTime_
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+        numberOfCalls['BBasicHandler.stampLoan']++;
+        _stampLoan();
+    }
+
     /*******************************/
     /*** Prepare Tests Functions ***/
     /*******************************/
