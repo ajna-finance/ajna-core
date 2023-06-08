@@ -236,7 +236,12 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         // update in memory pool state struct
         poolState.debt       = result.poolDebt;
         poolState.t0Debt     = result.t0PoolDebt;
-        if (result.t0DebtInAuctionChange != 0) poolState.t0DebtInAuction -= result.t0DebtInAuctionChange;
+        if (result.t0DebtInAuctionChange != 0) {
+            poolState.t0DebtInAuction    -= result.t0DebtInAuctionChange;
+            poolBalances.t0DebtInAuction -= result.t0DebtInAuctionChange;
+        }
+
+
         poolState.collateral = result.poolCollateral;
 
         // adjust t0Debt2ToCollateral ratio if loan not in auction
@@ -255,9 +260,6 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         if (result.quoteTokenToRepay != 0) {
             // update pool balances state
             poolBalances.t0Debt = poolState.t0Debt;
-            if (result.t0DebtInAuctionChange != 0) {
-                poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
-            }
 
             // move amount to repay from sender to pool
             _transferQuoteTokenFrom(msg.sender, result.quoteTokenToRepay);
