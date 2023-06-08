@@ -41,13 +41,6 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     using EnumerableSet for EnumerableSet.UintSet;
     using SafeERC20     for ERC20;
 
-    /*****************/
-    /*** Constants ***/
-    /*****************/
-
-    /// @dev Period of time the token transfer is locked after redeeming from.
-    uint256 internal constant TRANSFER_LOCK_PERIOD = 1 hours;
-
     /***********************/
     /*** State Variables ***/
     /***********************/
@@ -113,17 +106,6 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         if (pool_ != positionTokens[tokenId_].pool) revert WrongPool();
 
         _;
-    }
-
-    /**
-     *  @dev   Modifier used to record time when a position is adjusted through positions NFT.
-     *  @dev   Position adjustment can be done by redeeming or moving liquidity.
-     *  @param tokenId_ Id of positions `NFT`.
-     */
-    modifier recordAdjustmentTime(uint256 tokenId_) {
-        _;
-
-        positionTokens[tokenId_].adjustmentTime = uint96(block.timestamp);
     }
 
     /*******************/
@@ -309,7 +291,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         uint256 fromIndex_,
         uint256 toIndex_,
         uint256 expiry_
-    ) external override nonReentrant mayInteract(pool_, tokenId_) recordAdjustmentTime(tokenId_) {
+    ) external override nonReentrant mayInteract(pool_, tokenId_) {
         TokenInfo storage tokenInfo    = positionTokens[tokenId_];
         Position  storage fromPosition = tokenInfo.positions[fromIndex_];
 
@@ -414,7 +396,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         address pool_,
         uint256 tokenId_,
         uint256[] calldata indexes_
-    ) external override mayInteract(pool_, tokenId_) recordAdjustmentTime(tokenId_) {
+    ) external override mayInteract(pool_, tokenId_) {
         TokenInfo storage tokenInfo = positionTokens[tokenId_];
 
         IPool pool = IPool(pool_);
@@ -459,27 +441,6 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     /**************************/
     /*** Internal Functions ***/
     /**************************/
-
-    /**
-     *  @dev Called before the NFT position transfer, reverts if transfer attempted in less than one hour since last redeem.
-     *  @dev    === Revert on ===
-     *  @dev    - positions changed in the last hour `TransferLocked()`
-     */
-    function _beforeTokenTransfer(
-        address,
-        address to_,
-        uint256 tokenId_,
-        uint256
-    ) internal override {
-        // burning is not constrained by any redeem action
-        if (to_ != address(0)) {
-            TokenInfo storage token = positionTokens[tokenId_];
-            // revert transfer in case token positions were redeem in the last transfer lock period
-            if (block.timestamp - token.adjustmentTime <= TRANSFER_LOCK_PERIOD) revert TransferLocked();
-
-            token.adjustmentTime = 0;
-        }
-    }
 
     /**
      *  @notice Checks that a provided pool address was deployed by an `Ajna` factory.
