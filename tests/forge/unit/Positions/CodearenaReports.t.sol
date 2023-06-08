@@ -812,7 +812,6 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         Alice no has the 10 eth worth of lp
         Bob's transaction completes and he gets a worthless NFT
         Alice gets Bobs 9 eth
-
         Fixed by recording block of last redeem and revert if same as transfer block.
      */
     function testAdjustPositionBeforeTransfer_report_196() external {
@@ -855,57 +854,24 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         _pool.approveLPTransferors(transferors);
         _positionManager.memorializePositions(address(_pool), tokenId, indexes);
 
-        /*******************************/
-        /*** Move liquidity scenario ***/
-        /*******************************/
+        // FIXME - positions NFT can be subject of front running if buying from open markets
 
-        uint256 beforeMove = vm.snapshot();
-        // alice moves positions from bucket before transferring NFT to bob
-        _positionManager.moveLiquidity(address(_pool), tokenId, 2551, 5000, block.timestamp + 5 hours);
-
-        // alice transfer NFT to bob in the same block as move liquidity, transfer should fail
-        _positionManager.approve(address(this), tokenId);
-        vm.expectRevert(IPositionManagerErrors.TransferLocked.selector);
-        _positionManager.safeTransferFrom(alice, bob, tokenId);
-        vm.revertTo(beforeMove);
-
-        /*******************************/
-        /*** Redeem position scenario ***/
-        /*******************************/
-
+        _pool.approveLPTransferors(transferors);
         // alice redeems positions from a bucket before transferring NFT to bob
-        _pool.approveLPTransferors(transferors);
-        _positionManager.redeemPositions(address(_pool),tokenId, aliceRedeemIndex);
-
-        // alice transfer NFT to bob in the same block as redeem, transfer should fail
-        _positionManager.approve(address(this), tokenId);
-        vm.expectRevert(IPositionManagerErrors.TransferLocked.selector);
-        _positionManager.safeTransferFrom(alice, bob, tokenId);
-
-        // alice transfer NFT to bob after 1 hour lock period since last redeem
-        skip(61 minutes);
-        _positionManager.safeTransferFrom(alice, bob, tokenId);
-
-        // bob owns position NFT
-        assertEq(_positionManager.ownerOf(tokenId), bob);
-
-        // bob redeems positions
-        changePrank(bob);
-        _pool.approveLPTransferors(transferors);
         _positionManager.redeemPositions(address(_pool), tokenId, bobRedeemIndex);
 
-        // bob should be able to burn NFT in same block as redeem
-        _positionManager.burn(address(_pool), tokenId);
+        _positionManager.approve(address(this), tokenId);
+        _positionManager.safeTransferFrom(alice, bob, tokenId);
 
-        // check balances, alice should have LP in bucket 2550, bob should have LP in bucket 2551
+        // bob redeem positions revert since there's no index memorialized
+        changePrank(bob);
+        _pool.approveLPTransferors(transferors);
+        vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
+        _positionManager.redeemPositions(address(_pool), tokenId, bobRedeemIndex);
+
+        // alice has LP redeemed before transfer at index 2551
         _assertLenderLpBalance({
             lender:      alice,
-            index:       2550,
-            lpBalance:   15_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      bob,
             index:       2551,
             lpBalance:   10_000 * 1e18,
             depositTime: _startTime

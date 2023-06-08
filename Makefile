@@ -27,6 +27,8 @@ test-load                       :; forge test --match-test testLoad --gas-report
 test-invariant-all              :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES}
 test-invariant-erc20            :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc ERC20
 test-invariant-erc721           :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc ERC721
+test-invariant-position         :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc Position 
+test-invariant-rewards          :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc Rewards
 test-invariant                  :; forge t --mt ${MT} --nmc RegressionTest
 test-invariant-erc20-precision  :; ./tests/forge/invariants/test-invariant-erc20-precision.sh
 test-invariant-erc721-precision :; ./tests/forge/invariants/test-invariant-erc721-precision.sh
@@ -48,6 +50,8 @@ test-swap-load-erc20             :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST
 test-regression-all             : test-regression-erc20 test-regression-erc721 test-regression-prototech
 test-regression-erc20           :; forge t --mt test_regression --mc ERC20 --nmc "RealWorldRegression|Prototech"
 test-regression-erc721          :; forge t --mt test_regression --mc ERC721 --nmc "RealWorldRegression|Prototech"
+test-regression-rewards         :; forge t --mt test_regression --mc Rewards --nmc "RealWorldRegression|Prototech"
+test-regression-position        :; forge t --mt test_regression --mc Position --nmc "RealWorldRegression|Prototech"
 test-regression-prototech       :; forge t --mt test_regression --mc Prototech
 test-regression-rw              :; forge t --mt test_regression --mc RealWorldRegression
 test-regression                 :; forge t --mt ${MT}

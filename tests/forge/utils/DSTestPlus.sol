@@ -1488,5 +1488,18 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         // calculate the fee rate based upon the interest rate
         feeRate_ = _borrowFeeRate(newInterestRate) + Maths.WAD;
     }
-
 }
+
+    function getDiff(uint256 x, uint256 y) pure returns (uint256 diff) {
+        diff = x > y ? x - y : y - x;
+    }
+
+    function requireWithinDiff(uint256 x, uint256 y, uint256 expectedDiff, string memory err) pure {
+        require(getDiff(x, y) <= expectedDiff, err);
+    }
+
+    function greaterThanWithinDiff(uint256 x, uint256 y, uint256 expectedDiff, string memory err) pure {
+        require(x > y || getDiff(x, y) <= expectedDiff, err);
+    }
+
+
