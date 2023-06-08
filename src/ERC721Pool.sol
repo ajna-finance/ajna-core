@@ -187,11 +187,10 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         // update pool interest rate state
         _updateInterestState(poolState, result.newLup);
 
+        if (result.t0DebtInAuctionChange != 0) poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
+
         if (tokenIdsToPledge_.length != 0) {
             // update pool balances state
-            if (result.t0DebtInAuctionChange != 0) {
-                poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
-            }
             poolBalances.pledgedCollateral = poolState.collateral;
 
             // move collateral from sender to pool
@@ -251,7 +250,10 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         // update in memory pool state struct
         poolState.debt       = result.poolDebt;
         poolState.t0Debt     = result.t0PoolDebt;
-        if (result.t0DebtInAuctionChange != 0) poolState.t0DebtInAuction -= result.t0DebtInAuctionChange;
+        if (result.t0DebtInAuctionChange != 0) {
+            poolState.t0DebtInAuction -= result.t0DebtInAuctionChange;
+            poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
+        }
         poolState.collateral = result.poolCollateral;
 
         if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
@@ -275,9 +277,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         if (result.quoteTokenToRepay != 0) {
             // update pool balances state
             poolBalances.t0Debt = poolState.t0Debt;
-            if (result.t0DebtInAuctionChange != 0) {
-                poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
-            }
 
             // move amount to repay from sender to pool
             _transferQuoteTokenFrom(msg.sender, result.quoteTokenToRepay);

@@ -175,11 +175,10 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         // update pool interest rate state
         _updateInterestState(poolState, result.newLup);
 
+        if (result.t0DebtInAuctionChange != 0) poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
+
         if (collateralToPledge_ != 0) {
             // update pool balances state
-            if (result.t0DebtInAuctionChange != 0) {
-                poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
-            }
             poolBalances.pledgedCollateral = poolState.collateral;
 
             // move collateral from sender to pool
@@ -238,9 +237,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         poolState.t0Debt     = result.t0PoolDebt;
         if (result.t0DebtInAuctionChange != 0) {
             poolState.t0DebtInAuction    -= result.t0DebtInAuctionChange;
-            poolBalances.t0DebtInAuction -= result.t0DebtInAuctionChange;
+            poolBalances.t0DebtInAuction  = poolState.t0DebtInAuction;
         }
-
 
         poolState.collateral = result.poolCollateral;
 
