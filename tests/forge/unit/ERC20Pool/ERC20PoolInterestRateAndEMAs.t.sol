@@ -852,7 +852,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         _assertEMAs({
             debtColEma:   3_565_623.757561586266590894 * 1e18,
             lupt0DebtEma: 6_106_851.867005073649467356 * 1e18,
-            debtEma:      19_054.349087608426800462 * 1e18,
+            debtEma:      19_054.349087608426800463 * 1e18,
             depositEma:   40_022.159713346932216568 * 1e18
         });
 
@@ -884,7 +884,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         _assertEMAs({
             debtColEma:   3_579_931.895052572545685861 * 1e18, // big col. deposit barely affects 
             lupt0DebtEma: 6_128_931.249262523887589579 * 1e18,
-            debtEma:      19_082.947567966496316465 * 1e18,
+            debtEma:      19_082.947567966496316466 * 1e18,
             depositEma:   40_039.379711258283363568 * 1e18
         });
     }

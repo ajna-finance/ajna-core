@@ -686,7 +686,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         _kick({
             from:           _minterTwo,
             borrower:       _borrower2,
-            debt:           9_976.561670003961916237 * 1e18,
+            debt:           9_976.561670003961916238 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           98.533942419792216457 * 1e18,
             transferAmount: 98.533942419792216457 * 1e18
@@ -727,7 +727,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             index:        _i9_81,
             lpBalance:    10_000 * 1e18,
             collateral:   0,
-            deposit:      4_936.865539659334888884 * 1e18,
+            deposit:      4_936.865539659334888883 * 1e18,
             exchangeRate: 0.493686553965933489 * 1e18
         });
 

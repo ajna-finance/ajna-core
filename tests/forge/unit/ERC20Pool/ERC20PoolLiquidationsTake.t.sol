@@ -158,7 +158,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower2,
-            debt:           9_945.738101507554206918 * 1e18,
+            debt:           9_945.738101507554206919 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           98.229512113654856365 * 1e18,
             transferAmount: 98.229512113654856365 * 1e18
@@ -280,7 +280,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower2,
-            debt:           9_945.738101507554206918 * 1e18,
+            debt:           9_945.738101507554206919 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           2_946.885363409645690939 * 1e18,
             transferAmount: 2_946.885363409645690939 * 1e18
@@ -557,7 +557,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower2,
-            debt:           9_945.738101507554206918 * 1e18,
+            debt:           9_945.738101507554206919 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           2_946.885363409645690939 * 1e18,
             transferAmount: 2_946.885363409645690939 * 1e18
@@ -765,7 +765,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower2,
-            debt:           9_945.738101507554206918 * 1e18,
+            debt:           9_945.738101507554206919 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           2_946.885363409645690939 * 1e18,
             transferAmount: 2_946.885363409645690939 * 1e18
@@ -911,7 +911,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower2,
-            debt:           9_945.738101507554206918 * 1e18,
+            debt:           9_945.738101507554206919 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           98.229512113654856365 * 1e18,
             transferAmount: 98.229512113654856365 * 1e18
@@ -1153,7 +1153,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower2,
-            debt:           9_945.738101507554206918 * 1e18,
+            debt:           9_945.738101507554206919 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           2_946.885363409645690939 * 1e18,
             transferAmount: 2_946.885363409645690939 * 1e18
@@ -1283,7 +1283,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower2,
-            debt:           9_976.561670003961916237 * 1e18,
+            debt:           9_976.561670003961916238 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           98.533942419792216457 * 1e18,
             transferAmount: 98.533942419792216457 * 1e18
@@ -1765,7 +1765,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower2,
-            debt:           9_976.561670003961916237 * 1e18,
+            debt:           9_976.561670003961916238 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           98.533942419792216457 * 1e18,
             transferAmount: 98.533942419792216457 * 1e18
@@ -1837,7 +1837,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower,
-            debt:           19.999089026951250136 * 1e18,
+            debt:           19.999089026951250137 * 1e18,
             collateral:     2 * 1e18,
             bond:           0.197766022516205193 * 1e18,
             transferAmount: 0.197766022516205193 * 1e18
@@ -1894,7 +1894,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower2,
-            debt:           9_976.561670003961916237 * 1e18,
+            debt:           9_976.561670003961916238 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           98.533942419792216457 * 1e18,
             transferAmount: 98.533942419792216457 * 1e18
@@ -1958,7 +1958,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower2,
-            debt:           9_976.561670003961916237 * 1e18,
+            debt:           9_976.561670003961916238 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           98.533942419792216457 * 1e18,
             transferAmount: 98.533942419792216457 * 1e18
@@ -2058,7 +2058,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower2,
-            debt:           9_945.738101507554206918 * 1e18,
+            debt:           9_945.738101507554206919 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           2_946.885363409645690939 * 1e18,
             transferAmount: 2_946.885363409645690939 * 1e18
@@ -2160,7 +2160,7 @@ contract ERC20PoolLiquidationsTakeAndRepayAllDebtInPoolTest is ERC20HelperContra
         _kick({
             from:           _kicker,
             borrower:       _borrower,
-            debt:           104.162540773774892916 * 1e18,
+            debt:           104.162540773774892917 * 1e18,
             collateral:     0.067433366047580170 * 1e18,
             bond:           1.028765834802714992 * 1e18,
             transferAmount: 1.028765834802714992  * 1e18

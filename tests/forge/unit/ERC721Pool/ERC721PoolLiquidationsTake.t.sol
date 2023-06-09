@@ -173,7 +173,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower,
-            debt:           23.012828827714740289 * 1e18,
+            debt:           23.012828827714740290 * 1e18,
             collateral:     2 * 1e18,
             bond:           0.227287198298417188 * 1e18,
             transferAmount: 0.227287198298417188 * 1e18
@@ -357,7 +357,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             borrower:        _borrower,
             maxCollateral:   2,
             bondChange:      0.227287198298417188 * 1e18,
-            givenAmount:     24.624422560094104976 * 1e18,
+            givenAmount:     24.624422560094104977 * 1e18,
             collateralTaken: 1.459206577606363895 * 1e18, // not a rounded collateral, difference of 2 - 1.16 collateral should go to borrower in quote tokens at auction price
             isReward:        false
         });
@@ -415,7 +415,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(1), _lender);
 
         // after take: check quote token balances of taker and borrower
-        assertEq(_quote.balanceOf(_lender), 46_966.022285771024095971 * 1e18);
+        assertEq(_quote.balanceOf(_lender), 46_966.022285771024095970 * 1e18);
         assertEq(_quote.balanceOf(_borrower), 128.926004470583381865 * 1e18); // borrower gets quote tokens from the difference of rounded collateral (2) and needed collateral (1.16) at auction price (19.8) = 16.6 additional tokens
     }
 
@@ -451,7 +451,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower,
-            debt:           23.012828827714740289 * 1e18,
+            debt:           23.012828827714740290 * 1e18,
             collateral:     2 * 1e18,
             bond:           0.227287198298417188 * 1e18,
             transferAmount: 0.227287198298417188 * 1e18
@@ -692,7 +692,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower,
-            debt:           23.012828827714740289 * 1e18,
+            debt:           23.012828827714740290 * 1e18,
             collateral:     2 * 1e18,
             bond:           0.227287198298417188 * 1e18,
             transferAmount: 0.227287198298417188 * 1e18
@@ -850,7 +850,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower,
-            debt:           23.012828827714740289 * 1e18,
+            debt:           23.012828827714740290 * 1e18,
             collateral:     2 * 1e18,
             bond:           0.227287198298417188 * 1e18,
             transferAmount: 0.227287198298417188 * 1e18

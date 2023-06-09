@@ -139,7 +139,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         _kick({
             from:           testMinter,
             borrower:       testBorrowerTwo,
-            debt:           9_976.561670003961916237 * 1e18,
+            debt:           9_976.561670003961916238 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           98.533942419792216457 * 1e18,
             transferAmount: 98.533942419792216457 * 1e18

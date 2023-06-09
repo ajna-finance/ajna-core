@@ -596,7 +596,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             kicker:           _lender,
             index:            _i10016,
             collateralArbed:  0.002156704581707556 * 1e18,
-            quoteTokenAmount: 21.602634870308383520 * 1e18,
+            quoteTokenAmount: 21.602634870308383521 * 1e18,
             bondChange:       0.199398195043779403 * 1e18,
             isReward:         false,
             lpAwardTaker:     0,
@@ -625,7 +625,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             index:        _i10016,
             lpBalance:    1_000 * 1e18,      // LP balance in arbed bucket increased with LP awarded for deposit taker
             collateral:   0.002156704581707556 * 1e18,          // arbed collateral added to the arbed bucket
-            deposit:      978.397365129691616480 * 1e18,        // quote token amount is diminished in arbed bucket
+            deposit:      978.397365129691616479 * 1e18,        // quote token amount is diminished in arbed bucket
             exchangeRate: 1 * 1e18
         });
         _assertAuction(

@@ -255,7 +255,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             2_861.685489213148775844 * 1e18,
+                poolSize:             2_861.685489213148775842 * 1e18,
                 pledgedCollateral:    1 * 1e18,
                 encumberedCollateral: 0,
                 poolDebt:             0,
@@ -371,9 +371,9 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
 
         _assertBucket({
             index:        2500,
-            lpBalance:    1_860.819465331537769873 * 1e18,
+            lpBalance:    1_860.819465331537769872 * 1e18,
             collateral:   0,
-            deposit:      1_861.382770397052268844 * 1e18,
+            deposit:      1_861.382770397052268842 * 1e18,
             exchangeRate: 1.000302718816096508 * 1e18
         });
     }

@@ -165,7 +165,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower,
-            debt:           19.778456451861613481 * 1e18,
+            debt:           19.778456451861613482 * 1e18,
             collateral:     2 * 1e18,
             bond:           0.195342779771472726 * 1e18,
             transferAmount: 0.195342779771472726 * 1e18
@@ -589,7 +589,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             kicker:           _lender,
             index:            _i10016,
             collateralArbed:  0.257950403803869741 * 1e18,
-            quoteTokenAmount: 21.163274547333150632 * 1e18,
+            quoteTokenAmount: 21.163274547333150633 * 1e18,
             bondChange:       0.195342779771472726 * 1e18,
             isReward:         false,
             lpAwardTaker:     2_562.597355112798042 * 1e18,
@@ -617,7 +617,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             index:        _i10016,
             lpBalance:    3_562.597355112798042 * 1e18,       // LP balance in arbed bucket increased with LP awarded for arb taker
             collateral:   0.257950403803869741 * 1e18,        // arbed collateral added to the arbed bucket
-            deposit:      978.836725452666849368 * 1e18,      // quote token amount is diminished in arbed bucket
+            deposit:      978.836725452666849367 * 1e18,      // quote token amount is diminished in arbed bucket
             exchangeRate: 1.000000000000000001 * 1e18
         });
         _assertAuction(

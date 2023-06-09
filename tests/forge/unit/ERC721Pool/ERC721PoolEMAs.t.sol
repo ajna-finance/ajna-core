@@ -258,7 +258,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
             rate:   0.032805 * 1e18
         });
         (, , debtEma, ) = _pool.emasInfo();
-        assertEq(debtEma, 17_944.480736533919717209 * 1e18);            // reached 18_000
+        assertEq(debtEma, 17_944.480736533919717210 * 1e18);            // reached 18_000
         _assertPool(
             PoolParams({
                 htp:                  1_497.769957757345433425 * 1e18,
@@ -297,7 +297,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
         _assertEMAs({
             debtColEma:     2_745_524.266553065584517923 * 1e18,        // reflects newly drawn debt
             lupt0DebtEma:   3_239_231.294940137090747973 * 1e18,       // unchanged from setup
-            debtEma:        6_895.559233472655919795 * 1e18,            // increasing toward 7_647
+            debtEma:        6_895.559233472655919796 * 1e18,            // increasing toward 7_647
             depositEma:     10_183.805962068972523753 * 1e18            // decreasing toward 10_000
         });
 
@@ -327,7 +327,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
         _assertEMAs({
             debtColEma:     2_750_544.877504425497154098 * 1e18,
             lupt0DebtEma:   3_245_152.843668674754668559 * 1e18,
-            debtEma:        6_899.360444842923621304 * 1e18,
+            debtEma:        6_899.360444842923621305 * 1e18,
             depositEma:     10_903.051559899926973925 * 1e18            // still noticably impacted
         });
 
@@ -340,7 +340,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
         _assertEMAs({
             debtColEma:     3_412_160.847313164565839074 * 1e18,
             lupt0DebtEma:   4_025_493.853024754985190842 * 1e18,
-            debtEma:        7_278.073513801178223507 * 1e18,
+            debtEma:        7_278.073513801178223508 * 1e18,
             depositEma:     10_452.403764437541109496 * 1e18            // moving down back to 10_000
         });
         _assertPool(

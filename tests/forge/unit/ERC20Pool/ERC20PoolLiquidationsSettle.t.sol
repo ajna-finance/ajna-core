@@ -167,7 +167,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower2,
-            debt:           9_976.561670003961916237 * 1e18,
+            debt:           9_976.561670003961916238 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           98.533942419792216457 * 1e18,
             transferAmount: 98.533942419792216457 * 1e18
@@ -449,7 +449,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower2,
-            debt:           9_976.561670003961916237 * 1e18,
+            debt:           9_976.561670003961916238 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           98.533942419792216457 * 1e18,
             transferAmount: 98.533942419792216457 * 1e18
@@ -583,7 +583,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   284.459955586905868020 * 1e18,
-            deposit:      8_290.291541398584037503 * 1e18,
+            deposit:      8_290.291541398584037502 * 1e18,
             exchangeRate: 1.005055539219335976 * 1e18
         });
         _assertBucket({
@@ -617,7 +617,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower2,
-            debt:           9_976.561670003961916237 * 1e18,
+            debt:           9_976.561670003961916238 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           98.533942419792216457 * 1e18,
             transferAmount: 98.533942419792216457 * 1e18
@@ -911,7 +911,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower2,
-            debt:           9_976.561670003961916237 * 1e18,
+            debt:           9_976.561670003961916238 * 1e18,
             collateral:     1_000 * 1e18,
             bond:           98.533942419792216457 * 1e18,
             transferAmount: 98.533942419792216457 * 1e18
