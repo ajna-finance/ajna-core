@@ -88,7 +88,7 @@ abstract contract UnboundedPositionsHandler is UnboundedBasePositionHandler {
             }
 
         } catch (bytes memory err) {
-            _ensurePoolError(err);
+            _ensurePositionsManagerError(err);
         }
     }
 
@@ -111,7 +111,7 @@ abstract contract UnboundedPositionsHandler is UnboundedBasePositionHandler {
             require(posIndexes.length == 0, "PM4: positions are associated with tokenId");
 
         } catch (bytes memory err) {
-            _ensurePoolError(err);
+            _ensurePositionsManagerError(err);
         }
     }
 
@@ -192,7 +192,7 @@ abstract contract UnboundedPositionsHandler is UnboundedBasePositionHandler {
             }
 
         } catch (bytes memory err) {
-            _ensurePoolError(err);
+            _ensurePositionsManagerError(err);
         }
 
     }
@@ -283,7 +283,7 @@ abstract contract UnboundedPositionsHandler is UnboundedBasePositionHandler {
 
 
         } catch (bytes memory err) {
-            _ensurePoolError(err);
+            _ensurePositionsManagerError(err);
         }
     }
 
@@ -307,7 +307,24 @@ abstract contract UnboundedPositionsHandler is UnboundedBasePositionHandler {
             uint256[] memory posIndexes = _positionManager.getPositionIndexes(tokenId_);
             require(posIndexes.length == 0, "PM5: positions still exist after burn");
         } catch (bytes memory err) {
-            _ensurePoolError(err);
+            _ensurePositionsManagerError(err);
         }
+    }
+
+    function _ensurePositionsManagerError(bytes memory err_) internal pure {
+        bytes32 err = keccak256(err_);
+
+        require(
+            err == keccak256(abi.encodeWithSignature("AllowanceTooLow()")) ||
+            err == keccak256(abi.encodeWithSignature("BucketBankrupt()")) ||
+            err == keccak256(abi.encodeWithSignature("DeployWithZeroAddress()")) ||
+            err == keccak256(abi.encodeWithSignature("LiquidityNotRemoved()")) ||
+            err == keccak256(abi.encodeWithSignature("NoAuth()")) ||
+            err == keccak256(abi.encodeWithSignature("NoToken()")) ||
+            err == keccak256(abi.encodeWithSignature("NotAjnaPool()")) ||
+            err == keccak256(abi.encodeWithSignature("RemovePositionFailed()")) ||
+            err == keccak256(abi.encodeWithSignature("WrongPool()")),
+            "Unexpected revert error"
+        );
     }
 }
