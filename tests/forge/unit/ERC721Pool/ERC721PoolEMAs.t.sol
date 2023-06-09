@@ -78,10 +78,10 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
                 poolSize:             15_000 * 1e18,
                 pledgedCollateral:    6 * 1e18,
                 encumberedCollateral: 4.620028820788372636 * 1e18,      // 6 / 1.3 = 4.62
-                poolDebt:             6_954.361808414458420694 * 1e18,
+                poolDebt:             6_954.361808414458420695 * 1e18,
                 actualUtilization:    0.000000000000000000 * 1e18,      // moving -> 6_947 / 10_000 (meaningful) = 0.7
                 targetUtilization:    1.000000000000000000 * 1e18,
-                minDebtAmount:        695.436180841445842069 * 1e18,    // debt / 10; only one loan, so not enforced
+                minDebtAmount:        695.436180841445842070 * 1e18,    // debt / 10; only one loan, so not enforced
                 loans:                1,
                 maxBorrower:          address(_borrower),
                 interestRate:         0.05 * 1e18,
@@ -207,7 +207,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
                 poolSize:             25_002.955913967460376246 * 1e18, // reflects additional 10_000 deposit
                 pledgedCollateral:    6 * 1e18,
                 encumberedCollateral: 4.622082975054377226 * 1e18,
-                poolDebt:             6_957.453852323755131280 * 1e18,
+                poolDebt:             6_957.453852323755131281 * 1e18,
                 actualUtilization:    0.348388356770742011 * 1e18,      // dropped to 35% as expected
                 targetUtilization:    0.770135325994564531 * 1e18,
                 minDebtAmount:        695.745385232375513128* 1e18,
@@ -266,10 +266,10 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
                 poolSize:             25_010.141517477798670592 * 1e18,
                 pledgedCollateral:    12 * 1e18,                        // 6 additional NFTs deposited
                 encumberedCollateral: 11.940259472915000621 * 1e18,     // all 12 NFTs are encumbered
-                poolDebt:             17_973.239493088145201104 * 1e18, // includes new debt
+                poolDebt:             17_973.239493088145201105 * 1e18, // includes new debt
                 actualUtilization:    0.897069303670436098 * 1e18,
                 targetUtilization:    0.966852816219664605 * 1e18,
-                minDebtAmount:        1_797.323949308814520110 * 1e18,
+                minDebtAmount:        1_797.323949308814520111 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower),
                 interestRate:         0.032805 * 1e18,
@@ -350,7 +350,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
                 poolSize:             15_002.177276783057210001 * 1e18,
                 pledgedCollateral:    6 * 1e18,
                 encumberedCollateral: 5.086988044805126619 * 1e18,
-                poolDebt:             7_657.258591000940390422 * 1e18,  // 7_647 principal plus some interest
+                poolDebt:             7_657.258591000940390423 * 1e18,  // 7_647 principal plus some interest
                 actualUtilization:    0.696306196911713144 * 1e18,
                 targetUtilization:    0.847637823306888876 * 1e18,
                 minDebtAmount:        765.725859100094039042 * 1e18,
