@@ -25,8 +25,7 @@ import {
 }                            from './interfaces/pool/IERC3156FlashLender.sol';
 
 import {
-    DrawDebtResult,
-    RepayDebtResult,
+    DebtChangeResult,
     SettleParams,
     SettleResult,
     TakeResult
@@ -141,7 +140,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         // ensure the borrower is not credited with a fractional amount of collateral smaller than the token scale
         collateralToPledge_ = _roundToScale(collateralToPledge_, _getArgUint256(COLLATERAL_SCALE));
 
-        DrawDebtResult memory result = BorrowerActions.drawDebt(
+        DebtChangeResult memory result = BorrowerActions.drawDebt(
             auctions,
             buckets,
             deposits,
@@ -156,42 +155,14 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         emit DrawDebt(borrowerAddress_, amountToBorrow_, collateralToPledge_, result.newLup);
 
-        // update in memory pool state struct
-        poolState.debt       = result.poolDebt;
-        poolState.t0Debt     = result.t0PoolDebt;
-        poolState.collateral = result.poolCollateral;
-
-        // update t0 debt in auction in memory pool state struct and pool balances state
-        if (result.t0DebtInAuctionChange != 0) {
-            poolState.t0DebtInAuction    -= result.t0DebtInAuctionChange;
-            poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
-        }
-
-        // adjust t0Debt2ToCollateral ratio if loan not in auction
-        if (!result.inAuction) {
-            _updateT0Debt2ToCollateral(
-                result.settledAuction ? 0 : result.debtPreAction,       // debt pre settle (for loan in auction) not taken into account
-                result.debtPostAction,
-                result.settledAuction ? 0 : result.collateralPreAction, // collateral pre settle (for loan in auction) not taken into account
-                result.collateralPostAction
-            );
-        }
-
-        // update pool interest rate state
-        _updateInterestState(poolState, result.newLup);
+        _updatePostDebtChangeState(result, poolState);
 
         if (collateralToPledge_ != 0) {
-            // update pool balances pledged collateral state
-            poolBalances.pledgedCollateral = poolState.collateral;
-
             // move collateral from sender to pool
             _transferCollateralFrom(msg.sender, collateralToPledge_);
         }
 
         if (amountToBorrow_ != 0) {
-            // update pool balances t0 debt state
-            poolBalances.t0Debt = poolState.t0Debt;
-
             // move borrowed amount from pool to sender
             _transferQuoteToken(msg.sender, amountToBorrow_);
         }
@@ -221,7 +192,10 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             maxQuoteTokenAmountToRepay_ = _roundToScale(maxQuoteTokenAmountToRepay_, poolState.quoteTokenScale);
         collateralAmountToPull_         = _roundToScale(collateralAmountToPull_,     _getArgUint256(COLLATERAL_SCALE));
 
-        RepayDebtResult memory result = BorrowerActions.repayDebt(
+        (
+            DebtChangeResult memory result,
+            uint256 quoteTokenToRepay
+        ) = BorrowerActions.repayDebt(
             auctions,
             buckets,
             deposits,
@@ -233,43 +207,15 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             limitIndex_
         );
 
-        emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, collateralAmountToPull_, result.newLup);
+        emit RepayDebt(borrowerAddress_, quoteTokenToRepay, collateralAmountToPull_, result.newLup);
 
-        // update in memory pool state struct
-        poolState.debt       = result.poolDebt;
-        poolState.t0Debt     = result.t0PoolDebt;
-        poolState.collateral = result.poolCollateral;
+        _updatePostDebtChangeState(result, poolState);
 
-        // update t0 debt in auction in memory pool state struct and pool balances state
-        if (result.t0DebtInAuctionChange != 0) {
-            poolState.t0DebtInAuction    -= result.t0DebtInAuctionChange;
-            poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
-        }
-
-        // adjust t0Debt2ToCollateral ratio if loan not in auction
-        if (!result.inAuction) {
-            _updateT0Debt2ToCollateral(
-                result.settledAuction ? 0 : result.debtPreAction,       // debt pre settle (for loan in auction) not taken into account
-                result.debtPostAction,
-                result.settledAuction ? 0 : result.collateralPreAction, // collateral pre settle (for loan in auction) not taken into account
-                result.collateralPostAction
-            );
-        }
-
-        // update pool interest rate state
-        _updateInterestState(poolState, result.newLup);
-
-        if (result.quoteTokenToRepay != 0) {
-            // update pool balances t0 debt state
-            poolBalances.t0Debt = poolState.t0Debt;
-
+        if (quoteTokenToRepay != 0) {
             // move amount to repay from sender to pool
-            _transferQuoteTokenFrom(msg.sender, result.quoteTokenToRepay);
+            _transferQuoteTokenFrom(msg.sender, quoteTokenToRepay);
         }
         if (collateralAmountToPull_ != 0) {
-            // update pool balances pledged collateral state
-            poolBalances.pledgedCollateral = poolState.collateral;
-
             // move collateral from pool to address specified as collateral receiver
             _transferCollateral(collateralReceiver_, collateralAmountToPull_);
         }

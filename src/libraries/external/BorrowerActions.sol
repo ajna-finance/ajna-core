@@ -9,11 +9,10 @@ import {
     DepositsState,
     LoansState,
     PoolState
-}                   from '../../interfaces/pool/commons/IPoolState.sol';
+}                    from '../../interfaces/pool/commons/IPoolState.sol';
 import {
-    DrawDebtResult,
-    RepayDebtResult
-}                   from '../../interfaces/pool/commons/IPoolInternals.sol';
+    DebtChangeResult
+}                    from '../../interfaces/pool/commons/IPoolInternals.sol';
 
 import {
     _borrowFeeRate,
@@ -122,7 +121,7 @@ library BorrowerActions {
         uint256 limitIndex_,
         uint256 collateralToPledge_
     ) external returns (
-        DrawDebtResult memory result_
+        DebtChangeResult memory result_
     ) {
         // revert if not enough pool balance to borrow
         if (amountToBorrow_ > maxAvailable_) revert InsufficientLiquidity();
@@ -278,7 +277,8 @@ library BorrowerActions {
         uint256 collateralAmountToPull_,
         uint256 limitIndex_
     ) external returns (
-        RepayDebtResult memory result_
+        DebtChangeResult memory result_,
+        uint256 quoteTokenToRepay_
     ) {
         RepayDebtLocalVars memory vars;
         vars.repay = maxQuoteTokenAmountToRepay_ != 0;
@@ -311,9 +311,10 @@ library BorrowerActions {
                 );
             }
 
-            result_.t0PoolDebt        -= vars.t0RepaidDebt;
-            result_.poolDebt          = Maths.wmul(result_.t0PoolDebt, poolState_.inflator);
-            result_.quoteTokenToRepay = Maths.ceilWmul(vars.t0RepaidDebt,  poolState_.inflator);
+            result_.t0PoolDebt -= vars.t0RepaidDebt;
+            result_.poolDebt   = Maths.wmul(result_.t0PoolDebt, poolState_.inflator);
+
+            quoteTokenToRepay_ = Maths.ceilWmul(vars.t0RepaidDebt,  poolState_.inflator);
 
             vars.borrowerDebt = Maths.wmul(borrower.t0Debt - vars.t0RepaidDebt, poolState_.inflator);
 

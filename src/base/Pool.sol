@@ -36,6 +36,7 @@ import {
     Liquidation
 }                                   from '../interfaces/pool/commons/IPoolState.sol';
 import {
+    DebtChangeResult,
     KickResult,
     SettleResult,
     TakeResult,
@@ -572,6 +573,44 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 reserveAuction.totalInterestEarned += newInterest;
             }
         }
+    }
+
+    /**
+     *  @notice Helper function to update pool state post debt change actions.
+     *  @param result_    Struct containing details of debt change result.
+     *  @param poolState_ Struct containing pool details.
+     */
+    function _updatePostDebtChangeState(
+        DebtChangeResult memory result_,
+        PoolState memory poolState_
+    ) internal {
+        // update in memory pool state struct
+        poolState_.debt       = result_.poolDebt;
+        poolState_.t0Debt     = result_.t0PoolDebt;
+        poolState_.collateral = result_.poolCollateral;
+
+        // update pool balances state
+        poolBalances.t0Debt            = poolState_.t0Debt;
+        poolBalances.pledgedCollateral = poolState_.collateral;
+
+        // update t0 debt in auction in memory pool state struct and pool balances state
+        if (result_.t0DebtInAuctionChange != 0) {
+            poolState_.t0DebtInAuction   -= result_.t0DebtInAuctionChange;
+            poolBalances.t0DebtInAuction = poolState_.t0DebtInAuction;
+        }
+
+        // adjust t0Debt2ToCollateral ratio if loan not in auction
+        if (!result_.inAuction) {
+            _updateT0Debt2ToCollateral(
+                result_.settledAuction ? 0 : result_.debtPreAction,       // debt pre settle (for loan in auction) not taken into account
+                result_.debtPostAction,
+                result_.settledAuction ? 0 : result_.collateralPreAction, // collateral pre settle (for loan in auction) not taken into account
+                result_.collateralPostAction
+            );
+        }
+
+        // update pool interest rate state
+        _updateInterestState(poolState_, result_.newLup);
     }
 
     /**

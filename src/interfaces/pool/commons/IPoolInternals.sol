@@ -93,8 +93,8 @@ struct RemoveQuoteParams {
 /*** Loan Management Param Structs ***/
 /*************************************/
 
-/// @dev Struct used to return result of `BorrowerActions.drawDebt` action.
-struct DrawDebtResult {
+/// @dev Struct used to return result of `BorrowerActions.drawDebt` and `BorrowerActions.repayDebt` actions.
+struct DebtChangeResult {
     bool    inAuction;             // true if loan still in auction after pledge more collateral, false otherwise
     uint256 newLup;                // [WAD] new pool LUP after draw debt
     uint256 poolCollateral;        // [WAD] total amount of collateral in pool after pledge collateral
@@ -107,21 +107,4 @@ struct DrawDebtResult {
     uint256 debtPostAction;        // [WAD] The amount of borrower t0 debt after draw debt
     uint256 collateralPreAction;   // [WAD] The amount of borrower collateral before draw debt
     uint256 collateralPostAction;  // [WAD] The amount of borrower collateral after draw debt
-}
-
-/// @dev Struct used to return result of `BorrowerActions.repayDebt` action.
-struct RepayDebtResult {
-    bool    inAuction;             // true if loan still in auction after repay, false otherwise
-    uint256 newLup;                // [WAD] new pool LUP after draw debt
-    uint256 poolCollateral;        // [WAD] total amount of collateral in pool after pull collateral
-    uint256 poolDebt;              // [WAD] total accrued debt in pool after repay debt
-    uint256 remainingCollateral;   // [WAD] amount of borrower collateral after pull collateral
-    bool    settledAuction;        // true if repay debt settles auction
-    uint256 t0DebtInAuctionChange; // [WAD] change of t0 pool debt in auction after repay debt
-    uint256 t0PoolDebt;            // [WAD] amount of t0 debt in pool after repay
-    uint256 quoteTokenToRepay;     // [WAD] quote token amount to be transferred from sender to pool
-    uint256 debtPreAction;         // [WAD] The amount of borrower t0 debt before repay debt
-    uint256 debtPostAction;        // [WAD] The amount of borrower t0 debt after repay debt
-    uint256 collateralPreAction;   // [WAD] The amount of borrower collateral before repay debt
-    uint256 collateralPostAction;  // [WAD] The amount of borrower collateral after repay debt
 }
