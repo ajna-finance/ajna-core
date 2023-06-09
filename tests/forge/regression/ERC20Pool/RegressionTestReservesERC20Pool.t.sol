@@ -841,6 +841,11 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         _invariant_F1();
     }
 
+    /**
+        Test was failing because t0 debt in auction accumulator was in an inconsistent state after repayDebt action:
+        - auction was settled, the quote token amount to repay was rounded down to 0 therefore t0 debt in auction accumulator not updated (updated only when token to repay was not 0)
+        Fixed by properly updating t0 debt in auction accumulator every time t0DebtInAuctionChange is different than 0.
+     */
     function test_regression_failure_A1_repaydebt_t0_rounding() external {
         _reserveERC20PoolHandler.transferLps(883172166925196014153612741, 1011874887306145524, 1560280797611982634762545, 2999999999999999999999999999999999999999988581, 166067911958117829389897753);
         _reserveERC20PoolHandler.drawDebt(109748618821205351803014988731482981932, 1, 1946224850931);

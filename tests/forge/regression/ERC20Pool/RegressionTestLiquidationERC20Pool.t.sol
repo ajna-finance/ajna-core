@@ -513,6 +513,11 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
         invariant_auction();
     }
 
+    /**
+        Test was failing because t0 debt in auction accumulator was in an inconsistent state after repayDebt action:
+        - auction was settled, the quote token amount to repay was rounded down to 0 therefore t0 debt in auction accumulator not updated (updated only when token to repay was not 0)
+        Fixed by properly updating t0 debt in auction accumulator every time t0DebtInAuctionChange is not 0 
+     */
     function test_regression_failure_custom_error_settle() external {
         _liquidationERC20PoolHandler.addCollateral(2, 2, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 2330392716681262379662959078081248015652372);
         _liquidationERC20PoolHandler.addCollateral(378829, 396801918870251373002623362920166344338616219734986900771610669838, 3522072715526471174702, 740);
