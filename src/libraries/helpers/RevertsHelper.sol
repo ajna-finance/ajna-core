@@ -39,7 +39,7 @@ import { Maths }    from '../internal/Maths.sol';
     ) view {
         if (t0DebtInAuction_ != 0 ) {
             // deposit in buckets within liquidation debt from the top-of-book down are frozen.
-            if (index_ <= Deposits.findIndexOfSum(deposits_, Maths.wmul(t0DebtInAuction_, inflator_))) revert RemoveDepositLockedByAuctionDebt();
+            if (index_ <= Deposits.findIndexOfSum(deposits_, Maths.ceilWmul(t0DebtInAuction_, inflator_))) revert RemoveDepositLockedByAuctionDebt();
         } 
     }
 

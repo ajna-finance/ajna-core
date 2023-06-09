@@ -533,7 +533,7 @@ abstract contract BaseHandler is Test {
         printLog("Total t0 debt            = ", totalT0debt);
         printLog("Total t0 debt in auction = ", totalT0debtInAuction);
         printLog("Total debt               = ", Maths.ceilWmul(totalT0debt, pendingInflator));
-        printLog("Total debt in auction    = ", Maths.wmul(totalT0debtInAuction, pendingInflator));
+        printLog("Total debt in auction    = ", Maths.ceilWmul(totalT0debtInAuction, pendingInflator));
         printLog("Total bond escrowed      = ", totalBond);
         printLine("");
         printLog("Total Loans              = ", noOfLoans);
