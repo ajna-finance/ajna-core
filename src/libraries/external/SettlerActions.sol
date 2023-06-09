@@ -351,7 +351,7 @@ library SettlerActions {
             vars.price                 = _priceAt(vars.index);
 
             if (vars.unscaledDeposit != 0) {
-                vars.debt              = Maths.wmul(remainingt0Debt_, inflator_);           // current debt to be settled
+                vars.debt              = Maths.ceilWmul(remainingt0Debt_, inflator_);           // current debt to be settled
                 vars.maxSettleableDebt = Maths.floorWmul(remainingCollateral_, vars.price); // max debt that can be settled with existing collateral
                 vars.scaledDeposit     = Maths.wmul(vars.scale, vars.unscaledDeposit);
 
@@ -455,7 +455,7 @@ library SettlerActions {
             (uint256 index, , uint256 scale) = Deposits.findIndexAndSumOfSum(deposits_, 1);
             uint256 unscaledDeposit          = Deposits.unscaledValueAt(deposits_, index);
             uint256 depositToRemove          = Maths.wmul(scale, unscaledDeposit);
-            uint256 debt                     = Maths.wmul(remainingt0Debt_, inflator_);
+            uint256 debt                     = Maths.ceilWmul(remainingt0Debt_, inflator_);
             uint256 depositRemaining;
 
             // 1) bucket deposit covers entire loan debt to settle, no constraints needed

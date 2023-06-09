@@ -385,7 +385,7 @@ library KickerActions {
         kickResult_.lup          = Deposits.getLup(deposits_, poolState_.debt + additionalDebt_);
 
         KickLocalVars memory vars;
-        vars.borrowerDebt       = Maths.wmul(kickResult_.t0KickedDebt, poolState_.inflator);
+        vars.borrowerDebt       = Maths.ceilWmul(kickResult_.t0KickedDebt, poolState_.inflator);
         vars.borrowerCollateral = kickResult_.collateralPreAction;
 
         // revert if kick on a collateralized borrower

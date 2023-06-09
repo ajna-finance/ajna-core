@@ -505,7 +505,7 @@ library TakerActions {
         uint256 compensatedCollateral_
     ) {
 
-        uint256 borrowerDebt = Maths.wmul(borrower_.t0Debt, poolState_.inflator);
+        uint256 borrowerDebt = Maths.ceilWmul(borrower_.t0Debt, poolState_.inflator);
 
         // check that taking from loan doesn't leave borrower debt under min debt amount
         _revertOnMinDebt(
@@ -708,7 +708,7 @@ library TakerActions {
             liquidation_.alreadyTaken = true;
         }
 
-        vars.borrowerDebt = Maths.wmul(vars.t0BorrowerDebt, inflator_);
+        vars.borrowerDebt = Maths.ceilWmul(vars.t0BorrowerDebt, inflator_);
 
         uint256 neutralPrice = liquidation_.neutralPrice;
 

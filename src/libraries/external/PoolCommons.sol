@@ -98,7 +98,7 @@ library PoolCommons {
 
         // calculate new interest params
         vars.nonAuctionedT0Debt = poolState_.t0Debt - poolState_.t0DebtInAuction;
-        vars.newDebt = Maths.wmul(vars.nonAuctionedT0Debt, poolState_.inflator);
+        vars.newDebt = Maths.ceilWmul(vars.nonAuctionedT0Debt, poolState_.inflator);
         // new meaningful deposit cannot be less than pool's debt
         vars.newMeaningfulDeposit = Maths.max(
             _meaningfulDeposit(
@@ -369,7 +369,7 @@ library PoolCommons {
         }
         meaningfulDeposit_ -= Maths.min(
             meaningfulDeposit_,
-            Maths.wmul(t0DebtInAuction_, inflator_)
+            Maths.ceilWmul(t0DebtInAuction_, inflator_)
         );
     }
 

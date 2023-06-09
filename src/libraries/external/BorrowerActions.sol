@@ -315,7 +315,7 @@ library BorrowerActions {
             result_.poolDebt          = Maths.ceilWmul(result_.t0PoolDebt, poolState_.inflator);
             result_.quoteTokenToRepay = Maths.ceilWmul(vars.t0RepaidDebt,  poolState_.inflator);
 
-            vars.borrowerDebt = Maths.wmul(borrower.t0Debt - vars.t0RepaidDebt, poolState_.inflator);
+            vars.borrowerDebt = Maths.ceilWmul(borrower.t0Debt - vars.t0RepaidDebt, poolState_.inflator);
 
             // check that paying the loan doesn't leave borrower debt under min debt amount
             _revertOnMinDebt(
