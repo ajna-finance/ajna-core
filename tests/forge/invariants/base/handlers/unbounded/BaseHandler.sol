@@ -265,6 +265,14 @@ abstract contract BaseHandler is Test {
         _quote.approve(address(_pool), _quote.balanceOf(actor_));
     }
 
+    function _ensureAjnaAmount(address actor_, uint256 amount_) internal {
+        uint256 actorBalance = _ajna.balanceOf(actor_);
+        if (amount_> actorBalance) {
+            _ajna.mint(actor_, amount_ - actorBalance);
+        }
+        _ajna.approve(address(_pool), _ajna.balanceOf(actor_));
+    }
+
     function _updatePoolState() internal {
         _pool.updateInterest();
     }
@@ -272,10 +280,12 @@ abstract contract BaseHandler is Test {
     /**
      * @dev Ensure that error is an Pool expected error.
      */
-    function _ensurePoolError(bytes memory err_) internal pure {
+    function _ensurePoolError(bytes memory err_) internal pure { require( _isPoolError(err_), "Unexpected revert error"); }
+
+    function _isPoolError(bytes memory err_) internal pure returns (bool isPoolError_) {
         bytes32 err = keccak256(err_);
 
-        require(
+        if (
             err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
             err == keccak256(abi.encodeWithSignature("BucketBankruptcyBlock()")) ||
             err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) ||
@@ -305,9 +315,7 @@ abstract contract BaseHandler is Test {
             err == keccak256(abi.encodeWithSignature("ReserveAuctionTooSoon()")) ||
             err == keccak256(abi.encodeWithSignature("NoReserves()")) ||
             err == keccak256(abi.encodeWithSignature("ZeroThresholdPrice()")) ||
-            err == keccak256(abi.encodeWithSignature("NoReservesAuction()")),
-            "Unexpected revert error"
-        );
+            err == keccak256(abi.encodeWithSignature("NoReservesAuction()"))) isPoolError_ = true;
     }
 
     /**************************************/

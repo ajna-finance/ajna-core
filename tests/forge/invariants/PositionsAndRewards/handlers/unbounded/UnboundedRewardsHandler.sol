@@ -2,7 +2,6 @@
 
 pragma solidity 0.8.18;
 
-import '@std/console.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionManagerOwnerActions.sol';
@@ -12,7 +11,6 @@ import { Maths }                        from "src/libraries/internal/Maths.sol";
 import { UnboundedBasePositionHandler } from './UnboundedBasePositionHandler.sol';
 
 import { _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
-
 
 /**
  *  @dev this contract manages multiple lenders
@@ -48,7 +46,8 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
         numberOfCalls['UBRewardsHandler.unstake']++;
 
         uint256 actorAjnaBalanceBeforeClaim = _ajna.balanceOf(_actor);
-        uint256 rewardsClaimedBeforeAction  = _rewardsManager.rewardsClaimed(tokenId_);
+        uint256 rewardsClaimedBeforeAction  = _rewardsManager.rewardsClaimed(_pool.currentBurnEpoch());
+        uint256 updateRewardsClaimedBeforeAction  = _rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch());
 
         try _rewardsManager.unstake(tokenId_) {
 
@@ -67,11 +66,14 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
                 totalRewardPerEpoch[lastClaimedEpoch] += _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
 
                 uint256 actorAjnaGain = _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
-                uint256 rewardsClaimedGain = _rewardsManager.rewardsClaimed(tokenId_) - rewardsClaimedBeforeAction;
-
+                uint256 rewardsClaimedGain = _rewardsManager.rewardsClaimed(_pool.currentBurnEpoch()) - rewardsClaimedBeforeAction;
+                uint256 updateRewardsClaimedGain = _rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch()) - updateRewardsClaimedBeforeAction;
+ 
                 require(_rewardsManager.isEpochClaimed(tokenId_, _pool.currentBurnEpoch()) == true, "RW6: most recent epoch should be claimed");
-                require( lastClaimedEpoch == _pool.currentBurnEpoch(), "RW6: most recent epoch should be claimed");
-                require(actorAjnaGain == rewardsClaimedGain, "RW6: rewardsManager's rewards claimed increase should match actor's claim");
+
+                require(lastClaimedEpoch == 0, "RW6: last claimed is not 0 on unstake");
+                require(actorAjnaGain == rewardsClaimedGain + updateRewardsClaimedGain,
+                "RW6: rewardsManager's rewards claimed increase should match actor's claim");
             }
 
         } catch (bytes memory err) {

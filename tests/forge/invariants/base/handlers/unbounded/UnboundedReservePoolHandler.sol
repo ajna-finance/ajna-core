@@ -38,8 +38,8 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBReserveHandler.takeReserves']++; 
 
-        deal(address(_ajna), _actor, type(uint256).max);
-        IERC20(address(_ajna)).approve(address(_pool), type(uint256).max);
+        // ensure actor always has the amount to take reserves
+        _ensureAjnaAmount(_actor, 1e45);
 
         (, uint256 claimableReservesBeforeAction, ,) = _pool.reservesInfo();
 
