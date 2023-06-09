@@ -9,7 +9,7 @@ import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionM
 import { _depositFeeRate }              from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }                        from "src/libraries/internal/Maths.sol";
 
-import { UnboundedBasePositionHandler }         from './UnboundedBasePositionHandler.sol';
+import { UnboundedBasePositionHandler } from './UnboundedBasePositionHandler.sol';
 
 import { _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
 
@@ -38,7 +38,7 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
             require(_positionManager.ownerOf(tokenId_) == address(_rewardsManager), "RW5: owner should be rewardsManager");
 
         } catch (bytes memory err) {
-            _ensurePoolError(err);
+            _ensureRewardsManagerError(err);
         }
     }
 
@@ -75,7 +75,7 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
             }
 
         } catch (bytes memory err) {
-            _ensurePoolError(err);
+            _ensureRewardsManagerError(err);
         }
     }
 
@@ -95,7 +95,7 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
             }
 
         } catch (bytes memory err) {
-            _ensurePoolError(err);
+            _ensureRewardsManagerError(err);
         }
     }
 
@@ -107,7 +107,22 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
 
         try _rewardsManager.claimRewards(tokenId_, epoch_, 0) {
         } catch (bytes memory err) {
-            _ensurePoolError(err);
+            _ensureRewardsManagerError(err);
         }
+    }
+
+    function _ensureRewardsManagerError(bytes memory err_) internal pure {
+        bytes32 err = keccak256(err_);
+
+        require(
+            err == keccak256(abi.encodeWithSignature("AlreadyClaimed()")) ||
+            err == keccak256(abi.encodeWithSignature("EpochNotAvailable()")) ||
+            err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")) ||
+            err == keccak256(abi.encodeWithSignature("MoveStakedLiquidityInvalid()")) ||
+            err == keccak256(abi.encodeWithSignature("NotAjnaPool()")) ||
+            err == keccak256(abi.encodeWithSignature("NotOwnerOfDeposit()")) ||
+            err == keccak256(abi.encodeWithSignature("DeployWithZeroAddress()")),
+            "Unexpected revert error"
+        );
     }
 }

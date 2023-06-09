@@ -48,11 +48,6 @@ interface IPositionManagerErrors {
     error RemovePositionFailed();
 
     /**
-     * @notice User cannot transfer a position NFT in an interval less than 1 hour since last change.
-     */
-    error TransferLocked();
-
-    /**
      * @notice User attempting to interact with a pool that doesn't match the pool associated with the `tokenId`.
      */
     error WrongPool();
