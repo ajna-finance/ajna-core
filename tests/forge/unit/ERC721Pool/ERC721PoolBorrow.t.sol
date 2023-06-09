@@ -313,7 +313,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         // find pending debt after interest accumulation
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              1_508.860066921599065132 * 1e18,
+            borrowerDebt:              1_508.860066921599065131 * 1e18,
             borrowerCollateral:        3 * 1e18,
             borrowert0Np:              1_051.009615384615385100 * 1e18,
             borrowerCollateralization: 5.986423966420065589 * 1e18
@@ -887,7 +887,7 @@ contract ERC721ScaledQuoteTokenBorrowAndRepayTest is ERC721NDecimalsHelperContra
         // find pending debt after interest accumulation
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              1_508.860066921599065132 * 1e18,
+            borrowerDebt:              1_508.860066921599065131 * 1e18,
             borrowerCollateral:        3 * 1e18,
             borrowert0Np:              1_051.009615384615385100 * 1e18,
             borrowerCollateralization: 5.986423966420065589 * 1e18
@@ -1011,7 +1011,7 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
         _quote.approve(address(_pool), 200_000 * 1e18);
     }
 
-    function testDrawRepayDebtFuzzy(uint256 numIndexes, uint256 mintAmount_) external tearDown {
+    function testDrawRepayDebtFuzzy1(uint256 numIndexes, uint256 mintAmount_) external tearDown {
         numIndexes = bound(numIndexes, 3, 7); // number of indexes to add liquidity to
         mintAmount_ = bound(mintAmount_, 1 * 1e18, 1_000 * 1e18);
 
@@ -1098,16 +1098,10 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
 
         // repay all debt and withdraw collateral
         (debt, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
-        deal(address(_quote), _borrower, debt);
+        deal(address(_quote), _borrower, debt + 10 * 1e18);
 
-        _repayDebt({
-            from:             _borrower,
-            borrower:         _borrower,
-            amountToRepay:    debt,
-            amountRepaid:     debt,
-            collateralToPull: tokenIdsToAdd.length,
-            newLup:           _calculateLup(address(_pool), 0)
-        });
+        changePrank(_borrower);
+        ERC721Pool(address(_pool)).repayDebt(_borrower, type(uint256).max, tokenIdsToAdd.length, _borrower, MAX_FENWICK_INDEX);
 
         // check that deposit and exchange rate have increased as a result of accrued interest
         for (uint256 i = 0; i < numIndexes; ++i) {

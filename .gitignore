@@ -16,6 +16,7 @@ report/
 keystore/
 broadcast/
 logFile.txt
+*.log
 
 # Certora
 .certora_internal/

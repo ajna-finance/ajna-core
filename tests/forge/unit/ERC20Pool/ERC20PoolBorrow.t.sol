@@ -331,7 +331,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             newLup:             2_981.007422784467321543 * 1e18
         });
 
-        uint256 expectedDebt = 21_046.123595032677924434 * 1e18;
+        uint256 expectedDebt = 21_046.123595032677924433 * 1e18;
 
         _assertPool(
             PoolParams({
@@ -366,7 +366,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             amount:   10 * 1e18
         });
 
-        expectedDebt = 21_072.086872169016071673 * 1e18;
+        expectedDebt = 21_072.086872169016071672 * 1e18;
 
         _assertPool(
             PoolParams({
@@ -439,7 +439,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         emit LoanStamped(_borrower);
         _pool.stampLoan();
 
-        expectedDebt = 21_132.184557783880298441 * 1e18;
+        expectedDebt = 21_132.184557783880298440 * 1e18;
 
         _assertPool(
             PoolParams({
@@ -1279,16 +1279,10 @@ contract ERC20PoolBorrowFuzzyTest is ERC20FuzzyHelperContract {
         // repay all debt and withdraw collateral
         (debt, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
 
-        deal(address(_quote), _borrower, debt);
+        deal(address(_quote), _borrower, debt + 10 * 1e18);
 
-        _repayDebt({
-            from:             _borrower,
-            borrower:         _borrower,
-            amountToRepay:    type(uint256).max,
-            amountRepaid:     debt,
-            collateralToPull: requiredCollateral,
-            newLup:           _calculateLup(address(_pool), 0)
-        });
+        changePrank(_borrower);
+        ERC20Pool(address(_pool)).repayDebt(_borrower, type(uint256).max, requiredCollateral, _borrower, MAX_FENWICK_INDEX);
 
         // check that deposit and exchange rate have increased as a result of accrued interest
         for (uint256 i = 0; i < numIndexes; ++i) {

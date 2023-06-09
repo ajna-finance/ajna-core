@@ -3,7 +3,7 @@
 pragma solidity 0.8.18;
 
 import '@std/Test.sol';
-import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import { EnumerableSet }   from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
 import { Pool }             from 'src/base/Pool.sol';
@@ -216,9 +216,7 @@ abstract contract BaseHandler is Test {
         } catch {
             changePrank(_actor);
         }
-
         _;
-
     }
 
     modifier useRandomLenderBucket(uint256 bucketIndex_) {

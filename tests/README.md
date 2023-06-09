@@ -33,6 +33,14 @@ make test-regression-erc20
 ```bash
 make test-regression-erc721
 ```
+- regression tests for Position Manager:
+```bash
+make test-regression-position
+```
+- regression tests for Rewards Manager:
+```bash
+make test-regression-rewards
+```
 #### Instruction to generate regression test from failing invariant sequence
 
 - copy the failing scenario steps from invariant failure in `trace.log` file in invariants dir
@@ -137,6 +145,14 @@ make test-invariant-erc20
 - run all invariant tests for ERC721 pool:
 ```bash
 make test-invariant-erc721
+```
+- run all invariant tests for Position Manager:
+```bash
+make test-invariant-position
+```
+- run all invariant tests for Rewards Manager:
+```bash
+make test-invariant-rewards
 ```
 - run specific invariant test for both ERC20 and ERC721 pools:
 ```bash

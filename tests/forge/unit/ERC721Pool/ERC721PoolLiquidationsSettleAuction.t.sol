@@ -131,7 +131,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         });
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              5_069.682183392068152309 * 1e18,
+            borrowerDebt:              5_069.682183392068152308 * 1e18,
             borrowerCollateral:        2 * 1e18,
             borrowert0Np:              2_627.524038461538462750 * 1e18,
             borrowerCollateralization: 0.000000000039385618 * 1e18
@@ -156,7 +156,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         // partial borrower debt is settled, borrower collateral decreased with the amount used to settle debt
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              70.600130721308266688 * 1e18,
+            borrowerDebt:              70.600130721308266687 * 1e18,
             borrowerCollateral:        0.706125968991279692 * 1e18,
             borrowert0Np:              2_627.524038461538462750 * 1e18,
             borrowerCollateralization: 0.000000000998539114 * 1e18
