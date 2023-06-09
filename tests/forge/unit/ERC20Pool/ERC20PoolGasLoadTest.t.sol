@@ -119,10 +119,9 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         skip(15 hours);
 
         address borrower = _borrowers[borrowerId_];
-        (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
 
         vm.prank(borrower);
-        ERC20Pool(address(_pool)).repayDebt(borrower, debt, 0, borrower, MAX_FENWICK_INDEX);
+        ERC20Pool(address(_pool)).repayDebt(borrower, type(uint256).max, 0, borrower, MAX_FENWICK_INDEX);
 
         assertEq(_noOfLoans(), LOANS_COUNT - 1);
     }
@@ -220,10 +219,9 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
             assertEq(_noOfLoans(), LOANS_COUNT);
 
             address borrower = _borrowers[i];
-            (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
 
             vm.prank(borrower);
-            ERC20Pool(address(_pool)).repayDebt(borrower, debt, 0, borrower, MAX_FENWICK_INDEX);
+            ERC20Pool(address(_pool)).repayDebt(borrower, type(uint256).max, 0, borrower, MAX_FENWICK_INDEX);
 
             assertEq(_noOfLoans(), LOANS_COUNT - 1);
 
