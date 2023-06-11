@@ -84,8 +84,8 @@
 - **RW4**: After staking, for each bucket in the staked position `lpsAtStakeTime` should equal the position's LP (`position.lps`) in the bucket and `rateAtStakeTime` should equal the bucket's exchange rate (`Buckets.getExchangeRate()`)
 - **RW5**: After staking, the Reward's manager contract should be the new owner of the position (`ERC721.ownerOf()`). Upon unstaking, The caller of unstake should be the new owner of the position (`ERC721.ownerOf()`)
 - **RW5**: After unstaking or claiming rewards, `isEpochClaimed` should be equal to `true`, `stakeInfo_.lastClaimedEpoch` be equal to the current epoch and `rewardsClaimed` should be incremented by the claimed amount.
-- **RW6**: Each time the bucket rate is updated the `updateRewardsClaimed` accumulator should be properly updated
-- **RW7**: After unstaking or claiming rewards, if ajna has been burned over an epoch while the staker was staked they should have an increased amount in ajna balance `_ajna.balanceOf()` that matches the amount of ajna balance deducted from the contract`_ajna.balanceOf()`.
+- **RW6**: Each time the bucket rate is updated the `updateRewardsClaimed` accumulator should be updated. Each time a user claims rewards from staking the `rewardsClaimed` accumulator should be updated.
+- **RW7**: After unstaking or claiming rewards, if ajna has been burned over an epoch while the staker was staked they should have an increased amount in ajna balance `_ajna.balanceOf()` that matches the amount of ajna balance deducted from the contract `_ajna.balanceOf()`.
 - **RW8**: After unstaking, stakeInfo's tokenId mapping should be deleted and all corrosponding values should therefore be zero'd out (`StakeInfo.ajnaPool`, `StakeInfo.lastClaimedEpoch`, `StakeInfo.owner`, `StakeInfo.stakingEpoch`, `StakeInfo.snapshots`)
 - **RW9**: Can't claim rewards for an end epoch twice
 

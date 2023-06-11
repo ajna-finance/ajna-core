@@ -12,6 +12,8 @@ import { UnboundedBasePositionHandler } from './UnboundedBasePositionHandler.sol
 
 import { _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
 
+import '@std/console.sol';
+
 /**
  *  @dev this contract manages multiple lenders
  *  @dev methods in this contract are called in random order
@@ -45,9 +47,11 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBRewardsHandler.unstake']++;
 
-        uint256 actorAjnaBalanceBeforeClaim = _ajna.balanceOf(_actor);
-        uint256 rewardsClaimedBeforeAction  = _rewardsManager.rewardsClaimed(_pool.currentBurnEpoch());
-        uint256 updateRewardsClaimedBeforeAction  = _rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch());
+        uint256 actorAjnaBalanceBeforeClaim    = _ajna.balanceOf(_actor);
+        uint256 contractAjnaBalanceBeforeClaim = _ajna.balanceOf(address(_rewardsManager));
+
+        uint256 rewardsClaimedBeforeAction       = _rewardsManager.rewardsClaimed(_pool.currentBurnEpoch());
+        uint256 updateRewardsClaimedBeforeAction = _rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch());
 
         try _rewardsManager.unstake(tokenId_) {
 
@@ -58,23 +62,26 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
             tokenIdsByActor[address(_actor)].add(tokenId_);
             tokenIdsByActor[address(_rewardsManager)].remove(tokenId_);
 
-            // add to total rewards if actor received reward
-
             (,,uint256 lastClaimedEpoch) = _rewardsManager.getStakeInfo(tokenId_);
 
             if ((_ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim) != 0) {
                 totalRewardPerEpoch[lastClaimedEpoch] += _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
 
-                uint256 actorAjnaGain = _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
-                uint256 rewardsClaimedGain = _rewardsManager.rewardsClaimed(_pool.currentBurnEpoch()) - rewardsClaimedBeforeAction;
+            }
+                console.log("current burn", _pool.currentBurnEpoch());
+
+                uint256 actorAjnaGain        = _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
+                uint256 contractAjnaDeducted = contractAjnaBalanceBeforeClaim - _ajna.balanceOf(address(_rewardsManager));
+
+                uint256 rewardsClaimedGain       = _rewardsManager.rewardsClaimed(_pool.currentBurnEpoch()) - rewardsClaimedBeforeAction;
                 uint256 updateRewardsClaimedGain = _rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch()) - updateRewardsClaimedBeforeAction;
- 
                 require(_rewardsManager.isEpochClaimed(tokenId_, _pool.currentBurnEpoch()) == true, "RW6: most recent epoch should be claimed");
 
                 require(lastClaimedEpoch == 0, "RW6: last claimed is not 0 on unstake");
                 require(actorAjnaGain == rewardsClaimedGain + updateRewardsClaimedGain,
                 "RW6: rewardsManager's rewards claimed increase should match actor's claim");
-            }
+                require(actorAjnaGain == contractAjnaDeducted,
+                "RW7: ajna deducted from rewardsManager doesn't equal ajna gained by actor");
 
         } catch (bytes memory err) {
             _ensureRewardsManagerError(err);
@@ -86,7 +93,11 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
     ) internal {
         numberOfCalls['UBRewardsHandler.exchangeRate']++;
 
-        uint256 actorAjnaBalanceBeforeClaim = _ajna.balanceOf(_actor);
+        uint256 actorAjnaBalanceBeforeClaim    = _ajna.balanceOf(_actor);
+        uint256 contractAjnaBalanceBeforeClaim = _ajna.balanceOf(address(_rewardsManager));
+
+        uint256 rewardsClaimedBeforeAction       = _rewardsManager.rewardsClaimed(_pool.currentBurnEpoch());
+        uint256 updateRewardsClaimedBeforeAction = _rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch());
 
         try _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), indexes_) {
 
@@ -95,6 +106,17 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
                 uint256 curBurnEpoch = _pool.currentBurnEpoch();
                 totalRewardPerEpoch[curBurnEpoch] += _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
             }
+
+            uint256 actorAjnaGain        = _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
+            uint256 contractAjnaDeducted = contractAjnaBalanceBeforeClaim - _ajna.balanceOf(address(_rewardsManager));
+            uint256 rewardsClaimedGain   = _rewardsManager.rewardsClaimed(_pool.currentBurnEpoch()) - rewardsClaimedBeforeAction;
+
+            uint256 updateRewardsClaimedGain = _rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch()) - updateRewardsClaimedBeforeAction;
+
+            require(actorAjnaGain == rewardsClaimedGain + updateRewardsClaimedGain,
+            "RW6: rewardsManager's rewards claimed increase should match actor's claim");
+            require(actorAjnaGain == contractAjnaDeducted,
+            "RW7: ajna deducted from rewardsManager doesn't equal ajna gained by actor");
 
         } catch (bytes memory err) {
             _ensureRewardsManagerError(err);
