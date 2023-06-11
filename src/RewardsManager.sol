@@ -20,7 +20,6 @@ import { StakeInfo, BucketState } from './interfaces/rewards/IRewardsManagerStat
 import { PositionManager } from './PositionManager.sol';
 
 import { Maths } from './libraries/internal/Maths.sol';
-import '@std/console.sol';
 
 /**
  *  @title  Rewards (staking) Manager contract
@@ -342,18 +341,12 @@ contract RewardsManager is IRewardsManager {
         uint256 lastClaimedEpoch = stakes[tokenId_].lastClaimedEpoch;
         uint256 stakingEpoch     = stakes[tokenId_].stakingEpoch;
 
-        console.log("epochToClaim_", epochToClaim_);
-        console.log("maxReward_", maxReward_);
-
         uint256[] memory positionIndexes = positionManager.getPositionIndexesFiltered(tokenId_);
 
         uint256 epoch = lastClaimedEpoch;
-        console.log("epoch", epoch);
 
         // iterate through all burn periods to calculate and claim rewards
         while (epoch <= epochToClaim_ && rewards_ <= maxReward_) {
-            console.log("in loop");
-
             uint256 nextEpochRewards = _calculateNextEpochRewards(
                 tokenId_,
                 epoch,
@@ -372,10 +365,6 @@ contract RewardsManager is IRewardsManager {
             // update epoch token claim trackers
             rewardsClaimed[epoch]           += nextEpochRewards;
             isEpochClaimed[tokenId_][epoch] = true;
-
-            console.log("last claimed Epoch", epoch);
-            console.log("maxReward_", maxReward_);
-            console.log("current rewards", rewards_);
         }
     }
 
