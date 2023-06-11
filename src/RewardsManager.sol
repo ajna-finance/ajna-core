@@ -330,11 +330,13 @@ contract RewardsManager is IRewardsManager {
      *  @dev    Rewards are calculated as the difference in exchange rates between the last interaction burn event and the current burn event.
      *  @param  tokenId_      `ID` of the staked `LP` `NFT`.
      *  @param  epochToClaim_ The burn epoch to claim rewards for (rewards calculation starts from the last claimed epoch).
+     *  @param  maxReward_    The maximum reward which is set to the ajna balance of the rewards contract
      *  @return rewards_      Amount of rewards earned by the `NFT`.
      */
     function _calculateAndClaimStakingRewards(
         uint256 tokenId_,
-        uint256 epochToClaim_
+        uint256 epochToClaim_,
+        uint256 maxReward_
     ) internal returns (uint256 rewards_) {
         address ajnaPool         = stakes[tokenId_].ajnaPool;
         uint256 lastClaimedEpoch = stakes[tokenId_].lastClaimedEpoch;
@@ -342,9 +344,10 @@ contract RewardsManager is IRewardsManager {
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexesFiltered(tokenId_);
 
-        // iterate through all burn periods to calculate and claim rewards
-        for (uint256 epoch = lastClaimedEpoch; epoch < epochToClaim_; ) {
+        uint256 epoch = lastClaimedEpoch;
 
+        // iterate through all burn periods to calculate and claim rewards
+        while (epoch <= epochToClaim_ && rewards_ <= maxReward_) {
             uint256 nextEpochRewards = _calculateNextEpochRewards(
                 tokenId_,
                 epoch,
@@ -352,6 +355,9 @@ contract RewardsManager is IRewardsManager {
                 ajnaPool,
                 positionIndexes
             );
+
+            // rewards exceed maxReward, reduce rewards for this epoch
+            if (rewards_ + nextEpochRewards > maxReward_) nextEpochRewards = maxReward_ - rewards_;
 
             rewards_ += nextEpochRewards;
 
@@ -491,12 +497,11 @@ contract RewardsManager is IRewardsManager {
 
         uint256 rewardsCapped = Maths.wmul(REWARD_CAP, totalBurnedInPeriod);
 
-        // Check rewards claimed - check that less than 80% of the tokens for a given burn event have been claimed.
-        if (rewardsClaimedInEpoch_ + newRewards_ > rewardsCapped) {
-
-            // set claim reward to difference between cap and reward
-            newRewards_ = rewardsClaimedInEpoch_ > rewardsCapped ? 0 : rewardsCapped - rewardsClaimedInEpoch_;
-        }
+        newRewards_ = _enforceRewardsCap(
+            newRewards_,
+            rewardsClaimedInEpoch_,
+            rewardsCapped
+        );
     }
 
     /**
@@ -525,7 +530,9 @@ contract RewardsManager is IRewardsManager {
         );
 
         if (!isEpochClaimed[tokenId_][epochToClaim_]) {
-            rewardsEarned_ += _calculateAndClaimStakingRewards(tokenId_, epochToClaim_);
+            uint256 maxRewards     =  IERC20(ajnaToken).balanceOf(address(this)) - rewardsEarned_;
+            uint256 stakingRewards =  _calculateAndClaimStakingRewards(tokenId_, epochToClaim_, maxRewards);
+            rewardsEarned_         += stakingRewards;
         }
 
         uint256[] memory burnEpochsClaimed = _getBurnEpochsClaimed(
@@ -630,11 +637,11 @@ contract RewardsManager is IRewardsManager {
                 uint256 rewardsCap            = Maths.wmul(UPDATE_CAP, totalBurnedInEpoch);
                 uint256 rewardsClaimedInEpoch = updateRewardsClaimed[curBurnEpoch];
 
-                // update total tokens claimed for updating bucket exchange rates tracker
-                if (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap) {
-                    // if update reward is greater than cap, set to remaining difference
-                    updatedRewards_ = rewardsClaimedInEpoch > rewardsCap ? 0 : rewardsCap - rewardsClaimedInEpoch;
-                }
+                updatedRewards_ = _enforceRewardsCap(
+                    updatedRewards_,
+                    rewardsClaimedInEpoch,
+                    rewardsCap
+                );
 
                 // accumulate the full amount of additional rewards
                 updateRewardsClaimed[curBurnEpoch] += updatedRewards_;
@@ -643,6 +650,32 @@ contract RewardsManager is IRewardsManager {
 
         // emit event with the list of bucket indexes updated
         emit UpdateExchangeRates(msg.sender, pool_, indexes_, updatedRewards_);
+    }
+
+
+    /**
+     *  @notice cap the ajna rewards earned by the updater and staker
+     *  @dev    Called as part of `_updateBucketExchangeRates` and `calculateNewRewards`. Also restricts amount of rewards to balance of contract
+     *  @param  rewards_               Amount of rewards earned by actor.
+     *  @param  rewardsClaimedInEpoch_ Amount of rewards claimed in the current epoch.
+     *  @param  maxRewards_            Maximum amount of rewards (determined by multiplying CAP by total burned in epoch)
+     *  @return cappedRewards_         Amount of rewards capped by the maximum amount of rewards.
+    */
+    function _enforceRewardsCap(
+        uint256 rewards_,
+        uint256 rewardsClaimedInEpoch_,
+        uint256 maxRewards_
+    ) internal view returns (uint256 cappedRewards_) {
+        cappedRewards_ = rewards_;
+        if (rewardsClaimedInEpoch_ + cappedRewards_ > maxRewards_) {
+            // if update reward is greater than cap, set to remaining difference
+            cappedRewards_ = rewardsClaimedInEpoch_ > maxRewards_ ? 0 : maxRewards_ - rewardsClaimedInEpoch_;
+        }
+
+        uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
+
+        // cap amount to transfer at available contract balance
+        if (cappedRewards_ > ajnaBalance) cappedRewards_ = ajnaBalance;
     }
 
     /**
@@ -785,11 +818,6 @@ contract RewardsManager is IRewardsManager {
      *  @param minAmount_      Min amount that rewards claimer wants to recieve.
      */
     function _transferAjnaRewards(uint256 transferAmount_, uint256 minAmount_) internal {
-        uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
-
-        // cap amount to transfer at available contract balance
-        if (transferAmount_ > ajnaBalance) transferAmount_ = ajnaBalance;
-
         // revert if amount to transfer is lower than limit amount
         if (transferAmount_ < minAmount_) revert InsufficientLiquidity();
 
