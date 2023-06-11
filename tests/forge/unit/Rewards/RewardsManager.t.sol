@@ -2212,8 +2212,7 @@ contract RewardsManagerTest is RewardsHelperContract {
                 (, , uint256 lastInteractionEpoch) = _rewardsManager.getStakeInfo(randomNfts[j]);
 
                 // select random epoch to claim reward
-                uint256 epochToClaim = lastInteractionEpoch < _pool.currentBurnEpoch() ? randomInRange(lastInteractionEpoch + 1, _pool.currentBurnEpoch()) : lastInteractionEpoch; 
- 
+                uint256 epochToClaim = lastInteractionEpoch < _pool.currentBurnEpoch() ? randomInRange(lastInteractionEpoch + 1, _pool.currentBurnEpoch()) : lastInteractionEpoch;  
                 uint256 rewardsEarned = _rewardsManager.calculateRewards(randomNfts[j], epochToClaim);
                 assertGt(rewardsEarned, 0);
 
