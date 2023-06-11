@@ -1989,6 +1989,72 @@ contract RewardsManagerTest is RewardsHelperContract {
             epochsClaimed:      _epochsClaimedArray(1, 0)
         });
         assertLt(_ajnaToken.balanceOf(_minterOne), tokensToBurn);
+    }
+
+    function testAccumulatorsMatchUpdaterRewards() external {
+
+        skip(10);
+
+        // configure NFT position
+        uint256[] memory depositIndexes = new uint256[](5);
+        depositIndexes[0] = 9;
+        depositIndexes[1] = 1;
+        depositIndexes[2] = 2;
+        depositIndexes[3] = 3;
+        depositIndexes[4] = 4;
+
+        // mint memorialize and deposit NFT
+        uint256 tokenId = _mintAndMemorializePositionNFT({
+            indexes:    depositIndexes,
+            minter:     _minterOne,
+            mintAmount: 1_000 * 1e18,
+            pool:       address(_pool)
+        });
+
+        // no rewards earned if legit Ajna pool
+        uint256 rewards = _rewardsManager.updateBucketExchangeRatesAndClaim(
+            address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), depositIndexes
+        );
+
+        assertEq(rewards, 0);
+
+        _stakeToken({
+            pool:    address(_pool),
+            owner:   _minterOne,
+            tokenId: tokenId
+        });
+
+        // burn rewards manager tokens and leave only 3 tokens available
+        // this will occur when the rewardsManager CT is out of ajna to reward stakers and updaters
+        changePrank(address(_rewardsManager));
+        IERC20Token(address(_ajnaToken)).burn(99_999_997.0 * 1e18);
+        assertEq(_ajnaToken.balanceOf(address(_rewardsManager)), 3 * 1e18);
+
+        // borrower takes actions providing reserves enabling reserve auctions
+        // bidder takes reserve auctions by providing ajna tokens to be burned
+        _triggerReserveAuctions({
+            borrower:     _borrower,
+            borrowAmount: 300 * 1e18,
+            limitIndex:   3,
+            pool:         address(_pool),
+            tokensToBurn: 81.799082739441002012 * 1e18
+        });
+
+        assertEq(_ajnaToken.balanceOf(_updater), 0);
+        assertEq(_rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch()), 0);
+
+        // call update exchange rate to enable claiming rewards
+        // updater should earn 4.089954136972050057 ajna tokens but rewardsManager contract only has 3 remaining ajna tokens
+        // balance of updater is restricted to 3 ajna tokens
+        _updateExchangeRates({
+            updater: _updater,
+            pool:    address(_pool),
+            indexes: depositIndexes,
+            reward:  3.0 * 1e18 // this event matches what is rewarded
+        });
+
+        // The rewards claimed by updater should match the `updateRewardsClaimed` accumulator
+        assertEq(_rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch()), _ajnaToken.balanceOf(_updater));
 
     }
 
