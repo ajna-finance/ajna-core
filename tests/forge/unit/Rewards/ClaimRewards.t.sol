@@ -177,11 +177,14 @@ contract ClaimRewardsOnExchangeRateUpdateTest is ClaimRewardsOnStakeTest {
         changePrank(address(_rewardsManager));
         IERC20Token(address(_ajnaToken)).burn(99_999_999 * 1e18);
 
+        updaterBalance = _ajnaToken.balanceOf(_updater);
+        assertEq(updaterBalance, 0);
+
         _updateExchangeRates({
             updater: _updater,
             pool:    address(_pool),
             indexes: depositIndexes,
-            reward:  4.089939384822468148 * 1e18
+            reward:  1.0 * 1e18
         });
         updaterBalance = _ajnaToken.balanceOf(_updater);
         assertEq(updaterBalance, 1 * 1e18);
@@ -197,7 +200,7 @@ contract ClaimRewardsOnExchangeRateUpdateTest is ClaimRewardsOnStakeTest {
             updater: _updater,
             pool:    address(_pool),
             indexes: depositIndexes,
-            reward:  4.089939384822468148 * 1e18
+            reward:  0
         });
         uint256 updaterBalance = _ajnaToken.balanceOf(_updater);
         assertEq(updaterBalance, 0);
@@ -247,13 +250,16 @@ contract ClaimRewardsTest is ClaimRewardsOnStakeTest {
 
         uint256 claimSnapshot = vm.snapshot();
 
+        uint256 minterOneBalancePre = _ajnaToken.balanceOf(_minterOne);
+        assertEq(minterOneBalancePre, 0);
+
         // 3. claim rewards with balance < rewards and balance > limit - staker should receive balance
         _claimRewards({
             pool:               address(_pool),
             from:               _minterOne,
             tokenId:            tokenIdOne,
             minAmountToReceive: 5 * 1e18,
-            reward:             24.539636308934808886 * 1e18,
+            reward:             10.0 * 1e18,
             epochsClaimed:      _epochsClaimedArray(1,0)
         });
         uint256 minterOneBalance = _ajnaToken.balanceOf(_minterOne);
@@ -297,7 +303,7 @@ contract ClaimRewardsTest is ClaimRewardsOnStakeTest {
             from:               _minterOne,
             tokenId:            tokenIdOne,
             minAmountToReceive: 0,
-            reward:             24.539636308934808886 * 1e18,
+            reward:             0,
             epochsClaimed:      _epochsClaimedArray(1,0)
         });
         uint256 minterOneBalance = _ajnaToken.balanceOf(_minterOne);
@@ -335,7 +341,24 @@ contract ClaimRewardsOnUnstakeTest is ClaimRewardsOnStakeTest {
         uint256 unstakeSnapshot = vm.snapshot();
 
         // 2. unstake with balance < rewards - tx should revert
-        _assertUnstakeInsufficientLiquidityRevert(_minterOne, tokenIdOne);
+        uint256 minterOneBalance = _ajnaToken.balanceOf(_minterOne);
+        assertEq(minterOneBalance, 0);
+
+        _unstakeToken({
+            owner:                     _minterOne,
+            pool:                      address(_pool),
+            tokenId:                   tokenIdOne,
+            claimedArray:              _epochsClaimedArray(1, 0),
+            reward:                    10.0 * 1e18,
+            indexes:                   depositIndexes,
+            updateExchangeRatesReward: 4.089939384822468148 * 1e18
+        });
+
+        minterOneBalance = _ajnaToken.balanceOf(_minterOne);
+        assertEq(minterOneBalance, 10 * 1e18);
+
+        vm.revertTo(unstakeSnapshot);
+        unstakeSnapshot = vm.snapshot();
 
         // emergency unstake should unstake without any reward
         _emergencyUnstakeToken({
@@ -343,7 +366,8 @@ contract ClaimRewardsOnUnstakeTest is ClaimRewardsOnStakeTest {
             pool:    address(_pool),
             tokenId: tokenIdOne
         });
-        uint256 minterOneBalance = _ajnaToken.balanceOf(_minterOne);
+
+        minterOneBalance = _ajnaToken.balanceOf(_minterOne);
         assertEq(minterOneBalance, 0);
 
         vm.revertTo(unstakeSnapshot);
@@ -351,8 +375,28 @@ contract ClaimRewardsOnUnstakeTest is ClaimRewardsOnStakeTest {
         // burn all rewards manager tokens
         changePrank(address(_rewardsManager));
         IERC20Token(address(_ajnaToken)).burn(_ajnaToken.balanceOf(address(_rewardsManager)));
+        assertEq(_ajnaToken.balanceOf(address(_rewardsManager)), 0);
 
-        _assertUnstakeInsufficientLiquidityRevert(_minterOne, tokenIdOne);
+        unstakeSnapshot = vm.snapshot();
+
+        minterOneBalance = _ajnaToken.balanceOf(_minterOne);
+        assertEq(minterOneBalance, 0);
+
+        // lender can still unstake regularly without any reward
+        _unstakeToken({
+            owner:                     _minterOne,
+            pool:                      address(_pool),
+            tokenId:                   tokenIdOne,
+            claimedArray:              _epochsClaimedArray(1, 0),
+            reward:                    0,
+            indexes:                   depositIndexes,
+            updateExchangeRatesReward: 0
+        });
+
+        minterOneBalance = _ajnaToken.balanceOf(_minterOne);
+        assertEq(minterOneBalance, 0);
+
+        vm.revertTo(unstakeSnapshot);
 
         // emergency unstake should unstake without any reward
         _emergencyUnstakeToken({

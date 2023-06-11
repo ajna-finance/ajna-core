@@ -347,7 +347,7 @@ contract RewardsManager is IRewardsManager {
         uint256 epoch = lastClaimedEpoch;
 
         // iterate through all burn periods to calculate and claim rewards
-        while (epoch <= epochToClaim_ && rewards_ <= maxReward_) {
+        while (epoch < epochToClaim_ && rewards_ <= maxReward_) {
             uint256 nextEpochRewards = _calculateNextEpochRewards(
                 tokenId_,
                 epoch,
