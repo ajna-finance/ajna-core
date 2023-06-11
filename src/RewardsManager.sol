@@ -20,6 +20,7 @@ import { StakeInfo, BucketState } from './interfaces/rewards/IRewardsManagerStat
 import { PositionManager } from './PositionManager.sol';
 
 import { Maths } from './libraries/internal/Maths.sol';
+import '@std/console.sol';
 
 /**
  *  @title  Rewards (staking) Manager contract
@@ -334,16 +335,24 @@ contract RewardsManager is IRewardsManager {
      */
     function _calculateAndClaimStakingRewards(
         uint256 tokenId_,
-        uint256 epochToClaim_
+        uint256 epochToClaim_,
+        uint256 maxReward_
     ) internal returns (uint256 rewards_) {
         address ajnaPool         = stakes[tokenId_].ajnaPool;
         uint256 lastClaimedEpoch = stakes[tokenId_].lastClaimedEpoch;
         uint256 stakingEpoch     = stakes[tokenId_].stakingEpoch;
 
+        console.log("epochToClaim_", epochToClaim_);
+        console.log("maxReward_", maxReward_);
+
         uint256[] memory positionIndexes = positionManager.getPositionIndexesFiltered(tokenId_);
 
+        uint256 epoch = lastClaimedEpoch;
+        console.log("epoch", epoch);
+
         // iterate through all burn periods to calculate and claim rewards
-        for (uint256 epoch = lastClaimedEpoch; epoch < epochToClaim_; ) {
+        while (epoch <= epochToClaim_ && rewards_ <= maxReward_) {
+            console.log("in loop");
 
             uint256 nextEpochRewards = _calculateNextEpochRewards(
                 tokenId_,
@@ -353,6 +362,9 @@ contract RewardsManager is IRewardsManager {
                 positionIndexes
             );
 
+            // rewards exceed maxReward, reduce rewards for this epoch
+            if (rewards_ + nextEpochRewards > maxReward_) nextEpochRewards = maxReward_ - rewards_;
+
             rewards_ += nextEpochRewards;
 
             unchecked { ++epoch; }
@@ -360,6 +372,10 @@ contract RewardsManager is IRewardsManager {
             // update epoch token claim trackers
             rewardsClaimed[epoch]           += nextEpochRewards;
             isEpochClaimed[tokenId_][epoch] = true;
+
+            console.log("last claimed Epoch", epoch);
+            console.log("maxReward_", maxReward_);
+            console.log("current rewards", rewards_);
         }
     }
 
@@ -491,12 +507,11 @@ contract RewardsManager is IRewardsManager {
 
         uint256 rewardsCapped = Maths.wmul(REWARD_CAP, totalBurnedInPeriod);
 
-        // Check rewards claimed - check that less than 80% of the tokens for a given burn event have been claimed.
-        if (rewardsClaimedInEpoch_ + newRewards_ > rewardsCapped) {
-
-            // set claim reward to difference between cap and reward
-            newRewards_ = rewardsClaimedInEpoch_ > rewardsCapped ? 0 : rewardsCapped - rewardsClaimedInEpoch_;
-        }
+        newRewards_ = _enforceRewardsCap(
+            newRewards_,
+            rewardsClaimedInEpoch_,
+            rewardsCapped
+        );
     }
 
     /**
@@ -525,7 +540,9 @@ contract RewardsManager is IRewardsManager {
         );
 
         if (!isEpochClaimed[tokenId_][epochToClaim_]) {
-            rewardsEarned_ += _calculateAndClaimStakingRewards(tokenId_, epochToClaim_);
+            uint256 maxRewards     =  IERC20(ajnaToken).balanceOf(address(this)) - rewardsEarned_;
+            uint256 stakingRewards =  _calculateAndClaimStakingRewards(tokenId_, epochToClaim_, maxRewards);
+            rewardsEarned_         += stakingRewards;
         }
 
         uint256[] memory burnEpochsClaimed = _getBurnEpochsClaimed(
@@ -630,11 +647,11 @@ contract RewardsManager is IRewardsManager {
                 uint256 rewardsCap            = Maths.wmul(UPDATE_CAP, totalBurnedInEpoch);
                 uint256 rewardsClaimedInEpoch = updateRewardsClaimed[curBurnEpoch];
 
-                // update total tokens claimed for updating bucket exchange rates tracker
-                if (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap) {
-                    // if update reward is greater than cap, set to remaining difference
-                    updatedRewards_ = rewardsClaimedInEpoch > rewardsCap ? 0 : rewardsCap - rewardsClaimedInEpoch;
-                }
+                updatedRewards_ = _enforceRewardsCap(
+                    updatedRewards_,
+                    rewardsClaimedInEpoch,
+                    rewardsCap
+                );
 
                 // accumulate the full amount of additional rewards
                 updateRewardsClaimed[curBurnEpoch] += updatedRewards_;
@@ -643,6 +660,23 @@ contract RewardsManager is IRewardsManager {
 
         // emit event with the list of bucket indexes updated
         emit UpdateExchangeRates(msg.sender, pool_, indexes_, updatedRewards_);
+    }
+
+    function _enforceRewardsCap(
+        uint256 rewards_,
+        uint256 rewardsClaimedInEpoch_,
+        uint256 maxRewards_
+    ) internal view returns (uint256 cappedRewards_) {
+        cappedRewards_ = rewards_;
+        if (rewardsClaimedInEpoch_ + cappedRewards_ > maxRewards_) {
+            // if update reward is greater than cap, set to remaining difference
+            cappedRewards_ = rewardsClaimedInEpoch_ > maxRewards_ ? 0 : maxRewards_ - rewardsClaimedInEpoch_;
+        }
+
+        uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
+
+        // cap amount to transfer at available contract balance
+        if (cappedRewards_ > ajnaBalance) cappedRewards_ = ajnaBalance;
     }
 
     /**
@@ -785,11 +819,6 @@ contract RewardsManager is IRewardsManager {
      *  @param minAmount_      Min amount that rewards claimer wants to recieve.
      */
     function _transferAjnaRewards(uint256 transferAmount_, uint256 minAmount_) internal {
-        uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
-
-        // cap amount to transfer at available contract balance
-        if (transferAmount_ > ajnaBalance) transferAmount_ = ajnaBalance;
-
         // revert if amount to transfer is lower than limit amount
         if (transferAmount_ < minAmount_) revert InsufficientLiquidity();
 

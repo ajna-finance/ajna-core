@@ -12,6 +12,8 @@ import { IPoolErrors }           from 'src/interfaces/pool/commons/IPoolErrors.s
 import { Token }                 from '../../utils/Tokens.sol';
 import { RoguePool }             from './RoguePool.sol';
 
+import '@std/console.sol';
+
 contract RewardsManagerTest is RewardsHelperContract {
 
     address internal _borrower;
@@ -991,12 +993,15 @@ contract RewardsManagerTest is RewardsHelperContract {
         uint256 managerBalance = _ajnaToken.balanceOf(address(_rewardsManager));
         assertEq(managerBalance, 5 * 1e18);
 
-        // check reward generated are more than manager token balance
+        // check reward generated is equal to the manager token balance
         uint256 rewards = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        assertGt(rewards, managerBalance);
+        assertEq(rewards, managerBalance);
 
         // claimRewards should revert when user tries to claim more rewards than available in manager
         _assertClaimRewardsInsufficientLiquidityRevert(_minterOne, tokenIdOne, managerBalance + 1);
+
+        uint256 minterOneBal = _ajnaToken.balanceOf(address(_minterOne));
+        assertEq(minterOneBal, 0);
 
         // claimRewards should claim all available ajna token in manager
         _claimRewards({
@@ -1004,13 +1009,16 @@ contract RewardsManagerTest is RewardsHelperContract {
             from:               _minterOne,
             tokenId:            tokenIdOne,
             minAmountToReceive: 0,
-            reward:             40.899541369720500568 * 1e18,
+            reward:             5.0 * 1e18,
             epochsClaimed:      _epochsClaimedArray(1,0)
         });
 
         // manager balance should be zero after all ajna tokens are claimed
         managerBalance = _ajnaToken.balanceOf(address(_rewardsManager));
         assertEq(managerBalance, 0);
+
+        minterOneBal = _ajnaToken.balanceOf(address(_minterOne));
+        assertEq(minterOneBal, 5.0 * 1e18);
     }
 
     function testMultiPeriodRewardsSingleClaim() external {
@@ -1792,14 +1800,31 @@ contract RewardsManagerTest is RewardsHelperContract {
         uint256 managerBalance = _ajnaToken.balanceOf(address(_rewardsManager));
         assertEq(managerBalance, 5 * 1e18);
 
-        // check reward generated are more than manager token balance
+        // check reward generated is equal to manager token balance
         uint256 rewards = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        assertGt(rewards, managerBalance);
+        assertEq(rewards, managerBalance);
 
-        // should revert when rewards are more than token balance
-        _assertUnstakeInsufficientLiquidityRevert(_minterOne, tokenIdOne);
+        uint256 minterOneBal = _ajnaToken.balanceOf(_minterOne);
+        assertEq(minterOneBal, 0);
+
+        // since rewards can never exceed the contract's balance, unstake works cleanly
+        _unstakeToken({
+            owner:                     _minterOne,
+            pool:                      address(_pool),
+            tokenId:                   tokenIdOne,
+            claimedArray:              _epochsClaimedArray(1, 0),
+            reward:                    5.000000000000000000 * 1e18,
+            indexes:                   depositIndexes,   
+            updateExchangeRatesReward: 0
+        });
+
+        minterOneBal = _ajnaToken.balanceOf(address(_minterOne));
+        assertEq(minterOneBal, 5 * 1e18);
 
         vm.revertTo(snapshot);
+
+        minterOneBal = _ajnaToken.balanceOf(address(_minterOne));
+        assertEq(minterOneBal, 0);
 
         // test when enough tokens in rewards manager contracts
         // _minterOne unstakes staked position
@@ -2049,17 +2074,18 @@ contract RewardsManagerTest is RewardsHelperContract {
         for (uint256 i = 0; i < deposits; ++i) {
 
             tokenIds[i] = _mintAndMemorializePositionNFT({
-                indexes: depositIndexes,
-                minter: minters[i],
+                indexes:    depositIndexes,
+                minter:     minters[i],
                 mintAmount: 1_000_000_000 * 1e18,
-                pool: address(_pool)
+                pool:       address(_pool)
             });
             tokenIdToMinter[tokenIds[i]] = minters[i];
             _stakeToken(address(_pool), minters[i], tokenIds[i]);
         }
 
         uint256 updaterBalance = _ajnaToken.balanceOf(_updater);
-
+        
+        // track the balances of each minter
         for (uint i = 0; i < deposits; i++) {
             minterToBalance[minters[i]] = _ajnaToken.balanceOf(minters[i]);
         }
@@ -2080,7 +2106,6 @@ contract RewardsManagerTest is RewardsHelperContract {
             assertEq(_ajnaToken.balanceOf(_updater), updaterBalance);
 
             changePrank(_updater);
-            assertEq(_ajnaToken.balanceOf(_updater), updaterBalance);
             _rewardsManager.updateBucketExchangeRatesAndClaim(
                 address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), depositIndexes
             );
@@ -2104,11 +2129,11 @@ contract RewardsManagerTest is RewardsHelperContract {
 
                 // select random epoch to claim reward
                 uint256 epochToClaim = lastInteractionEpoch < _pool.currentBurnEpoch() ? randomInRange(lastInteractionEpoch + 1, _pool.currentBurnEpoch()) : lastInteractionEpoch; 
-                
+ 
                 uint256 rewardsEarned = _rewardsManager.calculateRewards(randomNfts[j], epochToClaim);
                 assertGt(rewardsEarned, 0);
 
-                _rewardsManager.claimRewards(randomNfts[j], _pool.currentBurnEpoch(), 0);
+                _rewardsManager.claimRewards(randomNfts[j], epochToClaim, 0);
 
                 // ensure user gets reward
                 assertGt(_ajnaToken.balanceOf(minterAddress), minterToBalance[minterAddress]);
