@@ -2044,18 +2044,38 @@ contract RewardsManagerTest is RewardsHelperContract {
         assertEq(_rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch()), 0);
 
         // call update exchange rate to enable claiming rewards
-        // updater should earn 4.089954136972050057 ajna tokens but rewardsManager contract only has 3 remaining ajna tokens
-        // balance of updater is restricted to 3 ajna tokens
+        // updater should earn 4.089954136972050057 ajna tokens but rewardsManager contract only has 3
+        // updater rewards are restricted to 3 ajna tokens
         _updateExchangeRates({
             updater: _updater,
             pool:    address(_pool),
             indexes: depositIndexes,
-            reward:  3.0 * 1e18 // this event matches what is rewarded
+            reward:  3.0 * 1e18 // updater rewards are restricted to 3 ajna tokens
         });
 
         // The rewards claimed by updater should match the `updateRewardsClaimed` accumulator
         assertEq(_rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch()), _ajnaToken.balanceOf(_updater));
 
+        assertEq(_ajnaToken.balanceOf(address(_rewardsManager)), 0);
+        deal(address(_ajna), address(_rewardsManager), 5 * 1e18);
+        assertEq(_ajnaToken.balanceOf(address(_rewardsManager)), 5 * 1e18);
+
+        assertEq(_ajnaToken.balanceOf(_minterOne), 0);
+        assertEq(_rewardsManager.rewardsClaimed(_pool.currentBurnEpoch()), 0);
+
+        // claim rewards accrued since deposit
+        // claimer should earn 40.899541369720500568 * 1e18 ajna tokens but rewardsManager contract only has 5
+        _claimRewards({
+            pool:               address(_pool),
+            from:               _minterOne,
+            tokenId:            tokenId,
+            minAmountToReceive: 0,
+            reward:             5.0 * 1e18, // claimer rewards are restricted to 5 ajna tokens
+            epochsClaimed:      _epochsClaimedArray(1, 0)
+        });
+
+        // The rewards claimed should match the `rewardsClaimed` accumulator
+        assertEq(_rewardsManager.rewardsClaimed(_pool.currentBurnEpoch()), _ajnaToken.balanceOf(_minterOne)); 
     }
 
     /********************/
