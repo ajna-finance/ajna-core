@@ -34,7 +34,7 @@ abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler 
             tokenIdsByActor[address(_actor)].remove(tokenId_);
 
         } catch (bytes memory err) {
-            _ensurePoolError(err);
+            _ensureRewardsManagerError(err);
         }
     }
 
@@ -61,7 +61,7 @@ abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler 
             }
 
         } catch (bytes memory err) {
-            _ensurePoolError(err);
+            _ensureRewardsManagerError(err);
         }
     }
 
@@ -81,7 +81,7 @@ abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler 
             }
 
         } catch (bytes memory err) {
-            _ensurePoolError(err);
+            _ensureRewardsManagerError(err);
         }
     }
 
@@ -93,7 +93,22 @@ abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler 
 
         try _rewardsManager.claimRewards(tokenId_, epoch_, 0) {
         } catch (bytes memory err) {
-            _ensurePoolError(err);
+            _ensureRewardsManagerError(err);
         }
+    }
+
+    function _ensureRewardsManagerError(bytes memory err_) internal pure {
+        bytes32 err = keccak256(err_);
+
+        require(
+            err == keccak256(abi.encodeWithSignature("AlreadyClaimed()")) ||
+            err == keccak256(abi.encodeWithSignature("EpochNotAvailable()")) ||
+            err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")) ||
+            err == keccak256(abi.encodeWithSignature("MoveStakedLiquidityInvalid()")) ||
+            err == keccak256(abi.encodeWithSignature("NotAjnaPool()")) ||
+            err == keccak256(abi.encodeWithSignature("NotOwnerOfDeposit()")) ||
+            err == keccak256(abi.encodeWithSignature("DeployWithZeroAddress()")),
+            "Unexpected revert error"
+        );
     }
 }

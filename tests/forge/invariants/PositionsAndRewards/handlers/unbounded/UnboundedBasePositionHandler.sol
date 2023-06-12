@@ -65,4 +65,21 @@ abstract contract UnboundedBasePositionHandler is Test {
     function getTokenIdsByActor(address actor_) public view returns(uint256[] memory) {
         return tokenIdsByActor[actor_].values();
     }
+
+    function _ensurePositionsManagerError(bytes memory err_) internal pure {
+        bytes32 err = keccak256(err_);
+
+        require(
+            err == keccak256(abi.encodeWithSignature("AllowanceTooLow()")) ||
+            err == keccak256(abi.encodeWithSignature("BucketBankrupt()")) ||
+            err == keccak256(abi.encodeWithSignature("DeployWithZeroAddress()")) ||
+            err == keccak256(abi.encodeWithSignature("LiquidityNotRemoved()")) ||
+            err == keccak256(abi.encodeWithSignature("NoAuth()")) ||
+            err == keccak256(abi.encodeWithSignature("NoToken()")) ||
+            err == keccak256(abi.encodeWithSignature("NotAjnaPool()")) ||
+            err == keccak256(abi.encodeWithSignature("RemovePositionFailed()")) ||
+            err == keccak256(abi.encodeWithSignature("WrongPool()")),
+            "Unexpected revert error"
+        );
+    }
 }
