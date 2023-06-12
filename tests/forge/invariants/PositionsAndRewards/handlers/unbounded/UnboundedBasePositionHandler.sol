@@ -3,6 +3,7 @@
 
 pragma solidity 0.8.18;
 
+import '@std/Test.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
@@ -10,18 +11,15 @@ import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionM
 import { _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }             from "src/libraries/internal/Maths.sol";
 
-import { BaseERC20PoolHandler } from '../../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
-
 import { PositionManager }   from 'src/PositionManager.sol';
 import { RewardsManager }    from 'src/RewardsManager.sol';
-import { ERC20Pool }         from 'src/ERC20Pool.sol';
 
 /**
  *  @dev this contract manages multiple lenders
  *  @dev methods in this contract are called in random order
  *  @dev randomly selects a lender contract to make a txn
  */ 
-abstract contract UnboundedBasePositionHandler is BaseERC20PoolHandler {
+abstract contract UnboundedBasePositionHandler is Test {
 
     PositionManager internal _positionManager;
     RewardsManager  internal _rewardsManager;

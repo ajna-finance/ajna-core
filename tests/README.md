@@ -146,9 +146,13 @@ make test-invariant-erc20
 ```bash
 make test-invariant-erc721
 ```
-- run all invariant tests for Position Manager:
+- run all invariant tests for Position Manager with ERC20Pool:
 ```bash
-make test-invariant-position
+make test-invariant-position-erc20
+```
+- run all invariant tests for Position Manager with ERC721Pool:
+```bash
+make test-invariant-position-erc721
 ```
 - run all invariant tests for Rewards Manager:
 ```bash

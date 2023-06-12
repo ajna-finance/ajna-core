@@ -14,14 +14,14 @@ import {
 import { Maths }                        from "src/libraries/internal/Maths.sol";
 
 import { BaseERC20PoolHandler }         from '../../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
-import { UnboundedBasePositionHandler }         from './UnboundedBasePositionHandler.sol';
+import { UnboundedBasePositionHandler } from './UnboundedBasePositionHandler.sol';
 
 /**
  *  @dev this contract manages multiple lenders
  *  @dev methods in this contract are called in random order
  *  @dev randomly selects a lender contract to make a txn
  */ 
-abstract contract UnboundedPositionsHandler is UnboundedBasePositionHandler {
+abstract contract UnboundedERC20PoolPositionsHandler is UnboundedBasePositionHandler, BaseERC20PoolHandler {
 
     using EnumerableSet for EnumerableSet.UintSet;
 
