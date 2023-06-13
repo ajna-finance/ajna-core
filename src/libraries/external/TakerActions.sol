@@ -56,7 +56,6 @@ library TakerActions {
         bool    depositTake;     // deposit or arb take, used by bucket take
         uint256 index;           // bucket index, used by bucket take
         uint256 inflator;        // [WAD] current pool inflator
-        uint256 collateralScale; // precision of collateral token based on decimals
     }
 
     /// @dev Struct used to hold `take` function params.
@@ -65,7 +64,6 @@ library TakerActions {
         uint256 takeCollateral;  // [WAD] desired amount to take
         uint256 inflator;        // [WAD] current pool inflator
         uint256 poolType;        // pool type (ERC20 or NFT)
-        uint256 collateralScale; // precision of collateral token based on decimals
     }
 
     /*************************/
@@ -138,8 +136,7 @@ library TakerActions {
         PoolState memory poolState_,
         address borrowerAddress_,
         bool    depositTake_,
-        uint256 index_,
-        uint256 collateralScale_
+        uint256 index_
     ) external returns (TakeResult memory result_) {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
         // revert if borrower's collateral is 0
@@ -155,11 +152,10 @@ library TakerActions {
             deposits_,
             borrower,
             BucketTakeParams({
-                borrower:        borrowerAddress_,
-                inflator:        poolState_.inflator,
-                depositTake:     depositTake_,
-                index:           index_,
-                collateralScale: collateralScale_
+                borrower:    borrowerAddress_,
+                inflator:    poolState_.inflator,
+                depositTake: depositTake_,
+                index:       index_
             })
         );
 
@@ -204,8 +200,7 @@ library TakerActions {
         LoansState storage loans_,
         PoolState memory poolState_,
         address borrowerAddress_,
-        uint256 collateral_,
-        uint256 collateralScale_
+        uint256 collateral_
     ) external returns (TakeResult memory result_) {
         // revert if no amount to take
         if (collateral_ == 0) revert InvalidAmount();
@@ -229,11 +224,10 @@ library TakerActions {
             auctions_,
             borrower,
             TakeParams({
-                borrower:        borrowerAddress_,
-                takeCollateral:  collateral_,
-                inflator:        poolState_.inflator,
-                poolType:        poolState_.poolType,
-                collateralScale: collateralScale_
+                borrower:       borrowerAddress_,
+                takeCollateral: collateral_,
+                inflator:       poolState_.inflator,
+                poolType:       poolState_.poolType
             })
         );
 
@@ -365,7 +359,6 @@ library TakerActions {
         vars_ = _calculateTakeFlowsAndBondChange(
             Maths.min(takeableCollateral, params_.takeCollateral),
             params_.inflator,
-            params_.collateralScale,
             vars_
         );
 
@@ -446,7 +439,6 @@ library TakerActions {
         vars_ = _calculateTakeFlowsAndBondChange(
             borrower_.collateral,
             params_.inflator,
-            params_.collateralScale,
             vars_
         );
 
@@ -734,7 +726,6 @@ library TakerActions {
     function _calculateTakeFlowsAndBondChange(
         uint256              totalCollateral_,
         uint256              inflator_,
-        uint256              collateralScale_,
         TakeLocalVars memory vars
     ) internal pure returns (
         TakeLocalVars memory
@@ -752,7 +743,7 @@ library TakerActions {
         
         if (vars.quoteTokenAmount <= vars.borrowerDebt && vars.quoteTokenAmount <= borrowerCollateralValue) {
             // quote token used to purchase is constraining factor
-            vars.collateralAmount         = _roundToScale(Maths.wdiv(vars.quoteTokenAmount, borrowerPrice), collateralScale_);
+            vars.collateralAmount         = Maths.wdiv(vars.quoteTokenAmount, borrowerPrice);
             vars.t0RepayAmount            = Maths.wdiv(vars.quoteTokenAmount, inflator_);
             vars.unscaledQuoteTokenAmount = vars.unscaledDeposit;
 
@@ -760,7 +751,7 @@ library TakerActions {
 
         } else if (vars.borrowerDebt <= borrowerCollateralValue) {
             // borrower debt is constraining factor
-            vars.collateralAmount         = _roundToScale(Maths.wdiv(vars.borrowerDebt, borrowerPrice), collateralScale_);
+            vars.collateralAmount         = Maths.wdiv(vars.borrowerDebt, borrowerPrice);
             vars.t0RepayAmount            = vars.t0BorrowerDebt;
             vars.unscaledQuoteTokenAmount = Maths.wdiv(vars.borrowerDebt, vars.bucketScale);
 

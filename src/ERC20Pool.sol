@@ -411,8 +411,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             loans,
             poolState,
             borrowerAddress_,
-            maxAmount_,
-            collateralTokenScale
+            maxAmount_
         );
         // round quote token up to cover the cost of purchasing the collateral
         result.quoteTokenAmount = _roundUpToScale(result.quoteTokenAmount, poolState.quoteTokenScale);
@@ -456,8 +455,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             poolState,
             borrowerAddress_,
             depositTake_,
-            index_,
-            _getArgUint256(COLLATERAL_SCALE)
+            index_
         );
 
         _updatePostTakeState(result, poolState);

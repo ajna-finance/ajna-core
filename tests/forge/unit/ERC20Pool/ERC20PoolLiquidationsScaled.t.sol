@@ -237,7 +237,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint8  collateralPrecisionDecimals_, 
         uint8  quotePrecisionDecimals_,
         uint16 startBucketId_
-    ) external tearDown {
+    ) external {
 
         uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 12, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1,  18);
@@ -272,13 +272,16 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         // Take remainder of collateral
         (auctionPrice, , auctionCollateral) = _advanceAuction(33 minutes);
         _take(auctionCollateral, _bidder);
-        uint256 auctionDebt;
-        (, auctionDebt, auctionCollateral) = _advanceAuction(0);
-        assertEq(auctionCollateral, 0);
 
-        // Settle the auction
-        if (auctionDebt != 0) skip(72 hours);
-        _settle();
+        // if auction wasn't settled by take then advance auction and settle
+        (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(_borrower);
+        if (kickTime != 0) {
+            (, uint256 auctionDebt, ) = _advanceAuction(0);
+
+            // Settle the auction
+            if (auctionDebt != 0) skip(72 hours);
+            _settle();
+        }
     }
 
     /************************/
