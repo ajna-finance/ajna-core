@@ -264,7 +264,7 @@ library KickerActions {
         } else {
             // update lender and bucket LP balances
             lender.lps -= vars.redeemedLP;
-            bucket.lps -= vars.redeemedLP;
+            bucket.lps = bucketRemainingLP;
         }
 
         emit RemoveQuoteToken(
