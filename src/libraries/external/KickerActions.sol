@@ -101,7 +101,7 @@ library KickerActions {
     error InsufficientLP();
     error InvalidAmount();
     error NoReserves();
-    error PriceBelowLUP();
+    error LUPBelowHTP();
     error ReserveAuctionTooSoon();
 
     /***************************/
@@ -142,6 +142,7 @@ library KickerActions {
      *  @dev    === Reverts on ===
      *  @dev    insufficient deposit to kick auction `InsufficientLiquidity()`
      *  @dev    no `LP` redeemed to kick auction `InsufficientLP()`
+     *  @dev    resulting LUP would be below HTP `LUPBelowHTP()`
      *  @dev    === Emit events ===
      *  @dev    - `RemoveQuoteToken`
      *  @return kickResult_ The `KickResult` struct result of the kick action.
@@ -187,7 +188,7 @@ library KickerActions {
         // revert if no amount that can be removed
         if (vars.amountToDebitFromDeposit == 0) revert InsufficientLiquidity();
 
-        // kick top borrower
+        // kick top borrower.  Add amountToDebitFromDeposit as extra debt to simulate effect on LUP from removing deposit
         kickResult_ = _kick(
             auctions_,
             deposits_,
@@ -212,8 +213,11 @@ library KickerActions {
             kickResult_.amountToCoverBond -= vars.amountToDebitFromDeposit;
         }
 
-        // revert if the bucket price used to kick and remove is below new LUP
-        if (vars.bucketPrice < kickResult_.lup) revert PriceBelowLUP();
+        // Compute new HTP
+        uint256 newHtp = Maths.wmul(Loans.getMax(loans_).thresholdPrice, poolState_.inflator);
+
+        // revert if the new LUP is below new HTP
+        if (kickResult_.lup < newHtp) revert LUPBelowHTP();
 
         // remove amount from deposits
         if (vars.amountToDebitFromDeposit == vars.bucketDeposit && vars.bucketCollateral == 0) {

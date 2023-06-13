@@ -1116,12 +1116,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.kickWithDeposit(index, MAX_FENWICK_INDEX);
     }
 
-    function _assertKickPriceBelowProposedLupRevert(
+    function _assertKickProposedLupBelowHtpRevert(
         address from,
         uint256 index
     ) internal {
         changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('PriceBelowLUP()'));
+        vm.expectRevert(abi.encodeWithSignature('LUPBelowHTP()'));
         _pool.kickWithDeposit(index, MAX_FENWICK_INDEX);
     }
 

@@ -324,6 +324,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
+        // check that deposit to withdraw is not locked
+        _revertIfAuctionDebtLocked(deposits, poolState.t0DebtInAuction, index_, poolState.inflator);
+
         // kick auctions
         KickResult memory result = KickerActions.kickWithDeposit(
             auctions,

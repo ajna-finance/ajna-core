@@ -1315,22 +1315,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             index:  2_500
         });
 
-        // Lender 2 adds Quote token at a much lower price the tries to kick with deposit
-        _addLiquidityWithPenalty({
-            from:        _lender3,
-            amount:      150_000 * 1e18,
-            amountAdded: 149_979.452054794520550000 * 1e18,
-            index:       7000,
-            lpAward:     149_979.452054794520550000 * 1e18,
-            newLup:      3_844.432207828138682757 * 1e18
-        });
-
-        _assertKickPriceBelowProposedLupRevert({
-            from:   _lender3,
-            index:  7000
-        });
-
-        // asert failure when lender has LP but insufficient quote token balance to post remaining bond
+        // assert failure when lender has LP but insufficient quote token balance to post remaining bond
         _addLiquidity({
             from:    _lender4,
             amount:  5_000 * 1e18,
@@ -1350,7 +1335,9 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         });
 
         changePrank(_lender4);
-        vm.expectRevert("ERC20: transfer amount exceeds balance");
-        _pool.kickWithDeposit(2499, MAX_FENWICK_INDEX);
+        _assertKickProposedLupBelowHtpRevert({
+            from:   _lender4,
+            index: 2499
+         });
     }
 }
