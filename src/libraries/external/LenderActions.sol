@@ -306,9 +306,7 @@ library LenderActions {
         Deposits.unscaledAdd(deposits_, params_.toIndex, Maths.wdiv(movedAmount_, vars.toBucketScale));
 
         // recalculate LUP after adding amount in to bucket only if to bucket price is greater than LUP
-        if (vars.toBucketPrice > lup_) {
-            lup_ = Deposits.getLup(deposits_, poolState_.debt);
-        }
+        if (vars.toBucketPrice > lup_) lup_ = Deposits.getLup(deposits_, poolState_.debt);
 
         vars.htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
 
