@@ -186,6 +186,14 @@ make test-invariant-erc20-buckets
 ```bash
 make test-invariant-erc721-buckets
 ```
+- run Position manager with ERC20 pool invariant tests for most popular token precision combinations(6, 8 and 18):
+```bash
+make test-invariant-position-erc20-precision
+```
+- run Position manager with ERC721 pool invariant tests for most popular token precision(6, 8 and 18):
+```bash
+make test-invariant-position-erc721-precision
+```
 
 ### Code coverage:
 ```bash
