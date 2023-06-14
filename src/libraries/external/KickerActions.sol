@@ -67,19 +67,6 @@ library KickerActions {
         uint256 kickPenalty;        // [WAD] current debt added as kick penalty
     }
 
-    /// @dev Struct used for `kickWithDeposit` function local vars.
-    struct KickWithDepositLocalVars {
-        uint256 amountToDebitFromDeposit; // [WAD] the amount of quote tokens used to kick and debited from lender deposit
-        uint256 bucketCollateral;         // [WAD] amount of collateral in bucket
-        uint256 bucketDeposit;            // [WAD] amount of quote tokens in bucket
-        uint256 bucketLP;                 // [WAD] LP of the bucket
-        uint256 bucketPrice;              // [WAD] bucket price
-        uint256 bucketScale;              // [WAD] bucket scales
-        uint256 bucketUnscaledDeposit;    // [WAD] unscaled amount of quote tokens in bucket
-        uint256 lenderLP;                 // [WAD] LP of lender in bucket
-        uint256 redeemedLP;               // [WAD] LP used by kick action
-    }
-
     /**************/
     /*** Events ***/
     /**************/
@@ -101,7 +88,6 @@ library KickerActions {
     error InsufficientLP();
     error InvalidAmount();
     error NoReserves();
-    error PriceBelowLUP();
     error ReserveAuctionTooSoon();
 
     /***************************/
@@ -160,34 +146,26 @@ library KickerActions {
         Bucket storage bucket = buckets_[index_];
         Lender storage lender = bucket.lenders[msg.sender];
 
-        KickWithDepositLocalVars memory vars;
+        uint256 lenderLP      = bucket.bankruptcyTime < lender.depositTime ? lender.lps : 0;
+        uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
 
-        if (bucket.bankruptcyTime < lender.depositTime) vars.lenderLP = lender.lps;
-
-        vars.bucketLP              = bucket.lps;
-        vars.bucketCollateral      = bucket.collateral;
-        vars.bucketPrice           = _priceAt(index_);
-        vars.bucketUnscaledDeposit = Deposits.unscaledValueAt(deposits_, index_);
-        vars.bucketScale           = Deposits.scale(deposits_, index_);
-        vars.bucketDeposit         = Maths.wmul(vars.bucketUnscaledDeposit, vars.bucketScale);
-
-        // calculate amount to remove based on lender LP in bucket
-        vars.amountToDebitFromDeposit = Buckets.lpToQuoteTokens(
-            vars.bucketCollateral,
-            vars.bucketLP,
-            vars.bucketDeposit,
-            vars.lenderLP,
-            vars.bucketPrice,
+        // calculate amount lender is entitled in current bucket (based on lender LP in bucket)
+        uint256 entitledAmount = Buckets.lpToQuoteTokens(
+            bucket.collateral,
+            bucket.lps,
+            bucketDeposit,
+            lenderLP,
+            _priceAt(index_),
             Math.Rounding.Down
         );
 
-        // cap the amount to remove at bucket deposit
-        if (vars.amountToDebitFromDeposit > vars.bucketDeposit) vars.amountToDebitFromDeposit = vars.bucketDeposit;
+        // cap the amount entitled at bucket deposit
+        if (entitledAmount > bucketDeposit) entitledAmount = bucketDeposit;
 
-        // revert if no amount that can be removed
-        if (vars.amountToDebitFromDeposit == 0) revert InsufficientLiquidity();
+        // revert if no entitled amount
+        if (entitledAmount == 0) revert InsufficientLiquidity();
 
-        // kick top borrower
+        // kick borrower
         kickResult_ = _kick(
             auctions_,
             deposits_,
@@ -195,80 +173,7 @@ library KickerActions {
             poolState_,
             Loans.getMax(loans_).borrower,
             limitIndex_,
-            vars.amountToDebitFromDeposit
-        );
-
-        // amount to remove from deposit covers entire bond amount
-        if (vars.amountToDebitFromDeposit > kickResult_.amountToCoverBond) {
-            // cap amount to remove from deposit at amount to cover bond
-            vars.amountToDebitFromDeposit = kickResult_.amountToCoverBond;
-
-            // recalculate the LUP with the amount to cover bond
-            kickResult_.lup = Deposits.getLup(deposits_, poolState_.debt + vars.amountToDebitFromDeposit);
-            // entire bond is covered from deposit, no additional amount to be send by lender
-            kickResult_.amountToCoverBond = 0;
-        } else {
-            // lender should send additional amount to cover bond
-            kickResult_.amountToCoverBond -= vars.amountToDebitFromDeposit;
-        }
-
-        // revert if the bucket price used to kick and remove is below new LUP
-        if (vars.bucketPrice < kickResult_.lup) revert PriceBelowLUP();
-
-        // remove amount from deposits
-        if (vars.amountToDebitFromDeposit == vars.bucketDeposit && vars.bucketCollateral == 0) {
-            // In this case we are redeeming the entire bucket exactly, and need to ensure bucket LP are set to 0
-            vars.redeemedLP = vars.bucketLP;
-
-            Deposits.unscaledRemove(deposits_, index_, vars.bucketUnscaledDeposit);
-            vars.bucketUnscaledDeposit = 0;
-
-        } else {
-            vars.redeemedLP = Buckets.quoteTokensToLP(
-                vars.bucketCollateral,
-                vars.bucketLP,
-                vars.bucketDeposit,
-                vars.amountToDebitFromDeposit,
-                vars.bucketPrice,
-                Math.Rounding.Up
-            );
-
-            uint256 unscaledAmountToRemove = Maths.floorWdiv(vars.amountToDebitFromDeposit, vars.bucketScale);
-
-            // revert if calculated unscaled amount is 0
-            if (unscaledAmountToRemove == 0) revert InsufficientLiquidity();
-
-            Deposits.unscaledRemove(deposits_, index_, unscaledAmountToRemove);
-            vars.bucketUnscaledDeposit -= unscaledAmountToRemove;
-        }
-
-        vars.redeemedLP = Maths.min(vars.lenderLP, vars.redeemedLP);
-
-        // revert if LP redeemed amount to kick auction is 0
-        if (vars.redeemedLP == 0) revert InsufficientLP();
-
-        uint256 bucketRemainingLP = vars.bucketLP - vars.redeemedLP;
-
-        if (vars.bucketCollateral == 0 && vars.bucketUnscaledDeposit == 0 && bucketRemainingLP != 0) {
-            bucket.lps            = 0;
-            bucket.bankruptcyTime = block.timestamp;
-
-            emit BucketBankruptcy(
-                index_,
-                bucketRemainingLP
-            );
-        } else {
-            // update lender and bucket LP balances
-            lender.lps -= vars.redeemedLP;
-            bucket.lps -= vars.redeemedLP;
-        }
-
-        emit RemoveQuoteToken(
-            msg.sender,
-            index_,
-            vars.amountToDebitFromDeposit,
-            vars.redeemedLP,
-            kickResult_.lup
+            entitledAmount
         );
     }
 
