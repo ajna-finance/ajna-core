@@ -28,9 +28,11 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         numberOfCalls['UBBasicHandler.addQuoteToken']++;
 
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
-        (uint256 poolDebt, , ,)   = _pool.debtInfo();
-        uint256 lupIndex          = _pool.depositIndex(poolDebt);
-        (uint256 interestRate, )  = _pool.interestRateInfo();
+
+        (uint256 inflator, )     = _pool.inflatorInfo();
+        uint256 poolDebt         = Maths.wmul(_pool.totalT0Debt(), inflator);
+        uint256 lupIndex         = _pool.depositIndex(poolDebt);
+        (uint256 interestRate, ) = _pool.interestRateInfo();
 
         // ensure actor always has amount of quote to add
         _ensureQuoteAmount(_actor, amount_);
