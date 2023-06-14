@@ -263,17 +263,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         address borrower,
         uint256 debt,
         uint256 collateral,
-        uint256 bond,
-        uint256 removedFromDeposit,
-        uint256 transferAmount,
-        uint256 lup
+        uint256 bond
     ) internal {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit Kick(borrower, debt, collateral, bond);
-        vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(from, index, removedFromDeposit, removedFromDeposit, lup);
-        if (transferAmount != 0) _assertQuoteTokenTransferEvent(from, address(_pool), transferAmount);
+        _assertQuoteTokenTransferEvent(from, address(_pool), bond);
         _pool.kickWithDeposit(index, MAX_FENWICK_INDEX);
     }
 
@@ -1116,7 +1111,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.kickWithDeposit(index, MAX_FENWICK_INDEX);
     }
 
-    function _assertKickPriceBelowProposedLupRevert(
+    function _assertKickPriceBelowLupRevert(
         address from,
         uint256 index
     ) internal {

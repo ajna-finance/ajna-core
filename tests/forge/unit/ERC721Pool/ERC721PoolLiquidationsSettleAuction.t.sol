@@ -91,26 +91,20 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
 
         // kick both loans
         _kickWithDeposit({
-            from:               _lender,
-            index:              2500,
-            borrower:           _borrower,
-            debt:               5_067.367788461538463875 * 1e18,
-            collateral:         2 * 1e18,
-            bond:               1_501.442307692307693000 * 1e18,
-            removedFromDeposit: 1_501.442307692307693000 * 1e18,
-            transferAmount:     0,
-            lup:                3_825.305679430983794766 * 1e18
+            from:       _lender,
+            index:      2500,
+            borrower:   _borrower,
+            debt:       5_067.367788461538463875 * 1e18,
+            collateral: 2 * 1e18,
+            bond:       1_501.442307692307693000 * 1e18
         });
         _kickWithDeposit({
-            from:               _lender,
-            index:              2500,
-            borrower:           _borrower2,
-            debt:               5_067.367788461538463875 * 1e18,
-            collateral:         3 * 1e18,
-            bond:               1_501.442307692307693000 * 1e18,
-            removedFromDeposit: 1_501.442307692307693000 * 1e18,
-            transferAmount:     0,
-            lup:                99836282890
+            from:       _lender,
+            index:      2500,
+            borrower:   _borrower2,
+            debt:       5_067.367788461538463875 * 1e18,
+            collateral: 3 * 1e18,
+            bond:       1_501.442307692307693000 * 1e18
         });
     }
 

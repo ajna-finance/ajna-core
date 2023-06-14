@@ -47,7 +47,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         _lender    = makeAddr("lender");
         _bidder    = makeAddr("bidder");
         
-        uint256 lenderDepositDenormalized = 200_000 * _quoteTokenPrecision;
+        uint256 lenderDepositDenormalized = 300_000 * _quoteTokenPrecision;
 
         // give bidder quote token to cover liquidation bond
         vm.startPrank(_bidder);
