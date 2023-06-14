@@ -77,6 +77,12 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
             uint256 totalRewardsEarnedPostAction;
             for (uint256 epoch = preActionLastClaimedEpoch; epoch <= _pool.currentBurnEpoch(); epoch++) {
 
+                // if lastClaimed is the same as epoch staked isEpochClaimed will return false
+                if (epoch != preActionLastClaimedEpoch) {
+                    require(_rewardsManager.isEpochClaimed(tokenId_, epoch) == true,
+                    "RW6: epoch after claim rewards is not claimed");
+                }
+                
                 if (rewardsAlreadyClaimed[epoch] != 0) {
                     require(rewardsAlreadyClaimed[epoch] == _rewardsManager.rewardsClaimed(epoch), 
                     "RW10: staker has claimed rewards from the same epoch twice"); 
@@ -162,6 +168,12 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
             uint256 totalRewardsEarnedPostAction;
             for (uint256 epoch = preActionLastClaimedEpoch; epoch <= _pool.currentBurnEpoch(); epoch++) {
 
+                // if lastClaimed is the same as epoch staked isEpochClaimed will return false
+                if (epoch != preActionLastClaimedEpoch) {
+                    require(_rewardsManager.isEpochClaimed(tokenId_, epoch) == true,
+                    "RW6: epoch after claim rewards is not claimed");
+                }
+
                 if (rewardsAlreadyClaimed[epoch] != 0) {
                     require(rewardsAlreadyClaimed[epoch] == _rewardsManager.rewardsClaimed(epoch), 
                     "RW10: staker has claimed rewards from the same epoch twice"); 
@@ -173,6 +185,10 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
                 // reset staking rewards earned in epoch
                 rewardsClaimedPerEpoch[epoch] = _rewardsManager.rewardsClaimed(epoch);
             }
+
+            (, , uint256 lastClaimedEpoch) = _rewardsManager.getStakeInfo(tokenId_);
+            require(lastClaimedEpoch == _pool.currentBurnEpoch(),
+            "RW6: lastClaimed is not current epoch");
 
             require(actorAjnaGain <= totalRewardsEarnedPostAction - totalRewardsEarnedPreAction,
             "RW7: actor's total claimed is greater than rewards earned");
