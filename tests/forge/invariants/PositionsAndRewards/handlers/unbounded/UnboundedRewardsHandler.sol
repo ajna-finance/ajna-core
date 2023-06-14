@@ -55,7 +55,7 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
         uint256 totalRewardsEarnedPreAction;
         for (uint256 epoch = preActionLastClaimedEpoch; epoch <= _pool.currentBurnEpoch(); epoch++) {
             
-            // track epochs that have already been claimed
+            // for epochs already claimed by the staker, `rewardsClaimed()` should go unchanged 
             if (_rewardsManager.isEpochClaimed(tokenId_, epoch)) {
                 rewardsAlreadyClaimed[epoch] = _rewardsManager.rewardsClaimed(epoch);
             }
@@ -88,7 +88,7 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
                     "RW10: staker has claimed rewards from the same epoch twice"); 
                 }
 
-                // total rewards earned post action
+                // total rewards earned across all actors in epoch post action
                 totalRewardsEarnedPostAction += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
 
                 // reset staking and updating rewards earned in epoch
@@ -155,7 +155,7 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
                 rewardsAlreadyClaimed[epoch] = _rewardsManager.rewardsClaimed(epoch);
             }
             
-            // total the rewards earned pre action
+            // total staking rewards earned across all actors in epoch pre action
             totalRewardsEarnedPreAction += _rewardsManager.rewardsClaimed(epoch);
         }
 
@@ -179,7 +179,7 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
                     "RW10: staker has claimed rewards from the same epoch twice"); 
                 }
 
-                // total staking rewards earned post action
+                // total staking rewards earned across all actors in epoch post action
                 totalRewardsEarnedPostAction += _rewardsManager.rewardsClaimed(epoch);
 
                 // reset staking rewards earned in epoch
