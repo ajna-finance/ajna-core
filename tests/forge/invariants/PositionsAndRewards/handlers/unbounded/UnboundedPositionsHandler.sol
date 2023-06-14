@@ -323,6 +323,7 @@ abstract contract UnboundedPositionsHandler is UnboundedBasePositionHandler {
             err == keccak256(abi.encodeWithSignature("NoToken()")) ||
             err == keccak256(abi.encodeWithSignature("NotAjnaPool()")) ||
             err == keccak256(abi.encodeWithSignature("RemovePositionFailed()")) ||
+            err == keccak256(abi.encodeWithSignature("WrongPool()")) ||
             _isPoolError(err_),
             "Unexpected revert error"
         );
