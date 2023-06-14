@@ -12,8 +12,6 @@ import { UnboundedBasePositionHandler } from './UnboundedBasePositionHandler.sol
 
 import { _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
 
-import '@std/console.sol';
-
 /**
  *  @dev this contract manages multiple lenders
  *  @dev methods in this contract are called in random order
@@ -28,7 +26,7 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBRewardsHandler.stake']++;
 
-        require(_positionManager.ownerOf(tokenId_) == address(_actor), "RW5: owner should be actor staking");
+        require(_positionManager.ownerOf(tokenId_) == address(_actor), "the actor calling `stake()` is not the owner");
 
         try _rewardsManager.stake(tokenId_) {
             // actor should loses ownership, positionManager gains it
@@ -68,9 +66,6 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
  
         try _rewardsManager.unstake(tokenId_) {
 
-            // check token was transferred from rewards contract to actor
-            require(_positionManager.ownerOf(tokenId_) == _actor, "actor should receive ownership after unstaking");
-
             // actor should receive tokenId, positionManager loses ownership
             tokenIdsByActor[address(_actor)].add(tokenId_);
             tokenIdsByActor[address(_rewardsManager)].remove(tokenId_);
@@ -84,7 +79,7 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
 
                 if (rewardsAlreadyClaimed[epoch] != 0) {
                     require(rewardsAlreadyClaimed[epoch] == _rewardsManager.rewardsClaimed(epoch), 
-                    "RW9: staker has claimed rewards from the same epoch twice"); 
+                    "RW10: staker has claimed rewards from the same epoch twice"); 
                 }
 
                 // total rewards earned post action
@@ -95,15 +90,18 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
                 updateRewardsClaimedPerEpoch[epoch] = _rewardsManager.updateRewardsClaimed(epoch);
             }
 
+            require(_positionManager.ownerOf(tokenId_) == address(_actor),
+            "RW5: caller of unstake is not owner of NFT");
+
             require(actorAjnaGain <= totalRewardsEarnedPostAction - totalRewardsEarnedPreAction,
-            "RW6: actor's total claimed is greater than rewards earned");
+            "RW7: actor's total claimed is greater than rewards earned");
 
             require(actorAjnaGain == contractAjnaBalanceBeforeClaim - _ajna.balanceOf(address(_rewardsManager)),
-            "RW7: ajna deducted from rewardsManager doesn't equal ajna gained by actor");
+            "RW8: ajna deducted from rewardsManager doesn't equal ajna gained by actor");
 
             (address owner, address pool, uint256 lastClaimedEpoch) = _rewardsManager.getStakeInfo(tokenId_);
             require(owner == address(0) && pool == address(0) && lastClaimedEpoch == 0,
-            "RW8: stake info is not reset after unstake");
+            "RW9: stake info is not reset after unstake");
 
         } catch (bytes memory err) {
             _ensureRewardsManagerError(err);
@@ -123,7 +121,7 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
 
             uint256 actorAjnaGain = _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
             require(actorAjnaGain == contractAjnaBalanceBeforeClaim - _ajna.balanceOf(address(_rewardsManager)),
-            "RW7: ajna deducted from rewardsManager doesn't equal ajna gained by actor");
+            "RW8: ajna deducted from rewardsManager doesn't equal ajna gained by actor");
 
         } catch (bytes memory err) {
             _ensureRewardsManagerError(err);
@@ -166,7 +164,7 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
 
                 if (rewardsAlreadyClaimed[epoch] != 0) {
                     require(rewardsAlreadyClaimed[epoch] == _rewardsManager.rewardsClaimed(epoch), 
-                    "RW9: staker has claimed rewards from the same epoch twice"); 
+                    "RW10: staker has claimed rewards from the same epoch twice"); 
                 }
 
                 // total staking rewards earned post action
@@ -177,10 +175,10 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
             }
 
             require(actorAjnaGain <= totalRewardsEarnedPostAction - totalRewardsEarnedPreAction,
-            "RW6: actor's total claimed is greater than rewards earned");
+            "RW7: actor's total claimed is greater than rewards earned");
 
             require(actorAjnaGain == contractAjnaBalanceBeforeClaim - _ajna.balanceOf(address(_rewardsManager)),
-            "RW7: ajna deducted from rewardsManager doesn't equal ajna gained by actor");
+            "RW8: ajna deducted from rewardsManager doesn't equal ajna gained by actor");
 
         } catch (bytes memory err) {
             _ensureRewardsManagerError(err);
