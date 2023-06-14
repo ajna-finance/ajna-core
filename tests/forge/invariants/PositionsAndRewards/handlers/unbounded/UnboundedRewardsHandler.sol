@@ -47,12 +47,25 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBRewardsHandler.unstake']++;
 
+        // track balances
         uint256 actorAjnaBalanceBeforeClaim    = _ajna.balanceOf(_actor);
         uint256 contractAjnaBalanceBeforeClaim = _ajna.balanceOf(address(_rewardsManager));
 
-        uint256 rewardsClaimedBeforeAction       = _rewardsManager.rewardsClaimed(_pool.currentBurnEpoch());
-        uint256 updateRewardsClaimedBeforeAction = _rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch());
+        (,,uint256 preActionLastClaimedEpoch) = _rewardsManager.getStakeInfo(tokenId_);
 
+        // loop over all epochs that are going to be
+        uint256 totalRewardsEarnedPreAction;
+        for (uint256 epoch = preActionLastClaimedEpoch; epoch <= _pool.currentBurnEpoch(); epoch++) {
+            
+            // track epochs that have already been claimed
+            if (_rewardsManager.isEpochClaimed(tokenId_, epoch)) {
+                rewardsAlreadyClaimed[epoch] = _rewardsManager.rewardsClaimed(epoch);
+            }
+            
+            // total the rewards earned pre action
+            totalRewardsEarnedPreAction  += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
+        }
+ 
         try _rewardsManager.unstake(tokenId_) {
 
             // check token was transferred from rewards contract to actor
@@ -62,26 +75,35 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
             tokenIdsByActor[address(_actor)].add(tokenId_);
             tokenIdsByActor[address(_rewardsManager)].remove(tokenId_);
 
-            (,,uint256 lastClaimedEpoch) = _rewardsManager.getStakeInfo(tokenId_);
+            // balance changes
+            uint256 actorAjnaGain = _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
 
-            if ((_ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim) != 0) {
-                totalRewardPerEpoch[lastClaimedEpoch] += _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
+            // loop over all epochs that were claimed
+            uint256 totalRewardsEarnedPostAction;
+            for (uint256 epoch = preActionLastClaimedEpoch; epoch <= _pool.currentBurnEpoch(); epoch++) {
 
+                if (rewardsAlreadyClaimed[epoch] != 0) {
+                    require(rewardsAlreadyClaimed[epoch] == _rewardsManager.rewardsClaimed(epoch), 
+                    "RW9: staker has claimed rewards from the same epoch twice"); 
+                }
+
+                // total rewards earned post action
+                totalRewardsEarnedPostAction += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
+
+                // reset staking and updating rewards earned in epoch
+                rewardsClaimedPerEpoch[epoch]       = _rewardsManager.rewardsClaimed(epoch);
+                updateRewardsClaimedPerEpoch[epoch] = _rewardsManager.updateRewardsClaimed(epoch);
             }
-                console.log("current burn", _pool.currentBurnEpoch());
 
-                uint256 actorAjnaGain        = _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
-                uint256 contractAjnaDeducted = contractAjnaBalanceBeforeClaim - _ajna.balanceOf(address(_rewardsManager));
+            require(actorAjnaGain <= totalRewardsEarnedPostAction - totalRewardsEarnedPreAction,
+            "RW6: actor's total claimed is greater than rewards earned");
 
-                uint256 rewardsClaimedGain       = _rewardsManager.rewardsClaimed(_pool.currentBurnEpoch()) - rewardsClaimedBeforeAction;
-                uint256 updateRewardsClaimedGain = _rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch()) - updateRewardsClaimedBeforeAction;
-                require(_rewardsManager.isEpochClaimed(tokenId_, _pool.currentBurnEpoch()) == true, "RW6: most recent epoch should be claimed");
+            require(actorAjnaGain == contractAjnaBalanceBeforeClaim - _ajna.balanceOf(address(_rewardsManager)),
+            "RW7: ajna deducted from rewardsManager doesn't equal ajna gained by actor");
 
-                require(lastClaimedEpoch == 0, "RW6: last claimed is not 0 on unstake");
-                require(actorAjnaGain == rewardsClaimedGain + updateRewardsClaimedGain,
-                "RW6: rewardsManager's rewards claimed increase should match actor's claim");
-                require(actorAjnaGain == contractAjnaDeducted,
-                "RW7: ajna deducted from rewardsManager doesn't equal ajna gained by actor");
+            (address owner, address pool, uint256 lastClaimedEpoch) = _rewardsManager.getStakeInfo(tokenId_);
+            require(owner == address(0) && pool == address(0) && lastClaimedEpoch == 0,
+            "RW8: stake info is not reset after unstake");
 
         } catch (bytes memory err) {
             _ensureRewardsManagerError(err);
@@ -93,29 +115,14 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
     ) internal {
         numberOfCalls['UBRewardsHandler.exchangeRate']++;
 
+        // track balances
         uint256 actorAjnaBalanceBeforeClaim    = _ajna.balanceOf(_actor);
         uint256 contractAjnaBalanceBeforeClaim = _ajna.balanceOf(address(_rewardsManager));
 
-        uint256 rewardsClaimedBeforeAction       = _rewardsManager.rewardsClaimed(_pool.currentBurnEpoch());
-        uint256 updateRewardsClaimedBeforeAction = _rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch());
-
         try _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), indexes_) {
 
-            // add to total rewards if actor received reward
-            if ((_ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim) != 0) {
-                uint256 curBurnEpoch = _pool.currentBurnEpoch();
-                totalRewardPerEpoch[curBurnEpoch] += _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
-            }
-
-            uint256 actorAjnaGain        = _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
-            uint256 contractAjnaDeducted = contractAjnaBalanceBeforeClaim - _ajna.balanceOf(address(_rewardsManager));
-            uint256 rewardsClaimedGain   = _rewardsManager.rewardsClaimed(_pool.currentBurnEpoch()) - rewardsClaimedBeforeAction;
-
-            uint256 updateRewardsClaimedGain = _rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch()) - updateRewardsClaimedBeforeAction;
-
-            require(actorAjnaGain == rewardsClaimedGain + updateRewardsClaimedGain,
-            "RW6: rewardsManager's rewards claimed increase should match actor's claim");
-            require(actorAjnaGain == contractAjnaDeducted,
+            uint256 actorAjnaGain = _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
+            require(actorAjnaGain == contractAjnaBalanceBeforeClaim - _ajna.balanceOf(address(_rewardsManager)),
             "RW7: ajna deducted from rewardsManager doesn't equal ajna gained by actor");
 
         } catch (bytes memory err) {
@@ -129,7 +136,52 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
     ) internal {
         numberOfCalls['UBRewardsHandler.claimRewards']++;
 
+        // track balances
+        uint256 actorAjnaBalanceBeforeClaim    = _ajna.balanceOf(_actor);
+        uint256 contractAjnaBalanceBeforeClaim = _ajna.balanceOf(address(_rewardsManager));
+
+        (,,uint256 preActionLastClaimedEpoch) = _rewardsManager.getStakeInfo(tokenId_);
+
+        // loop over all epochs that are going to be
+        uint256 totalRewardsEarnedPreAction;
+        for (uint256 epoch = preActionLastClaimedEpoch; epoch <= _pool.currentBurnEpoch(); epoch++) {
+            
+            // track epochs that have already been claimed
+            if (_rewardsManager.isEpochClaimed(tokenId_, epoch)) {
+                rewardsAlreadyClaimed[epoch] = _rewardsManager.rewardsClaimed(epoch);
+            }
+            
+            // total the rewards earned pre action
+            totalRewardsEarnedPreAction += _rewardsManager.rewardsClaimed(epoch);
+        }
+
         try _rewardsManager.claimRewards(tokenId_, epoch_, 0) {
+
+            // balance changes
+            uint256 actorAjnaGain = _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
+
+            // loop over all epochs that were claimed
+            uint256 totalRewardsEarnedPostAction;
+            for (uint256 epoch = preActionLastClaimedEpoch; epoch <= _pool.currentBurnEpoch(); epoch++) {
+
+                if (rewardsAlreadyClaimed[epoch] != 0) {
+                    require(rewardsAlreadyClaimed[epoch] == _rewardsManager.rewardsClaimed(epoch), 
+                    "RW9: staker has claimed rewards from the same epoch twice"); 
+                }
+
+                // total staking rewards earned post action
+                totalRewardsEarnedPostAction += _rewardsManager.rewardsClaimed(epoch);
+
+                // reset staking rewards earned in epoch
+                rewardsClaimedPerEpoch[epoch] = _rewardsManager.rewardsClaimed(epoch);
+            }
+
+            require(actorAjnaGain <= totalRewardsEarnedPostAction - totalRewardsEarnedPreAction,
+            "RW6: actor's total claimed is greater than rewards earned");
+
+            require(actorAjnaGain == contractAjnaBalanceBeforeClaim - _ajna.balanceOf(address(_rewardsManager)),
+            "RW7: ajna deducted from rewardsManager doesn't equal ajna gained by actor");
+
         } catch (bytes memory err) {
             _ensureRewardsManagerError(err);
         }
