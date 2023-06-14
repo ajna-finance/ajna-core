@@ -71,7 +71,6 @@ library KickerActions {
     struct KickWithDepositLocalVars {
         uint256 bucketDeposit;  // [WAD] amount of quote tokens in bucket
         uint256 bucketPrice;    // [WAD] bucket price
-        uint256 currentLup;     // [WAD] current LUP in pool
         uint256 entitledAmount; // [WAD] amount that lender is entitled to remove at specified index
         uint256 lenderLP;       // [WAD] LP of lender in bucket
     }
@@ -157,10 +156,9 @@ library KickerActions {
         KickWithDepositLocalVars memory vars;
 
         vars.bucketPrice = _priceAt(index_);
-        vars.currentLup  = Deposits.getLup(deposits_, poolState_.debt);
 
-        // revert if the bucket price is below LUP
-        if (vars.bucketPrice < vars.currentLup) revert PriceBelowLUP();
+        // revert if the bucket price is below current LUP
+        if (vars.bucketPrice < Deposits.getLup(deposits_, poolState_.debt)) revert PriceBelowLUP();
 
         Bucket storage bucket = buckets_[index_];
         Lender storage lender = bucket.lenders[msg.sender];
@@ -194,8 +192,6 @@ library KickerActions {
             limitIndex_,
             vars.entitledAmount
         );
-        // set LUP to current pool value
-        kickResult_.lup = vars.currentLup;
     }
 
     /*************************/
@@ -311,14 +307,14 @@ library KickerActions {
         // add amount to remove to pool debt in order to calculate proposed LUP
         // for regular kick this is the currrent LUP in pool
         // for provisional kick this just simulates LUP movement and needs to be reset to current LUP in pool
-        kickResult_.lup = Deposits.getLup(deposits_, poolState_.debt + additionalDebt_);
+        uint256 lup = Deposits.getLup(deposits_, poolState_.debt + additionalDebt_);
 
         KickLocalVars memory vars;
         vars.borrowerDebt       = Maths.wmul(kickResult_.t0KickedDebt, poolState_.inflator);
         vars.borrowerCollateral = kickResult_.collateralPreAction;
 
         // revert if kick on a collateralized borrower
-        if (_isCollateralized(vars.borrowerDebt, vars.borrowerCollateral, kickResult_.lup, poolState_.poolType)) {
+        if (_isCollateralized(vars.borrowerDebt, vars.borrowerCollateral, lup, poolState_.poolType)) {
             revert BorrowerOk();
         }
 

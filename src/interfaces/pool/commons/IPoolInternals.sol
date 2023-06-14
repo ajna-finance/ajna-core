@@ -15,7 +15,6 @@ struct KickResult {
     uint256 amountToCoverBond;    // [WAD] amount of bond that needs to be covered
     uint256 t0PoolDebt;           // [WAD] t0 debt in pool after kick
     uint256 t0KickedDebt;         // [WAD] new t0 debt after kick
-    uint256 lup;                  // [WAD] current lup
     uint256 debtPreAction;        // [WAD] The amount of borrower t0 debt before kick
     uint256 collateralPreAction;  // [WAD] The amount of borrower collateral before kick, same as the one after kick
 }
