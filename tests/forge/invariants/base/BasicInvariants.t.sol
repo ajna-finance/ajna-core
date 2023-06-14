@@ -178,28 +178,19 @@ abstract contract BasicInvariants is BaseInvariants {
         require(poolDebt == totalDebt, "Quote Token Invariant QT2");
     }
 
-    /// @dev checks pool quote token balance is greater than or equal with unclaimed reserves plus claimable auction bonds
+    /// @dev checks pool quote token balance is greater than or equal with sum of escrowed bonds and unclaimed reserves
     function _invariant_QT3() internal view {
         // convert pool quote balance into WAD
         uint256 poolBalance = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
-        (, uint256 unClaimed, , ) = _pool.reservesInfo();
-
-        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
-        uint256 claimableAuctionBonds;
-        for (uint256 i = 0; i < actorCount; i++) {
-            address kicker = IBaseHandler(_handler).actors(i);
-            (uint256 claimable, ) = _pool.kickerInfo(kicker);
-
-            claimableAuctionBonds += claimable;
-        }
-
-        console.log("poolBalance        -> ", poolBalance);
-        console.log("claimable reserves -> ", unClaimed);
-        console.log("claimable bonds    -> ", claimableAuctionBonds);
+        (
+            uint256 totalBondEscrowed,
+            uint256 unClaimed,
+            ,
+        ) = _pool.reservesInfo();
 
         require(
-            poolBalance >= unClaimed + claimableAuctionBonds,
-            "QT3: claimable escrowed bonds and claimable reserves not guaranteed"
+            poolBalance >= totalBondEscrowed + unClaimed,
+            "QT3: escrowed bonds and claimable reserves not guaranteed"
         );
     }
 
