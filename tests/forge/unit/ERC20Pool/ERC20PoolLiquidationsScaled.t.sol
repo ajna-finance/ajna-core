@@ -175,8 +175,8 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     function testSettleAuctionWithoutTakes(
         uint8  collateralPrecisionDecimals_, 
         uint8  quotePrecisionDecimals_,
-        uint16 startBucketId_) external tearDown
-    {
+        uint16 startBucketId_
+    ) external tearDown {
         uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 6,    18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      6,    18);
         uint256 startBucketId       = bound(uint256(startBucketId_),               1000, 6388);
@@ -193,10 +193,10 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         assertLt(_borrowerCollateralization(_borrower), 1e18);
 
         // Kick an auction and wait for a meaningful price
-        assertEq(_quote.balanceOf(_bidder), 200_000 * _quoteTokenPrecision);
+        assertEq(_quote.balanceOf(_bidder), 300_000 * _quoteTokenPrecision);
         _kick(_borrower, _bidder);
         // assert bidder locked balance in auction bond
-        assertLt(_quote.balanceOf(_bidder), 200_000 * _quoteTokenPrecision);
+        assertLt(_quote.balanceOf(_bidder), 300_000 * _quoteTokenPrecision);
 
         (uint256 auctionPrice, uint256 auctionDebt, uint256 auctionCollateral) = _advanceAuction(9 hours);
         assertGt(auctionPrice, 0);
@@ -227,10 +227,10 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         if ( bondTransferAmount * _pool.quoteTokenScale() < claimableBond ) roundingDiff = 1;
 
         // ensure bidders can still withdraw their bonds
-        assertLt(_quote.balanceOf(_bidder), 200_000 * _quoteTokenPrecision);
+        assertLt(_quote.balanceOf(_bidder), 300_000 * _quoteTokenPrecision);
         changePrank(_bidder);
         _pool.withdrawBonds(_bidder, type(uint256).max);
-        assertEq(_quote.balanceOf(_bidder), 200_000 * _quoteTokenPrecision - roundingDiff);
+        assertEq(_quote.balanceOf(_bidder), 300_000 * _quoteTokenPrecision - roundingDiff);
     }
 
     function testLiquidationKickWithDeposit(
@@ -299,14 +299,14 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         _pool.kickWithDeposit(bucketId, MAX_FENWICK_INDEX);
         _checkAuctionStateUponKick(lender);
 
-        // confirm user has redeemed some of their LP to post liquidation bond
+        // confirm user doesn't redeemed any of their LP to post liquidation bond
         (uint256 lenderLP, ) = _pool.lenderInfo(bucketId, lender);
-        assertLt(lenderLP, lastLenderLP);
+        assertEq(lenderLP, lastLenderLP);
 
-        // confirm deposit has been removed from bucket
+        // confirm deposit wasn't removed from bucket
         (, uint256 bucketDeposit, , uint256 bucketLP, , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
-        assertLt(bucketDeposit, lastBucketDeposit);
-        assertLt(bucketLP, lastBucketLP);
+        assertTrue(bucketDeposit >= lastBucketDeposit);
+        assertEq(bucketLP, lastBucketLP);
     }
 
     function _checkAuctionStateUponKick(address kicker) internal {

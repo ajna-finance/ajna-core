@@ -154,18 +154,19 @@ library KickerActions {
     ) external returns (
         KickResult memory kickResult_
     ) {
+        KickWithDepositLocalVars memory vars;
+
+        vars.bucketPrice = _priceAt(index_);
+        vars.currentLup  = Deposits.getLup(deposits_, poolState_.debt);
+
+        // revert if the bucket price is below LUP
+        if (vars.bucketPrice < vars.currentLup) revert PriceBelowLUP();
+
         Bucket storage bucket = buckets_[index_];
         Lender storage lender = bucket.lenders[msg.sender];
 
-        KickWithDepositLocalVars memory vars;
-
         vars.lenderLP      = bucket.bankruptcyTime < lender.depositTime ? lender.lps : 0;
         vars.bucketDeposit = Deposits.valueAt(deposits_, index_);
-        vars.bucketPrice   = _priceAt(index_);
-        vars.currentLup    = Deposits.getLup(deposits_, poolState_.debt);
-
-        // revert if the bucket price used to kick and remove is below LUP
-        if (vars.bucketPrice < vars.currentLup) revert PriceBelowLUP();
 
         // calculate amount lender is entitled in current bucket (based on lender LP in bucket)
         vars.entitledAmount = Buckets.lpToQuoteTokens(
@@ -183,7 +184,7 @@ library KickerActions {
         // revert if no entitled amount
         if (vars.entitledAmount == 0) revert InsufficientLiquidity();
 
-        // kick borrower
+        // kick top borrower
         kickResult_ = _kick(
             auctions_,
             deposits_,
