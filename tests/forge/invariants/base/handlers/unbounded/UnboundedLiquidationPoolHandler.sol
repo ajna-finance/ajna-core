@@ -208,7 +208,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.bucketTake']++;
 
-        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+        (uint256 borrowerT0Debt, , ) = _pool.borrowerInfo(borrower_);
 
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
         ( , , , , uint256 auctionPrice, )  = _poolInfo.auctionStatus(address(_pool), borrower_);
@@ -252,7 +252,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // assign value to fenwick tree to mitigate rounding error that could be created in a _fenwickRemove call
             fenwickDeposits[bucketIndex_] = afterBucketTakeVars.deposit;
 
-            _updateCurrentTakeState(borrower_, borrowerDebt);
+            _updateCurrentTakeState(borrower_, borrowerT0Debt);
 
         } catch (bytes memory err) {
             _ensurePoolError(err);

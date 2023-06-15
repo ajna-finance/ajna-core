@@ -311,9 +311,12 @@ library BorrowerActions {
                 );
             }
 
-            result_.t0PoolDebt        -= vars.t0RepaidDebt;
-            result_.poolDebt          = Maths.wmul(result_.t0PoolDebt, poolState_.inflator);
-            result_.quoteTokenToRepay = Maths.ceilWmul(vars.t0RepaidDebt,  poolState_.inflator);
+            result_.quoteTokenToRepay = Maths.ceilWmul(vars.t0RepaidDebt, poolState_.inflator);
+            // revert if (due to roundings) calculated token amount to repay is 0
+            if (result_.quoteTokenToRepay == 0) revert InvalidAmount();
+
+            result_.t0PoolDebt -= vars.t0RepaidDebt;
+            result_.poolDebt   = Maths.wmul(result_.t0PoolDebt, poolState_.inflator);
 
             vars.borrowerDebt = Maths.wmul(borrower.t0Debt - vars.t0RepaidDebt, poolState_.inflator);
 
