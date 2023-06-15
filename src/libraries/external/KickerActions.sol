@@ -135,11 +135,9 @@ library KickerActions {
      *  @dev   - decrement `lender.lps` accumulator
      *  @dev   - decrement `bucket.lps` accumulator
      *  @dev    === Reverts on ===
-     *  @dev    bucket price bellow current pool `LUP` `PriceBelowLUP()`
+     *  @dev    bucket price below current pool `LUP` `PriceBelowLUP()`
      *  @dev    insufficient deposit to kick auction `InsufficientLiquidity()`
      *  @dev    no `LP` redeemed to kick auction `InsufficientLP()`
-     *  @dev    === Emit events ===
-     *  @dev    - `RemoveQuoteToken`
      *  @return kickResult_ The `KickResult` struct result of the kick action.
      */
     function kickWithDeposit(
@@ -306,7 +304,7 @@ library KickerActions {
 
         // add amount to remove to pool debt in order to calculate proposed LUP
         // for regular kick this is the currrent LUP in pool
-        // for provisional kick this just simulates LUP movement and needs to be reset to current LUP in pool
+        // for provisional kick this simulates LUP movement with additional debt
         uint256 lup = Deposits.getLup(deposits_, poolState_.debt + additionalDebt_);
 
         KickLocalVars memory vars;
