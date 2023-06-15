@@ -49,7 +49,6 @@ library LenderActions {
         uint256 toBucketUnscaledDeposit;    // Amount of unscaled deposit in to bucket.
         uint256 toBucketDeposit;            // Amount of scaled deposit in to bucket.
         uint256 toBucketScale;              // Scale deposit of to bucket.
-        uint256 ptp;                        // [WAD] Pool Threshold Price.
         uint256 htp;                        // [WAD] Highest Threshold Price.
     }
 
@@ -305,6 +304,9 @@ library LenderActions {
         if (toBucketLP_ == 0) revert InsufficientLP();
 
         Deposits.unscaledAdd(deposits_, params_.toIndex, Maths.wdiv(movedAmount_, vars.toBucketScale));
+
+        // recalculate LUP after adding amount in to bucket only if to bucket price is greater than LUP
+        if (vars.toBucketPrice > lup_) lup_ = Deposits.getLup(deposits_, poolState_.debt);
 
         vars.htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
 
