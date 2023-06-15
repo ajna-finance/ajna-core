@@ -114,18 +114,73 @@ abstract contract UnboundedRewardsHandler is UnboundedBasePositionHandler {
         }
     }
 
+    function _emergencyUnstake(
+        uint256 tokenId_
+    ) internal updateLocalStateAndPoolInterest {
+        numberOfCalls['UBRewardsHandler.emergencyUnstake']++;
+
+        uint256 actorAjnaBalanceBeforeClaim    = _ajna.balanceOf(_actor);
+        uint256 contractAjnaBalanceBeforeClaim = _ajna.balanceOf(address(_rewardsManager));
+
+        // loop over all epochs that have occured
+        uint256 totalRewardsEarnedPreAction;
+        for (uint256 epoch = 0; epoch <= _pool.currentBurnEpoch(); epoch++) {
+             
+            // total rewards earned across all actors in epoch pre action
+            totalRewardsEarnedPreAction  += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
+        }
+
+        try _rewardsManager.emergencyUnstake(tokenId_) {
+
+            // loop over all epochs that have occured
+            uint256 totalRewardsEarnedPostAction;
+            for (uint256 epoch = 0; epoch <= _pool.currentBurnEpoch(); epoch++) {
+
+                // total rewards earned across all actors in epoch post action
+                totalRewardsEarnedPostAction += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
+            }
+
+            // actor should receive tokenId, positionManager loses ownership
+            tokenIdsByActor[address(_actor)].add(tokenId_);
+            tokenIdsByActor[address(_rewardsManager)].remove(tokenId_);
+
+            require(totalRewardsEarnedPreAction == totalRewardsEarnedPostAction,
+            "rewards were earned on emergency unstake");
+
+            require(_positionManager.ownerOf(tokenId_) == address(_actor),
+            "RW5: caller of unstake is not owner of NFT");
+
+            require(contractAjnaBalanceBeforeClaim == _ajna.balanceOf(address(_rewardsManager)),
+            "RW8: ajna balance of rewardsManager changed");
+
+            require(actorAjnaBalanceBeforeClaim == _ajna.balanceOf(_actor),
+            "RW8: ajna balance of actor changed");
+
+        } catch (bytes memory err) {
+            _ensureRewardsManagerError(err);
+        }
+    }
+
     function _updateExchangeRate(
         uint256[] memory indexes_
     ) internal {
-        numberOfCalls['UBRewardsHandler.exchangeRate']++;
+        numberOfCalls['UBRewardsHandler.updateExchangeRate']++;
 
         // track balances
         uint256 actorAjnaBalanceBeforeClaim    = _ajna.balanceOf(_actor);
         uint256 contractAjnaBalanceBeforeClaim = _ajna.balanceOf(address(_rewardsManager));
+      
+        // total the rewards earned pre action
+        uint256 totalRewardsEarnedPreAction = _rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch());
 
         try _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), indexes_) {
 
+            // balance changes
             uint256 actorAjnaGain = _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
+
+            require(actorAjnaGain <= _rewardsManager.updateRewardsClaimed(_pool.currentBurnEpoch()) - totalRewardsEarnedPreAction,
+            "RW7: actor's total claimed is greater than update rewards earned");
+
             require(actorAjnaGain == contractAjnaBalanceBeforeClaim - _ajna.balanceOf(address(_rewardsManager)),
             "RW8: ajna deducted from rewardsManager doesn't equal ajna gained by actor");
 

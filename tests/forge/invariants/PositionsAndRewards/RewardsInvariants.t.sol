@@ -61,13 +61,13 @@ contract RewardsInvariants is PositionsInvariants {
             // stake rewards cap is 80% of total burned
             uint256 stakeRewardsCap = Maths.wmul(totalBurnedInPeriod, 0.8 * 1e18);
 
-            // check claimed rewards <= rewards cap
-            if (stakeRewardsCap != 0) require(rewardsClaimed <= stakeRewardsCap, "Rewards invariant RW1");
-
             // update rewards cap is 10% of total burned
             uint256 updateRewardsCap = Maths.wmul(totalBurnedInPeriod, 0.1 * 1e18);
 
             // check claimed rewards <= rewards cap
+            if (stakeRewardsCap != 0) require(rewardsClaimed <= stakeRewardsCap, "Rewards invariant RW1");
+
+            // check update rewards <= rewards cap
             if (updateRewardsCap != 0) require(updateRewardsClaimed <= updateRewardsCap, "Rewards invariant RW2");
 
             epoch++;
@@ -79,12 +79,21 @@ contract RewardsInvariants is PositionsInvariants {
         console.log("--Positions--------");
         console.log("UBRewardsHandler.unstake            ",  IBaseHandler(_handler).numberOfCalls("UBRewardsHandler.unstake"));
         console.log("BRewardsHandler.unstake             ",  IBaseHandler(_handler).numberOfCalls("BRewardsHandler.unstake"));
+        console.log("UBRewardsHandler.emergencyUnstake   ",  IBaseHandler(_handler).numberOfCalls("UBRewardsHandler.emergencyUnstake"));
+        console.log("BRewardsHandler.emergencyUnstake    ",  IBaseHandler(_handler).numberOfCalls("BRewardsHandler.emergencyUnstake"));
         console.log("UBRewardsHandler.stake              ",  IBaseHandler(_handler).numberOfCalls("UBRewardsHandler.stake"));
         console.log("BRewardsHandler.stake               ",  IBaseHandler(_handler).numberOfCalls("BRewardsHandler.stake"));
+        console.log("UBRewardsHandler.updateExchangeRate ",  IBaseHandler(_handler).numberOfCalls("UBRewardsHandler.updateExchangeRate"));
+        console.log("BRewardsHandler.updateExchangeRate  ",  IBaseHandler(_handler).numberOfCalls("BRewardsHandler.updateExchangeRate"));
+        console.log("UBRewardsHandler.claimRewards       ",  IBaseHandler(_handler).numberOfCalls("UBRewardsHandler.claimRewards"));
+        console.log("BRewardsHandler.claimRewards        ",  IBaseHandler(_handler).numberOfCalls("BRewardsHandler.claimRewards"));
         console.log(
             "Sum",
             IBaseHandler(_handler).numberOfCalls("BRewardsHandler.unstake") +
-            IBaseHandler(_handler).numberOfCalls("BRewardsHandler.stake")
+            IBaseHandler(_handler).numberOfCalls("BRewardsHandler.stake") +
+            IBaseHandler(_handler).numberOfCalls("BRewardsHandler.updateExchangeRate") +
+            IBaseHandler(_handler).numberOfCalls("BRewardsHandler.claimRewards") +
+            IBaseHandler(_handler).numberOfCalls("BRewardsHandler.emergencyUnstake")
         );
     }
 }
