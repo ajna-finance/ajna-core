@@ -213,6 +213,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
         ( , , , , uint256 auctionPrice, )  = _poolInfo.auctionStatus(address(_pool), borrower_);
         uint256 auctionBucketIndex         = auctionPrice < MIN_PRICE ? 7388 : (auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionPrice));
+        ( , , , uint256 pendingInflator, ) = _poolInfo.poolLoansInfo(address(_pool));
         
         LocalBucketTakeVars memory beforeBucketTakeVars = getBucketTakeInfo(bucketIndex_, kicker, _actor, auctionBucketIndex, borrower_);
 
@@ -252,7 +253,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // assign value to fenwick tree to mitigate rounding error that could be created in a _fenwickRemove call
             fenwickDeposits[bucketIndex_] = afterBucketTakeVars.deposit;
 
-            _updateCurrentTakeState(borrower_, borrowerT0Debt);
+            _updateCurrentTakeState(borrower_, borrowerT0Debt, pendingInflator);
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
