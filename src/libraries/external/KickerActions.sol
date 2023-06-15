@@ -305,14 +305,14 @@ library KickerActions {
         // add amount to remove to pool debt in order to calculate proposed LUP
         // for regular kick this is the currrent LUP in pool
         // for provisional kick this simulates LUP movement with additional debt
-        uint256 lup = Deposits.getLup(deposits_, poolState_.debt + additionalDebt_);
+        kickResult_.lup = Deposits.getLup(deposits_, poolState_.debt + additionalDebt_);
 
         KickLocalVars memory vars;
         vars.borrowerDebt       = Maths.wmul(kickResult_.t0KickedDebt, poolState_.inflator);
         vars.borrowerCollateral = kickResult_.collateralPreAction;
 
         // revert if kick on a collateralized borrower
-        if (_isCollateralized(vars.borrowerDebt, vars.borrowerCollateral, lup, poolState_.poolType)) {
+        if (_isCollateralized(vars.borrowerDebt, vars.borrowerCollateral, kickResult_.lup, poolState_.poolType)) {
             revert BorrowerOk();
         }
 
@@ -364,6 +364,10 @@ library KickerActions {
 
         kickResult_.t0PoolDebt   = poolState_.t0Debt + vars.t0KickPenalty;
         kickResult_.t0KickedDebt += vars.t0KickPenalty;
+
+        // recalculate LUP with new pool debt (including kick penalty)
+        kickResult_.poolDebt = Maths.wmul(kickResult_.t0PoolDebt, poolState_.inflator);
+        kickResult_.lup      = Deposits.getLup(deposits_, kickResult_.poolDebt);
 
         // update borrower debt with kicked debt penalty
         borrower.t0Debt = kickResult_.t0KickedDebt;

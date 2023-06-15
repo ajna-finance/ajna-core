@@ -291,7 +291,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // update in memory pool state struct
-        poolState.debt            =  Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.debt            =  result.poolDebt;
         poolState.t0Debt          =  result.t0PoolDebt;
         poolState.t0DebtInAuction += result.t0KickedDebt;
 
@@ -307,7 +307,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolBalances.t0Debt          = poolState.t0Debt;
         poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
         // update pool interest rate state
-        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
+        _updateInterestState(poolState, result.lup);
 
         if (result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
     }
@@ -336,7 +336,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // update in memory pool state struct
-        poolState.debt            =  Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.debt            =  result.poolDebt;
         poolState.t0Debt          =  result.t0PoolDebt;
         poolState.t0DebtInAuction += result.t0KickedDebt;
 
@@ -353,7 +353,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
 
         // update pool interest rate state
-        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
+        _updateInterestState(poolState, result.lup);
 
         // transfer from kicker to pool the difference to cover bond
         if (result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
