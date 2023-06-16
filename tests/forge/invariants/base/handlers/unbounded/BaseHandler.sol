@@ -280,12 +280,10 @@ abstract contract BaseHandler is Test {
     /**
      * @dev Ensure that error is an Pool expected error.
      */
-    function _ensurePoolError(bytes memory err_) internal pure { require( _isPoolError(err_), "Unexpected revert error"); }
-
-    function _isPoolError(bytes memory err_) internal pure returns (bool isPoolError_) {
+    function _ensurePoolError(bytes memory err_) internal pure {
         bytes32 err = keccak256(err_);
 
-        if (
+        require(
             err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
             err == keccak256(abi.encodeWithSignature("BucketBankruptcyBlock()")) ||
             err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) ||
@@ -315,7 +313,9 @@ abstract contract BaseHandler is Test {
             err == keccak256(abi.encodeWithSignature("ReserveAuctionTooSoon()")) ||
             err == keccak256(abi.encodeWithSignature("NoReserves()")) ||
             err == keccak256(abi.encodeWithSignature("ZeroThresholdPrice()")) ||
-            err == keccak256(abi.encodeWithSignature("NoReservesAuction()"))) isPoolError_ = true;
+            err == keccak256(abi.encodeWithSignature("NoReservesAuction()")),
+            "Unexpected revert error"
+        );
     }
 
     /**************************************/
