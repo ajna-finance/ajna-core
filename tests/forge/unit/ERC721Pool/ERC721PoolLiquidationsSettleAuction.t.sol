@@ -93,7 +93,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         skip(5100 days);
 
         // kick both loans
-        _kickWithDeposit({
+        _lenderKickAuction({
             from:       _lender,
             index:      2500,
             borrower:   _borrower,
@@ -101,7 +101,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             collateral: 2 * 1e18,
             bond:       100.646484035657361526 * 1e18
         });
-        _kickWithDeposit({
+        _lenderKickAuction({
             from:       _lender,
             index:      2500,
             borrower:   _borrower2,

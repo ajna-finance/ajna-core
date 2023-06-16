@@ -318,14 +318,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @dev    increment `poolBalances.t0DebtInAuction` and `poolBalances.t0Debt` accumulators
      *  @dev    update `t0Debt2ToCollateral` ratio, debt and collateral post action are considered 0
      */
-    function kickWithDeposit(
+    function lenderKickAuction(
         uint256 index_,
         uint256 npLimitIndex_
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
         // kick auctions
-        KickResult memory result = KickerActions.kickWithDeposit(
+        KickResult memory result = KickerActions.lenderKickAuction(
             auctions,
             deposits,
             buckets,

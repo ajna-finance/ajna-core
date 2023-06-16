@@ -67,8 +67,8 @@ library KickerActions {
         uint256 kickPenalty;        // [WAD] current debt added as kick penalty
     }
 
-    /// @dev Struct used for `kickWithDeposit` function local vars.
-    struct KickWithDepositLocalVars {
+    /// @dev Struct used for `lenderKickAuction` function local vars.
+    struct LenderKickLocalVars {
         uint256 bucketDeposit;  // [WAD] amount of quote tokens in bucket
         uint256 bucketPrice;    // [WAD] bucket price
         uint256 entitledAmount; // [WAD] amount that lender is entitled to remove at specified index
@@ -130,17 +130,12 @@ library KickerActions {
 
     /**
      *  @notice See `IPoolKickerActions` for descriptions.
-     *  @dev    === Write state ===
-     *  @dev   - `Deposits.unscaledRemove` (remove amount in `Fenwick` tree, from index): update `values` array state
-     *  @dev   - decrement `lender.lps` accumulator
-     *  @dev   - decrement `bucket.lps` accumulator
      *  @dev    === Reverts on ===
      *  @dev    bucket price below current pool `LUP` `PriceBelowLUP()`
      *  @dev    insufficient deposit to kick auction `InsufficientLiquidity()`
-     *  @dev    no `LP` redeemed to kick auction `InsufficientLP()`
      *  @return kickResult_ The `KickResult` struct result of the kick action.
      */
-    function kickWithDeposit(
+    function lenderKickAuction(
         AuctionsState storage auctions_,
         DepositsState storage deposits_,
         mapping(uint256 => Bucket) storage buckets_,
@@ -151,7 +146,7 @@ library KickerActions {
     ) external returns (
         KickResult memory kickResult_
     ) {
-        KickWithDepositLocalVars memory vars;
+        LenderKickLocalVars memory vars;
 
         vars.bucketPrice = _priceAt(index_);
 

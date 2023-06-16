@@ -460,8 +460,8 @@ abstract contract BasicInvariants is BaseInvariants {
         console.log("--Liquidation--------");
         console.log("BLiquidationHandler.kickAuction             ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickAuction"));
         console.log("UBLiquidationHandler.kickAuction            ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.kickAuction"));
-        console.log("BLiquidationHandler.kickWithDeposit         ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickWithDeposit"));
-        console.log("UBLiquidationHandler.kickWithDeposit        ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.kickWithDeposit"));
+        console.log("BLiquidationHandler.lenderKickAuction       ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.lenderKickAuction"));
+        console.log("UBLiquidationHandler.lenderKickAuction      ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.lenderKickAuction"));
         console.log("BLiquidationHandler.takeAuction             ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.takeAuction"));
         console.log("UBLiquidationHandler.takeAuction            ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.takeAuction"));
         console.log("BLiquidationHandler.bucketTake              ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.bucketTake"));
@@ -506,7 +506,7 @@ abstract contract BasicInvariants is BaseInvariants {
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt") + 
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickAuction") +
-            IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickWithDeposit") +
+            IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.lenderKickAuction") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.takeAuction") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.bucketTake") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.withdrawBonds") +

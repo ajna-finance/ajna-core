@@ -120,7 +120,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         /*** Kick both loans ***/
         /***********************/
 
-        _kickWithDeposit({
+        _lenderKickAuction({
             from:       _lender,
             index:      2500,
             borrower:   _borrower,
@@ -129,7 +129,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
             bond:       1_501.442307692307693000 * 1e18
         });
 
-        _kickWithDeposit({
+        _lenderKickAuction({
             from:       _lender,
             index:      2500,
             borrower:   _borrower2,

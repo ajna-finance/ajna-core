@@ -559,7 +559,7 @@ abstract contract BaseHandler is Test {
         printLog("Total interest earned    = ", totalInterest);
         printLine("");
         printLog("Successful kicks         = ", numberOfActions["kick"]);
-        printLog("Successful deposit kicks = ", numberOfActions["kickWithDeposit"]);
+        printLog("Successful deposit kicks = ", numberOfActions["lenderKickAuction"]);
         printLog("Successful takes         = ", numberOfActions["take"]);
         printLog("Successful bucket takes  = ", numberOfActions["bucketTake"]);
         printLog("Successful settles       = ", numberOfActions["settle"]);

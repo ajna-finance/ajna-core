@@ -5,7 +5,7 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/libraries/helpers/PoolHelper.sol';
 
-contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
+contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
 
     address internal _borrower1;
     address internal _borrower2;
@@ -151,7 +151,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         });
     }
     
-    function testKickWithDepositAmountHigherThanAuctionBond() external tearDown {
+    function testLenderKickAuctionAmountHigherThanAuctionBond() external tearDown {
 
         /**
             - kick with deposit amount lower than deposit available (lender can redeem less LP from bucket than deposit)
@@ -168,12 +168,12 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         });
 
         // should revert if NP goes below limit
-        _assertKickWithDepositNpUnderLimitRevert({
+        _assertLenderKickAuctionNpUnderLimitRevert({
             from:  _lender1,
             index: 2500
         });
 
-        _kickWithDeposit({
+        _lenderKickAuction({
             from:       _lender1,
             index:      2500,
             borrower:   _borrower1,
@@ -261,7 +261,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
     }
 
-    function testKickWithDepositAmountLowerThanAuctionBond() external tearDown {
+    function testLenderKickAuctionAmountLowerThanAuctionBond() external tearDown {
         /**
             - kick with deposit amount lower than deposit available (lender can redeem less LP from bucket than deposit)
             - bond auction is not covered entirely by removed deposit (bucket still contains LP), difference to cover bond is sent by lender
@@ -298,12 +298,12 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
 
         // should revert if NP goes below limit
-        _assertKickWithDepositNpUnderLimitRevert({
+        _assertLenderKickAuctionNpUnderLimitRevert({
             from:  _lender3,
             index: 2500
         });
 
-        _kickWithDeposit({
+        _lenderKickAuction({
             from:       _lender3,
             index:      2500,
             borrower:   _borrower1,
@@ -391,7 +391,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         );
     }
 
-    function testKickWithDepositUsingAllLpsWithinBucket() external tearDown {
+    function testLenderKickAuctionUsingAllLpsWithinBucket() external tearDown {
         /**
             - kick using entire deposit / LP from bucket
             - bond auction is not covered entirely by deposit, deposit is obliterated and difference to cover bond is sent by lender
@@ -428,13 +428,13 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_borrower5),     20_000 * 1e18);
 
         // should revert if NP goes below limit
-        _assertKickWithDepositNpUnderLimitRevert({
+        _assertLenderKickAuctionNpUnderLimitRevert({
             from:  _lender2,
             index: 2500
         });
 
         // lender 2 kicks using bucket 2499
-        _kickWithDeposit({
+        _lenderKickAuction({
             from:       _lender2,
             index:      2499,
             borrower:   _borrower1,
@@ -516,7 +516,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         );
     }
 
-    function testKickWithDepositAmountHigherThanAvailableDeposit() external tearDown {
+    function testLenderKickAuctionAmountHigherThanAvailableDeposit() external tearDown {
 
         /**
             - kick with deposit amount higher than deposit available (lender can redeem more LP from bucket than deposit)
@@ -547,12 +547,12 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         });
 
         // should revert if NP goes below limit
-        _assertKickWithDepositNpUnderLimitRevert({
+        _assertLenderKickAuctionNpUnderLimitRevert({
             from:  _lender1,
             index: 2500
         });
 
-        _kickWithDeposit({
+        _lenderKickAuction({
             from:       _lender1,
             index:      2500,
             borrower:   _borrower1,
@@ -640,7 +640,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
     }
 
-    function testKickWithDepositAllBorrowersAndSettle() external tearDown {
+    function testLenderKickAuctionAllBorrowersAndSettle() external tearDown {
         // assert loans positions in heap
         address borrower;
         uint256 thresholdPrice;
@@ -661,7 +661,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
 
         // kick borrower 1
-        _kickWithDeposit({
+        _lenderKickAuction({
             from:       _lender1,
             index:      2500,
             borrower:   _borrower1,
@@ -697,7 +697,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(prev, address(0));
 
         // kick borrower 5
-        _kickWithDeposit({
+        _lenderKickAuction({
             from:       _lender1,
             index:      2500,
             borrower:   _borrower5,
@@ -732,7 +732,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(prev, _borrower1);
 
         // kick borrower 4
-        _kickWithDeposit({
+        _lenderKickAuction({
             from:       _lender1,
             index:      2500,
             borrower:   _borrower4,
@@ -771,7 +771,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(prev, _borrower5);
 
         // kick borrower 3
-        _kickWithDeposit({
+        _lenderKickAuction({
             from:       _lender1,
             index:      2500,
             borrower:   _borrower3,
@@ -814,7 +814,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(prev, _borrower4);
 
         // kick borrower 2
-        _kickWithDeposit({
+        _lenderKickAuction({
             from:       _lender1,
             index:      2500,
             borrower:   _borrower2,
@@ -1276,7 +1276,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         });
     }
 
-    function testKickWithDepositReverts() external tearDown {
+    function testLenderKickAuctionReverts() external tearDown {
         // assert lender cannot kick with a bucket without deposit
         _assertKickWithInsufficientLiquidityRevert({
             from:   _lender3,
@@ -1325,6 +1325,6 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
         changePrank(_lender4);
         vm.expectRevert("ERC20: transfer amount exceeds balance");
-        _pool.kickWithDeposit(2499, MAX_FENWICK_INDEX);
+        _pool.lenderKickAuction(2499, MAX_FENWICK_INDEX);
     }
 }

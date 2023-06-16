@@ -233,7 +233,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         assertEq(_quote.balanceOf(_bidder), 300_000 * _quoteTokenPrecision - roundingDiff);
     }
 
-    function testLiquidationKickWithDeposit(
+    function testLiquidationLenderKickAuction(
         uint8  collateralPrecisionDecimals_, 
         uint8  quotePrecisionDecimals_,
         uint16 startBucketId_
@@ -254,7 +254,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         assertLt(_borrowerCollateralization(_borrower), 1e18);
 
         // Kick off an auction and wait the grace period
-        _kickWithDeposit(_lender, _startBucketId);
+        _lenderKickAuction(_lender, _startBucketId);
         skip(1 hours);
 
         // Wait until price drops below utilized portion of book
@@ -291,12 +291,12 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         _checkAuctionStateUponKick(kicker);
     }
 
-    function _kickWithDeposit(address lender, uint256 bucketId) internal {
+    function _lenderKickAuction(address lender, uint256 bucketId) internal {
         (uint256 lastLenderLP, ) = _pool.lenderInfo(bucketId, lender);
         (, uint256 lastBucketDeposit, , uint256 lastBucketLP, , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
 
         changePrank(lender);
-        _pool.kickWithDeposit(bucketId, MAX_FENWICK_INDEX);
+        _pool.lenderKickAuction(bucketId, MAX_FENWICK_INDEX);
         _checkAuctionStateUponKick(lender);
 
         // confirm user doesn't redeemed any of their LP to post liquidation bond
