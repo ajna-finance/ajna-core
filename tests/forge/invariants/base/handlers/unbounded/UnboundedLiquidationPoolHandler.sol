@@ -71,7 +71,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         // ensure actor always has the amount to add for kick
         _ensureQuoteAmount(_actor, borrowerDebt);
 
-        try _pool.lenderKickAuction(bucketIndex_, 7388) {
+        try _pool.lenderKick(bucketIndex_, 7388) {
             numberOfActions['lenderKickAuction']++;
 
             ( , , , uint256 depositAfterAction, ) = _pool.bucketInfo(bucketIndex_);

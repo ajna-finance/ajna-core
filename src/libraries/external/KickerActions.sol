@@ -67,7 +67,7 @@ library KickerActions {
         uint256 kickPenalty;        // [WAD] current debt added as kick penalty
     }
 
-    /// @dev Struct used for `lenderKickAuction` function local vars.
+    /// @dev Struct used for `lenderKick` function local vars.
     struct LenderKickLocalVars {
         uint256 bucketDeposit;  // [WAD] amount of quote tokens in bucket
         uint256 bucketPrice;    // [WAD] bucket price
@@ -135,7 +135,7 @@ library KickerActions {
      *  @dev    insufficient deposit to kick auction `InsufficientLiquidity()`
      *  @return kickResult_ The `KickResult` struct result of the kick action.
      */
-    function lenderKickAuction(
+    function lenderKick(
         AuctionsState storage auctions_,
         DepositsState storage deposits_,
         mapping(uint256 => Bucket) storage buckets_,

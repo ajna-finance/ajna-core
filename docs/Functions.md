@@ -174,10 +174,10 @@
 	- PoolCommons.updateInterestRate():
 		- UpdateInterestRate
 
-### lenderKickAuction
+### lenderKick
 	external libraries call:
 	- PoolCommons.accrueInterest()
-	- KickerActions.lenderKickAuction()
+	- KickerActions.lenderKick()
 	- PoolCommons.updateInterestRate()
 
 	write state:
@@ -186,7 +186,7 @@
 			- Deposits.mult() (scale Fenwick tree with new interest accrued):
 				- update scaling array state 
     	- increment reserveAuction.totalInterestEarned accumulator
-	- KickerActions.lenderKickAuction():
+	- KickerActions.lenderKick():
 		- _kick():
 			- _recordAuction():
 				- borrower -> liquidation mapping update
@@ -206,13 +206,13 @@
 		- pool inflator and inflatorUpdate state
 
 	reverts on:
-	- KickerActions.lenderKickAuction():
+	- KickerActions.lenderKick():
 		- bucket price below current pool LUP PriceBelowLUP()
 		- borrower collateralized BorrowerOk()
 		- insuficient amount InsufficientLiquidity()
 
 	emit events:
-	- KickerActions.lenderKickAuction():
+	- KickerActions.lenderKick():
 		- Kick
 	- PoolCommons.updateInterestRate():
 		- UpdateInterestRate

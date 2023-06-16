@@ -257,7 +257,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.kick(borrower, MAX_FENWICK_INDEX);
     }
 
-    function _lenderKickAuction(
+    function _lenderKick(
         address from,
         uint256 index,
         address borrower,
@@ -269,7 +269,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         vm.expectEmit(true, true, false, true);
         emit Kick(borrower, debt, collateral, bond);
         _assertQuoteTokenTransferEvent(from, address(_pool), bond);
-        _pool.lenderKickAuction(index, MAX_FENWICK_INDEX);
+        _pool.lenderKick(index, MAX_FENWICK_INDEX);
     }
 
     function _moveLiquidity(
@@ -1090,7 +1090,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LimitIndexExceeded.selector);
-        _pool.lenderKickAuction(index, 0);
+        _pool.lenderKick(index, 0);
     }
 
     function _assertKickWithInsufficientLiquidityRevert(
@@ -1099,7 +1099,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('InsufficientLiquidity()'));
-        _pool.lenderKickAuction(index, MAX_FENWICK_INDEX);
+        _pool.lenderKick(index, MAX_FENWICK_INDEX);
     }
 
     function _assertKickWithBadProposedLupRevert(
@@ -1108,7 +1108,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('BorrowerOk()'));
-        _pool.lenderKickAuction(index, MAX_FENWICK_INDEX);
+        _pool.lenderKick(index, MAX_FENWICK_INDEX);
     }
 
     function _assertKickPriceBelowLupRevert(
@@ -1117,7 +1117,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('PriceBelowLUP()'));
-        _pool.lenderKickAuction(index, MAX_FENWICK_INDEX);
+        _pool.lenderKick(index, MAX_FENWICK_INDEX);
     }
 
     function _assertRemoveCollateralAuctionNotClearedRevert(

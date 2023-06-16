@@ -173,7 +173,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             index: 2500
         });
 
-        _lenderKickAuction({
+        _lenderKick({
             from:       _lender1,
             index:      2500,
             borrower:   _borrower1,
@@ -303,7 +303,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             index: 2500
         });
 
-        _lenderKickAuction({
+        _lenderKick({
             from:       _lender3,
             index:      2500,
             borrower:   _borrower1,
@@ -434,7 +434,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
         });
 
         // lender 2 kicks using bucket 2499
-        _lenderKickAuction({
+        _lenderKick({
             from:       _lender2,
             index:      2499,
             borrower:   _borrower1,
@@ -552,7 +552,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             index: 2500
         });
 
-        _lenderKickAuction({
+        _lenderKick({
             from:       _lender1,
             index:      2500,
             borrower:   _borrower1,
@@ -661,7 +661,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
         assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
 
         // kick borrower 1
-        _lenderKickAuction({
+        _lenderKick({
             from:       _lender1,
             index:      2500,
             borrower:   _borrower1,
@@ -697,7 +697,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
         assertEq(prev, address(0));
 
         // kick borrower 5
-        _lenderKickAuction({
+        _lenderKick({
             from:       _lender1,
             index:      2500,
             borrower:   _borrower5,
@@ -732,7 +732,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
         assertEq(prev, _borrower1);
 
         // kick borrower 4
-        _lenderKickAuction({
+        _lenderKick({
             from:       _lender1,
             index:      2500,
             borrower:   _borrower4,
@@ -771,7 +771,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
         assertEq(prev, _borrower5);
 
         // kick borrower 3
-        _lenderKickAuction({
+        _lenderKick({
             from:       _lender1,
             index:      2500,
             borrower:   _borrower3,
@@ -814,7 +814,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
         assertEq(prev, _borrower4);
 
         // kick borrower 2
-        _lenderKickAuction({
+        _lenderKick({
             from:       _lender1,
             index:      2500,
             borrower:   _borrower2,
@@ -1325,6 +1325,6 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
 
         changePrank(_lender4);
         vm.expectRevert("ERC20: transfer amount exceeds balance");
-        _pool.lenderKickAuction(2499, MAX_FENWICK_INDEX);
+        _pool.lenderKick(2499, MAX_FENWICK_INDEX);
     }
 }
