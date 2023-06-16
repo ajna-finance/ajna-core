@@ -1099,7 +1099,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             toIndex:      4550,
             lpRedeemFrom: amountToMove,
             lpAwardTo:    amountToMove,
-            newLup:       _priceAt(4651)
+            newLup:       0.139445853940958153 * 1e18
         });
     }
 

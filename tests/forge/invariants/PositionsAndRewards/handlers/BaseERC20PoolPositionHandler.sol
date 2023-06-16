@@ -13,10 +13,9 @@ import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionM
 import { PositionManager }              from 'src/PositionManager.sol';
 import { ERC20Pool }                    from 'src/ERC20Pool.sol';
 
-import { UnboundedPositionsHandler } from './unbounded/UnboundedPositionsHandler.sol';
-import { BaseERC20PoolHandler }      from '../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
+import { UnboundedERC20PoolPositionsHandler } from './unbounded/UnboundedERC20PoolPositionsHandler.sol';
 
-abstract contract BasePositionHandler is UnboundedPositionsHandler {
+abstract contract BaseERC20PoolPositionHandler is UnboundedERC20PoolPositionsHandler {
 
     using EnumerableSet for EnumerableSet.UintSet;
 

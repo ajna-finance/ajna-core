@@ -24,16 +24,19 @@ test-with-gas-report            :; forge test --no-match-test ${TEST_EXCLUDES} -
 test-load                       :; forge test --match-test testLoad --gas-report
 
 # Invariant Tests
-test-invariant-all              :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES}
-test-invariant-erc20            :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc ERC20
-test-invariant-erc721           :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc ERC721
-test-invariant-position         :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc Position 
-test-invariant-rewards          :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc Rewards
-test-invariant                  :; forge t --mt ${MT} --nmc RegressionTest
-test-invariant-erc20-precision  :; ./tests/forge/invariants/test-invariant-erc20-precision.sh
-test-invariant-erc721-precision :; ./tests/forge/invariants/test-invariant-erc721-precision.sh
-test-invariant-erc20-buckets    :; ./tests/forge/invariants/test-invariant-erc20-buckets.sh
-test-invariant-erc721-buckets   :; ./tests/forge/invariants/test-invariant-erc721-buckets.sh
+test-invariant-all                       :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES}
+test-invariant-erc20                     :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc ERC20
+test-invariant-erc721                    :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc ERC721
+test-invariant-position-erc20            :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc ERC20PoolPosition 
+test-invariant-position-erc721           :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc ERC721PoolPosition
+test-invariant-rewards                   :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc Rewards
+test-invariant                           :; forge t --mt ${MT} --nmc RegressionTest
+test-invariant-erc20-precision           :; ./tests/forge/invariants/test-invariant-erc20-precision.sh
+test-invariant-erc721-precision          :; ./tests/forge/invariants/test-invariant-erc721-precision.sh
+test-invariant-erc20-buckets             :; ./tests/forge/invariants/test-invariant-erc20-buckets.sh
+test-invariant-erc721-buckets            :; ./tests/forge/invariants/test-invariant-erc721-buckets.sh
+test-invariant-position-erc20-precision  :; ./tests/forge/invariants/test-invariant-position-erc20-precision.sh
+test-invariant-position-erc721-precision :; ./tests/forge/invariants/test-invariant-position-erc721-precision.sh
 
 # Real-world simulation scenarios
 test-rw-simulation-erc20        :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all_erc20 --mc RealWorldScenario

@@ -146,9 +146,13 @@ make test-invariant-erc20
 ```bash
 make test-invariant-erc721
 ```
-- run all invariant tests for Position Manager:
+- run all invariant tests for Position Manager with ERC20Pool:
 ```bash
-make test-invariant-position
+make test-invariant-position-erc20
+```
+- run all invariant tests for Position Manager with ERC721Pool:
+```bash
+make test-invariant-position-erc721
 ```
 - run all invariant tests for Rewards Manager:
 ```bash
@@ -181,6 +185,14 @@ make test-invariant-erc20-buckets
 - run ERC721 pool invariant tests for multiple bucket ranges:
 ```bash
 make test-invariant-erc721-buckets
+```
+- run Position manager with ERC20 pool invariant tests for most popular token precision combinations(6, 8 and 18):
+```bash
+make test-invariant-position-erc20-precision
+```
+- run Position manager with ERC721 pool invariant tests for most popular token precision(6, 8 and 18):
+```bash
+make test-invariant-position-erc721-precision
 ```
 
 ### Code coverage:

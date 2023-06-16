@@ -4,10 +4,10 @@ pragma solidity 0.8.18;
 
 import { PositionManager }              from 'src/PositionManager.sol';
 
-import { BasePositionHandler } from  './BasePositionHandler.sol';
-import { BaseERC20PoolHandler }     from '../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
+import { BaseERC721PoolPositionHandler } from  './BaseERC721PoolPositionHandler.sol';
+import { BaseERC721PoolHandler }     from '../../ERC721Pool/handlers/unbounded/BaseERC721PoolHandler.sol';
 
-contract PositionHandler is BasePositionHandler {
+contract ERC721PoolPositionHandler is BaseERC721PoolPositionHandler {
 
     constructor(
         address positions_,
@@ -18,7 +18,7 @@ contract PositionHandler is BasePositionHandler {
         address poolInfo_,
         uint256 numOfActors_,
         address testContract_
-    ) BaseERC20PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
+    ) BaseERC721PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
 
         // Position manager
         _positionManager = PositionManager(positions_);
