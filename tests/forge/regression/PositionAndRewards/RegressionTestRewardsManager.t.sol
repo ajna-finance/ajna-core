@@ -6,7 +6,7 @@ import { PoolInfoUtils }     from 'src/PoolInfoUtils.sol';
 
 import '@std/console.sol';
 
-contract RegressionRewardsManager is RewardsInvariants {
+contract RegressionTestRewardsManager is RewardsInvariants {
 
     function setUp() public override { 
         super.setUp();

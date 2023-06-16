@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 
 import { ERC20PoolPositionsInvariants } from "../../invariants/PositionsAndRewards/ERC20PoolPositionsInvariants.t.sol";
 
-contract RegressionPositionManager is ERC20PoolPositionsInvariants { 
+contract RegressionTestPositionManager is ERC20PoolPositionsInvariants { 
 
     function setUp() public override { 
         super.setUp();
