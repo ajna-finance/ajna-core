@@ -13,15 +13,15 @@ import {
     }                                   from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }                        from "src/libraries/internal/Maths.sol";
 
-import { BaseERC20PoolHandler }         from '../../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
-import { UnboundedBasePositionHandler }         from './UnboundedBasePositionHandler.sol';
+import { BaseERC721PoolHandler }         from '../../../ERC721Pool/handlers/unbounded/BaseERC721PoolHandler.sol';
+import { UnboundedBasePositionHandler } from './UnboundedBasePositionHandler.sol';
 
 /**
  *  @dev this contract manages multiple lenders
  *  @dev methods in this contract are called in random order
  *  @dev randomly selects a lender contract to make a txn
  */ 
-abstract contract UnboundedPositionsHandler is UnboundedBasePositionHandler {
+abstract contract UnboundedERC721PoolPositionsHandler is UnboundedBasePositionHandler, BaseERC721PoolHandler {
 
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -94,7 +94,7 @@ abstract contract UnboundedPositionsHandler is UnboundedBasePositionHandler {
 
     function _mint() internal returns (uint256 tokenIdResult) {
         numberOfCalls['UBPositionHandler.mint']++;
-        try _positionManager.mint(address(_pool), _actor, keccak256("ERC20_NON_SUBSET_HASH")) returns (uint256 tokenId) {
+        try _positionManager.mint(address(_pool), _actor, keccak256("ERC721_NON_SUBSET_HASH")) returns (uint256 tokenId) {
 
             tokenIdResult = tokenId;
 
@@ -309,22 +309,5 @@ abstract contract UnboundedPositionsHandler is UnboundedBasePositionHandler {
         } catch (bytes memory err) {
             _ensurePositionsManagerError(err);
         }
-    }
-
-    function _ensurePositionsManagerError(bytes memory err_) internal pure {
-        bytes32 err = keccak256(err_);
-
-        require(
-            err == keccak256(abi.encodeWithSignature("AllowanceTooLow()")) ||
-            err == keccak256(abi.encodeWithSignature("BucketBankrupt()")) ||
-            err == keccak256(abi.encodeWithSignature("DeployWithZeroAddress()")) ||
-            err == keccak256(abi.encodeWithSignature("LiquidityNotRemoved()")) ||
-            err == keccak256(abi.encodeWithSignature("NoAuth()")) ||
-            err == keccak256(abi.encodeWithSignature("NoToken()")) ||
-            err == keccak256(abi.encodeWithSignature("NotAjnaPool()")) ||
-            err == keccak256(abi.encodeWithSignature("RemovePositionFailed()")) ||
-            err == keccak256(abi.encodeWithSignature("WrongPool()")),
-            "Unexpected revert error"
-        );
     }
 }
