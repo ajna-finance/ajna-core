@@ -10,9 +10,9 @@ import { _getEpochInfo }       from 'src/RewardsManager.sol';
 import { IBaseHandler }                from '../interfaces/IBaseHandler.sol';
 import { IPositionsAndRewardsHandler } from '../interfaces/IPositionsAndRewardsHandler.sol';
 import { RewardsHandler }              from './handlers/RewardsHandler.sol';
-import { PositionsInvariants }         from './PositionsInvariants.t.sol';
+import { ERC20PoolPositionsInvariants }         from './ERC20PoolPositionsInvariants.t.sol';
 
-contract RewardsInvariants is PositionsInvariants {
+contract RewardsInvariants is ERC20PoolPositionsInvariants {
 
     RewardsManager   internal _rewardsManager;
     RewardsHandler   internal _rewardsHandler;
@@ -26,7 +26,7 @@ contract RewardsInvariants is PositionsInvariants {
         // fund the rewards manager with 100M ajna
         _ajna.mint(address(_rewardsManager), 100_000_000 * 1e18);
 
-        excludeContract(address(_positionHandler));
+        excludeContract(address(_erc20positionHandler));
         excludeContract(address(_rewardsManager));
 
         _rewardsHandler = new RewardsHandler(
