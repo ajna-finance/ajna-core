@@ -69,6 +69,21 @@ contract RewardsHandler is UnboundedRewardsHandler, BaseERC20PoolPositionHandler
         _unstake(tokenId);
     }
 
+    function emergencyUnstake(
+        uint256 actorIndex_,
+        uint256 bucketIndex_,
+        uint256 amountToAdd_,
+        uint256 skippedTime_
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+        numberOfCalls['BRewardsHandler.emergencyUnstake']++;
+        
+        // Pre action
+        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_);
+        
+        // Action phase
+        _emergencyUnstake(tokenId);
+    }
+
     function updateExchangeRate(
         uint256 actorIndex_,
         uint256 bucketIndex_,

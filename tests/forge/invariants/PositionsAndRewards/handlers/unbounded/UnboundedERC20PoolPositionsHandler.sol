@@ -287,8 +287,6 @@ abstract contract UnboundedERC20PoolPositionsHandler is UnboundedBasePositionHan
         }
     }
 
-
-
     function _burn(
         uint256 tokenId_
     ) internal {
@@ -311,3 +309,4 @@ abstract contract UnboundedERC20PoolPositionsHandler is UnboundedBasePositionHan
         }
     }
 }
+
