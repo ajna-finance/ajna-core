@@ -82,7 +82,8 @@ abstract contract UnboundedBasePositionHandler is Test {
             err == keccak256(abi.encodeWithSignature("MoveToSameIndex()")) ||
             err == keccak256(abi.encodeWithSignature("RemoveDepositLockedByAuctionDebt()")) ||
             err == keccak256(abi.encodeWithSignature("DustAmountNotExceeded()")) ||
-            err == keccak256(abi.encodeWithSignature("InvalidIndex()")),
+            err == keccak256(abi.encodeWithSignature("InvalidIndex()")) ||
+            err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")),
             "Unexpected revert error"
         );
     }
