@@ -44,6 +44,7 @@ abstract contract UnboundedBasePositionHandler is Test {
     mapping(uint256 => uint256) internal bucketIndexToDepositTime;
 
     // Rewards invariant test state //
+    mapping(address => EnumerableSet.UintSet) internal stakedTokenIdsByActor;
     mapping(uint256 => uint256) public rewardsClaimedPerEpoch;       // staking rewards per epoch
     mapping(uint256 => uint256) public updateRewardsClaimedPerEpoch; // updating rewards per epoch
 
@@ -67,6 +68,10 @@ abstract contract UnboundedBasePositionHandler is Test {
 
     function getTokenIdsByActor(address actor_) public view returns(uint256[] memory) {
         return tokenIdsByActor[actor_].values();
+    }
+
+    function getStakedTokenIdsByActor(address actor_) public view returns(uint256[] memory) {
+        return stakedTokenIdsByActor[actor_].values();
     }
 
     function _ensurePositionsManagerError(bytes memory err_) internal pure {

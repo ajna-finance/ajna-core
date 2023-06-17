@@ -109,10 +109,8 @@ contract RewardsHandler is UnboundedRewardsHandler, BaseERC20PoolPositionHandler
         // Pre action //
         uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_);
 
-        uint256 currentEpoch = _pool.currentBurnEpoch();
-
         // Action phase
-        _claimRewards(tokenId, currentEpoch);
+        _claimRewards(tokenId, _pool.currentBurnEpoch());
     }
 
     /*******************************/
@@ -124,9 +122,8 @@ contract RewardsHandler is UnboundedRewardsHandler, BaseERC20PoolPositionHandler
         uint256 amountToAdd_
     ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
 
-        (tokenId_, indexes_) = _preMemorializePositions(bucketIndex_, amountToAdd_);
-        
-        _memorializePositions(tokenId_, indexes_);
+        // retreive or create a NFT position
+        (tokenId_, indexes_)= _getNFTPosition(bucketIndex_, amountToAdd_);
 
         // Approve rewards contract to transfer token
         _positionManager.approve(address(_rewardsManager), tokenId_);
@@ -137,13 +134,8 @@ contract RewardsHandler is UnboundedRewardsHandler, BaseERC20PoolPositionHandler
         uint256 bucketIndex_,
         uint256 amountToAdd_
     ) internal returns (uint256 tokenId_) {
-
-        // TODO: Check if the actor has a NFT position or a staked position is tracking events
-        
-        // Create a staked position
         uint256[] memory indexes;
-        (tokenId_, indexes)= _preStake(bucketIndex_, amountToAdd_);
-        _stake(tokenId_);
+        (tokenId_, indexes)= _getStakedPosition(bucketIndex_, amountToAdd_);
 
         _advanceEpochRewardStakers(amountToAdd_, indexes);
     }
@@ -185,4 +177,28 @@ contract RewardsHandler is UnboundedRewardsHandler, BaseERC20PoolPositionHandler
         indexes_ = new uint256[](1);
         indexes_[0] = bucketIndex_;
     }
+
+    function _getStakedPosition(
+        uint256 bucketIndex_,
+        uint256 amountToAdd_
+    ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
+
+        // Check for exisiting staked positions in RewardsManager
+        uint256[] memory tokenIds = getStakedTokenIdsByActor(address(_actor));
+
+        if (tokenIds.length != 0 ) {
+            // use existing position NFT
+            tokenId_ = tokenIds[0];
+            indexes_ = getBucketIndexesByTokenId(tokenId_);
+        } else {
+            // retreive or create a NFT position
+            (tokenId_, indexes_)= _getNFTPosition(bucketIndex_, amountToAdd_);
+
+            // approve rewards contract to transfer token
+            _positionManager.approve(address(_rewardsManager), tokenId_);
+
+            // stake the position
+            _stake(tokenId_);
+        }
+    } 
 }

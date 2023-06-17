@@ -11,5 +11,7 @@ interface IPositionsAndRewardsHandler {
     function getBucketIndexesWithPosition() external view returns(uint256[] memory);
     function getTokenIdsByBucketIndex(uint256) external view returns(uint256[] memory);
     function getBucketIndexesByTokenId(uint256) external view returns(uint256[] memory);
+
     function getTokenIdsByActor() external view returns(uint256[] memory);
+    function getStakedTokenIdsByActor() external view returns(uint256[] memory);
 }

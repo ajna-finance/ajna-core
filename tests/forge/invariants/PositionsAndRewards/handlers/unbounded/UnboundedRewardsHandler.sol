@@ -33,6 +33,9 @@ abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler 
             tokenIdsByActor[address(_rewardsManager)].add(tokenId_);
             tokenIdsByActor[address(_actor)].remove(tokenId_);
 
+            // staked position is tracked
+            stakedTokenIdsByActor[address(_actor)].add(tokenId_);
+
             require(_positionManager.ownerOf(tokenId_) == address(_rewardsManager), "RW5: owner should be rewardsManager");
 
         } catch (bytes memory err) {
@@ -69,6 +72,9 @@ abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler 
             // actor should receive tokenId, positionManager loses ownership
             tokenIdsByActor[address(_actor)].add(tokenId_);
             tokenIdsByActor[address(_rewardsManager)].remove(tokenId_);
+
+            // staked position is no longer tracked
+            stakedTokenIdsByActor[address(_actor)].remove(tokenId_);
 
             // balance changes
             uint256 actorAjnaGain = _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
@@ -132,6 +138,13 @@ abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler 
 
         try _rewardsManager.emergencyUnstake(tokenId_) {
 
+            // actor should receive tokenId, positionManager loses ownership
+            tokenIdsByActor[address(_actor)].add(tokenId_);
+            tokenIdsByActor[address(_rewardsManager)].remove(tokenId_);
+
+            // staked position is no longer tracked
+            stakedTokenIdsByActor[address(_actor)].remove(tokenId_);
+
             // loop over all epochs that have occured
             uint256 totalRewardsEarnedPostAction;
             for (uint256 epoch = 0; epoch <= _pool.currentBurnEpoch(); epoch++) {
@@ -140,9 +153,6 @@ abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler 
                 totalRewardsEarnedPostAction += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
             }
 
-            // actor should receive tokenId, positionManager loses ownership
-            tokenIdsByActor[address(_actor)].add(tokenId_);
-            tokenIdsByActor[address(_rewardsManager)].remove(tokenId_);
 
             require(totalRewardsEarnedPreAction == totalRewardsEarnedPostAction,
             "rewards were earned on emergency unstake");
