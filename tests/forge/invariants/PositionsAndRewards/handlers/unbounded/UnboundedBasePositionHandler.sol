@@ -44,9 +44,12 @@ abstract contract UnboundedBasePositionHandler is Test {
     mapping(uint256 => uint256) internal bucketIndexToDepositTime;
 
     // Rewards invariant test state //
-    mapping(uint256 => uint256) public totalRewardPerEpoch; // total rewards per epoch
-    uint256 public totalStakerRewPerEpoch;                  // amount of reserve decrease
-    uint256 public totalUpdaterRewPerEpoch;                 // amount of reserve increase
+    mapping(uint256 => uint256) public rewardsClaimedPerEpoch;       // staking rewards per epoch
+    mapping(uint256 => uint256) public updateRewardsClaimedPerEpoch; // updating rewards per epoch
+
+    mapping(uint256 => uint256) public rewardsAlreadyClaimed;  // tracks rewards already claimed
+    uint256 public totalStakerRewPerEpoch;                     // amount of reserve decrease
+    uint256 public totalUpdaterRewPerEpoch;                    // amount of reserve increase
 
     using EnumerableSet for EnumerableSet.UintSet;
 

@@ -265,6 +265,14 @@ abstract contract BaseHandler is Test {
         _quote.approve(address(_pool), _quote.balanceOf(actor_));
     }
 
+    function _ensureAjnaAmount(address actor_, uint256 amount_) internal {
+        uint256 actorBalance = _ajna.balanceOf(actor_);
+        if (amount_> actorBalance) {
+            _ajna.mint(actor_, amount_ - actorBalance);
+        }
+        _ajna.approve(address(_pool), _ajna.balanceOf(actor_));
+    }
+
     function _updatePoolState() internal {
         _pool.updateInterest();
     }
