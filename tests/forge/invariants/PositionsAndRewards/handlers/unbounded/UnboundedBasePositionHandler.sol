@@ -87,6 +87,7 @@ abstract contract UnboundedBasePositionHandler is Test {
             err == keccak256(abi.encodeWithSignature("NotAjnaPool()")) ||
             err == keccak256(abi.encodeWithSignature("RemovePositionFailed()")) ||
             err == keccak256(abi.encodeWithSignature("WrongPool()")) || 
+            err == keccak256(abi.encodeWithSignature("NoAllowance()")) ||
             err == keccak256(abi.encodeWithSignature("MoveToSameIndex()")) ||
             err == keccak256(abi.encodeWithSignature("RemoveDepositLockedByAuctionDebt()")) ||
             err == keccak256(abi.encodeWithSignature("DustAmountNotExceeded()")) ||

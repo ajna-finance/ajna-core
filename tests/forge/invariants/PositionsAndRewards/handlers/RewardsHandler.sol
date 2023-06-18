@@ -36,36 +36,6 @@ contract RewardsHandler is UnboundedRewardsHandler, BaseERC20PoolPositionHandler
     /*** Rewards Test Functions ***/
     /*******************************/
 
-    function claimRewards(
-        uint256 actorIndex_,
-        uint256 bucketIndex_,
-        uint256 amountToAdd_,
-        uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
-        numberOfCalls['BRewardsHandler.claimRewards']++;
-
-        // Pre action //
-        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_);
-
-        // Action phase
-        _claimRewards(tokenId, _pool.currentBurnEpoch());
-    }
-
-    function emergencyUnstake(
-        uint256 actorIndex_,
-        uint256 bucketIndex_,
-        uint256 amountToAdd_,
-        uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
-        numberOfCalls['BRewardsHandler.emergencyUnstake']++;
-        
-        // Pre action
-        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_);
-        
-        // Action phase
-        _emergencyUnstake(tokenId);
-    }
-
     function stake(
         uint256 actorIndex_,
         uint256 bucketIndex_,
@@ -98,6 +68,20 @@ contract RewardsHandler is UnboundedRewardsHandler, BaseERC20PoolPositionHandler
         _unstake(tokenId);
     }
 
+    function emergencyUnstake(
+        uint256 actorIndex_,
+        uint256 bucketIndex_,
+        uint256 amountToAdd_,
+        uint256 skippedTime_
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+        numberOfCalls['BRewardsHandler.emergencyUnstake']++;
+        
+        // Pre action
+        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_);
+        
+        // Action phase
+        _emergencyUnstake(tokenId);
+    }
 
     function updateExchangeRate(
         uint256 actorIndex_,
@@ -119,9 +103,47 @@ contract RewardsHandler is UnboundedRewardsHandler, BaseERC20PoolPositionHandler
         _updateExchangeRate(indexes);
     }
 
+    function claimRewards(
+        uint256 actorIndex_,
+        uint256 bucketIndex_,
+        uint256 amountToAdd_,
+        uint256 skippedTime_
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+        numberOfCalls['BRewardsHandler.claimRewards']++;
+
+        // Pre action //
+        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_);
+
+        // Action phase
+        _claimRewards(tokenId, _pool.currentBurnEpoch());
+    }
+
     /*******************************/
     /*** Prepare Tests Functions ***/
     /*******************************/
+
+    function _preStake(
+        uint256 bucketIndex_,
+        uint256 amountToAdd_
+    ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
+
+        // retreive or create a NFT position
+        (tokenId_, indexes_)= _getNFTPosition(bucketIndex_, amountToAdd_);
+
+        // Approve rewards contract to transfer token
+        _positionManager.approve(address(_rewardsManager), tokenId_);
+        
+    }
+
+    function _preUnstake(
+        uint256 bucketIndex_,
+        uint256 amountToAdd_
+    ) internal returns (uint256 tokenId_) {
+        uint256[] memory indexes;
+        (tokenId_, indexes)= _getStakedPosition(bucketIndex_, amountToAdd_);
+
+        _advanceEpochRewardStakers(amountToAdd_, indexes);
+    }
 
     function _advanceEpochRewardStakers(
         uint256 amountToAdd_,
@@ -149,32 +171,9 @@ contract RewardsHandler is UnboundedRewardsHandler, BaseERC20PoolPositionHandler
         uint256 boundedTakeAmount = constrictToRange(amountToAdd_, claimableReserves / 2, claimableReserves);
         _takeReserves(boundedTakeAmount);
 
-        // exchange rates must be updated so that rewards can be checked
-        _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), indexes_);
+        // exchange rates must be updated so that rewards can be claimed
+        _updateExchangeRate(indexes_);
 
-    }
-
-    function _preStake(
-        uint256 bucketIndex_,
-        uint256 amountToAdd_
-    ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
-
-        // retreive or create a NFT position
-        (tokenId_, indexes_)= _getNFTPosition(bucketIndex_, amountToAdd_);
-
-        // Approve rewards contract to transfer token
-        _positionManager.approve(address(_rewardsManager), tokenId_);
-        
-    }
-
-    function _preUnstake(
-        uint256 bucketIndex_,
-        uint256 amountToAdd_
-    ) internal returns (uint256 tokenId_) {
-        uint256[] memory indexes;
-        (tokenId_, indexes)= _getStakedPosition(bucketIndex_, amountToAdd_);
-
-        _advanceEpochRewardStakers(amountToAdd_, indexes);
     }
 
     function _getStakedPosition(

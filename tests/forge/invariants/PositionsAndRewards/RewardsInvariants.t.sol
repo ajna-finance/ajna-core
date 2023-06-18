@@ -76,7 +76,7 @@ contract RewardsInvariants is ERC20PoolPositionsInvariants {
 
     function invariant_call_summary() public virtual override useCurrentTimestamp {
         console.log("\nCall Summary\n");
-        console.log("--Positions--------");
+        console.log("--Rewardss--------");
         console.log("UBRewardsHandler.unstake            ",  IBaseHandler(_handler).numberOfCalls("UBRewardsHandler.unstake"));
         console.log("BRewardsHandler.unstake             ",  IBaseHandler(_handler).numberOfCalls("BRewardsHandler.unstake"));
         console.log("UBRewardsHandler.emergencyUnstake   ",  IBaseHandler(_handler).numberOfCalls("UBRewardsHandler.emergencyUnstake"));
