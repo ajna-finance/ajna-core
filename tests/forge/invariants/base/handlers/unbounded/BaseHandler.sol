@@ -265,6 +265,14 @@ abstract contract BaseHandler is Test {
         _quote.approve(address(_pool), _quote.balanceOf(actor_));
     }
 
+    function _ensureAjnaAmount(address actor_, uint256 amount_) internal {
+        uint256 actorBalance = _ajna.balanceOf(actor_);
+        if (amount_> actorBalance) {
+            _ajna.mint(actor_, amount_ - actorBalance);
+        }
+        _ajna.approve(address(_pool), _ajna.balanceOf(actor_));
+    }
+
     function _updatePoolState() internal {
         _pool.updateInterest();
     }
@@ -556,11 +564,11 @@ abstract contract BaseHandler is Test {
         printLog("Total reserves unclaimed = ", reserveUnclaimed);
         printLog("Total interest earned    = ", totalInterest);
         printLine("");
-        printLog("Successful kicks         = ", numberOfActions["kick"]);
-        printLog("Successful deposit kicks = ", numberOfActions["kickWithDeposit"]);
-        printLog("Successful takes         = ", numberOfActions["take"]);
-        printLog("Successful bucket takes  = ", numberOfActions["bucketTake"]);
-        printLog("Successful settles       = ", numberOfActions["settle"]);
+        printLog("Successful kicks        = ", numberOfActions["kick"]);
+        printLog("Successful lender kicks = ", numberOfActions["lenderKick"]);
+        printLog("Successful takes        = ", numberOfActions["take"]);
+        printLog("Successful bucket takes = ", numberOfActions["bucketTake"]);
+        printLog("Successful settles      = ", numberOfActions["settle"]);
 
         printInNextLine("=======================");
     }

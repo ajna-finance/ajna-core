@@ -9,10 +9,10 @@ import { RewardsManager }               from 'src/RewardsManager.sol';
 
 import { UnboundedRewardsHandler } from './unbounded/UnboundedRewardsHandler.sol';
 
-import { ReserveERC20PoolHandler } from '../../ERC20Pool/handlers/ReserveERC20PoolHandler.sol';
-import { BasePositionHandler } from './BasePositionHandler.sol';
+import { ReserveERC20PoolHandler }  from '../../ERC20Pool/handlers/ReserveERC20PoolHandler.sol';
+import { BaseERC20PoolPositionHandler } from './BaseERC20PoolPositionHandler.sol';
 
-contract RewardsHandler is UnboundedRewardsHandler, BasePositionHandler, ReserveERC20PoolHandler {
+contract RewardsHandler is UnboundedRewardsHandler, BaseERC20PoolPositionHandler, ReserveERC20PoolHandler {
 
     constructor(
         address rewards_,
@@ -67,6 +67,21 @@ contract RewardsHandler is UnboundedRewardsHandler, BasePositionHandler, Reserve
 
         // Action phase
         _unstake(tokenId);
+    }
+
+    function emergencyUnstake(
+        uint256 actorIndex_,
+        uint256 bucketIndex_,
+        uint256 amountToAdd_,
+        uint256 skippedTime_
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+        numberOfCalls['BRewardsHandler.emergencyUnstake']++;
+        
+        // Pre action
+        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_);
+        
+        // Action phase
+        _emergencyUnstake(tokenId);
     }
 
     function updateExchangeRate(

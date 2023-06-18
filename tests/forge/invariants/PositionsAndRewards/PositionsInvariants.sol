@@ -15,61 +15,17 @@ import { Maths }             from 'src/libraries/internal/Maths.sol';
 import { IBaseHandler }                from '../interfaces/IBaseHandler.sol';
 import { IPositionsAndRewardsHandler } from '../interfaces/IPositionsAndRewardsHandler.sol';
 import { BaseInvariants }              from '../base/BaseInvariants.sol';
-import { ReserveERC20PoolInvariants }  from '../ERC20Pool/ReserveERC20PoolInvariants.t.sol';
-import { ReserveERC20PoolHandler }     from '../ERC20Pool/handlers/ReserveERC20PoolHandler.sol';
 import { TokenWithNDecimals }          from '../../utils/Tokens.sol';
 
-import { PositionHandler }    from './handlers/PositionHandler.sol';
+abstract contract PositionsInvariants is BaseInvariants {
 
-contract PositionsInvariants is BaseInvariants {
+    uint256 internal constant NUM_ACTORS = 10;
 
-    uint256            internal constant NUM_ACTORS = 10;
-
-    TokenWithNDecimals internal _collateral;
-    ERC20Pool          internal _erc20pool;
     ERC20Pool          internal _erc20impl;
     ERC20PoolFactory   internal _erc20poolFactory;
     ERC721PoolFactory  internal _erc721poolFactory;
     ERC721Pool         internal _erc721impl;
     PositionManager    internal _positionManager;
-    PositionHandler    internal _positionHandler;
-
-    function setUp() public override virtual {
-
-        super.setUp();
-        _collateral        = new TokenWithNDecimals("Collateral", "C", uint8(vm.envOr("COLLATERAL_PRECISION", uint256(18))));
-        _erc20poolFactory  = new ERC20PoolFactory(address(_ajna));
-        _erc20impl         = _erc20poolFactory.implementation();
-        _erc721poolFactory = new ERC721PoolFactory(address(_ajna));
-        _erc721impl        = _erc721poolFactory.implementation();
-        _erc20pool         = ERC20Pool(_erc20poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
-        _pool              = Pool(address(_erc20pool));
-        _positionManager   = new PositionManager(_erc20poolFactory, _erc721poolFactory);
-
-        excludeContract(address(_ajna));
-        excludeContract(address(_collateral));
-        excludeContract(address(_quote));
-        excludeContract(address(_erc20poolFactory));
-        excludeContract(address(_erc721poolFactory));
-        excludeContract(address(_erc20pool));
-        excludeContract(address(_poolInfo));
-        excludeContract(address(_erc20impl));
-        excludeContract(address(_erc721impl));
-        excludeContract(address(_positionManager));
-
-        _positionHandler = new PositionHandler(
-            address(_positionManager),
-            address(_erc20pool),
-            address(_ajna),
-            address(_quote),
-            address(_collateral),
-            address(_poolInfo),
-            NUM_ACTORS,
-            address(this)
-        );
-
-        _handler = address(_positionHandler);
-    }
 
     function invariant_positions_PM1_PM2_PM3() public useCurrentTimestamp {
         uint256[] memory bucketIndexes = IPositionsAndRewardsHandler(_handler).getBucketIndexesWithPosition();

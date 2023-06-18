@@ -133,19 +133,19 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
         _resetSettledAuction(borrower, borrowerIndex_);
     }
 
-    function kickWithDeposit(
+    function lenderKickAuction(
         uint256 kickerIndex_,
         uint256 bucketIndex_,
         uint256 skippedTime_
     ) external useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
-        numberOfCalls['BPanicExitPoolHandler.kickWithDeposit']++;
+        numberOfCalls['BPanicExitPoolHandler.lenderKickAuction']++;
 
         kickerIndex_   = constrictToRange(kickerIndex_, 0, LENDERS - 1);
         address kicker  = _lenders[kickerIndex_];
 
         _actor = kicker;
         changePrank(_actor);
-        _kickWithDeposit(_lenderBucketIndex);
+        _lenderKickAuction(_lenderBucketIndex);
     }
 
     function withdrawBonds(

@@ -3,8 +3,8 @@ pragma solidity 0.8.18;
 
 import { Base64 } from '@base64-sol/base64.sol';
 
-import { ERC20HelperContract } from '../unit/ERC20Pool/ERC20DSTestPlus.sol';
-import { ERC721HelperContract } from '../unit/ERC721Pool/ERC721DSTestPlus.sol';
+import { ERC20HelperContract } from '../ERC20Pool/ERC20DSTestPlus.sol';
+import { ERC721HelperContract } from '../ERC721Pool/ERC721DSTestPlus.sol';
 
 import { IPermit } from 'src/base/PermitERC721.sol';
 
@@ -15,8 +15,8 @@ import 'src/libraries/helpers/PoolHelper.sol';
 
 import 'src/interfaces/pool/commons/IPoolErrors.sol';
 
-import '../utils/ContractNFTRecipient.sol';
-import '../utils/ContractNFTSpender.sol';
+import '../../utils/ContractNFTRecipient.sol';
+import '../../utils/ContractNFTSpender.sol';
 
 abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract {
 

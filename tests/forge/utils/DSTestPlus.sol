@@ -257,24 +257,19 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.kick(borrower, MAX_FENWICK_INDEX);
     }
 
-    function _kickWithDeposit(
+    function _lenderKick(
         address from,
         uint256 index,
         address borrower,
         uint256 debt,
         uint256 collateral,
-        uint256 bond,
-        uint256 removedFromDeposit,
-        uint256 transferAmount,
-        uint256 lup
+        uint256 bond
     ) internal {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit Kick(borrower, debt, collateral, bond);
-        vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(from, index, removedFromDeposit, removedFromDeposit, lup);
-        if (transferAmount != 0) _assertQuoteTokenTransferEvent(from, address(_pool), transferAmount);
-        _pool.kickWithDeposit(index, MAX_FENWICK_INDEX);
+        _assertQuoteTokenTransferEvent(from, address(_pool), bond);
+        _pool.lenderKick(index, MAX_FENWICK_INDEX);
     }
 
     function _moveLiquidity(
@@ -1089,13 +1084,13 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.kick(borrower, 0);
     }
 
-    function _assertKickWithDepositNpUnderLimitRevert(
+    function _assertLenderKickAuctionNpUnderLimitRevert(
         address from,
         uint256 index
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LimitIndexExceeded.selector);
-        _pool.kickWithDeposit(index, 0);
+        _pool.lenderKick(index, 0);
     }
 
     function _assertKickWithInsufficientLiquidityRevert(
@@ -1104,7 +1099,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('InsufficientLiquidity()'));
-        _pool.kickWithDeposit(index, MAX_FENWICK_INDEX);
+        _pool.lenderKick(index, MAX_FENWICK_INDEX);
     }
 
     function _assertKickWithBadProposedLupRevert(
@@ -1113,16 +1108,16 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('BorrowerOk()'));
-        _pool.kickWithDeposit(index, MAX_FENWICK_INDEX);
+        _pool.lenderKick(index, MAX_FENWICK_INDEX);
     }
 
-    function _assertKickPriceBelowProposedLupRevert(
+    function _assertKickPriceBelowLupRevert(
         address from,
         uint256 index
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('PriceBelowLUP()'));
-        _pool.kickWithDeposit(index, MAX_FENWICK_INDEX);
+        _pool.lenderKick(index, MAX_FENWICK_INDEX);
     }
 
     function _assertRemoveCollateralAuctionNotClearedRevert(
