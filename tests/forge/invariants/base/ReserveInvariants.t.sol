@@ -68,8 +68,8 @@ abstract contract ReserveInvariants is LiquidationInvariants {
         console.log("UBLiquidationHandler.settleAuction        ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.settleAuction"));
         console.log("BLiquidationHandler.withdrawBonds         ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.withdrawBonds"));
         console.log("UBLiquidationHandler.withdrawBonds        ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.withdrawBonds"));
-        console.log("BLiquidationHandler.kickWithDeposit       ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickWithDeposit"));
-        console.log("UBLiquidationHandler.kickWithDeposit      ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.kickWithDeposit"));
+        console.log("BLiquidationHandler.lenderKickAuction     ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.lenderKickAuction"));
+        console.log("UBLiquidationHandler.lenderKickAuction    ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.lenderKickAuction"));
         console.log("--Reserves--------");
         console.log("BReserveHandler.takeReserves        ",  IBaseHandler(_handler).numberOfCalls("BReserveHandler.takeReserves"));
         console.log("UBReserveHandler.takeReserves       ",  IBaseHandler(_handler).numberOfCalls("UBReserveHandler.takeReserves"));
@@ -92,14 +92,14 @@ abstract contract ReserveInvariants is LiquidationInvariants {
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.bucketTake") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.settleAuction") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.withdrawBonds") +
-            IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickWithDeposit") +
+            IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.lenderKickAuction") +
             IBaseHandler(_handler).numberOfCalls("BReserveHandler.kickReserveAuction") +
             IBaseHandler(_handler).numberOfCalls("BReserveHandler.takeReserves")
         );
         console.log("------------------");
         console.log("--Successful liquidation actions----");
         console.log("kick:              ",  IBaseHandler(_handler).numberOfActions("kick"));
-        console.log("kick with deposit: ",  IBaseHandler(_handler).numberOfActions("kickWithDeposit"));
+        console.log("kick with deposit: ",  IBaseHandler(_handler).numberOfActions("lenderKickAuction"));
         console.log("take:              ",  IBaseHandler(_handler).numberOfActions("take"));
         console.log("bucket take:       ",  IBaseHandler(_handler).numberOfActions("bucketTake"));
         console.log("settle             ",  IBaseHandler(_handler).numberOfActions("settle"));

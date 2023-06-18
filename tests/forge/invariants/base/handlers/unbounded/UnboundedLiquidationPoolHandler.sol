@@ -55,10 +55,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         }
     }
 
-    function _kickWithDeposit(
+    function _lenderKickAuction(
         uint256 bucketIndex_
     ) internal updateLocalStateAndPoolInterest {
-        numberOfCalls['UBLiquidationHandler.kickWithDeposit']++;
+        numberOfCalls['UBLiquidationHandler.lenderKickAuction']++;
         
         (address maxBorrower, , )              = _pool.loansInfo();
         (uint256 borrowerDebt, , )             = _poolInfo.borrowerInfo(address(_pool), maxBorrower);
@@ -71,8 +71,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         // ensure actor always has the amount to add for kick
         _ensureQuoteAmount(_actor, borrowerDebt);
 
-        try _pool.kickWithDeposit(bucketIndex_, 7388) {
-            numberOfActions['kickWithDeposit']++;
+        try _pool.lenderKick(bucketIndex_, 7388) {
+            numberOfActions['lenderKick']++;
 
             ( , , , uint256 depositAfterAction, ) = _pool.bucketInfo(bucketIndex_);
 
