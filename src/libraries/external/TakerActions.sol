@@ -769,8 +769,8 @@ library TakerActions {
         } else {
             // collateral available is constraint
             vars.collateralAmount         = totalCollateral_;
-            vars.t0RepayAmount            = Maths.wdiv(borrowerCollateralValue, inflator_);
-            vars.unscaledQuoteTokenAmount = Maths.wdiv(borrowerCollateralValue, vars.bucketScale);
+            vars.t0RepayAmount            = Math.mulDiv(totalCollateral_, borrowerPrice, inflator_);
+            vars.unscaledQuoteTokenAmount = Math.mulDiv(totalCollateral_, borrowerPrice, vars.bucketScale);
 
             vars.quoteTokenAmount         = Maths.wmul(vars.collateralAmount, vars.auctionPrice);
         }
