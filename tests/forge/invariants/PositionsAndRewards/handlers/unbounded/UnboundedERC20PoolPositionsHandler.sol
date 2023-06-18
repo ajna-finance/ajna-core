@@ -53,7 +53,7 @@ abstract contract UnboundedERC20PoolPositionsHandler is UnboundedBasePositionHan
             
             // track created positions
             for ( uint256 i = 0; i < indexes_.length; i++) {
-                // PM1_PM2_PM3 tracking
+
                 bucketIndexesWithPosition.add(indexes_[i]);
                 tokenIdsByBucketIndex[indexes_[i]].add(tokenId_);
 
@@ -138,10 +138,17 @@ abstract contract UnboundedERC20PoolPositionsHandler is UnboundedBasePositionHan
         } 
 
         try _positionManager.redeemPositions(address(_pool), tokenId_, indexes_) {
+
             // remove tracked positions
             for ( uint256 i = 0; i < indexes_.length; i++) {
-                bucketIndexesWithPosition.remove(indexes_[i]); 
+
                 tokenIdsByBucketIndex[indexes_[i]].remove(tokenId_);
+
+                // if no other positions exist for this bucketIndex, remove from bucketIndexesWithPosition
+                if (getTokenIdsByBucketIndex(indexes_[i]).length == 0) {
+
+                    bucketIndexesWithPosition.remove(indexes_[i]); 
+                }
             }
 
             // info for tear down
@@ -248,9 +255,14 @@ abstract contract UnboundedERC20PoolPositionsHandler is UnboundedBasePositionHan
             bucketIndexesByTokenId[tokenId_].remove(fromIndex_);
 
             // Post Action Checks //
-            // remove tracked positios
-            bucketIndexesWithPosition.remove(fromIndex_); 
+            // remove tracked positions
             tokenIdsByBucketIndex[fromIndex_].remove(tokenId_);
+
+            // if no other positions exist for this bucketIndex, remove from bucketIndexesWithPosition
+            if (getTokenIdsByBucketIndex(fromIndex_).length == 0) {
+
+                bucketIndexesWithPosition.remove(fromIndex_); 
+            }
 
             // track created positions
             bucketIndexesWithPosition.add(toIndex_);
