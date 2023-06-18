@@ -461,16 +461,14 @@ abstract contract BaseHandler is Test {
         bond_ = claimableBond + lockedBond;
     }
 
-    function _updateCurrentTakeState(address borrower_, uint256 borrowert0Debt_) internal {
+    function _updateCurrentTakeState(address borrower_, uint256 borrowert0Debt_, uint256 inflator_) internal {
         if (!alreadyTaken[borrower_]) {
             alreadyTaken[borrower_] = true;
-
-            (uint256 inflator, ) = _pool.inflatorInfo();
 
             // **RE7**: Reserves increase by 7% of the loan quantity upon the first take.
             increaseInReserves += Maths.wmul(
                 Maths.wmul(borrowert0Debt_, 0.07 * 1e18),
-                inflator
+                inflator_
             );
 
             firstTake = true;
