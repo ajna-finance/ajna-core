@@ -26,31 +26,24 @@ abstract contract UnboundedBasePositionHandler is Test {
 
     uint256 MAX_AJNA_AMOUNT = vm.envOr("MAX_AJNA_AMOUNT_ERC20", uint256(100_000_000 * 1e18));
 
-    // Position invariant test state //
-
-    // used for PM1_PM2_PM3 tracking
-    mapping(uint256 => EnumerableSet.UintSet) internal tokenIdsByBucketIndex;
+    // positionManager & rewardsManager
     EnumerableSet.UintSet internal bucketIndexesWithPosition;
-
-    // used for removing all CT and QT to reset bucket exchange rate 
-    mapping(uint256 => address) internal actorByTokenId;
-    mapping(address => EnumerableSet.UintSet) internal tokenIdsByActor;
     mapping(uint256 => EnumerableSet.UintSet) internal bucketIndexesByTokenId;
 
+    // positionManager
+    mapping(uint256 => EnumerableSet.UintSet) internal tokenIdsByBucketIndex;
+    mapping(address => EnumerableSet.UintSet) internal tokenIdsByActor;
     // used to track LP changes in `_redeemPositions()` and `_memorializePositions()`
-    mapping(uint256 => uint256) internal bucketIndexToActorPositionManLps;
     mapping(uint256 => uint256) internal bucketIndexToPositionManPoolLps;
     mapping(uint256 => uint256) internal bucketIndexToActorPoolLps;
     mapping(uint256 => uint256) internal bucketIndexToDepositTime;
 
-    // Rewards invariant test state //
+    // rewardsManager
     mapping(address => EnumerableSet.UintSet) internal stakedTokenIdsByActor;
     mapping(uint256 => uint256) public rewardsClaimedPerEpoch;       // staking rewards per epoch
     mapping(uint256 => uint256) public updateRewardsClaimedPerEpoch; // updating rewards per epoch
-
+    // used to track already claimed rewards
     mapping(uint256 => uint256) public rewardsAlreadyClaimed;  // tracks rewards already claimed
-    uint256 public totalStakerRewPerEpoch;                     // amount of reserve decrease
-    uint256 public totalUpdaterRewPerEpoch;                    // amount of reserve increase
 
     using EnumerableSet for EnumerableSet.UintSet;
 

@@ -116,7 +116,7 @@ abstract contract BaseERC721PoolPositionHandler is UnboundedERC721PoolPositionsH
         // add quote token if they don't have a position
         if (lpBalanceBefore == 0) {
             // Prepare test phase
-            uint256 boundedAmount = constrictToRange(amountToAdd_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
+            uint256 boundedAmount = constrictToRange(amountToAdd_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
             _ensureQuoteAmount(_actor, boundedAmount);
             try _pool.addQuoteToken(boundedAmount, bucketIndex_, block.timestamp + 1 minutes) {
             } catch (bytes memory err) {

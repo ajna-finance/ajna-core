@@ -62,7 +62,6 @@ abstract contract UnboundedERC20PoolPositionsHandler is UnboundedBasePositionHan
             }
 
             // info used track actors positions
-            actorByTokenId[tokenId_] = address(_actor);
             tokenIdsByActor[address(_actor)].add(tokenId_);
 
             // Post action Checks //
@@ -152,7 +151,6 @@ abstract contract UnboundedERC20PoolPositionsHandler is UnboundedBasePositionHan
             }
 
             // info for tear down
-            delete actorByTokenId[tokenId_];
             delete bucketIndexesByTokenId[tokenId_];
             tokenIdsByActor[address(_actor)].remove(tokenId_);
 
