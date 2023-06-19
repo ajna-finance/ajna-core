@@ -224,19 +224,11 @@ abstract contract BasicInvariants is BaseInvariants {
                         "Exchange Rate Invariant R1, R2, R3, R4, R5, R6, R7 or R8"
                     );
                 } else {
-                    uint256 deviation = 1e13;
-
-                    // if ERC20 pool and collateral precision lower than quote precision then require exchange rate to be within collateral scale
-                    // this could happen in a take / bucket take situation when we round to collateral scale in order to be claimed
-                    if (_pool.poolType() == 0 && _quote.decimals() > IERC20Token(_pool.collateralAddress()).decimals()) {
-                        deviation = Maths.max(deviation, IERC20Pool(address(_pool)).collateralScale());
-                    }
-
                     // Common case, 1 one millionth (0.000_001) of a quote token or greater is inserted into a single bucket
                     requireWithinDiff(
                         currentExchangeRate,
                         previousExchangeRate,
-                        deviation,
+                        1e8,  // otherwise require exchange rates to be within 1e-10,
                         "Exchange Rate Invariant R1, R2, R3, R4, R5, R6, R7 or R8"
                     );
                 }

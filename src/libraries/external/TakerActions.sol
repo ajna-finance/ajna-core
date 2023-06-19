@@ -755,8 +755,10 @@ library TakerActions {
             vars.collateralAmount         = _roundToScale(Maths.wdiv(vars.quoteTokenAmount, borrowerPrice), collateralScale_);
             vars.quoteTokenAmount         = Maths.wmul(vars.collateralAmount, vars.auctionPrice);
             vars.t0RepayAmount            = Math.mulDiv(vars.collateralAmount, vars.auctionPrice, inflator_);
-            vars.unscaledQuoteTokenAmount = Maths.min(vars.unscaledDeposit, Math.mulDiv(vars.collateralAmount, borrowerPrice,
-                                                                                        vars.bucketScale));
+            vars.unscaledQuoteTokenAmount = Maths.min(
+                vars.unscaledDeposit,
+                Math.mulDiv(vars.collateralAmount, borrowerPrice, vars.bucketScale)
+            );
 
         } else if (vars.borrowerDebt <= borrowerCollateralValue) {
             // borrower debt is constraining factor
