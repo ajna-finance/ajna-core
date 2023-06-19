@@ -1330,6 +1330,10 @@ contract RegressionTestReservesWith18QuotePrecision4CollateralPrecisionERC20Pool
         super.setUp();
     }
 
+    /**
+        Test was failing due to precision lost when calculating quote token amount / repaid debt in _calculateTakeFlowsAndBondChange function.
+        Fixed by using Math.mulDiv to preserve precision.
+     */
     function test_regression_rate_token_precision_failure_2() external {
         _reserveERC20PoolHandler.pullCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639934, 89552631, 27353130995490170987078007);
         _reserveERC20PoolHandler.takeAuction(1000006698792936000000000000000, 1013696853399, 11864972053525826488457833767, 20272629953825623093168169460);
