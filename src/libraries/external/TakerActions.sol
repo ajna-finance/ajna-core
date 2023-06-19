@@ -754,7 +754,7 @@ library TakerActions {
             // quote token used to purchase is constraining factor
             vars.collateralAmount         = _roundToScale(Maths.wdiv(vars.quoteTokenAmount, borrowerPrice), collateralScale_);
             vars.quoteTokenAmount         = Maths.wmul(vars.collateralAmount, vars.auctionPrice);
-            vars.t0RepayAmount            = Math.mulDiv(vars.collateralAmount, vars.auctionPrice, inflator_);
+            vars.t0RepayAmount            = Math.mulDiv(vars.collateralAmount, borrowerPrice, inflator_);
             vars.unscaledQuoteTokenAmount = Maths.min(
                 vars.unscaledDeposit,
                 Math.mulDiv(vars.collateralAmount, borrowerPrice, vars.bucketScale)
