@@ -7,11 +7,11 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import { PositionManager }              from 'src/PositionManager.sol';
 import { RewardsManager }               from 'src/RewardsManager.sol';
 
-import { UnboundedRewardsHandler }      from './unbounded/UnboundedRewardsHandler.sol';
-import { ReserveERC20PoolHandler }      from '../../ERC20Pool/handlers/ReserveERC20PoolHandler.sol';
-import { BaseERC20PoolPositionHandler } from './BaseERC20PoolPositionHandler.sol';
+import { UnboundedERC721PoolRewardsHandler } from './unbounded/UnboundedERC721PoolRewardsHandler.sol';
+import { ReserveERC721PoolHandler }          from '../../ERC721Pool/handlers/ReserveERC721PoolHandler.sol';
+import { BaseERC721PoolPositionHandler }     from './BaseERC721PoolPositionHandler.sol';
 
-contract RewardsHandler is UnboundedRewardsHandler, BaseERC20PoolPositionHandler, ReserveERC20PoolHandler {
+contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC721PoolPositionHandler, ReserveERC721PoolHandler {
 
     constructor(
         address rewards_,
@@ -23,7 +23,7 @@ contract RewardsHandler is UnboundedRewardsHandler, BaseERC20PoolPositionHandler
         address poolInfo_,
         uint256 numOfActors_,
         address testContract_
-    ) ReserveERC20PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
+    ) ReserveERC721PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
 
         // Position manager
         _positionManager = PositionManager(positions_); 
