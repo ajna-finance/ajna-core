@@ -5,8 +5,9 @@ pragma solidity 0.8.18;
 import "@std/console.sol";
 import '../../utils/DSTestPlus.sol';
 
-import { IERC20Pool } from 'src/interfaces/pool/erc20/IERC20Pool.sol';
-import { Maths }      from 'src/libraries/internal/Maths.sol';
+import { IERC20Token } from 'src/interfaces/pool/IPool.sol';
+import { IERC20Pool }  from 'src/interfaces/pool/erc20/IERC20Pool.sol';
+import { Maths }       from 'src/libraries/internal/Maths.sol';
 
 import { IBaseHandler }  from '../interfaces/IBaseHandler.sol';
 import { BaseInvariants } from '../base/BaseInvariants.sol';
@@ -178,28 +179,19 @@ abstract contract BasicInvariants is BaseInvariants {
         require(poolDebt == totalDebt, "Quote Token Invariant QT2");
     }
 
-    /// @dev checks pool quote token balance is greater than or equal with unclaimed reserves plus claimable auction bonds
+    /// @dev checks pool quote token balance is greater than or equal with sum of escrowed bonds and unclaimed reserves
     function _invariant_QT3() internal view {
         // convert pool quote balance into WAD
         uint256 poolBalance = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
-        (, uint256 unClaimed, , ) = _pool.reservesInfo();
-
-        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
-        uint256 claimableAuctionBonds;
-        for (uint256 i = 0; i < actorCount; i++) {
-            address kicker = IBaseHandler(_handler).actors(i);
-            (uint256 claimable, ) = _pool.kickerInfo(kicker);
-
-            claimableAuctionBonds += claimable;
-        }
-
-        console.log("poolBalance        -> ", poolBalance);
-        console.log("claimable reserves -> ", unClaimed);
-        console.log("claimable bonds    -> ", claimableAuctionBonds);
+        (
+            uint256 totalBondEscrowed,
+            uint256 unClaimed,
+            ,
+        ) = _pool.reservesInfo();
 
         require(
-            poolBalance >= unClaimed + claimableAuctionBonds,
-            "QT3: claimable escrowed bonds and claimable reserves not guaranteed"
+            poolBalance >= totalBondEscrowed + unClaimed,
+            "QT3: escrowed bonds and claimable reserves not guaranteed"
         );
     }
 
@@ -236,9 +228,9 @@ abstract contract BasicInvariants is BaseInvariants {
                     requireWithinDiff(
                         currentExchangeRate,
                         previousExchangeRate,
-                        1e8,  // otherwise require exchange rates to be within 1e-10
+                        1e8,  // otherwise require exchange rates to be within 1e-10,
                         "Exchange Rate Invariant R1, R2, R3, R4, R5, R6, R7 or R8"
-                    );    
+                    );
                 }
             }
         }
@@ -469,8 +461,8 @@ abstract contract BasicInvariants is BaseInvariants {
         console.log("--Liquidation--------");
         console.log("BLiquidationHandler.kickAuction             ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickAuction"));
         console.log("UBLiquidationHandler.kickAuction            ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.kickAuction"));
-        console.log("BLiquidationHandler.kickWithDeposit         ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickWithDeposit"));
-        console.log("UBLiquidationHandler.kickWithDeposit        ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.kickWithDeposit"));
+        console.log("BLiquidationHandler.lenderKickAuction       ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.lenderKickAuction"));
+        console.log("UBLiquidationHandler.lenderKickAuction      ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.lenderKickAuction"));
         console.log("BLiquidationHandler.takeAuction             ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.takeAuction"));
         console.log("UBLiquidationHandler.takeAuction            ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.takeAuction"));
         console.log("BLiquidationHandler.bucketTake              ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.bucketTake"));
@@ -515,7 +507,7 @@ abstract contract BasicInvariants is BaseInvariants {
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt") + 
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickAuction") +
-            IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickWithDeposit") +
+            IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.lenderKickAuction") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.takeAuction") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.bucketTake") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.withdrawBonds") +

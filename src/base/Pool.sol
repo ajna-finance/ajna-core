@@ -291,7 +291,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // update in memory pool state struct
-        poolState.debt            =  Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.debt            =  result.poolDebt;
         poolState.t0Debt          =  result.t0PoolDebt;
         poolState.t0DebtInAuction += result.t0KickedDebt;
 
@@ -318,14 +318,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @dev    increment `poolBalances.t0DebtInAuction` and `poolBalances.t0Debt` accumulators
      *  @dev    update `t0Debt2ToCollateral` ratio, debt and collateral post action are considered 0
      */
-    function kickWithDeposit(
+    function lenderKick(
         uint256 index_,
         uint256 npLimitIndex_
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
         // kick auctions
-        KickResult memory result = KickerActions.kickWithDeposit(
+        KickResult memory result = KickerActions.lenderKick(
             auctions,
             deposits,
             buckets,
@@ -336,7 +336,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // update in memory pool state struct
-        poolState.debt            =  Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.debt            =  result.poolDebt;
         poolState.t0Debt          =  result.t0PoolDebt;
         poolState.t0DebtInAuction += result.t0KickedDebt;
 

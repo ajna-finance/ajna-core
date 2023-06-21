@@ -56,11 +56,12 @@ abstract contract UnboundedERC20PoolRewardsHandler is UnboundedERC20PoolPosition
 
         // loop over all epochs that are going to be
         uint256 totalRewardsEarnedPreAction;
+
+        uint256[] memory rewardsEarnedInEpochPreAction = new uint256[](_pool.currentBurnEpoch() + 1);
         for (uint256 epoch = preActionLastClaimedEpoch; epoch <= _pool.currentBurnEpoch(); epoch++) {
-            
-            // for epochs already claimed by the staker, `rewardsClaimed()` should go unchanged 
+
             if (_rewardsManager.isEpochClaimed(tokenId_, epoch)) {
-                rewardsAlreadyClaimed[epoch] = _rewardsManager.rewardsClaimed(epoch);
+                rewardsEarnedInEpochPreAction[epoch] = _rewardsManager.rewardsClaimed(epoch);  
             }
             
             // total the rewards earned pre action
@@ -89,8 +90,8 @@ abstract contract UnboundedERC20PoolRewardsHandler is UnboundedERC20PoolPosition
                     "RW6: epoch after claim rewards is not claimed");
                 }
                 
-                if (rewardsAlreadyClaimed[epoch] != 0) {
-                    require(rewardsAlreadyClaimed[epoch] == _rewardsManager.rewardsClaimed(epoch), 
+                if (rewardsEarnedInEpochPreAction[epoch] > 0) {
+                    require(rewardsEarnedInEpochPreAction[epoch] == _rewardsManager.rewardsClaimed(epoch), 
                     "RW10: staker has claimed rewards from the same epoch twice"); 
                 }
 
@@ -213,13 +214,15 @@ abstract contract UnboundedERC20PoolRewardsHandler is UnboundedERC20PoolPosition
 
         // loop over all epochs that are going to be
         uint256 totalRewardsEarnedPreAction;
+
+        uint256[] memory rewardsEarnedInEpochPreAction = new uint256[](_pool.currentBurnEpoch() + 1);
         for (uint256 epoch = preActionLastClaimedEpoch; epoch <= _pool.currentBurnEpoch(); epoch++) {
             
             // track epochs that have already been claimed
             if (_rewardsManager.isEpochClaimed(tokenId_, epoch)) {
-                rewardsAlreadyClaimed[epoch] = _rewardsManager.rewardsClaimed(epoch);
+                rewardsEarnedInEpochPreAction[epoch] = _rewardsManager.rewardsClaimed(epoch);  
             }
-            
+
             // total staking rewards earned across all actors in epoch pre action
             totalRewardsEarnedPreAction += _rewardsManager.rewardsClaimed(epoch);
         }
@@ -239,8 +242,8 @@ abstract contract UnboundedERC20PoolRewardsHandler is UnboundedERC20PoolPosition
                     "RW6: epoch after claim rewards is not claimed");
                 }
 
-                if (rewardsAlreadyClaimed[epoch] != 0) {
-                    require(rewardsAlreadyClaimed[epoch] == _rewardsManager.rewardsClaimed(epoch), 
+                if (rewardsEarnedInEpochPreAction[epoch] > 0) {
+                    require(rewardsEarnedInEpochPreAction[epoch] == _rewardsManager.rewardsClaimed(epoch), 
                     "RW10: staker has claimed rewards from the same epoch twice"); 
                 }
 

@@ -355,7 +355,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         vm.stopPrank();
     }
 
-    function testLoadERC20PoolGasKickWithDepositAndSettleHighestTP() public {
+    function testLoadERC20PoolGasLenderKickAuctionAndSettleHighestTP() public {
         address kicker = makeAddr("kicker");
         _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
 
@@ -364,7 +364,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         _pool.addQuoteToken(500_000_000_000_000 * 1e18, 3_000, block.timestamp + 2 minutes);
         vm.warp(100_000 days);
 
-        _pool.kickWithDeposit(3_000, MAX_FENWICK_INDEX); // worst case scenario, pool interest accrues
+        _pool.lenderKick(3_000, MAX_FENWICK_INDEX); // worst case scenario, pool interest accrues
 
         skip(80 hours);
 
@@ -372,7 +372,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
 
         // kick remaining loans with deposit to get average gas cost
         for (uint256 i; i < LOANS_COUNT - 1; i ++) {
-            _pool.kickWithDeposit(3_000, MAX_FENWICK_INDEX);
+            _pool.lenderKick(3_000, MAX_FENWICK_INDEX);
         }
 
         vm.stopPrank();

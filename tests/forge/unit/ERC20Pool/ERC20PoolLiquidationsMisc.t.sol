@@ -446,13 +446,13 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
 
         // kick borrower 2
         changePrank(_lender);
-        _pool.kickWithDeposit(_i9_52, MAX_FENWICK_INDEX);
+        _pool.lenderKick(_i9_52, MAX_FENWICK_INDEX);
 
         _assertPool(
             PoolParams({
                 htp:                  0,
                 lup:                  0.000000099836282890 * 1e18,
-                poolSize:             8_002.290256823112434920 * 1e18,
+                poolSize:             8_083.134379679494060567 * 1e18,
                 pledgedCollateral:    1_001.742368450520005091 * 1e18,
                 encumberedCollateral: 81_714_595_700.439346767851204401 * 1e18,
                 poolDebt:             8_158.081492591040321202 * 1e18,
@@ -512,7 +512,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  0.000000099836282890 * 1e18,
-                poolSize:             8_002.657492380122502335 * 1e18,
+                poolSize:             8_083.501615236504132602 * 1e18,
                 pledgedCollateral:    1.742368450520005091 * 1e18,
                 encumberedCollateral: 82_124_923_660.837160770168974387 * 1e18,
                 poolDebt:             8_199.047110922993196875 * 1e18,
@@ -550,7 +550,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             470.467834275489987588 * 1e18,
+                poolSize:             551.311957051027493010 * 1e18,
                 pledgedCollateral:    1.742368450520005091 * 1e18,
                 encumberedCollateral: 0,
                 poolDebt:             0,
@@ -593,10 +593,10 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
         });
         _assertBucket({
             index:        _i9_52,
-            lpBalance:    7_920.016453607292031745 * 1e18,
+            lpBalance:    8_000.033211272270098596 * 1e18,
             collateral:   0,          
-            deposit:      470.467834275489987599 * 1e18,
-            exchangeRate: 0.059402380920712388 * 1e18
+            deposit:      551.311957051027493215 * 1e18,
+            exchangeRate: 0.068913708542386244 * 1e18
         });
     }
  }

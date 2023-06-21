@@ -61,7 +61,7 @@ abstract contract BaseHandler is Test {
     mapping(address => mapping(uint256 => uint256)) public lenderDepositTime; // mapping of lender address to bucket index to deposit time
 
     address[] public actors;
-    mapping(bytes => uint256)   public numberOfCalls;  // Logging
+    mapping(bytes => uint256)   public numberOfCalls;    // Logging
     mapping(bytes => uint256)   public numberOfActions;  // Logging
     mapping(address => uint256[]) public touchedBuckets; // Bucket tracking
 
@@ -461,16 +461,14 @@ abstract contract BaseHandler is Test {
         bond_ = claimableBond + lockedBond;
     }
 
-    function _updateCurrentTakeState(address borrower_, uint256 borrowert0Debt_) internal {
+    function _updateCurrentTakeState(address borrower_, uint256 borrowert0Debt_, uint256 inflator_) internal {
         if (!alreadyTaken[borrower_]) {
             alreadyTaken[borrower_] = true;
-
-            (uint256 inflator, ) = _pool.inflatorInfo();
 
             // **RE7**: Reserves increase by 7% of the loan quantity upon the first take.
             increaseInReserves += Maths.wmul(
                 Maths.wmul(borrowert0Debt_, 0.07 * 1e18),
-                inflator
+                inflator_
             );
 
             firstTake = true;
@@ -566,11 +564,11 @@ abstract contract BaseHandler is Test {
         printLog("Total reserves unclaimed = ", reserveUnclaimed);
         printLog("Total interest earned    = ", totalInterest);
         printLine("");
-        printLog("Successful kicks         = ", numberOfActions["kick"]);
-        printLog("Successful deposit kicks = ", numberOfActions["kickWithDeposit"]);
-        printLog("Successful takes         = ", numberOfActions["take"]);
-        printLog("Successful bucket takes  = ", numberOfActions["bucketTake"]);
-        printLog("Successful settles       = ", numberOfActions["settle"]);
+        printLog("Successful kicks        = ", numberOfActions["kick"]);
+        printLog("Successful lender kicks = ", numberOfActions["lenderKick"]);
+        printLog("Successful takes        = ", numberOfActions["take"]);
+        printLog("Successful bucket takes = ", numberOfActions["bucketTake"]);
+        printLog("Successful settles      = ", numberOfActions["settle"]);
 
         printInNextLine("=======================");
     }
