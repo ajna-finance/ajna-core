@@ -257,7 +257,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
                 totalBondEscrowed: 0.077287198298417188 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    9.624359312514645329 * 1e18,
+                thresholdPrice:    9.624359312514645335 * 1e18,
                 neutralPrice:      0
             })
         );
@@ -272,14 +272,14 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
             index:        _i1505_26,
             lpBalance:    15 * 1e18,
             collateral:   0.009965031187761219 * 1e18,
-            deposit:      0,
-            exchangeRate: 1 * 1e18
+            deposit:      5,
+            exchangeRate: 1.000000000000000001 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              9.624359312514645329 * 1e18,
+            borrowerDebt:              9.624359312514645335 * 1e18,
             borrowerCollateral:        1 * 1e18,
-            borrowert0Np:              8.769696613728507377 * 1e18,
+            borrowert0Np:              8.769696613728507382 * 1e18,
             borrowerCollateralization: 1.030425457052554443 * 1e18
         });
         _assertLenderLpBalance({

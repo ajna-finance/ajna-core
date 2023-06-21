@@ -746,7 +746,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         // settle should work because there is still debt to settle but no collateral left to auction (even if 72 hours didn't pass from kick)
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              10_028.889031920233428708 * 1e18,
+            borrowerDebt:              10_028.889031920233428709 * 1e18,
             borrowerCollateral:        0,
             borrowert0Np:              10.307611531622595991 * 1e18,
             borrowerCollateralization: 0
@@ -763,7 +763,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    10,
-            settledDebt: 9_891.935520844277346922 * 1e18
+            settledDebt: 9_891.935520844277346923 * 1e18
         });
 
         // bucket is insolvent, balances are resetted
@@ -1012,13 +1012,13 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             from:    _lender1,
             amount:  2_884.311069344372084707 * 1e18 + 10 - reserves,
             index:   _i9_81,
-            lpAward: 2_020.307252493359351054 * 1e18,
+            lpAward: 2_020.307252493359351053 * 1e18,
             newLup:  9.721295865031779605 * 1e18
         });
 
         uint256 bucket1Deposit = 2_112.736560735960384000 * 1e18;
-        uint256 bucket2Deposit = 7_065.014537346601772214 * 1e18;
-        uint256 debtToSettle   = 10_028.889031920233428708 * 1e18;
+        uint256 bucket2Deposit = 7_065.014537346601772213 * 1e18;
+        uint256 debtToSettle   = 10_028.889031920233428709 * 1e18;
 
         _assertBorrower({
             borrower:                  _borrower2,
@@ -1038,7 +1038,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         _assertBucket({
             index:        _i9_81,
-            lpBalance:    7_020.307252493359351054 * 1e18,
+            lpBalance:    7_020.307252493359351053 * 1e18,
             collateral:   0,
             deposit:      bucket2Deposit,
             exchangeRate: 1.006368280367980193 * 1e18
@@ -1048,12 +1048,12 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         vm.expectEmit(true, true, false, true);
         emit BucketBankruptcy(_i9_91, 2_099.367201799558744044 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit BucketBankruptcy(_i9_81, 7_020.307252493359351054 * 1e18);
+        emit BucketBankruptcy(_i9_81, 7_020.307252493359351053 * 1e18);
         _settle({
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    10,
-            settledDebt: 9_891.935520844277346922 * 1e18
+            settledDebt: 9_891.935520844277346923 * 1e18
         });
 
         // bucket is insolvent, balances are resetted
