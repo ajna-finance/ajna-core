@@ -223,8 +223,8 @@ abstract contract UnboundedERC20PoolRewardsHandler is UnboundedERC20PoolPosition
                 rewardsEarnedInEpochPreAction[epoch] = _rewardsManager.rewardsClaimed(epoch);  
             }
 
-            // total staking rewards earned across all actors in epoch pre action
-            totalRewardsEarnedPreAction += _rewardsManager.rewardsClaimed(epoch);
+            // total the rewards earned pre action
+            totalRewardsEarnedPreAction  += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
         }
 
         try _rewardsManager.claimRewards(tokenId_, epoch_, 0) {
@@ -247,11 +247,12 @@ abstract contract UnboundedERC20PoolRewardsHandler is UnboundedERC20PoolPosition
                     "RW10: staker has claimed rewards from the same epoch twice"); 
                 }
 
-                // total staking rewards earned across all actors in epoch post action
-                totalRewardsEarnedPostAction += _rewardsManager.rewardsClaimed(epoch);
+                // total rewards earned across all actors in epoch post action
+                totalRewardsEarnedPostAction += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
 
-                // reset staking rewards earned in epoch
-                rewardsClaimedPerEpoch[epoch] = _rewardsManager.rewardsClaimed(epoch);
+                // reset staking and updating rewards earned in epoch
+                rewardsClaimedPerEpoch[epoch]       = _rewardsManager.rewardsClaimed(epoch);
+                updateRewardsClaimedPerEpoch[epoch] = _rewardsManager.updateRewardsClaimed(epoch);
             }
 
             (, , uint256 lastClaimedEpoch) = _rewardsManager.getStakeInfo(tokenId_);

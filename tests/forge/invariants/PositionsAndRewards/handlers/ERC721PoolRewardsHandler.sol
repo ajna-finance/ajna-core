@@ -86,6 +86,7 @@ contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC7
     function updateExchangeRate(
         uint256 actorIndex_,
         uint256 bucketIndex_,
+        uint256 amountToAdd_,
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BRewardsHandler.updateRate']++;
@@ -93,10 +94,9 @@ contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC7
         // Pre action //
         uint256[] memory indexes = getBucketIndexesWithPosition();
 
-        // if there are no existing positions, update exchange rate for a random bucket
+        // if there are no existing positions, create a position at a a random index
         if (indexes.length == 0) {
-            indexes = new uint256[](1);
-            indexes[0] = _lenderBucketIndex;
+           (, indexes) = _getStakedPosition(_lenderBucketIndex, amountToAdd_);
         }
 
         // Action phase

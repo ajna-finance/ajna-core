@@ -12,6 +12,8 @@ import { UnboundedERC721PoolPositionsHandler } from './UnboundedERC721PoolPositi
 
 import { _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
 
+import '@std/console.sol';
+
 /**
  *  @dev this contract manages multiple lenders
  *  @dev methods in this contract are called in random order
@@ -224,8 +226,8 @@ abstract contract UnboundedERC721PoolRewardsHandler is UnboundedERC721PoolPositi
             if (_rewardsManager.isEpochClaimed(tokenId_, epoch)) {
                 rewardsEarnedInEpochPreAction[epoch] = _rewardsManager.rewardsClaimed(epoch);
             }
-            // total staking rewards earned across all actors in epoch pre action
-            totalRewardsEarnedPreAction += _rewardsManager.rewardsClaimed(epoch);
+            // total the rewards earned pre action
+            totalRewardsEarnedPreAction  += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
         }
 
         try _rewardsManager.claimRewards(tokenId_, epoch_, 0) {
@@ -248,11 +250,12 @@ abstract contract UnboundedERC721PoolRewardsHandler is UnboundedERC721PoolPositi
                     "RW10: staker has claimed rewards from the same epoch twice"); 
                 }
 
-                // total staking rewards earned across all actors in epoch post action
-                totalRewardsEarnedPostAction += _rewardsManager.rewardsClaimed(epoch);
+                // total rewards earned across all actors in epoch post action
+                totalRewardsEarnedPostAction += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
 
-                // reset staking rewards earned in epoch
-                rewardsClaimedPerEpoch[epoch] = _rewardsManager.rewardsClaimed(epoch);
+                // reset staking and updating rewards earned in epoch
+                rewardsClaimedPerEpoch[epoch]       = _rewardsManager.rewardsClaimed(epoch);
+                updateRewardsClaimedPerEpoch[epoch] = _rewardsManager.updateRewardsClaimed(epoch);
             }
 
             (, , uint256 lastClaimedEpoch) = _rewardsManager.getStakeInfo(tokenId_);

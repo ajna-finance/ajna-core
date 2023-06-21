@@ -86,6 +86,7 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
     function updateExchangeRate(
         uint256 actorIndex_,
         uint256 bucketIndex_,
+        uint256 amountToAdd_,
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BRewardsHandler.updateRate']++;
@@ -93,10 +94,9 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
         // Pre action //
         uint256[] memory indexes = getBucketIndexesWithPosition();
 
-        // if there are no existing positions, update exchange rate for a random bucket
+        // if there are no existing positions, create a position at a a random index
         if (indexes.length == 0) {
-            indexes = new uint256[](1);
-            indexes[0] = _lenderBucketIndex;
+           (, indexes) = _getStakedPosition(_lenderBucketIndex, amountToAdd_);
         }
 
         // Action phase
@@ -140,7 +140,7 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
         uint256 amountToAdd_
     ) internal returns (uint256 tokenId_) {
         uint256[] memory indexes;
-        (tokenId_, indexes)= _getStakedPosition(bucketIndex_, amountToAdd_);
+        (tokenId_, indexes) = _getStakedPosition(bucketIndex_, amountToAdd_);
 
         _advanceEpochRewardStakers(amountToAdd_, indexes);
     }
