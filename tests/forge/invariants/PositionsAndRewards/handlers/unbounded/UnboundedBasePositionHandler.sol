@@ -42,8 +42,6 @@ abstract contract UnboundedBasePositionHandler is Test {
     mapping(address => EnumerableSet.UintSet) internal stakedTokenIdsByActor;
     mapping(uint256 => uint256) public rewardsClaimedPerEpoch;       // staking rewards per epoch
     mapping(uint256 => uint256) public updateRewardsClaimedPerEpoch; // updating rewards per epoch
-    // used to track already claimed rewards
-    mapping(uint256 => uint256) public rewardsAlreadyClaimed;  // tracks rewards already claimed
 
     using EnumerableSet for EnumerableSet.UintSet;
 
