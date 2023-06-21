@@ -710,7 +710,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             from:        _minterTwo,
             borrower:    _borrower2,
             maxDepth:    10,
-            settledDebt: 9_891.935520844277346922 * 1e18
+            settledDebt: 9_891.935520844277346923 * 1e18
         });
 
         // bucket is insolvent, balances are reset
