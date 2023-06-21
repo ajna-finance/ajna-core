@@ -23,13 +23,13 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         _kickAuction(borrowerIndex_, amount_, kickerIndex_);
     }
 
-    function kickWithDeposit(
+    function lenderKickAuction(
         uint256 kickerIndex_,
         uint256 bucketIndex_,
         uint256 skippedTime_
     ) external useRandomActor(kickerIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
-        numberOfCalls['BLiquidationHandler.kickWithDeposit']++;
-        _kickWithDeposit(_lenderBucketIndex);
+        numberOfCalls['BLiquidationHandler.lenderKickAuction']++;
+        _lenderKickAuction(_lenderBucketIndex);
     }
 
     function withdrawBonds(

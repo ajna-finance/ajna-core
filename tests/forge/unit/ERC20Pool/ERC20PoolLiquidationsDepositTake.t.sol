@@ -309,8 +309,8 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         });
         // reserves should remain the same after deposit take
         _assertReserveAuction({
-            reserves:                   51.238131288298142182 * 1e18,
-            claimableReserves :         9.897035340857769727 * 1e18,
+            reserves:                   51.238131288298142183 * 1e18,
+            claimableReserves :         9.897035340857769728 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -326,14 +326,14 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                 kickMomp:          9.818751856078723036 * 1e18,
                 totalBondEscrowed: 0.199398195043779403 * 1e18,
                 auctionPrice:      7.402280333270247968 * 1e18,
-                debtInAuction:     1.966997287334847888 * 1e18,
+                debtInAuction:     1.966997287334847889 * 1e18,
                 thresholdPrice:    0,
                 neutralPrice:      10.468405239798418677 * 1e18
             })
         ); 
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              1.966997287334847888 * 1e18,
+            borrowerDebt:              1.966997287334847889 * 1e18,
             borrowerCollateral:        0,
             borrowert0Np:              10.115967548076923081 * 1e18,
             borrowerCollateralization: 0
@@ -503,7 +503,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                 totalBondEscrowed: 0.049398195043779403 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    3.317960196583009904 * 1e18,
+                thresholdPrice:    3.317960196583009907 * 1e18,
                 neutralPrice:      0
             })
         );
@@ -511,15 +511,15 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             index:        _i1505_26,
             lpBalance:    15 * 1e18,
             collateral:   0.009965031187761219 * 1e18,
-            deposit:      0,
-            exchangeRate: 1 * 1e18
+            deposit:      5,
+            exchangeRate: 1.000000000000000001 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              6.602856816327319771 * 1e18,
+            borrowerDebt:              6.602856816327319776 * 1e18,
             borrowerCollateral:        1.990034968812238781 * 1e18,
-            borrowert0Np:              3.384038787324199948 * 1e18,
-            borrowerCollateralization: 2.929901291475173000 * 1e18
+            borrowert0Np:              3.384038787324199951 * 1e18,
+            borrowerCollateralization: 2.929901291475172996 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _taker,
