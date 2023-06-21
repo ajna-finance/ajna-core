@@ -1048,7 +1048,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         _pool.addQuoteToken(913597152782868931694946846442, 2572, block.timestamp + 100);
         ERC20Pool(address(_pool)).drawDebt(actor, 456798576391434465847473423221, 7388, 170152459663184217402759609);
 
-        vm.warp(1689742127);
+        skip(100 days);
         // borrower is undercollateralized and pledged collateral is lower than encumbered collateral, tx should revert with InsufficientCollateral
         vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
         ERC20Pool(address(_pool)).repayDebt(actor, 0, 149220, actor, 7388);
