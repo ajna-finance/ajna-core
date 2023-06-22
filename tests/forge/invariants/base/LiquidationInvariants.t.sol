@@ -169,6 +169,8 @@ abstract contract LiquidationInvariants is BasicInvariants {
         console.log("UBLiquidationHandler.pledgeCollateral     ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.pledgeCollateral"));
         console.log("BLiquidationHandler.pullCollateral        ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.pullCollateral"));
         console.log("UBLiquidationHandler.pullCollateral       ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.pullCollateral"));
+        console.log("BLiquidationHandler.stampLoan             ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.stampLoan"));
+        console.log("UBLiquidationHandler.stampLoan            ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.stampLoan"));
         console.log("--Kicker/Taker----");
         console.log("BLiquidationHandler.kickAuction           ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickAuction"));
         console.log("UBLiquidationHandler.kickAuction          ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.kickAuction"));
@@ -194,6 +196,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.pullCollateral") + 
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt") + 
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt") + 
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.stampLoan") +
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.transferLps") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickAuction") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.takeAuction") +
