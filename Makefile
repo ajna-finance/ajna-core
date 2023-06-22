@@ -2,7 +2,7 @@
 # (-include to ignore error if it does not exist)
 -include .env && source ./tests/forge/invariants/scenarios/scenario-${SCENARIO}.sh
 
-CONTRACT_EXCLUDES="RegressionTest|Panic|RealWorld|Trading|Position|Rewards"
+CONTRACT_EXCLUDES="RegressionTest|Panic|RealWorld|Trading"
 TEST_EXCLUDES="testLoad|invariant|test_regression"
 
 all: clean install build
