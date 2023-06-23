@@ -6,7 +6,7 @@ with open(filename, 'r') as f:
 
 first_line = lines[0]
 full_handler = first_line.split("addr=[")[1].split(']')[0].split(":")[1]
-handler_prefix = '_' + ''.join(full_handler[:1])
+handler_prefix = '_' + ''.join(full_handler[:1].lower())
 handler_suffix = full_handler[1:]
 test_handler = handler_prefix + handler_suffix
 
