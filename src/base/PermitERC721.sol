@@ -257,6 +257,21 @@ abstract contract PermitERC721 is ERC721, IPermit {
     }
 
     /**
+     * @notice _approve override to be able to increment the permit nonce
+     * @inheritdoc ERC721
+     */
+    function _approve(
+        address to,
+        uint256 tokenId
+    ) internal virtual override {
+        // increment the permit nonce of this tokenId to ensure it can't be reused
+        _incrementNonce(tokenId);
+
+        // Approve the NFT to the to address
+        super._approve(to, tokenId);
+    }
+
+    /**
      * @notice _transfer override to be able to increment the permit nonce
      * @inheritdoc ERC721
      */
