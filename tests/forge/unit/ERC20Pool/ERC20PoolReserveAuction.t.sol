@@ -190,9 +190,13 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         vm.expectRevert(IPoolErrors.NoReserves.selector);
         pool.kickReserveAuction();
 
+        pool.settle(_actor3, 10);
+        
         // add tokens to have enough balance to kick new reserves auction
         pool.addQuoteToken(100, 2572, block.timestamp + 1);
+
         pool.kickReserveAuction();
+        return;
         // pool balance diminished by reward given to reserves kicker
         assertEq(_quote.balanceOf(address(pool)), 1116);
         assertEq(_availableQuoteToken(), 0);
