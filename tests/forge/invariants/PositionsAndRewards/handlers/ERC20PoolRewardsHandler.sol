@@ -54,11 +54,12 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
         uint256 actorIndex_,
         uint256 bucketIndex_,
         uint256 amountToAdd_,
-        uint256 skippedTime_
+        uint256 skippedTime_,
+        uint256 numberOfEpochs_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BRewardsHandler.unstake']++;
         // Pre action
-        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_);
+        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_, numberOfEpochs_);
         
         // if rewards exceed contract balance tx will revert, return
         uint256 reward = _rewardsManager.calculateRewards(tokenId, _pool.currentBurnEpoch());
@@ -72,12 +73,13 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
         uint256 actorIndex_,
         uint256 bucketIndex_,
         uint256 amountToAdd_,
-        uint256 skippedTime_
+        uint256 skippedTime_,
+        uint256 numberOfEpochs_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BRewardsHandler.emergencyUnstake']++;
         
         // Pre action
-        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_);
+        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_, numberOfEpochs_);
         
         // Action phase
         _emergencyUnstake(tokenId);
@@ -107,12 +109,13 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
         uint256 actorIndex_,
         uint256 bucketIndex_,
         uint256 amountToAdd_,
-        uint256 skippedTime_
+        uint256 skippedTime_,
+        uint256 numberOfEpochs_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BRewardsHandler.claimRewards']++;
 
         // Pre action //
-        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_);
+        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_, numberOfEpochs_);
 
         // Action phase
         _claimRewards(tokenId, _pool.currentBurnEpoch());
@@ -137,43 +140,48 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
 
     function _preUnstake(
         uint256 bucketIndex_,
-        uint256 amountToAdd_
+        uint256 amountToAdd_,
+        uint256 numberOfEpochs_
     ) internal returns (uint256 tokenId_) {
         uint256[] memory indexes;
         (tokenId_, indexes) = _getStakedPosition(bucketIndex_, amountToAdd_);
 
-        _advanceEpochRewardStakers(amountToAdd_, indexes);
+        _advanceEpochRewardStakers(amountToAdd_, indexes, numberOfEpochs_);
     }
 
     function _advanceEpochRewardStakers(
         uint256 amountToAdd_,
-        uint256[] memory indexes_
+        uint256[] memory indexes_,
+        uint256 numberOfEpochs_
     ) internal {
 
-        // draw some debt and then repay after some times to increase pool earning / reserves 
-        (, uint256 claimableReserves, , ) = _pool.reservesInfo();
-        if (claimableReserves == 0) {
-            uint256 amountToBorrow = _preDrawDebt(amountToAdd_);
-            _drawDebt(amountToBorrow);
+        numberOfEpochs_ = constrictToRange(numberOfEpochs_, 1, vm.envOr("MAX_EPOCH_ADVANCE", uint256(2)));
 
-            skip(20 days); // epochs are spaced a minimum of 14 days apart
-        
-            _repayDebt(type(uint256).max);
+        for (uint256 epoch = 0; epoch <= numberOfEpochs_; epoch ++) {
+            // draw some debt and then repay after some times to increase pool earning / reserves 
+            (, uint256 claimableReserves, , ) = _pool.reservesInfo();
+            if (claimableReserves == 0) {
+                uint256 amountToBorrow = _preDrawDebt(amountToAdd_);
+                _drawDebt(amountToBorrow);
+
+                skip(20 days); // epochs are spaced a minimum of 14 days apart
+            
+                _repayDebt(type(uint256).max);
+            }
+
+            (, claimableReserves, , ) = _pool.reservesInfo();
+
+            _kickReserveAuction();
+
+            // skip time for price to decrease, large price decrease reduces chances of rewards exceeding rewards contract balance
+            skip(60 hours);
+
+            uint256 boundedTakeAmount = constrictToRange(amountToAdd_, claimableReserves / 2, claimableReserves);
+            _takeReserves(boundedTakeAmount);
+
+            // exchange rates must be updated so that rewards can be claimed
+            _updateExchangeRate(indexes_);
         }
-
-        (, claimableReserves, , ) = _pool.reservesInfo();
-
-        _kickReserveAuction();
-
-        // skip time for price to decrease, large price decrease reduces chances of rewards exceeding rewards contract balance
-        skip(60 hours);
-
-        uint256 boundedTakeAmount = constrictToRange(amountToAdd_, claimableReserves / 2, claimableReserves);
-        _takeReserves(boundedTakeAmount);
-
-        // exchange rates must be updated so that rewards can be claimed
-        _updateExchangeRate(indexes_);
-
     }
 
     function _getStakedPosition(
