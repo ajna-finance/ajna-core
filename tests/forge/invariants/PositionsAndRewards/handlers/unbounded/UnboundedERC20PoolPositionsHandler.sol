@@ -31,14 +31,17 @@ abstract contract UnboundedERC20PoolPositionsHandler is UnboundedBasePositionHan
     ) internal {
         numberOfCalls['UBPositionHandler.memorialize']++;
 
+        uint256 actorPreActionPoolLps;
+        uint256 positionManPreActionPoolLps;
+
         for(uint256 i=0; i < indexes_.length; i++) {
 
             // store vals pre action to check after memorializing:
-            (uint256 actorLps, uint256 actorDepositTime)   = _pool.lenderInfo(indexes_[i], address(_actor));
-            (uint256 posManLps, uint256 posManDepositTime) = _pool.lenderInfo(indexes_[i], address(_positionManager));
+            (uint256 poolPreActionActorLps, uint256 actorDepositTime)   = _pool.lenderInfo(indexes_[i], address(_actor));
+            (uint256 poolPreActionPosManLps, uint256 posManDepositTime) = _pool.lenderInfo(indexes_[i], address(_positionManager));
 
-            bucketIndexToActorPoolLps[indexes_[i]] = actorLps;
-            bucketIndexToPositionManPoolLps[indexes_[i]]   = posManLps;
+            actorPreActionPoolLps       += poolPreActionActorLps;
+            positionManPreActionPoolLps += poolPreActionPosManLps;
 
             // positionManager is assigned the most recent depositTime
             bucketIndexToDepositTime[indexes_[i]] = (actorDepositTime >= posManDepositTime) ? actorDepositTime : posManDepositTime;
@@ -64,27 +67,30 @@ abstract contract UnboundedERC20PoolPositionsHandler is UnboundedBasePositionHan
             // info used track actors positions
             tokenIdsByActor[address(_actor)].add(tokenId_);
 
+            uint256 positionManMangerLps;
+            uint256 positionManPoolLps;
+
             // Post action Checks //
             for(uint256 i=0; i < indexes_.length; i++) {
                 uint256 bucketIndex = indexes_[i];
 
-                // assert that the LP that now exists in the pool contract matches the amount added by the actor 
-                (uint256 poolLps, uint256 poolDepositTime) = _pool.lenderInfo(bucketIndex, address(_positionManager));
-                require(poolLps == bucketIndexToActorPoolLps[bucketIndex] + bucketIndexToPositionManPoolLps[bucketIndex],
-                "PM7: pool contract lps do not match amount added by actor");
+                (uint256 poolPosLps, uint256 poolDepositTime) = _pool.lenderInfo(bucketIndex, address(_positionManager));
+                (uint256 managerLps,) = _positionManager.getPositionInfo(tokenId_, bucketIndex);
+
+                positionManPoolLps   += poolPosLps;
+                positionManMangerLps += managerLps;
 
                 require(poolDepositTime == bucketIndexToDepositTime[bucketIndex],
                 "PM7: positionManager depositTime does not match most recent depositTime");
-
-                // assert that the positionManager LP balance of the actor has increased
-                (uint256 posLps,) = _positionManager.getPositionInfo(tokenId_, bucketIndex);
-                require(posLps == bucketIndexToActorPoolLps[bucketIndex],
-                "PM7: positionManager lps do not match amount added by actor");
-
-                delete bucketIndexToActorPoolLps[bucketIndex];
-                delete bucketIndexToPositionManPoolLps[bucketIndex];
-                delete bucketIndexToDepositTime[bucketIndex];
             }
+
+            // assert that the LP that now exists in the pool contract matches the amount added by the actor 
+            require(positionManPoolLps == actorPreActionPoolLps + positionManPreActionPoolLps,
+            "PM7: pool contract lps do not match amount added by actor");
+
+            // assert that the positionManager LP balance of the actor has increased
+            require(positionManMangerLps == actorPreActionPoolLps,
+            "PM7: positionManager lps do not match amount added by actor");
 
         } catch (bytes memory err) {
             _ensurePositionsManagerError(err);
@@ -122,14 +128,17 @@ abstract contract UnboundedERC20PoolPositionsHandler is UnboundedBasePositionHan
 
         address preActionOwner = _positionManager.ownerOf(tokenId_);
 
+        uint256 actorPreActionPoolLps;
+        uint256 positionManPreActionPoolLps;
+
         for (uint256 i=0; i < indexes_.length; i++) {
 
             // store vals in mappings to check lps
             (uint256 poolPreActionActorLps,)  = _pool.lenderInfo(indexes_[i], preActionOwner);
             (uint256 poolPreActionPosManLps,) = _pool.lenderInfo(indexes_[i], address(_positionManager));
 
-            bucketIndexToActorPoolLps[indexes_[i]]       = poolPreActionActorLps;
-            bucketIndexToPositionManPoolLps[indexes_[i]] = poolPreActionPosManLps;
+            actorPreActionPoolLps       += poolPreActionActorLps;
+            positionManPreActionPoolLps += poolPreActionPosManLps;
 
             // assert that the underlying LP balance in PositionManager is greater than 0 
             (uint256 posPreActionLps,) = _positionManager.getPositionInfo(tokenId_, indexes_[i]);
@@ -159,42 +168,41 @@ abstract contract UnboundedERC20PoolPositionsHandler is UnboundedBasePositionHan
             require(_positionManager.ownerOf(tokenId_) == preActionOwner,
             'PM8: previous owner is no longer owner on redemption');
 
-            // assert that poolKey is still same
-            address poolAddress = _positionManager.poolKey(tokenId_);
-            require(poolAddress == address(_pool), 'PM8: poolKey has changed on redemption');
+            // assert that poolKey address matches pool address
+            require(_positionManager.poolKey(tokenId_) == address(_pool),
+            'PM8: poolKey has changed on redemption');
 
             // assert that no positions are associated with this tokenId
             uint256[] memory posIndexes = _positionManager.getPositionIndexes(tokenId_);
             require(posIndexes.length == 0, 'PM8: positions still exist after redemption');
 
+            uint256 actorPoolLps;
+            uint256 positionManPoolLps;
+
             for(uint256 i=0; i < indexes_.length; i++) {
                 uint256 bucketIndex = indexes_[i];
-
-                uint256 actorPoolLps        = bucketIndexToActorPoolLps[bucketIndex];
-                uint256 positionManPoolLps  = bucketIndexToPositionManPoolLps[bucketIndex];
 
                 (uint256 poolActorLps,) = _pool.lenderInfo(bucketIndex, preActionOwner);
                 (uint256 poolPosLps,)   = _pool.lenderInfo(bucketIndex, address(_positionManager));
 
-                // assert PositionsMan LP in pool matches the amount redeemed by actor 
-                // positionMan has now == positionMan pre - actor's LP change
-                require(poolPosLps == positionManPoolLps - (poolActorLps - actorPoolLps),
-                "PM8: positionManager's pool contract lps do not match amount redeemed by actor");
-
-                // assert actor LP in pool matches amount removed from the posMan's position 
-                // assert actor LP in pool = what actor LP had pre + what LP positionManager redeemed to actor
-                require(poolActorLps == actorPoolLps + (positionManPoolLps - poolPosLps), 
-                "PM8: actor's pool contract lps do not match amount redeemed by actor");
+                actorPoolLps       += poolActorLps;
+                positionManPoolLps += poolPosLps;
 
                 // assert that the underlying LP balance in PositionManager is zero
                 (uint256 posLps, uint256 posDepositTime) = _positionManager.getPositionInfo(tokenId_, bucketIndex);
                 require(posLps == 0,         "PM8: tokenId has lps after redemption");
                 require(posDepositTime == 0, "PM8: tokenId has depositTime after redemption");
-
-                // delete mappings for reuse
-                delete bucketIndexToActorPoolLps[bucketIndex];
-                delete bucketIndexToPositionManPoolLps[bucketIndex];
             }
+
+            // assert PositionsMan LP in pool matches the amount redeemed by actor 
+            // positionMan has now == positionMan pre - actor's LP change
+            require(positionManPoolLps == positionManPreActionPoolLps - (actorPoolLps - actorPreActionPoolLps),
+            "PM8: positionManager's pool contract lps do not match amount redeemed by actor");
+
+            // assert actor LP in pool matches amount removed from the posMan's position 
+            // assert actor LP in pool = what actor LP had pre + what LP positionManager redeemed to actor
+            require(actorPoolLps == actorPreActionPoolLps + (positionManPreActionPoolLps - positionManPoolLps), 
+            "PM8: actor's pool contract lps do not match amount redeemed by actor");
 
         } catch (bytes memory err) {
             _ensurePositionsManagerError(err);
