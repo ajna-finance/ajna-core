@@ -6,8 +6,6 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 import 'src/interfaces/pool/IPool.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
 
-import '@std/console.sol';
-
 contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
     address internal _borrower;
