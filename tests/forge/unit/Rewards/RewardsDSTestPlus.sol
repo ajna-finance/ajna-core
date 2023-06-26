@@ -86,7 +86,7 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
             indexes,
             updateExchangeRatesReward
         );
-        // _assertUnstakeInvariants(owner, tokenId);
+        _assertUnstakeInvariants(owner, tokenId);
     }
 
     function _unstakeTokenGracefully(
