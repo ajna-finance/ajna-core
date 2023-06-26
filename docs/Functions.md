@@ -25,6 +25,8 @@
 		- pool inflator and inflatorUpdate state
 
 	reverts on:
+	- block timestamp greater than expiry TransactionExpired()
+	- head auction not cleared AuctionNotCleared()
 	- LenderActions.addQuoteToken():
 		- invalid bucket index InvalidIndex()
 		- same block when bucket becomes insolvent BucketBankruptcyBlock()

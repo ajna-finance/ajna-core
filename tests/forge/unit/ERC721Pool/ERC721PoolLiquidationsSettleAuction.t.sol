@@ -220,7 +220,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    5,
-            settledDebt: 323.391444837465801745 * 1e18 //confused why this is not the same as line 213
+            settledDebt: 323.391444837465801745 * 1e18
         });
 
         _assertBorrower({
