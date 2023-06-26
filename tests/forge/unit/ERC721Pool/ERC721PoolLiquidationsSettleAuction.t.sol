@@ -112,6 +112,14 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
     }
 
     function testSettlePartialDebtSubsetPool() external tearDown {
+        _assertBucket({
+            index:        2500,
+            lpBalance:    8_000 * 1e18,
+            collateral:   0,
+            deposit:      13_734.486139425783008000 * 1e18,
+            exchangeRate: 1.716810767428222876 * 1e18
+        });
+
         // the 2 token ids are owned by borrower before settle
         assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 0), 1);
         assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 1), 3);
