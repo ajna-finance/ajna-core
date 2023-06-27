@@ -13,8 +13,6 @@ import { IPositionManagerErrors } from 'src/interfaces/position/IPositionManager
 import { Token }                 from '../../utils/Tokens.sol';
 import { RoguePool }             from './RoguePool.sol';
 
-import '@std/console.sol';
-
 contract RewardsManagerTest is RewardsHelperContract {
 
     address internal _borrower;
