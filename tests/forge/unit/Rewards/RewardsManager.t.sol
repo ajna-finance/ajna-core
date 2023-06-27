@@ -1145,14 +1145,14 @@ contract RewardsManagerTest is RewardsHelperContract {
             exchangeRate: 1.0 * 1e18
         });
 
-        // actor re-memorializes using same tokenID (makes position go to zero)
         ERC20Pool(address(_pool)).increaseLPAllowance(address(_positionManager), depositIndexes, lpBalances);
 
+        // actor cannot re-memorialize using same tokenID because they are not the owner, rewardsManager is
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
         _positionManager.memorializePositions(address(_pool), tokenIdOne, depositIndexes);
 
-        // FIXME: _minterOne unstakes, however they should have earned rewards from epoch one and didnt...
-        // Get positionIndex filtered returns 0 -> https://github.com/ajna-finance/contracts/blob/259242691fd23e4b1a78bbf6fe2ddf08c5090de6/src/PositionManager.sol#L511
+        // Staker doesn't receive rewards, proof that once a bucket is bankrupted all previous rewards are nullified for if the positionManager's deposit time
+        // is before the bucket's bankruptcy. Due to filtering in `getFilteredPositions()`
         _unstakeToken({
             owner:                     _minterOne,
             pool:                      address(_pool),
