@@ -9,6 +9,7 @@ import 'src/interfaces/rewards/IRewardsManager.sol';
 import { ERC20Pool }             from 'src/ERC20Pool.sol';
 import { RewardsHelperContract } from './RewardsDSTestPlus.sol';
 import { IPoolErrors }           from 'src/interfaces/pool/commons/IPoolErrors.sol';
+import { IPositionManagerErrors } from 'src/interfaces/position/IPositionManagerErrors.sol';
 import { Token }                 from '../../utils/Tokens.sol';
 import { RoguePool }             from './RoguePool.sol';
 
@@ -783,6 +784,380 @@ contract RewardsManagerTest is RewardsHelperContract {
             claimedArray:              _epochsClaimedArray(1, 0),
             reward:                    0,
             indexes:                   depositIndexes2,
+            updateExchangeRatesReward: 0
+        });
+    }
+    
+     function testNoRewardsToClaimPostBankrupt() external {
+        skip(10);
+        
+        /***************************/
+        /*** Lender Deposits NFT ***/
+        /***************************/
+        
+        // set deposit indexes
+        uint256[] memory depositIndexes = new uint256[](2);
+        uint256[] memory depositIndex1 = new uint256[](1);
+        uint256[] memory depositIndex2 = new uint256[](1);
+        depositIndexes[0] = 2770;
+        depositIndexes[1] = 2771;
+        depositIndex1[0] = 2771;
+        depositIndex2[0] = 2770;
+        
+        // configure NFT position one
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT({
+            indexes:    depositIndexes,
+            minter:     _minterOne,
+            mintAmount: 10_000 * 1e18,
+            pool:       address(_pool)
+        });
+
+        _stakeToken({
+            pool:    address(_pool),
+            owner:   _minterOne,
+            tokenId: tokenIdOne
+        });
+        
+        /************************************/
+        /*** Borrower One Accrue Interest ***/
+        /************************************/
+        
+        // borrower borrows
+        (uint256 collateralToPledge) = _createTestBorrower(address(_pool), _borrower, 10_000 * 1e18, 2770);
+ 
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     5 * 1e18,
+            limitIndex:         2770,
+            collateralToPledge: collateralToPledge,
+            newLup:             1_004.989662429170775094 * 1e18
+        });
+
+        // pass time to allow interest to accrue
+        skip(2 hours);
+
+        // borrower repays their loan
+        (uint256 debt, , ) = _pool.borrowerInfo(_borrower);
+        _repayDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToRepay:      debt,
+            amountRepaid:       5.004807692307692310 * 1e18,
+            collateralToPull:   0,
+            newLup:             1_004.989662429170775094 * 1e18
+        });
+
+        /*****************************/
+        /*** First Reserve Auction ***/
+        /*****************************/
+        // start reserve auction
+        _kickReserveAuction({
+            pool: address(_pool),
+            bidder: _bidder
+        });
+
+        // _borrower now takes out more debt to accumulate more interest
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     2_000 * 1e18,
+            limitIndex:         2770,
+            collateralToPledge: 0,
+            newLup:             1_004.989662429170775094 * 1e18
+        });
+
+        // allow time to pass for the reserve price to decrease
+        skip(24 hours);
+
+        _takeReserves({
+            pool: address(_pool),
+            from: _bidder
+        });
+
+        (,, uint256 tokensBurned) = IPool(address(_pool)).burnInfo(IPool(address(_pool)).currentBurnEpoch());
+
+        // recorder updates the change in exchange rates in the first index
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_pool),
+            indexes:        depositIndex1,
+            reward:         0.007075096372721386 * 1e18
+        });
+        assertEq(_ajnaToken.balanceOf(_updater), 0.007075096372721386 * 1e18);
+
+        _assertBurn({
+            pool:      address(_pool),
+            epoch:     0,
+            timestamp: 0,
+            burned:    0,
+            interest:  0,
+            tokensToBurn: 0
+        });
+
+        _assertBurn({
+            pool:             address(_pool),
+            epoch:            1,
+            timestamp:        block.timestamp - 24 hours,
+            burned:           0.283003854923906684 * 1e18,
+            interest:         0.000048562908902619 * 1e18,
+            tokensToBurn:     tokensBurned
+        });
+
+        // skip more time to allow more interest to accrue
+        skip(10 days);
+
+        // borrower repays their loan again
+        (debt, , ) = _pool.borrowerInfo(_borrower);
+        _repayDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToRepay:      debt,
+            amountRepaid:       2_001.900281182536528587 * 1e18,
+            collateralToPull:   0,
+            newLup:             1_004.989662429170775094 * 1e18
+        });
+
+        // recorder updates the change in exchange rates in the second index
+        _updateExchangeRates({
+            updater:        _updater2,
+            pool:           address(_pool),
+            indexes:        depositIndex2,
+            reward:         0.021225289119669282 * 1e18
+        });
+        assertEq(_ajnaToken.balanceOf(_updater2), .021225289119669282 * 1e18);
+
+        // assert minterOne has rewards to be claimed
+        uint256 rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
+        assertEq(rewardsEarned, 0.226403083939125347 * 1e18);
+
+        _assertBucket({
+            index:        2770,
+            lpBalance:    10000000000000000000000,
+            collateral:   0,
+            deposit:      10_001.283047927145090000 * 1e18,
+            exchangeRate: 1000128304792714509
+        });
+
+        _assertBucket({
+            index:        2771,
+            lpBalance:    10000000000000000000000,
+            collateral:   0,
+            deposit:      10_001.283047927145090000 * 1e18,
+            exchangeRate: 1000128304792714509
+        });
+
+        /***************************************************************/
+        /*** Borrower One Accrue Interest for second reserve auction ***/
+        /***************************************************************/
+        
+        // borrower borrows
+        (collateralToPledge) = _createTestBorrower(address(_pool), _borrower, 10_000 * 1e18, 2770);
+ 
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     5 * 1e18,
+            limitIndex:         2770,
+            collateralToPledge: collateralToPledge,
+            newLup:             1_004.989662429170775094 * 1e18
+        });
+
+        // pass time to allow interest to accrue
+        skip(2 hours);
+
+        // borrower repays their loan
+        (debt, , ) = _pool.borrowerInfo(_borrower);
+        _repayDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToRepay:      debt,
+            amountRepaid:       8.034323493614017007 * 1e18,
+            collateralToPull:   0,
+            newLup:             1_004.989662429170775094 * 1e18
+        });
+
+        /******************************/
+        /*** Second Reserve Auction ***/
+        /******************************/
+        skip(2 weeks);
+
+        // start reserve auction
+        _kickReserveAuction({
+            pool: address(_pool),
+            bidder: _bidder
+        });
+
+        // _borrower now takes out more debt to accumulate more interest
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     2_000 * 1e18,
+            limitIndex:         2770,
+            collateralToPledge: 0,
+            newLup:             1_004.989662429170775094 * 1e18
+        });
+
+        // allow time to pass for the reserve price to decrease
+        skip(24 hours);
+
+        _takeReserves({
+            pool: address(_pool),
+            from: _bidder
+        });
+
+        (,,tokensBurned) = IPool(address(_pool)).burnInfo(IPool(address(_pool)).currentBurnEpoch());
+
+        // recorder updates the change in exchange rates in the first index
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_pool),
+            indexes:        depositIndex1,
+            reward:         3.511985000906831402 * 1e18
+        });
+
+        assertEq(_ajnaToken.balanceOf(_updater), 3.519060097279552788 * 1e18);
+
+        _assertBurn({
+            pool:             address(_pool),
+            epoch:            2,
+            timestamp:        block.timestamp - 24 hours,
+            burned:           140.762403891199659050 * 1e18,
+            interest:         2.566194585267388219 * 1e18,
+            tokensToBurn:     tokensBurned
+        });
+
+        // skip more time to allow more interest to accrue
+        skip(10 days);
+
+        // borrower repays their loan again
+        (debt, , ) = _pool.borrowerInfo(_borrower);
+        _repayDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToRepay:      debt,
+            amountRepaid:       1_995.045633466463004690 * 1e18,
+            collateralToPull:   0,
+            newLup:             1_004.989662429170775094 * 1e18
+        });
+
+        // recorder updates the change in exchange rates in the second index
+        _updateExchangeRates({
+            updater:        _updater2,
+            pool:           address(_pool),
+            indexes:        depositIndex2,
+            reward:         3.160572158484729706 * 1e18
+        });
+        assertEq(_ajnaToken.balanceOf(_updater2), 3.181797447604398988 * 1e18);
+
+        // assert minterOne has more rewards to be claimed
+        rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
+        assertEq(rewardsEarned, 66.951974677854736430 * 1e18);
+
+        // QT is adeed to a bucket
+        deal(address(_quote), _minterOne, 100 * 1e18 * depositIndexes.length + 6_000.0 * 1e18);
+        changePrank(_minterOne);
+        uint256[] memory lpBalances = new uint256[](depositIndexes.length);
+        for (uint256 i = 0; i < depositIndexes.length; i++) {
+            ERC20Pool(address(_pool)).addQuoteToken(100 * 1e18, depositIndexes[i], type(uint256).max);
+            (lpBalances[i], ) = ERC20Pool(address(_pool)).lenderInfo(depositIndexes[i], _minterOne);
+        }
+
+        // add more QT so borrower can draw enough debt to bankrupt bucket
+        ERC20Pool(address(_pool)).addQuoteToken(6_000.0 * 1e18, 2775, type(uint256).max);
+
+        // borrower borrows
+        (collateralToPledge) = _createTestBorrower(address(_pool), _borrower, 25_000 * 1e18, 2775);
+
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     25_000 * 1e18,
+            limitIndex:         MAX_FENWICK_INDEX,
+            collateralToPledge: 6 * 1e18,
+            newLup:             980.237438737934313685 * 1e18
+        });
+
+        // pass time to allow interest to accrue
+        skip(2 hours);
+
+        // Skip to make borrower undercollateralized
+        skip(200 days);
+
+
+        // all QT was inserted when minting NFT, provide more to kick
+        deal(address(_quote), _minterTwo, 10_000 * 1e18);
+
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              25656.385808102176964640 * 1e18,
+            borrowerCollateral:        25.921751033498703620  * 1e18,
+            borrowert0Np:              1_004.264567230919901856 * 1e18,
+            borrowerCollateralization: 0.990376081445383032 * 1e18
+        });
+
+        _kick({
+            from:           _minterTwo,
+            borrower:       _borrower,
+            debt:           25_945.020148443326455492 * 1e18,
+            collateral:     25.921751033498703620 * 1e18,
+            bond:           256.563858081021769646 * 1e18,
+            transferAmount: 256.563858081021769646 * 1e18
+        });
+
+        // skip ahead so take can be called on the loan
+        skip(72 hours);
+
+        // take entire collateral
+        _take({
+            from:            _minterTwo,
+            borrower:        _borrower,
+            maxCollateral:   100.0  * 1e18,
+            bondChange:      0 * 1e18,
+            givenAmount:     0 * 1e18,
+            collateralTaken: 25.921751033498703620 * 1e18,
+            isReward:        true
+        });
+
+        _settle({
+            from:        _minterTwo,
+            borrower:    _borrower,
+            maxDepth:    10,
+            settledDebt: 26_954.947917202244023854 * 1e18
+        });
+
+        // bucket is insolvent, balances are reset
+        _assertBucket({
+            index:        2770,
+            lpBalance:    0, // bucket is bankrupt
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1.0 * 1e18
+        });
+
+        _assertBucket({
+            index:        2771,
+            lpBalance:    0, // bucket is bankrupt
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1.0 * 1e18
+        });
+
+        ERC20Pool(address(_pool)).increaseLPAllowance(address(_positionManager), depositIndexes, lpBalances);
+
+        // actor cannot re-memorialize using same tokenID because they are not the owner, rewardsManager is
+        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
+        _positionManager.memorializePositions(address(_pool), tokenIdOne, depositIndexes);
+
+        // Staker doesn't receive rewards, proof that once a bucket is bankrupted all previous rewards are nullified for if the positionManager's deposit time
+        // is before the bucket's bankruptcy. Due to filtering in `getFilteredPositions()`
+        _unstakeToken({
+            owner:                     _minterOne,
+            pool:                      address(_pool),
+            tokenId:                   tokenIdOne,
+            claimedArray:              _epochsClaimedArray(2, 0),
+            reward:                    0 * 1e18,
+            indexes:                   depositIndexes,
             updateExchangeRatesReward: 0
         });
     }
