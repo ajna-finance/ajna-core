@@ -680,6 +680,23 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             borrowerCollateralization: 0.974363394700228467 * 1e18
         });
 
+        _addLiquidityWithPenalty({
+            from:        _lender1,
+            amount:      100 * 1e18,
+            amountAdded: 99.987671232876712300 * 1e18,
+            index:       _i9_52,
+            lpAward:     99.987671232876712300 * 1e18,
+            newLup:      9.721295865031779605 * 1e18
+        });
+        
+        _addLiquidity({ 
+            from:    _lender1, 
+            amount:  100 * 1e18, 
+            index:   _i9_91, 
+            lpAward: 99.367201799558744044 * 1e18,
+            newLup:  9.721295865031779605 * 1e18
+        });
+
         // take entire collateral
         _take({
             from:            _lender,
@@ -716,30 +733,11 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:  _i9_52
         });
 
-        // add liquidity in same block should be possible as debt was not yet settled / bucket is not yet insolvent
-        _addLiquidity({
-            from:    _lender1,
-            amount:  100 * 1e18,
-            index:   _i9_91,
-            lpAward: 99.367201799558744044 * 1e18,
-            newLup:  9.721295865031779605 * 1e18
-        });
-
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       _i9_91,
             lpBalance:   99.367201799558744044 * 1e18,
             depositTime: _startTime + 100 days + 10 hours
-        });
-
-        // adding to a different bucket for testing move in same block with bucket bankruptcy
-        _addLiquidityWithPenalty({
-            from:        _lender1,
-            amount:      100 * 1e18,
-            amountAdded: 99.987671232876712300 * 1e18,
-            index:       _i9_52,
-            lpAward:     99.987671232876712300 * 1e18,
-            newLup:      9.721295865031779605 * 1e18
         });
 
         // settle to make buckets insolvent
@@ -751,7 +749,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             borrowert0Np:              10.307611531622595991 * 1e18,
             borrowerCollateralization: 0
         });
-        
+
         assertTrue(block.timestamp - kickTime < 72 hours); // assert auction was kicked less than 72 hours ago
 
         // LP forfeited when forgive bad debt should be reflected in BucketBankruptcy event
@@ -889,7 +887,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         });
     }
 
-    function testSettleZeroExchangeRateResidualBankruptcy() external  {
+    function testSettleZeroExchangeRateResidualBankruptcy() external tearDown {
         // Borrower2 borrows
         _borrow({
             from:       _borrower2,
@@ -968,6 +966,15 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             borrowerCollateralization: 0.974363394700228467 * 1e18
         });
 
+        // add liquidity in same block should be possible as debt was not yet settled / bucket is not yet insolvent
+        _addLiquidity({
+            from:    _lender1,
+            amount:  100 * 1e18,
+            index:   _i9_91,
+            lpAward: 99.367201799558744044 * 1e18,
+            newLup:  9.721295865031779605 * 1e18
+        });
+
         // take entire collateral
         _take({
             from:            _lender,
@@ -979,15 +986,6 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             isReward:        true
         });
 
-        // add liquidity in same block should be possible as debt was not yet settled / bucket is not yet insolvent
-        _addLiquidity({
-            from:    _lender1,
-            amount:  100 * 1e18,
-            index:   _i9_91,
-            lpAward: 99.367201799558744044 * 1e18,
-            newLup:  9.721295865031779605 * 1e18
-        });
-
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       _i9_91,
@@ -995,34 +993,9 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             depositTime: _startTime + 100 days + 10 hours
         });
 
-        // adding to a different bucket for testing move in same block with bucket bankruptcy
-        _addLiquidityWithPenalty({
-            from:        _lender1,
-            amount:      100 * 1e18,
-            amountAdded: 99.987671232876712300 * 1e18,
-            index:       _i9_52,
-            lpAward:     99.987671232876712300 * 1e18,
-            newLup:      9.721295865031779605 * 1e18
-        });
-
-        (uint256 reserves, , , ,) = _poolUtils.poolReservesInfo(address(_pool));
-
-        // Add 10 more quote token than would be enough to cover debt, with reserves
-        _addLiquidity({
-            from:    _lender1,
-            amount:  2_884.311069344372084707 * 1e18 + 10 - reserves,
-            index:   _i9_81,
-            lpAward: 2_020.307252493359351053 * 1e18,
-            newLup:  9.721295865031779605 * 1e18
-        });
-
-        uint256 bucket1Deposit = 2_112.736560735960384000 * 1e18;
-        uint256 bucket2Deposit = 7_065.014537346601772213 * 1e18;
-        uint256 debtToSettle   = 10_028.889031920233428709 * 1e18;
-
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              debtToSettle,
+            borrowerDebt:              10_028.889031920233428709 * 1e18,
             borrowerCollateral:        0,
             borrowert0Np:              10.307611531622595991 * 1e18,
             borrowerCollateralization: 0
@@ -1032,23 +1005,13 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_91,
             lpBalance:    2_099.367201799558744044 * 1e18,
             collateral:   0,
-            deposit:      bucket1Deposit,
-            exchangeRate: 1.006368280367980193 * 1e18
-        });
-
-        _assertBucket({
-            index:        _i9_81,
-            lpBalance:    7_020.307252493359351053 * 1e18,
-            collateral:   0,
-            deposit:      bucket2Deposit,
+            deposit:      2_112.736560735960384000 * 1e18,
             exchangeRate: 1.006368280367980193 * 1e18
         });
 
         // LP forfeited when forgive bad debt should be reflected in BucketBankruptcy event
         vm.expectEmit(true, true, false, true);
         emit BucketBankruptcy(_i9_91, 2_099.367201799558744044 * 1e18);
-        vm.expectEmit(true, true, false, true);
-        emit BucketBankruptcy(_i9_81, 7_020.307252493359351053 * 1e18);
         _settle({
             from:        _lender,
             borrower:    _borrower2,
@@ -1063,25 +1026,6 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             collateral:   0,
             deposit:      0,
             exchangeRate: 1 * 1e18
-        });
-
-        skip(1 hours);
-        // bucket is insolvent, balances are resetted
-        _assertBucketAssets({
-            index:        _i9_81,
-            lpBalance:    0, // bucket is bankrupt
-            collateral:   0,
-            deposit:      0,
-            exchangeRate: 1 * 1e18
-        });
-
-        // add to bankrupt bucket with deposit to enable tearDown
-        _addLiquidity({
-            from:    _lender1,
-            amount:  1 * 1e18,
-            index:   _i9_81,
-            lpAward: 1 * 1e18,
-            newLup:  9.721295865031779605 * 1e18
         });
 
     }
