@@ -294,7 +294,7 @@ library PoolCommons {
         if (4 * (tu - mau102) < (((tu + mau102 - 1e18) / 1e9) ** 2) - 1e18) {
             newInterestRate_ = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
         // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
-        } else if (4 * (tu - mau) > 1e18 - ((tu + mau - 1e18) ** 2) / 1e18) {
+        } else if (4 * (tu - mau) > 1e18 - ((tu + mau - 1e18) / 1e9) ** 2) {
             newInterestRate_ = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
         }
 
