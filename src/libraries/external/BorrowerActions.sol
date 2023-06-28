@@ -375,8 +375,6 @@ library BorrowerActions {
             // calculate LUP only if it wasn't calculated in repay action
             if (!vars.repay) result_.newLup = Deposits.getLup(deposits_, result_.poolDebt);
 
-            _revertIfPriceDroppedBelowLimit(result_.newLup, limitIndex_);
-
             uint256 encumberedCollateral = Maths.wdiv(vars.borrowerDebt, result_.newLup);
             if (
                 borrower.t0Debt != 0 && encumberedCollateral == 0 || // case when small amount of debt at a high LUP results in encumbered collateral calculated as 0
@@ -391,6 +389,9 @@ library BorrowerActions {
 
             result_.poolCollateral -= collateralAmountToPull_;
         }
+
+        // check limit price and revert if price dropped below
+        _revertIfPriceDroppedBelowLimit(result_.newLup, limitIndex_);
 
         // update loan state
         Loans.update(
