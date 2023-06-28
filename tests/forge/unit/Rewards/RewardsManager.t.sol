@@ -2344,6 +2344,180 @@ contract RewardsManagerTest is RewardsHelperContract {
 
     }
 
+    function testMultipleUnstakeInSameEpoch() external {
+        
+        skip(10);
+
+        uint256 totalTokensBurned;
+
+        // configure NFT position
+        uint256[] memory depositIndexes = new uint256[](10);
+        depositIndexes[0] = 5995;
+        depositIndexes[1] = 5996;
+        depositIndexes[2] = 5997;
+        depositIndexes[3] = 5998;
+        depositIndexes[4] = 5999;
+        depositIndexes[5] = 6000;
+        depositIndexes[6] = 6001;
+        depositIndexes[7] = 6002;
+        depositIndexes[8] = 6003;
+        depositIndexes[9] = 6004;
+
+        // mint memorialize and deposit NFT
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT({
+            indexes:    depositIndexes,
+            minter:     _minterOne,
+            mintAmount: 1_000 * 1e18,
+            pool:       address(_pool)
+        });
+
+        _stakeToken({
+            pool:    address(_pool),
+            owner:   _minterOne,
+            tokenId: tokenIdOne
+        });
+
+        /*****************************/
+        /*** First Reserve Auction ***/
+        /*****************************/
+
+        // borrower takes actions providing reserves enabling reserve auctions
+        // bidder takes reserve auctions by providing ajna tokens to be burned
+        totalTokensBurned += _triggerReserveAuctions({
+            borrower:     _borrower,
+            tokensToBurn: 408.996298826179924310 * 1e18,
+            borrowAmount: 1_500 * 1e18,
+            limitIndex:   6000,
+            pool:         address(_pool)
+        });
+
+        // call update exchange rate to enable claiming rewards
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_pool),
+            indexes:        depositIndexes,
+            reward:         20.449814941308995996 * 1e18
+        });
+        assertEq(_ajnaToken.balanceOf(_updater), 20.449814941308995996 * 1e18);
+
+        uint256 rewardsEarnedFirstEpoch = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
+        assertEq(rewardsEarnedFirstEpoch, 204.498149413089959965 * 1e18);
+
+        uint256 totalRewardEarned = 374.969146539701943260 * 1e18;
+
+        uint256 snapshot = vm.snapshot();
+
+        // unstake and stake multiple times to check it has no effect on staking rewards
+        _unstakeToken({
+            owner:                     _minterOne,
+            pool:                      address(_pool),
+            tokenId:                   tokenIdOne,
+            claimedArray:              _epochsClaimedArray(1, 0),
+            reward:                    rewardsEarnedFirstEpoch,
+            indexes:                   depositIndexes,
+            updateExchangeRatesReward: 0
+        });
+
+        _stakeToken({
+            pool:    address(_pool),
+            owner:   _minterOne,
+            tokenId: tokenIdOne
+        });
+
+        _unstakeToken({
+            owner:                     _minterOne,
+            pool:                      address(_pool),
+            tokenId:                   tokenIdOne,
+            claimedArray:              _epochsClaimedArray(0, 0),
+            reward:                    0,
+            indexes:                   depositIndexes,
+            updateExchangeRatesReward: 0
+        });
+
+        _stakeToken({
+            pool:    address(_pool),
+            owner:   _minterOne,
+            tokenId: tokenIdOne
+        });
+
+        /******************************/
+        /*** Second Reserve Auction ***/
+        /******************************/
+        // trigger second reserve auction
+        totalTokensBurned += _triggerReserveAuctions({
+            borrower:     _borrower,
+            tokensToBurn: 749.938293079403940202 * 1e18,
+            borrowAmount: 1_500 * 1e18,
+            limitIndex:   6_000,
+            pool:         address(_pool)
+        });
+
+        // call update exchange rate to enable claiming rewards
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_pool),
+            indexes:        depositIndexes,
+            reward:         17.047099712661198328 * 1e18
+        });
+
+        uint256 newRewardsEarned = totalRewardEarned - rewardsEarnedFirstEpoch;
+
+        // claim rewards for second epoch
+        _claimRewards({
+            pool:               address(_pool),
+            from:               _minterOne,
+            tokenId:            tokenIdOne,
+            minAmountToReceive: 0,
+            epochsClaimed:      _epochsClaimedArray(1, 1),
+            reward:             newRewardsEarned
+        });
+
+        // ensure total rewards earned are same with and without unstake between epochs
+        assertEq(_ajnaToken.balanceOf(_minterOne), totalRewardEarned);
+
+        // Check rewards total rewards generated without any unstake between epochs
+        vm.revertTo(snapshot);
+
+        /******************************/
+        /*** Second Reserve Auction ***/
+        /******************************/
+
+        // trigger second reserve auction
+        totalTokensBurned += _triggerReserveAuctions({
+            borrower:     _borrower,
+            tokensToBurn: 749.938293079403940202 * 1e18,
+            borrowAmount: 1_500 * 1e18,
+            limitIndex:   6_000,
+            pool:         address(_pool)
+        });
+
+        // call update exchange rate to enable claiming rewards
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_pool),
+            indexes:        depositIndexes,
+            reward:         17.047099712661198328 * 1e18
+        });
+
+        // check available rewards
+        uint256 rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
+        assertEq(rewardsEarned, totalRewardEarned);
+
+        // claim all rewards accrued since deposit
+        _claimRewards({
+            pool:               address(_pool),
+            from:               _minterOne,
+            tokenId:            tokenIdOne,
+            minAmountToReceive: 0,
+            epochsClaimed:      _epochsClaimedArray(2,0),
+            reward:             totalRewardEarned
+        });
+        
+        // ensure total rewards earned are same with and without unstake between epochs
+        assertEq(_ajnaToken.balanceOf(_minterOne), totalRewardEarned);
+    
+    }
+
     /********************/
     /*** FUZZ TESTING ***/
     /********************/
