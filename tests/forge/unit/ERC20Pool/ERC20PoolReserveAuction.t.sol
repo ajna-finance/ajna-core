@@ -145,7 +145,7 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         ERC20Pool pool = ERC20Pool(address(_pool));
 
         changePrank(_actor3);
-        pool.addQuoteToken(197806, 2572, block.timestamp + 1);
+        pool.addQuoteToken(197806, 2572, block.timestamp + 1, false);
         pool.drawDebt(_actor3, 98903, 7388, 37);
         // pool balance is amount added minus new debt
         assertEq(_quote.balanceOf(address(pool)), 98903);
@@ -191,7 +191,7 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         pool.kickReserveAuction();
 
         // add tokens to have enough balance to kick new reserves auction
-        pool.addQuoteToken(100, 2572, block.timestamp + 1);
+        pool.addQuoteToken(100, 2572, block.timestamp + 1, false);
         pool.kickReserveAuction();
         // pool balance diminished by reward given to reserves kicker
         assertEq(_quote.balanceOf(address(pool)), 1116);

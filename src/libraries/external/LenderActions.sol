@@ -89,6 +89,7 @@ library LenderActions {
     error InsufficientLiquidity();
     error InsufficientCollateral();
     error MoveToSameIndex();
+    error PriceBelowLUP();
 
     /***************************/
     /***  External Functions ***/
@@ -171,7 +172,10 @@ library LenderActions {
         // charge unutilized deposit fee where appropriate
         uint256 lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
         bool depositBelowLup = lupIndex != 0 && params_.index > lupIndex;
+
         if (depositBelowLup) {
+            if (params_.revertIfBelowLup) revert PriceBelowLUP();
+
             addedAmount = Maths.wmul(addedAmount, Maths.WAD - _depositFeeRate(poolState_.rate));
         }
 
