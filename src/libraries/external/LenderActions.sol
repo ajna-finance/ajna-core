@@ -311,7 +311,18 @@ library LenderActions {
         vars.htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
 
         // check loan book's htp against new lup, revert if move drives LUP below HTP
-        if (params_.fromIndex < params_.toIndex && vars.htp > lup_) revert LUPBelowHTP();
+        if (
+            params_.fromIndex < params_.toIndex
+            &&
+            (
+                // check loan book's htp doesn't exceed new lup
+                vars.htp > lup_
+                ||
+                // ensure that pool debt < deposits after move
+                // this can happen if deposit fee is applied when moving amount
+                (poolState_.debt != 0 && poolState_.debt > Deposits.treeSum(deposits_))
+            )
+        ) revert LUPBelowHTP();
 
         // update lender and bucket LP balance in from bucket
         vars.fromBucketRemainingLP = vars.fromBucketLP - fromBucketRedeemedLP_;
