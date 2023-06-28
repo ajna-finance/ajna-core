@@ -1152,15 +1152,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             })
         );
 
-        // add more liquidity to settle auction
-        _mintQuoteAndApproveTokens(_lender1, 40_000 * 1e18);
-        _addLiquidity({
-            from:    _lender1,
-            amount:  40_000 * 1e18,
-            index:   2500,
-            lpAward: 39_985.826748556412134387 * 1e18,
-            newLup:  3_863.654368867279344664 * 1e18
-        });
+
 
         _settle({
             from:        _lender1,
@@ -1212,8 +1204,8 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             49_645.701045977641587831 * 1e18,
-                pledgedCollateral:    4_973.729764048432419297 * 1e18,
+                poolSize:             9_645.701045977641587831 * 1e18,
+                pledgedCollateral:    4_973.703521110015138686 * 1e18,
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0,
@@ -1229,8 +1221,8 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       2500,
-            lpBalance:   89_985.826748556412134387 * 1e18,
-            depositTime: _startTime + 80 hours
+            lpBalance:   50_000.000000000000000000 * 1e18,
+            depositTime: _startTime
         });
         // assert lender1 as a kicker
         _assertKicker({
@@ -1256,7 +1248,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
         _assertBorrower({
             borrower:                  _borrower3,
             borrowerDebt:              0,
-            borrowerCollateral:        994.751412316543869246 * 1e18,
+            borrowerCollateral:        994.725169378126588635 * 1e18,
             borrowert0Np:              21.125293269230769068 * 1e18,
             borrowerCollateralization: 1 * 1e18
         });
