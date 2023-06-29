@@ -155,7 +155,7 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
         uint256 numberOfEpochs_
     ) internal {
 
-        numberOfEpochs_ = constrictToRange(numberOfEpochs_, 1, vm.envOr("MAX_EPOCH_ADVANCE", uint256(2)));
+        numberOfEpochs_ = constrictToRange(numberOfEpochs_, 1, vm.envOr("MAX_EPOCH_ADVANCE", uint256(5)));
 
         for (uint256 epoch = 0; epoch <= numberOfEpochs_; epoch ++) {
             // draw some debt and then repay after some times to increase pool earning / reserves 

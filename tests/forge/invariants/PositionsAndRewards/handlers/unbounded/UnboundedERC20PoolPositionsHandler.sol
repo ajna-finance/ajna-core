@@ -67,30 +67,30 @@ abstract contract UnboundedERC20PoolPositionsHandler is UnboundedBasePositionHan
             // info used track actors positions
             tokenIdsByActor[address(_actor)].add(tokenId_);
 
-            uint256 positionManMangerLps;
-            uint256 positionManPoolLps;
+            uint256 poolLps;
+            uint256 managerLps;
 
             // Post action Checks //
             for(uint256 i=0; i < indexes_.length; i++) {
                 uint256 bucketIndex = indexes_[i];
 
                 (uint256 poolPosLps, uint256 poolDepositTime) = _pool.lenderInfo(bucketIndex, address(_positionManager));
-                (uint256 managerLps,) = _positionManager.getPositionInfo(tokenId_, bucketIndex);
+                (uint256 posBucketLps,) = _positionManager.getPositionInfo(tokenId_, bucketIndex);
 
-                positionManPoolLps   += poolPosLps;
-                positionManMangerLps += managerLps;
+                poolLps    += poolPosLps;
+                managerLps += posBucketLps;
 
                 require(poolDepositTime == bucketIndexToDepositTime[bucketIndex],
                 "PM7: positionManager depositTime does not match most recent depositTime");
             }
 
             // assert that the LP that now exists in the pool contract matches the amount added by the actor 
-            require(positionManPoolLps == actorPreActionPoolLps + positionManPreActionPoolLps,
+            require(poolLps == actorPreActionPoolLps + positionManPreActionPoolLps,
             "PM7: pool contract lps do not match amount added by actor");
 
             // assert that the positionManager LP balance of the actor has increased
-            require(positionManMangerLps == actorPreActionPoolLps,
-            "PM7: positionManager lps do not match amount added by actor");
+            require(managerLps == actorPreActionPoolLps,
+            "PM7: positionManager lps do not match amount added by actor"); 
 
         } catch (bytes memory err) {
             _ensurePositionsManagerError(err);
