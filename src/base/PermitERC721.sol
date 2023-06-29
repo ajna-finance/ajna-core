@@ -34,6 +34,15 @@ interface IPermit {
     /*** External Functions ***/
     /**************************/
 
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
+
+    /**
+    *  @notice Allows to retrieve current nonce for token.
+    *  @param  tokenId token id
+    *  @return current token nonce
+    */
+    function nonces(uint256 tokenId) external view returns (uint256);
+
     /**
     *  @notice `EIP-4494` permit to approve by way of owner signature.
     */
@@ -154,6 +163,19 @@ abstract contract PermitERC721 is ERC721, IPermit {
 
         // approve the spender for accessing the tokenId
         _approve(spender_, tokenId_);
+    }
+
+    /**
+     *  @notice Query if a contract implements an interface.
+     *  @param  interfaceId The interface identifier.
+     *  @return `true` if the contract implements `interfaceId` and `interfaceId` is not 0xffffffff, `false` otherwise
+     */
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override returns (bool) {
+        return
+            interfaceId == type(IPermit).interfaceId || // 0x5604e225
+            super.supportsInterface(interfaceId);
     }
 
     /**************************/

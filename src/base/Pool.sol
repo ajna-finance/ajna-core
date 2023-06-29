@@ -150,6 +150,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         bool    revertIfBelowLup_
     ) external override nonReentrant returns (uint256 bucketLP_) {
         _revertAfterExpiry(expiry_);
+
+        _revertIfAuctionClearable(auctions, loans);
+
         PoolState memory poolState = _accruePoolInterest();
 
         // round to token precision
