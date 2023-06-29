@@ -18,13 +18,13 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
     function testValidateAddQuoteTokenInput() external tearDown {
         // revert on zero amount
         vm.expectRevert(IPoolErrors.InvalidAmount.selector);
-        _pool.addQuoteToken(0, 1000, block.timestamp + 1);
+        _pool.addQuoteToken(0, 1000, block.timestamp + 1, false);
         // revert on zero index
         vm.expectRevert(IPoolErrors.InvalidIndex.selector);
-        _pool.addQuoteToken(1000, 0, block.timestamp + 1);
+        _pool.addQuoteToken(1000, 0, block.timestamp + 1, false);
         // revert on index greater than max index
         vm.expectRevert(IPoolErrors.InvalidIndex.selector);
-        _pool.addQuoteToken(1000, MAX_FENWICK_INDEX + 1, block.timestamp + 1);
+        _pool.addQuoteToken(1000, MAX_FENWICK_INDEX + 1, block.timestamp + 1, false);
     }
 
     function testValidateMoveQuoteTokenInput() external tearDown {

@@ -28,7 +28,7 @@ contract PurchaseQuoteWithExternalLiquidityTest is Test {
         deal(USDC, _lender, 120_000 * 1e6);
         vm.startPrank(_lender);
         usdc.approve(address(_ajnaPool), type(uint256).max);
-        _ajnaPool.addQuoteToken(5_000 * 1e18, 500, type(uint256).max);
+        _ajnaPool.addQuoteToken(5_000 * 1e18, 500, type(uint256).max, false);
         vm.stopPrank();
     }
 

@@ -13,15 +13,17 @@ interface IPoolLenderActions {
 
     /**
      *  @notice Called by lenders to add an amount of credit at a specified price bucket.
-     *  @param  amount_   The amount of quote token to be added by a lender (`WAD` precision).
-     *  @param  index_    The index of the bucket to which the quote tokens will be added.
-     *  @param  expiry_   Timestamp after which this transaction will revert, preventing inclusion in a block with unfavorable price.
-     *  @return bucketLP_ The amount of `LP` changed for the added quote tokens (`WAD` precision).
+     *  @param  amount_           The amount of quote token to be added by a lender (`WAD` precision).
+     *  @param  index_            The index of the bucket to which the quote tokens will be added.
+     *  @param  expiry_           Timestamp after which this transaction will revert, preventing inclusion in a block with unfavorable price.
+     *  @param  revertIfBelowLup_ The tx will revert if price of the bucket to which the quote tokens will be added is below `LUP` price (and avoid paying fee for deposit below `LUP`).
+     *  @return bucketLP_         The amount of `LP` changed for the added quote tokens (`WAD` precision).
      */
     function addQuoteToken(
         uint256 amount_,
         uint256 index_,
-        uint256 expiry_
+        uint256 expiry_,
+        bool    revertIfBelowLup_
     ) external returns (uint256 bucketLP_);
 
     /**

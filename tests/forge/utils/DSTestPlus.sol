@@ -130,7 +130,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 index
     ) internal {
         changePrank(from);
-        _pool.addQuoteToken(amount, index, type(uint256).max);
+        _pool.addQuoteToken(amount, index, type(uint256).max, false);
 
         // Add for tearDown
         lenders.add(from);
@@ -162,7 +162,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(from, index, (amountAdded / quoteTokenScale) * quoteTokenScale, lpAward, newLup);
         _assertQuoteTokenTransferEvent(from, address(_pool), amount);
-        _pool.addQuoteToken(amount, index, type(uint256).max);
+        _pool.addQuoteToken(amount, index, type(uint256).max, false);
 
         // Add for tearDown
         lenders.add(from);
@@ -791,7 +791,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('BucketBankruptcyBlock()'));
-        _pool.addQuoteToken(amount, index, type(uint256).max);
+        _pool.addQuoteToken(amount, index, type(uint256).max, false);
     }
 
     function _assertAddLiquidityAtIndex0Revert(
@@ -800,7 +800,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InvalidIndex.selector);
-        _pool.addQuoteToken(amount, 0, type(uint256).max);
+        _pool.addQuoteToken(amount, 0, type(uint256).max, false);
     }
 
     function _assertAddLiquidityDustRevert(
@@ -810,7 +810,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
-        _pool.addQuoteToken(amount, index, type(uint256).max);
+        _pool.addQuoteToken(amount, index, type(uint256).max, false);
     }
 
     function _assertAddLiquidityExpiredRevert(
@@ -821,7 +821,17 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.TransactionExpired.selector);
-        _pool.addQuoteToken(amount, index, expiry);
+        _pool.addQuoteToken(amount, index, expiry, false);
+    }
+
+    function _assertAddLiquidityPriceBelowLUPRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('PriceBelowLUP()'));
+        _pool.addQuoteToken(amount, index, type(uint256).max, true);
     }
 
     function _assertArbTakeNoAuction(

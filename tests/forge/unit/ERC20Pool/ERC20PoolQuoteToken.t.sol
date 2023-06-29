@@ -225,10 +225,11 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         // should revert if passing future timestamp but time has elapsed
         bytes memory data = abi.encodeWithSignature(
-            "addQuoteToken(uint256,uint256,uint256)",
+            "addQuoteToken(uint256,uint256,uint256,bool)",
             50_000 * 1e18,
             3333,
-            block.timestamp + 5 minutes
+            block.timestamp + 5 minutes,
+            false
         );
 
         // should succeed if time hasn't passed

@@ -109,7 +109,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                     }
                     deal(_pool.quoteTokenAddress(), lender, depositRequired);
                     Token(_pool.quoteTokenAddress()).approve(address(_pool) , depositRequired);
-                    _pool.addQuoteToken(depositRequired, bucketIndex, block.timestamp + 1 minutes);
+                    _pool.addQuoteToken(depositRequired, bucketIndex, block.timestamp + 1 minutes, false);
                     (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
                     lpsAsCollateral = _poolUtils.lpToCollateral(address(_pool), lenderLpBalance, bucketIndex);
                 }
@@ -635,6 +635,16 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LimitIndexExceeded.selector);
         ERC721Pool(address(_pool)).repayDebt(from, 0, amount, from, indexLimit);
+    }
+
+    function _assertRepayLimitIndexRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.LimitIndexExceeded.selector);
+        ERC721Pool(address(_pool)).repayDebt(from, amount, 0, from, indexLimit);
     }
 
     function _assertRepayNoDebtRevert(

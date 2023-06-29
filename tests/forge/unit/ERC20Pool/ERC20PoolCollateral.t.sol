@@ -1045,7 +1045,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         _mintQuoteAndApproveTokens(actor, 1000000000000 * 1e18);
 
         changePrank(actor);
-        _pool.addQuoteToken(913597152782868931694946846442, 2572, block.timestamp + 100);
+        _pool.addQuoteToken(913597152782868931694946846442, 2572, block.timestamp + 100, false);
         ERC20Pool(address(_pool)).drawDebt(actor, 456798576391434465847473423221, 7388, 170152459663184217402759609);
 
         skip(100 days);
@@ -1061,7 +1061,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         _mintQuoteAndApproveTokens(actor, 1000000000000 * 1e18);
 
         changePrank(actor);
-        _pool.addQuoteToken(200, 2572, block.timestamp + 100);
+        _pool.addQuoteToken(200, 2572, block.timestamp + 100, false);
         ERC20Pool(address(_pool)).drawDebt(actor, 100, 7388, 1);
 
         // actor should not be able to pull his collateral without repaying the debt

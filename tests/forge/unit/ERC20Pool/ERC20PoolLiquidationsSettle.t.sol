@@ -821,7 +821,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             depositTime: bankruptcyTime + 1
         });
 
-        _pool.addQuoteToken(100 * 1e18, _i9_91, block.timestamp + 1 minutes);
+        _pool.addQuoteToken(100 * 1e18, _i9_91, block.timestamp + 1 minutes, false);
         ERC20Pool(address(_pool)).addCollateral(4 * 1e18, _i9_91, block.timestamp + 1 minutes);
 
         _assertLenderLpBalance({
@@ -857,7 +857,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             depositTime: _startTime + 100 days + 10 hours + 1 // _i9_91 bucket insolvency time + 1 (since deposit in _i9_52 from bucket was done before _i9_91 target bucket become insolvent)
         });
 
-        _pool.addQuoteToken(1_000 * 1e18, _i9_52, block.timestamp + 1 minutes);
+        _pool.addQuoteToken(1_000 * 1e18, _i9_52, block.timestamp + 1 minutes, false);
         _pool.moveQuoteToken(1_000 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes);
 
         _assertLenderLpBalance({
@@ -1075,7 +1075,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
 
     function testSettleAndBankruptcyOnHPBWithTinyDeposit() external {
         changePrank(actor6);
-        _pool.addQuoteToken(2_000_000 * 1e18, 2572, block.timestamp + 100);
+        _pool.addQuoteToken(2_000_000 * 1e18, 2572, block.timestamp + 100, false);
         skip(100 days);
         ERC20Pool(address(_pool)).drawDebt(actor6, 1000000 * 1e18, 7388, 372.489032271806320214 * 1e18);
         skip(100 days);
@@ -1093,7 +1093,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         skip(10 days);
 
         changePrank(actor3);
-        _pool.addQuoteToken(2, 2571, block.timestamp + 100);
+        _pool.addQuoteToken(2, 2571, block.timestamp + 100, false);
 
         (uint256 bucketLps, uint256 collateral, , uint256 deposit, ) = _pool.bucketInfo(2571);
         assertEq(bucketLps, 2);

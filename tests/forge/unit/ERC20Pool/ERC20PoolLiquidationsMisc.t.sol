@@ -252,7 +252,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
 
         // lender can add / remove liquidity in buckets that are not within liquidation debt
         changePrank(_lender1);
-        _pool.addQuoteToken(2_000 * 1e18, 5000, block.timestamp + 1 minutes);
+        _pool.addQuoteToken(2_000 * 1e18, 5000, block.timestamp + 1 minutes, false);
         _pool.removeQuoteToken(2_000 * 1e18, 5000);
 
         skip(3 hours);
