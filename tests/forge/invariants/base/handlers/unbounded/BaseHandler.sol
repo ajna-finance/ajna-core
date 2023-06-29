@@ -369,20 +369,15 @@ abstract contract BaseHandler is Test {
         if (pendingFactor == 1e18) return;
 
         // get TP of worst loan
-        (uint256 inflator, ) = _pool.inflatorInfo();
+        (, uint256 htp,) = _pool.loansInfo();
 
-        (, uint256 maxThresholdPrice,) =  _pool.loansInfo();
-        maxThresholdPrice = Maths.wdiv(maxThresholdPrice, inflator);
-
-        // get HTP and deposit above HTP
-        uint256 htp = Maths.wmul(maxThresholdPrice, inflator);
         uint256 accrualIndex;
 
         if (htp > MAX_PRICE)      accrualIndex = 1;                          // if HTP is over the highest price bucket then no buckets earn interest
         else if (htp < MIN_PRICE) accrualIndex = MAX_FENWICK_INDEX;          // if HTP is under the lowest price bucket then all buckets earn interest
         else                      accrualIndex = _poolInfo.priceToIndex(htp);
 
-        (, uint256 poolDebt,,) = _pool.debtInfo();
+        (, uint256 poolDebt, , ) = _pool.debtInfo();
         uint256 lupIndex = _pool.depositIndex(poolDebt);
 
         // accrual price is less of lup and htp, and prices decrease as index increases
