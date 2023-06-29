@@ -985,7 +985,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         amounts[0] = 30_000 * 1e18;
 
         changePrank(testMinter);
-        _pool.addQuoteToken(amounts[0], _i9_91, type(uint256).max);
+        _pool.addQuoteToken(amounts[0], _i9_91, type(uint256).max, false);
 
         _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
         _pool.approveLPTransferors(transferors);

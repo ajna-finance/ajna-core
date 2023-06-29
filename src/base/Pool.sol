@@ -146,7 +146,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function addQuoteToken(
         uint256 amount_,
         uint256 index_,
-        uint256 expiry_
+        uint256 expiry_,
+        bool    revertIfBelowLup_
     ) external override nonReentrant returns (uint256 bucketLP_) {
         _revertAfterExpiry(expiry_);
 
@@ -163,8 +164,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             poolState,
             AddQuoteParams({
-                amount: amount_,
-                index:  index_
+                amount:           amount_,
+                index:            index_,
+                revertIfBelowLup: revertIfBelowLup_
             })
         );
 

@@ -71,8 +71,9 @@ struct KickReserveAuctionParams {
 
 /// @dev Struct used to hold parameters for `LenderAction.addQuoteToken` action.
 struct AddQuoteParams {
-    uint256 amount;          // [WAD] amount to be added
-    uint256 index;           // the index in which to deposit
+    uint256 amount;           // [WAD] amount to be added
+    uint256 index;            // the index in which to deposit
+    bool    revertIfBelowLup; // revert tx if index in which to deposit is below LUP
 }
 
 /// @dev Struct used to hold parameters for `LenderAction.moveQuoteToken` action.

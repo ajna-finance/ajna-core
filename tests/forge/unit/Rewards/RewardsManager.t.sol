@@ -194,8 +194,8 @@ contract RewardsManagerTest is RewardsHelperContract {
         deal(address(_quoteOne), _minterOne, 400 * 1e18);
         changePrank(_minterOne);
         _quoteOne.approve(address(_pool), type(uint256).max);
-        _pool.addQuoteToken(200 * 1e18, 2_000, type(uint256).max);
-        _pool.addQuoteToken(200 * 1e18, 4_000, type(uint256).max);
+        _pool.addQuoteToken(200 * 1e18, 2_000, type(uint256).max, false);
+        _pool.addQuoteToken(200 * 1e18, 4_000, type(uint256).max, false);
         skip(1 hours);
 
         // draw debt between the buckets
@@ -1059,12 +1059,12 @@ contract RewardsManagerTest is RewardsHelperContract {
         changePrank(_minterOne);
         uint256[] memory lpBalances = new uint256[](depositIndexes.length);
         for (uint256 i = 0; i < depositIndexes.length; i++) {
-            ERC20Pool(address(_pool)).addQuoteToken(100 * 1e18, depositIndexes[i], type(uint256).max);
+            ERC20Pool(address(_pool)).addQuoteToken(100 * 1e18, depositIndexes[i], type(uint256).max, false);
             (lpBalances[i], ) = ERC20Pool(address(_pool)).lenderInfo(depositIndexes[i], _minterOne);
         }
 
         // add more QT so borrower can draw enough debt to bankrupt bucket
-        ERC20Pool(address(_pool)).addQuoteToken(6_000.0 * 1e18, 2775, type(uint256).max);
+        ERC20Pool(address(_pool)).addQuoteToken(6_000.0 * 1e18, 2775, type(uint256).max, false);
 
         // borrower borrows
         (collateralToPledge) = _createTestBorrower(address(_pool), _borrower, 25_000 * 1e18, 2775);
