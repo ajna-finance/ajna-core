@@ -55,11 +55,17 @@ contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC7
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_,
-        uint256 numberOfEpochs_
+        uint256 numberOfEpochs_,
+        uint256 bucketSubsetToUpdate_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BRewardsHandler.unstake']++;
         // Pre action
-        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_, numberOfEpochs_);
+        uint256 tokenId = _preUnstake(
+            _lenderBucketIndex,
+            amountToAdd_,
+            numberOfEpochs_,
+            bucketSubsetToUpdate_
+        );
         
         // if rewards exceed contract balance tx will revert, return
         uint256 reward = _rewardsManager.calculateRewards(tokenId, _pool.currentBurnEpoch());
@@ -74,12 +80,18 @@ contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC7
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_,
-        uint256 numberOfEpochs_
+        uint256 numberOfEpochs_,
+        uint256 bucketSubsetToUpdate_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BRewardsHandler.emergencyUnstake']++;
         
         // Pre action
-        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_, numberOfEpochs_);
+        uint256 tokenId = _preUnstake(
+            _lenderBucketIndex,
+            amountToAdd_,
+            numberOfEpochs_,
+            bucketSubsetToUpdate_
+        );
         
         // Action phase
         _emergencyUnstake(tokenId);
@@ -110,12 +122,18 @@ contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC7
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_,
-        uint256 numberOfEpochs_
+        uint256 numberOfEpochs_,
+        uint256 bucketSubsetToUpdate_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BRewardsHandler.claimRewards']++;
 
         // Pre action //
-        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_, numberOfEpochs_);
+        uint256 tokenId = _preUnstake(
+            _lenderBucketIndex,
+            amountToAdd_,
+            numberOfEpochs_,
+            bucketSubsetToUpdate_
+        );
 
         // Action phase
         _claimRewards(tokenId, _pool.currentBurnEpoch());
@@ -141,18 +159,25 @@ contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC7
     function _preUnstake(
         uint256 bucketIndex_,
         uint256 amountToAdd_,
-        uint256 numberOfEpochs_
+        uint256 numberOfEpochs_,
+        uint256 bucketSubsetToUpdate_
     ) internal returns (uint256 tokenId_) {
         uint256[] memory indexes;
         (tokenId_, indexes)= _getStakedPosition(bucketIndex_, amountToAdd_);
 
-        _advanceEpochRewardStakers(amountToAdd_, indexes, numberOfEpochs_);
+        _advanceEpochRewardStakers(
+            amountToAdd_,
+            indexes,
+            numberOfEpochs_,
+            bucketSubsetToUpdate_
+        );
     }
 
     function _advanceEpochRewardStakers(
         uint256 amountToAdd_,
         uint256[] memory indexes_,
-        uint256 numberOfEpochs_
+        uint256 numberOfEpochs_,
+        uint256 bucketSubsetToUpdate_
     ) internal {
         
         numberOfEpochs_ = constrictToRange(numberOfEpochs_, 1, vm.envOr("MAX_EPOCH_ADVANCE", uint256(2)));
@@ -180,7 +205,23 @@ contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC7
             _takeReserves(boundedTakeAmount);
 
             // exchange rates must be updated so that rewards can be claimed
-            _updateExchangeRate(indexes_);
+            indexes_ = _randomizeExchangeRateIndexes(indexes_, bucketSubsetToUpdate_);
+            if (indexes_.length != 0) { _updateExchangeRate(indexes_); }
+        }
+    }
+
+    function _randomizeExchangeRateIndexes(
+        uint256[] memory indexes_,
+        uint256 bucketSubsetToUpdate_
+    ) internal returns (uint256[] memory boundBuckets_) {
+        
+        uint256 boundIndexes = bound(bucketSubsetToUpdate_, 0, indexes_.length);
+        boundBuckets_ = new uint256[](boundIndexes);
+
+        if (boundBuckets_.length !=0) {
+            for (uint256 i = 0; i < boundIndexes; i++) {
+                boundBuckets_[i] = indexes_[i];
+            }
         }
     }
 
