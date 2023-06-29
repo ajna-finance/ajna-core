@@ -437,7 +437,12 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         });
 
         // should revert if LUP is below the limit
-        ( , , , , , uint256 lupIndex ) = _poolUtils.poolPricesInfo(address(_pool));        
+        ( , , , , , uint256 lupIndex ) = _poolUtils.poolPricesInfo(address(_pool));
+        _assertRepayLimitIndexRevert({
+            from:       _borrower,
+            amount:     20 * 1e18,
+            indexLimit: lupIndex - 1
+        }); 
         _assertPullLimitIndexRevert({
             from:       _borrower,
             amount:     2,

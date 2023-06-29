@@ -176,6 +176,14 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
     }
 
+    function _stampLoan() internal updateLocalStateAndPoolInterest {
+        numberOfCalls['UBBasicHandler.stampLoan']++;
+        try _pool.stampLoan() {
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
+        }
+    }
+
     function _drawDebt(
         uint256 amount_
     ) internal virtual;

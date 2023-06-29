@@ -110,7 +110,7 @@ library SettlerActions {
         if (kickTime == 0) revert NoAuction();
 
         Borrower memory borrower = loans_.borrowers[params_.borrower];
-        if ((block.timestamp - kickTime < 72 hours) && (borrower.collateral != 0)) revert AuctionNotClearable();
+        if ((block.timestamp - kickTime <= 72 hours) && (borrower.collateral != 0)) revert AuctionNotClearable();
 
         result_.debtPreAction       = borrower.t0Debt;
         result_.collateralPreAction = borrower.collateral;
