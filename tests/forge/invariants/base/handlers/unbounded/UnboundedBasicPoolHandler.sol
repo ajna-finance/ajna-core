@@ -112,7 +112,8 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             amount_,
             fromIndex_,
             toIndex_,
-            block.timestamp + 1 minutes
+            block.timestamp + 1 minutes,
+            false
         ) returns (uint256, uint256, uint256 movedAmount_) {
 
             (, uint256 fromBucketDepositTime) = _pool.lenderInfo(fromIndex_, _actor);

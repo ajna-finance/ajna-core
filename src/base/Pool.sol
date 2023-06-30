@@ -182,12 +182,20 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 maxAmount_,
         uint256 fromIndex_,
         uint256 toIndex_,
-        uint256 expiry_
+        uint256 expiry_,
+        bool    revertIfBelowLup_
     ) external override nonReentrant returns (uint256 fromBucketLP_, uint256 toBucketLP_, uint256 movedAmount_) {
         _revertAfterExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         _revertIfAuctionDebtLocked(deposits, poolState.t0DebtInAuction, fromIndex_, poolState.inflator);
+
+        MoveQuoteParams memory moveParams;
+        moveParams.maxAmountToMove  = maxAmount_;
+        moveParams.fromIndex        = fromIndex_;
+        moveParams.toIndex          = toIndex_;
+        moveParams.thresholdPrice   = Loans.getMax(loans).thresholdPrice;
+        moveParams.revertIfBelowLup = revertIfBelowLup_;
 
         uint256 newLup;
         (
@@ -199,12 +207,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             buckets,
             deposits,
             poolState,
-            MoveQuoteParams({
-                maxAmountToMove: maxAmount_,
-                fromIndex:       fromIndex_,
-                toIndex:         toIndex_,
-                thresholdPrice:  Loans.getMax(loans).thresholdPrice
-            })
+            moveParams
         );
 
         // update pool interest rate state
