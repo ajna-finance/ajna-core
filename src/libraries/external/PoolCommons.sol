@@ -281,7 +281,7 @@ library PoolCommons {
         if (poolState_.debt != 0) {
             // calculate meaningful actual utilization for interest rate update
             mau    = int256(_utilization(debtEma_, depositEma_));
-            mau102 = mau * PERCENT_102 / 1e18;
+            mau102 = (mau * PERCENT_102) / 1e18;
         }
 
         // calculate target utilization

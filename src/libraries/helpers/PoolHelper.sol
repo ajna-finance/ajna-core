@@ -418,7 +418,7 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 collateral_,
         uint256 momp_
     ) pure returns (uint256 bondFactor_, uint256 bondSize_) {
-        uint256 thresholdPrice = borrowerDebt_  * Maths.WAD / collateral_;
+        uint256 thresholdPrice = (borrowerDebt_ * Maths.WAD) / collateral_;
 
         // bondFactor = min(30%, max(1%, (MOMP - thresholdPrice) / MOMP))
         if (thresholdPrice >= momp_) {
