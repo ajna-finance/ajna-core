@@ -250,6 +250,19 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             toIndex:   _i9_81 
         });
 
+        uint256 snapshot = vm.snapshot();
+        skip(73 hours);
+
+        // lender cannot move funds if auction not cleared
+        _assertMoveDepositAuctionNotClearedRevert({
+            from:      _lender,
+            amount:    10.0 * 1e18,
+            fromIndex: _i9_72,
+            toIndex:   _i9_81 
+        });
+
+        vm.revertTo(snapshot);
+
         // lender can add / remove liquidity in buckets that are not within liquidation debt
         changePrank(_lender1);
         _pool.addQuoteToken(2_000 * 1e18, 5000, block.timestamp + 1 minutes, false);

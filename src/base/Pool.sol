@@ -34,6 +34,8 @@ import {
     ReserveAuctionState,
     Bucket,
     Lender,
+    Borrower,
+    Kicker,
     BurnEvent,
     Liquidation
 }                                   from '../interfaces/pool/commons/IPoolState.sol';
@@ -188,6 +190,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         bool    revertIfBelowLup_
     ) external override nonReentrant returns (uint256 fromBucketLP_, uint256 toBucketLP_, uint256 movedAmount_) {
         _revertAfterExpiry(expiry_);
+
+        _revertIfAuctionClearable(auctions, loans);
+
         PoolState memory poolState = _accruePoolInterest();
 
         _revertIfAuctionDebtLocked(deposits, poolState.t0DebtInAuction, fromIndex_, poolState.inflator);
@@ -759,7 +764,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         address prev_,
         bool alreadyTaken_
     ) {
-        Liquidation memory liquidation = auctions.liquidations[borrower_];
+        Liquidation storage liquidation = auctions.liquidations[borrower_];
         return (
             liquidation.kicker,
             liquidation.bondFactor,
@@ -778,10 +783,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function borrowerInfo(
         address borrower_
     ) external view override returns (uint256, uint256, uint256) {
+        Borrower storage borrower = loans.borrowers[borrower_];
         return (
-            loans.borrowers[borrower_].t0Debt,
-            loans.borrowers[borrower_].collateral,
-            loans.borrowers[borrower_].t0Np
+            borrower.t0Debt,
+            borrower.collateral,
+            borrower.t0Np
         );
     }
 
@@ -821,7 +827,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /// @inheritdoc IPoolState
     function burnInfo(uint256 burnEventEpoch_) external view returns (uint256, uint256, uint256) {
-        BurnEvent memory burnEvent = reserveAuction.burnEvents[burnEventEpoch_];
+        BurnEvent storage burnEvent = reserveAuction.burnEvents[burnEventEpoch_];
 
         return (
             burnEvent.timestamp,
@@ -906,9 +912,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function kickerInfo(
         address kicker_
     ) external view override returns (uint256, uint256) {
+        Kicker storage kicker = auctions.kickers[kicker_];
         return(
-            auctions.kickers[kicker_].claimable,
-            auctions.kickers[kicker_].locked
+            kicker.claimable,
+            kicker.locked
         );
     }
 
