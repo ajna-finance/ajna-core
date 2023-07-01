@@ -142,6 +142,7 @@ library LenderActions {
      *  @dev    same block when bucket becomes insolvent `BucketBankruptcyBlock()`
      *  @dev    no LP awarded in bucket `InsufficientLP()`
      *  @dev    calculated unscaled amount to add is 0 `InvalidAmount()`
+     *  @dev    deposit below `LUP` `PriceBelowLUP()`
      *  @dev    === Emit events ===
      *  @dev    - `AddQuoteToken`
      */
@@ -233,6 +234,7 @@ library LenderActions {
      *  @dev    dust amount `DustAmountNotExceeded()`
      *  @dev    invalid index `InvalidIndex()`
      *  @dev    no LP awarded in to bucket `InsufficientLP()`
+     *  @dev    move below `LUP` `PriceBelowLUP()`
      *  @dev    === Emit events ===
      *  @dev    - `BucketBankruptcy`
      *  @dev    - `MoveQuoteToken`
@@ -288,6 +290,8 @@ library LenderActions {
         lup_ = Deposits.getLup(deposits_, poolState_.debt);
         // apply unutilized deposit fee if quote token is moved from above the LUP to below the LUP
         if (vars.fromBucketPrice >= lup_ && vars.toBucketPrice < lup_) {
+            if (params_.revertIfBelowLup) revert PriceBelowLUP();
+
             movedAmount_ = Maths.wmul(movedAmount_, Maths.WAD - _depositFeeRate(poolState_.rate));
         }
 

@@ -25,7 +25,7 @@ def test_quote_deposit_move_remove_scaled(
 
         move_txes = []
         for i in range(2530, 2550):
-            tx = scaled_pool.moveQuoteToken(100 * 10**18, i, i + 30, chain.time() + 30, {"from": lenders[0]})
+            tx = scaled_pool.moveQuoteToken(100 * 10**18, i, i + 30, chain.time() + 30, False, {"from": lenders[0]})
             move_txes.append(tx)
         with capsys.disabled():
             print("\n==================================")

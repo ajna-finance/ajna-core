@@ -1223,6 +1223,14 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             expiry:    block.timestamp - 20
         });
 
+        // should revert if move below LUP with revertIfBelowLup set to true
+        _assertMoveDepositBelowLUPRevert({
+            from:      _lender,
+            amount:    10_000 * 1e18,
+            fromIndex: 4549,
+            toIndex:   5000
+        });
+
         // should be charged unutilized deposit fee if moving below LUP
         _moveLiquidityWithPenalty({
             from:         _lender,

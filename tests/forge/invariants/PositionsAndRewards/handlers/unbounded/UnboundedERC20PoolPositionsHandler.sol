@@ -242,7 +242,7 @@ abstract contract UnboundedERC20PoolPositionsHandler is UnboundedBasePositionHan
         *  @notice Struct holding parameters for moving the liquidity of a position.
         */
 
-        try _positionManager.moveLiquidity(address(_pool), tokenId_, fromIndex_, toIndex_, block.timestamp + 30) {
+        try _positionManager.moveLiquidity(address(_pool), tokenId_, fromIndex_, toIndex_, block.timestamp + 30, false) {
 
             bucketIndexesByTokenId[tokenId_].add(toIndex_);
             bucketIndexesByTokenId[tokenId_].remove(fromIndex_);

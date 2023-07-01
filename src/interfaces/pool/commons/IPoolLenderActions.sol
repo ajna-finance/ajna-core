@@ -28,19 +28,21 @@ interface IPoolLenderActions {
 
     /**
      *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
-     *  @param  maxAmount_    The maximum amount of quote token to be moved by a lender (`WAD` precision).
-     *  @param  fromIndex_    The bucket index from which the quote tokens will be removed.
-     *  @param  toIndex_      The bucket index to which the quote tokens will be added.
-     *  @param  expiry_       Timestamp after which this transaction will revert, preventing inclusion in a block with unfavorable price.
-     *  @return fromBucketLP_ The amount of `LP` moved out from bucket (`WAD` precision).
-     *  @return toBucketLP_   The amount of `LP` moved to destination bucket (`WAD` precision).
-     *  @return movedAmount_  The amount of quote token moved (`WAD` precision).
+     *  @param  maxAmount_        The maximum amount of quote token to be moved by a lender (`WAD` precision).
+     *  @param  fromIndex_        The bucket index from which the quote tokens will be removed.
+     *  @param  toIndex_          The bucket index to which the quote tokens will be added.
+     *  @param  expiry_           Timestamp after which this transaction will revert, preventing inclusion in a block with unfavorable price.
+     *  @param  revertIfBelowLup_ The tx will revert if quote token is moved from above the `LUP` to below the `LUP` (and avoid paying fee for move below `LUP`).
+     *  @return fromBucketLP_     The amount of `LP` moved out from bucket (`WAD` precision).
+     *  @return toBucketLP_       The amount of `LP` moved to destination bucket (`WAD` precision).
+     *  @return movedAmount_      The amount of quote token moved (`WAD` precision).
      */
     function moveQuoteToken(
         uint256 maxAmount_,
         uint256 fromIndex_,
         uint256 toIndex_,
-        uint256 expiry_
+        uint256 expiry_,
+        bool    revertIfBelowLup_
     ) external returns (uint256 fromBucketLP_, uint256 toBucketLP_, uint256 movedAmount_);
 
     /**

@@ -812,7 +812,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         skip(1 hours);
 
         // move quote token in a bankrupt bucket should set deposit time to time of bankruptcy + 1 to prevent losing deposit
-        _pool.moveQuoteToken(10 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes);
+        _pool.moveQuoteToken(10 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes, false);
         (, , uint256 bankruptcyTime, , ) = _pool.bucketInfo(_i9_91);
         _assertLenderLpBalance({
             lender:      _lender1,
@@ -848,7 +848,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             depositTime: _startTime
         });
 
-        _pool.moveQuoteToken(1_000 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes);
+        _pool.moveQuoteToken(1_000 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes, false);
 
         _assertLenderLpBalance({
             lender:      _lender,
@@ -858,7 +858,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         });
 
         _pool.addQuoteToken(1_000 * 1e18, _i9_52, block.timestamp + 1 minutes, false);
-        _pool.moveQuoteToken(1_000 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes);
+        _pool.moveQuoteToken(1_000 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes, false);
 
         _assertLenderLpBalance({
             lender:      _lender,
@@ -876,7 +876,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             exchangeRate: 0.821534360361016385 * 1e18
         });
 
-        _pool.moveQuoteToken(10000000000 * 1e18, _i9_72, _i9_91, type(uint256).max);
+        _pool.moveQuoteToken(10000000000 * 1e18, _i9_72, _i9_91, type(uint256).max, false);
 
         _assertBucket({
             index:        _i9_72,
