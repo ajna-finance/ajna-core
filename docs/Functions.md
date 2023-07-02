@@ -66,7 +66,9 @@
 		- pool inflator and inflatorUpdate state
 
 	reverts on:
+	- block timestamp greater than expiry TransactionExpired()
 	- deposits locked RemoveDepositLockedByAuctionDebt()
+	- head auction not cleared AuctionNotCleared()
 	- LenderActions.moveQuoteToken():
 		- same index MoveToSameIndex()
 		- dust amount DustAmountNotExceeded()

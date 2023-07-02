@@ -1304,6 +1304,17 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max, false);
     }
 
+    function _assertMoveDepositAuctionNotClearedRevert(
+        address from,
+        uint256 amount,
+        uint256 fromIndex,
+        uint256 toIndex
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AuctionNotCleared.selector);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max, false);
+    }
+
     function _assertMoveDepositBelowLUPRevert(
         address from,
         uint256 amount,
