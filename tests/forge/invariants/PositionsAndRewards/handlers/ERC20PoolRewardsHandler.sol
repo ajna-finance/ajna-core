@@ -11,8 +11,6 @@ import { UnboundedERC20PoolRewardsHandler } from './unbounded/UnboundedERC20Pool
 import { ReserveERC20PoolHandler }          from '../../ERC20Pool/handlers/ReserveERC20PoolHandler.sol';
 import { BaseERC20PoolPositionHandler }     from './BaseERC20PoolPositionHandler.sol';
 
-import '@std/console.sol';
-
 contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20PoolPositionHandler, ReserveERC20PoolHandler {
 
     constructor(
@@ -46,7 +44,9 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BRewardsHandler.stake']++;
         // Pre action
-        (uint256 tokenId,) = _preStake(_lenderBucketIndex, amountToAdd_);
+        (uint256 tokenId, uint256[] memory indexes) = _preStake(_lenderBucketIndex, amountToAdd_);
+
+        if (indexes.length == 0) return;
 
         // Action phase
         _stake(tokenId);
@@ -62,12 +62,15 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BRewardsHandler.unstake']++;
         // Pre action
-        uint256 tokenId = _preUnstake(
+        (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
             _lenderBucketIndex,
             amountToAdd_,
             numberOfEpochs_,
             bucketSubsetToUpdate_
-            );
+        );
+
+        // NFT doesn't have a position associated with it, return
+        if (indexes.length == 0) return;
         
         // if rewards exceed contract balance tx will revert, return
         uint256 reward = _rewardsManager.calculateRewards(tokenId, _pool.currentBurnEpoch());
@@ -88,12 +91,15 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
         numberOfCalls['BRewardsHandler.emergencyUnstake']++;
         
         // Pre action
-        uint256 tokenId = _preUnstake(
+        (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
             _lenderBucketIndex,
             amountToAdd_,
             numberOfEpochs_,
             bucketSubsetToUpdate_
         );
+
+        // NFT doesn't have a position associated with it, return
+        if (indexes.length == 0) return;
         
         // Action phase
         _emergencyUnstake(tokenId);
@@ -113,6 +119,9 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
         // if there are no existing positions, create a position at a a random index
         if (indexes.length == 0) {
            (, indexes) = _getStakedPosition(_lenderBucketIndex, amountToAdd_);
+
+           // NFT doesn't have a position associated with it, return
+           if (indexes.length == 0) return;
         }
 
         // Action phase
@@ -130,12 +139,15 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
         numberOfCalls['BRewardsHandler.claimRewards']++;
 
         // Pre action //
-        uint256 tokenId = _preUnstake(
+        (uint256 tokenId, uint256[] memory indexes_) = _preUnstake(
             _lenderBucketIndex,
             amountToAdd_,
             numberOfEpochs_,
             bucketSubsetToUpdate_
         );
+
+        // NFT doesn't have a position associated with it, return
+        if (indexes_.length == 0) return;
 
         // Action phase
         _claimRewards(tokenId, _pool.currentBurnEpoch());
@@ -152,8 +164,6 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
 
         // retreive or create a NFT position
         (tokenId_, indexes_)= _getNFTPosition(bucketIndex_, amountToAdd_);
-        console.log("tokenId", tokenId_);
-        console.log("indexes", indexes_[0]);
 
         // Approve rewards contract to transfer token
         _positionManager.approve(address(_rewardsManager), tokenId_);
@@ -165,13 +175,12 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
         uint256 amountToAdd_,
         uint256 numberOfEpochs_,
         uint256 bucketSubsetToUpdate_
-    ) internal returns (uint256 tokenId_) {
-        uint256[] memory indexes;
-        (tokenId_, indexes) = _getStakedPosition(bucketIndex_, amountToAdd_);
+    ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
+        (tokenId_, indexes_) = _getStakedPosition(bucketIndex_, amountToAdd_);
 
         _advanceEpochRewardStakers(
             amountToAdd_,
-            indexes,
+            indexes_,
             numberOfEpochs_,
             bucketSubsetToUpdate_
         );

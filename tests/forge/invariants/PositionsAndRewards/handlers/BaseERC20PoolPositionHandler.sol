@@ -15,8 +15,6 @@ import { ERC20Pool }                    from 'src/ERC20Pool.sol';
 
 import { UnboundedERC20PoolPositionsHandler } from './unbounded/UnboundedERC20PoolPositionsHandler.sol';
 
-import '@std/console.sol';
-
 abstract contract BaseERC20PoolPositionHandler is UnboundedERC20PoolPositionsHandler {
 
     using EnumerableSet for EnumerableSet.UintSet;
@@ -48,7 +46,10 @@ abstract contract BaseERC20PoolPositionHandler is UnboundedERC20PoolPositionsHan
         numberOfCalls['BPositionHandler.redeem']++;
         // Pre action //
         (uint256 tokenId, uint256[] memory indexes) = _preRedeemPositions(_lenderBucketIndex, amountToAdd_);
-        
+
+        // NFT doesn't have a position associated with it, return
+        if (indexes.length == 0) return; 
+ 
         // Action phase // 
         _redeemPositions(tokenId, indexes);
     }
@@ -99,6 +100,9 @@ abstract contract BaseERC20PoolPositionHandler is UnboundedERC20PoolPositionsHan
             ,
             ,
         ) = _pool.bucketInfo(fromIndex);
+
+        // NFT doesn't have a position associated with it, return
+        if (fromIndex == 0) return;
 
         // to avoid LP mismatch revert return if bucket has collateral or exchangeRate < 1e18
         if (bucketCollateral != 0) return;
@@ -175,7 +179,7 @@ abstract contract BaseERC20PoolPositionHandler is UnboundedERC20PoolPositionsHan
 
         uint256[] memory indexes;
         (tokenId_, indexes) = _getNFTPosition(boundedFromIndex_, amountToMove_);
-        boundedFromIndex_   = indexes[0];
+        boundedFromIndex_   = indexes.length != 0 ? indexes[0]: 0;
     }
 
     function _getNFTPosition(

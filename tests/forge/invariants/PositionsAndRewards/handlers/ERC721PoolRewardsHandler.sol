@@ -44,7 +44,10 @@ contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC7
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BRewardsHandler.stake']++;
         // Pre action
-        (uint256 tokenId,) = _preStake(_lenderBucketIndex, amountToAdd_);
+        (uint256 tokenId, uint256[] memory indexes) = _preStake(_lenderBucketIndex, amountToAdd_);
+
+        // NFT doesn't have a position associated with it, return
+        if (indexes.length == 0) return;
 
         // Action phase
         _stake(tokenId);
@@ -60,12 +63,15 @@ contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC7
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BRewardsHandler.unstake']++;
         // Pre action
-        uint256 tokenId = _preUnstake(
+        (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
             _lenderBucketIndex,
             amountToAdd_,
             numberOfEpochs_,
             bucketSubsetToUpdate_
         );
+
+        // NFT doesn't have a position associated with it, return
+        if (indexes.length == 0) return;
         
         // if rewards exceed contract balance tx will revert, return
         uint256 reward = _rewardsManager.calculateRewards(tokenId, _pool.currentBurnEpoch());
@@ -86,12 +92,15 @@ contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC7
         numberOfCalls['BRewardsHandler.emergencyUnstake']++;
         
         // Pre action
-        uint256 tokenId = _preUnstake(
+        (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
             _lenderBucketIndex,
             amountToAdd_,
             numberOfEpochs_,
             bucketSubsetToUpdate_
         );
+
+        // NFT doesn't have a position associated with it, return
+        if (indexes.length == 0) return;
         
         // Action phase
         _emergencyUnstake(tokenId);
@@ -111,6 +120,9 @@ contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC7
         // if there are no existing positions, create a position at a a random index
         if (indexes.length == 0) {
            (, indexes) = _getStakedPosition(_lenderBucketIndex, amountToAdd_);
+
+            // NFT doesn't have a position associated with it, return
+            if (indexes.length == 0) return;
         }
 
         // Action phase
@@ -128,12 +140,15 @@ contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC7
         numberOfCalls['BRewardsHandler.claimRewards']++;
 
         // Pre action //
-        uint256 tokenId = _preUnstake(
+        (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
             _lenderBucketIndex,
             amountToAdd_,
             numberOfEpochs_,
             bucketSubsetToUpdate_
         );
+
+        // NFT doesn't have a position associated with it, return
+        if (indexes.length == 0) return;
 
         // Action phase
         _claimRewards(tokenId, _pool.currentBurnEpoch());
@@ -161,16 +176,17 @@ contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC7
         uint256 amountToAdd_,
         uint256 numberOfEpochs_,
         uint256 bucketSubsetToUpdate_
-    ) internal returns (uint256 tokenId_) {
-        uint256[] memory indexes;
-        (tokenId_, indexes)= _getStakedPosition(bucketIndex_, amountToAdd_);
+    ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
+        (tokenId_, indexes_)= _getStakedPosition(bucketIndex_, amountToAdd_);
 
-        _advanceEpochRewardStakers(
-            amountToAdd_,
-            indexes,
-            numberOfEpochs_,
-            bucketSubsetToUpdate_
-        );
+        if (indexes_.length != 0) {
+            _advanceEpochRewardStakers(
+                amountToAdd_,
+                indexes_,
+                numberOfEpochs_,
+                bucketSubsetToUpdate_
+            );
+        }
     }
 
     function _advanceEpochRewardStakers(
@@ -188,11 +204,11 @@ contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC7
             if (claimableReserves == 0) {
                 uint256 amountToBorrow = _preDrawDebt(amountToAdd_);
                 _drawDebt(amountToBorrow);
-
-                skip(20 days); // epochs are spaced a minimum of 14 days apart
-            
+ 
                 _repayDebt(type(uint256).max);
             }
+
+            skip(20 days); // epochs are spaced a minimum of 14 days apart
 
             (, claimableReserves, , ) = _pool.reservesInfo();
 

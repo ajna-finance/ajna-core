@@ -16,8 +16,6 @@ import { Maths }                        from "src/libraries/internal/Maths.sol";
 import { BaseERC20PoolHandler }         from '../../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
 import { UnboundedBasePositionHandler } from './UnboundedBasePositionHandler.sol';
 
-import '@std/console.sol';
-
 /**
  *  @dev this contract manages multiple lenders
  *  @dev methods in this contract are called in random order
@@ -56,10 +54,8 @@ abstract contract UnboundedERC20PoolPositionsHandler is UnboundedBasePositionHan
                 bucketIndexesWithPosition.add(bucketIndex);
                 tokenIdsByBucketIndex[bucketIndex].add(tokenId_);
 
-                console.log("in mem", getBucketIndexesByTokenId(tokenId_).length);
                 // info used to tearDown buckets
                 bucketIndexesByTokenId[tokenId_].add(bucketIndex);
-                console.log("in mem 2", getBucketIndexesByTokenId(tokenId_).length);
 
                 (uint256 poolLps, uint256 poolDepositTime) = _pool.lenderInfo(bucketIndex, address(_positionManager));
 
