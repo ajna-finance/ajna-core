@@ -34,6 +34,8 @@ abstract contract UnboundedBasePositionHandler is Test {
     mapping(uint256 => EnumerableSet.UintSet) internal tokenIdsByBucketIndex;
     mapping(address => EnumerableSet.UintSet) internal tokenIdsByActor;
     // used to track changes in `_redeemPositions()` and `_memorializePositions()`
+    mapping(uint256 => uint256) internal actorLpsBefore;
+    mapping(uint256 => uint256) internal posManLpsBefore;
     mapping(uint256 => uint256) internal bucketIndexToDepositTime;
 
     // rewardsManager

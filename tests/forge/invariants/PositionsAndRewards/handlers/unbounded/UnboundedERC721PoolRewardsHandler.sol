@@ -62,7 +62,7 @@ abstract contract UnboundedERC721PoolRewardsHandler is UnboundedERC721PoolPositi
         uint256[] memory rewardsEarnedInEpochPreAction = new uint256[](_pool.currentBurnEpoch() + 1);
 
         for (uint256 epoch = preActionLastClaimedEpoch; epoch <= _pool.currentBurnEpoch(); epoch++) {
-            
+
             // for epochs already claimed by the staker, `rewardsClaimed()` should go unchanged 
             if (_rewardsManager.isEpochClaimed(tokenId_, epoch)) {
                 rewardsEarnedInEpochPreAction[epoch] = _rewardsManager.rewardsClaimed(epoch);
@@ -70,8 +70,8 @@ abstract contract UnboundedERC721PoolRewardsHandler is UnboundedERC721PoolPositi
             
             // total the rewards earned pre action
             totalRewardsEarnedPreAction  += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
-        }
- 
+        } 
+
         try _rewardsManager.unstake(tokenId_) {
 
             // actor should receive tokenId, positionManager loses ownership

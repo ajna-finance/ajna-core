@@ -152,6 +152,8 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
 
         // retreive or create a NFT position
         (tokenId_, indexes_)= _getNFTPosition(bucketIndex_, amountToAdd_);
+        console.log("tokenId", tokenId_);
+        console.log("indexes", indexes_[0]);
 
         // Approve rewards contract to transfer token
         _positionManager.approve(address(_rewardsManager), tokenId_);
@@ -191,10 +193,11 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
                 uint256 amountToBorrow = _preDrawDebt(amountToAdd_);
                 _drawDebt(amountToBorrow);
 
-                skip(20 days); // epochs are spaced a minimum of 14 days apart
             
                 _repayDebt(type(uint256).max);
             }
+
+            skip(20 days); // epochs are spaced a minimum of 14 days apart
 
             (, claimableReserves, , ) = _pool.reservesInfo();
 
@@ -215,9 +218,9 @@ contract ERC20PoolRewardsHandler is UnboundedERC20PoolRewardsHandler, BaseERC20P
     function _randomizeExchangeRateIndexes(
         uint256[] memory indexes_,
         uint256 bucketSubsetToUpdate_
-    ) internal returns (uint256[] memory boundBuckets_) {
+    ) internal view returns (uint256[] memory boundBuckets_) {
         
-        uint256 boundIndexes = bound(bucketSubsetToUpdate_, 0, indexes_.length);
+        uint256 boundIndexes = constrictToRange(bucketSubsetToUpdate_, 0, indexes_.length);
         boundBuckets_ = new uint256[](boundIndexes);
 
         if (boundBuckets_.length !=0) {
