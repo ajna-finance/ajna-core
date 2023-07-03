@@ -13,7 +13,6 @@ contract ERC20PoolRewardsHandler is RewardsPoolHandler, ReserveERC20PoolHandler 
     constructor(
         address rewards_,
         address positions_,
-        bytes32 poolHash_,
         address pool_,
         address ajna_,
         address quote_,
@@ -30,7 +29,7 @@ contract ERC20PoolRewardsHandler is RewardsPoolHandler, ReserveERC20PoolHandler 
         _rewardsManager = RewardsManager(rewards_);
 
         // pool hash for mint() call
-        _poolHash = poolHash_;
+        _poolHash = bytes32(keccak256("ERC20_NON_SUBSET_HASH"));
     }
 
     function _advanceEpochRewardStakers(

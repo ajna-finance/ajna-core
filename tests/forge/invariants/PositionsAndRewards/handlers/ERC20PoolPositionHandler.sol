@@ -11,7 +11,6 @@ contract ERC20PoolPositionHandler is PositionPoolHandler, BaseERC20PoolHandler {
 
     constructor(
         address positions_,
-        bytes32 poolHash_,
         address pool_,
         address ajna_,
         address quote_,
@@ -25,6 +24,6 @@ contract ERC20PoolPositionHandler is PositionPoolHandler, BaseERC20PoolHandler {
         _positionManager = PositionManager(positions_);
 
         // pool hash for mint() call
-        _poolHash = poolHash_;
+        _poolHash = bytes32(keccak256("ERC20_NON_SUBSET_HASH"));
     }
 }

@@ -3,8 +3,6 @@ pragma solidity 0.8.18;
 
 import { ERC20PoolRewardsInvariants } from "../../invariants/PositionsAndRewards/ERC20PoolRewardsInvariants.t.sol";
 
-import '@std/console.sol';
-
 contract RegressionTestERC20PoolRewardsManager is ERC20PoolRewardsInvariants {
 
     function setUp() public override { 

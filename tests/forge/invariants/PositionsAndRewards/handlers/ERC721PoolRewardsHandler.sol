@@ -13,7 +13,6 @@ contract ERC721PoolRewardsHandler is RewardsPoolHandler, ReserveERC721PoolHandle
     constructor(
         address rewards_,
         address positions_,
-        bytes32 poolHash_,
         address pool_,
         address ajna_,
         address quote_,
@@ -30,7 +29,7 @@ contract ERC721PoolRewardsHandler is RewardsPoolHandler, ReserveERC721PoolHandle
         _rewardsManager = RewardsManager(rewards_);
 
         // pool hash for mint() call
-        _poolHash = poolHash_;
+        _poolHash = bytes32(keccak256("ERC721_NON_SUBSET_HASH"));
     }
 
     function _advanceEpochRewardStakers(

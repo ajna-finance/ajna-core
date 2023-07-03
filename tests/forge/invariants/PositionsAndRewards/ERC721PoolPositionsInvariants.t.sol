@@ -48,7 +48,6 @@ contract ERC721PoolPositionsInvariants is PositionsInvariants {
 
         _erc721positionHandler = new ERC721PoolPositionHandler(
             address(_positionManager),
-            bytes32(keccak256("ERC721_NON_SUBSET_HASH")),
             address(_erc721pool),
             address(_ajna),
             address(_quote),
