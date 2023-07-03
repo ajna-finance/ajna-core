@@ -4,13 +4,17 @@ pragma solidity 0.8.18;
 
 import { PositionManager }              from 'src/PositionManager.sol';
 
-import { BaseERC721PoolPositionHandler } from  './BaseERC721PoolPositionHandler.sol';
-import { BaseERC721PoolHandler }     from '../../ERC721Pool/handlers/unbounded/BaseERC721PoolHandler.sol';
+// import { BaseERC721PoolPositionHandler } from  './BaseERC721PoolPositionHandler.sol';
+import { PositionPoolHandler }           from  './PositionPoolHandler.sol';
+import { BaseERC721PoolHandler }         from '../../ERC721Pool/handlers/unbounded/BaseERC721PoolHandler.sol';
 
-contract ERC721PoolPositionHandler is BaseERC721PoolPositionHandler {
+import '@std/console.sol';
+
+contract ERC721PoolPositionHandler is PositionPoolHandler, BaseERC721PoolHandler {
 
     constructor(
         address positions_,
+        bytes32 poolHash_,
         address pool_,
         address ajna_,
         address quote_,
@@ -22,5 +26,8 @@ contract ERC721PoolPositionHandler is BaseERC721PoolPositionHandler {
 
         // Position manager
         _positionManager = PositionManager(positions_);
+
+        // pool hash for mint() call
+        _poolHash = poolHash_;
     }
 }

@@ -13,15 +13,17 @@ import {
     }                                   from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }                        from "src/libraries/internal/Maths.sol";
 
-import { BaseERC721PoolHandler }         from '../../../ERC721Pool/handlers/unbounded/BaseERC721PoolHandler.sol';
+import { BaseERC20PoolHandler }         from '../../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
 import { UnboundedBasePositionHandler } from './UnboundedBasePositionHandler.sol';
+
+import { BaseHandler } from '../../../base/handlers/unbounded/BaseHandler.sol';
 
 /**
  *  @dev this contract manages multiple lenders
  *  @dev methods in this contract are called in random order
  *  @dev randomly selects a lender contract to make a txn
  */ 
-abstract contract UnboundedERC721PoolPositionsHandler is UnboundedBasePositionHandler, BaseERC721PoolHandler {
+abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, BaseHandler {
 
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -31,7 +33,7 @@ abstract contract UnboundedERC721PoolPositionsHandler is UnboundedBasePositionHa
     ) internal {
         numberOfCalls['UBPositionHandler.memorialize']++;
 
-        for(uint256 i = 0; i < indexes_.length; i++) {
+        for(uint256 i=0; i < indexes_.length; i++) {
 
             // store vals pre action to check after memorializing:
             (uint256 poolPreActionActorLps, uint256 actorDepositTime)   = _pool.lenderInfo(indexes_[i], address(_actor));
@@ -43,13 +45,10 @@ abstract contract UnboundedERC721PoolPositionsHandler is UnboundedBasePositionHa
             // positionManager is assigned the most recent depositTime
             bucketIndexToDepositTime[indexes_[i]] = (actorDepositTime >= posManDepositTime) ? actorDepositTime : posManDepositTime;
 
-            // assert that the underlying LP balance in PositionManager is 0 
-            (uint256 posPreActionLps,) = _positionManager.getPositionInfo(tokenId_, indexes_[i]);
-            require(posPreActionLps == 0, "tokenID already has lps associated on memorialize");
         }
 
         try _positionManager.memorializePositions(address(_pool), tokenId_, indexes_) {
-
+            
             // track created positions
             for ( uint256 i = 0; i < indexes_.length; i++) {
                 uint256 bucketIndex = indexes_[i];
@@ -83,13 +82,23 @@ abstract contract UnboundedERC721PoolPositionsHandler is UnboundedBasePositionHa
             tokenIdsByActor[address(_actor)].add(tokenId_);
 
         } catch (bytes memory err) {
+
+            // cleanup buckets so they don't interfere with future calls
+            for ( uint256 i = 0; i < indexes_.length; i++) {
+                uint256 bucketIndex = indexes_[i];
+
+                delete actorLpsBefore[bucketIndex];
+                delete posManLpsBefore[bucketIndex];
+                delete bucketIndexToDepositTime[bucketIndex];
+            }
             _ensurePositionsManagerError(err);
         }
     }
 
     function _mint() internal returns (uint256 tokenIdResult) {
         numberOfCalls['UBPositionHandler.mint']++;
-        try _positionManager.mint(address(_pool), _actor, keccak256("ERC721_NON_SUBSET_HASH")) returns (uint256 tokenId) {
+
+        try _positionManager.mint(address(_pool), _actor, _poolHash) returns (uint256 tokenId) {
 
             tokenIdResult = tokenId;
 
@@ -106,6 +115,7 @@ abstract contract UnboundedERC721PoolPositionsHandler is UnboundedBasePositionHa
             require(posIndexes.length == 0, "PM4: positions are associated with tokenId");
 
         } catch (bytes memory err) {
+            console.log("err");
             _ensurePositionsManagerError(err);
         }
     }
@@ -118,7 +128,7 @@ abstract contract UnboundedERC721PoolPositionsHandler is UnboundedBasePositionHa
 
         address preActionOwner = _positionManager.ownerOf(tokenId_);
 
-        for (uint256 i = 0; i < indexes_.length; i++) {
+        for (uint256 i=0; i < indexes_.length; i++) {
 
             (uint256 poolPreActionActorLps,)  = _pool.lenderInfo(indexes_[i], preActionOwner);
             (uint256 poolPreActionPosManLps,) = _pool.lenderInfo(indexes_[i], address(_positionManager));
@@ -138,6 +148,7 @@ abstract contract UnboundedERC721PoolPositionsHandler is UnboundedBasePositionHa
 
                 // if no other positions exist for this bucketIndex, remove from bucketIndexesWithPosition
                 if (getTokenIdsByBucketIndex(bucketIndex).length == 0) {
+
                     bucketIndexesWithPosition.remove(bucketIndex); 
                 }
 
@@ -182,15 +193,16 @@ abstract contract UnboundedERC721PoolPositionsHandler is UnboundedBasePositionHa
 
         } catch (bytes memory err) {
 
-            // remove tracking to avoid interference with other calls
             for ( uint256 i = 0; i < indexes_.length; i++) {
                 uint256 bucketIndex = indexes_[i];
                 // delete mappings for reuse
                 delete actorLpsBefore[bucketIndex];
                 delete posManLpsBefore[bucketIndex];
             }
+
             _ensurePositionsManagerError(err);
         }
+
     }
 
     function _getQuoteAtIndex(
@@ -273,19 +285,18 @@ abstract contract UnboundedERC721PoolPositionsHandler is UnboundedBasePositionHa
 
             // positionManager's total QT postAction is less than or equal to preAction
             // can be less than or equal due to fee on movements above -> below LUP
-
             greaterThanWithinDiff(
                 preActionFromIndexQuote + preActionToIndexQuote,
                 postActionFromIndexQuote + postActionToIndexQuote,
                 1,
                 "PM6: positiionManager QT balance has increased by `1` margin"
             );
+
+
         } catch (bytes memory err) {
             _ensurePositionsManagerError(err);
         }
     }
-
-
 
     function _burn(
         uint256 tokenId_

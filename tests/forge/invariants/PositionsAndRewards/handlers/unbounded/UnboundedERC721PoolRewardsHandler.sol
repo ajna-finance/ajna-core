@@ -8,9 +8,9 @@ import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionM
 import { _depositFeeRate }              from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }                        from "src/libraries/internal/Maths.sol";
 
-import { UnboundedERC721PoolPositionsHandler } from './UnboundedERC721PoolPositionsHandler.sol';
-
 import { _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
+
+import { UnboundedPositionPoolHandler } from './UnboundedPositionPoolHandler.sol';
 
 import '@std/console.sol';
 
@@ -19,7 +19,7 @@ import '@std/console.sol';
  *  @dev methods in this contract are called in random order
  *  @dev randomly selects a lender contract to make a txn
  */ 
-abstract contract UnboundedERC721PoolRewardsHandler is UnboundedERC721PoolPositionsHandler {
+abstract contract UnboundedERC721PoolRewardsHandler is UnboundedPositionPoolHandler {
 
     using EnumerableSet for EnumerableSet.UintSet;
 

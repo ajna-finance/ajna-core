@@ -3,19 +3,15 @@
 pragma solidity 0.8.18;
 
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
-import '@std/console.sol';
-
 import { Maths } from 'src/libraries/internal/Maths.sol';
 
-import { _priceAt }                     from 'src/libraries/helpers/PoolHelper.sol';
-
-import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionManagerOwnerActions.sol';
 import { PositionManager }              from 'src/PositionManager.sol';
-import { ERC20Pool }                    from 'src/ERC20Pool.sol';
+import { RewardsManager }               from 'src/RewardsManager.sol';
 
-import { UnboundedERC20PoolPositionsHandler } from './unbounded/UnboundedERC20PoolPositionsHandler.sol';
+import { UnboundedPositionPoolHandler } from './unbounded/UnboundedPositionPoolHandler.sol';
+import { ReserveERC721PoolHandler }          from '../../ERC721Pool/handlers/ReserveERC721PoolHandler.sol';
 
-abstract contract BaseERC20PoolPositionHandler is UnboundedERC20PoolPositionsHandler {
+abstract contract PositionPoolHandler is UnboundedPositionPoolHandler { 
 
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -200,4 +196,5 @@ abstract contract BaseERC20PoolPositionHandler is UnboundedERC20PoolPositionsHan
             _memorializePositions(tokenId_, indexes_);
         }
     } 
+
 }

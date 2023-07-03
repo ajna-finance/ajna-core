@@ -50,6 +50,7 @@ contract ERC20PoolPositionsInvariants is PositionsInvariants {
 
         _erc20positionHandler = new ERC20PoolPositionHandler(
             address(_positionManager),
+            bytes32(keccak256("ERC20_NON_SUBSET_HASH")),
             address(_erc20pool),
             address(_ajna),
             address(_quote),

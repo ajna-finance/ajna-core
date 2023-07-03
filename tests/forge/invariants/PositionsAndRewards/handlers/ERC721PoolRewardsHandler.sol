@@ -9,13 +9,14 @@ import { RewardsManager }               from 'src/RewardsManager.sol';
 
 import { UnboundedERC721PoolRewardsHandler } from './unbounded/UnboundedERC721PoolRewardsHandler.sol';
 import { ReserveERC721PoolHandler }          from '../../ERC721Pool/handlers/ReserveERC721PoolHandler.sol';
-import { BaseERC721PoolPositionHandler }     from './BaseERC721PoolPositionHandler.sol';
+import { PositionPoolHandler }               from './PositionPoolHandler.sol';
 
-contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC721PoolPositionHandler, ReserveERC721PoolHandler {
+contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, PositionPoolHandler, ReserveERC721PoolHandler {
 
     constructor(
         address rewards_,
         address positions_,
+        bytes32 poolHash_,
         address pool_,
         address ajna_,
         address quote_,
@@ -30,6 +31,9 @@ contract ERC721PoolRewardsHandler is UnboundedERC721PoolRewardsHandler, BaseERC7
 
         // Rewards manager
         _rewardsManager = RewardsManager(rewards_);
+
+        // pool hash for mint() call
+        _poolHash = poolHash_;
     }
 
     /*******************************/

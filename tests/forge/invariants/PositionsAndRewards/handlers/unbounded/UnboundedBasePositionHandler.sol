@@ -24,6 +24,8 @@ abstract contract UnboundedBasePositionHandler is Test {
     PositionManager internal _positionManager;
     RewardsManager  internal _rewardsManager;
 
+    bytes32 internal _poolHash;
+
     uint256 MAX_AJNA_AMOUNT = vm.envOr("MAX_AJNA_AMOUNT_ERC20", uint256(100_000_000 * 1e18));
 
     // positionManager & rewardsManager
@@ -88,4 +90,7 @@ abstract contract UnboundedBasePositionHandler is Test {
             "Unexpected revert error"
         );
     }
+
+    // function _mint() internal virtual returns (uint256);
+
 }

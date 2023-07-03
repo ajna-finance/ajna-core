@@ -55,6 +55,7 @@ contract ERC20PoolRewardsInvariants is RewardsInvariants {
         _erc20poolrewardsHandler = new ERC20PoolRewardsHandler(
             address(_rewardsManager),
             address(_positionManager),
+            bytes32(keccak256("ERC20_NON_SUBSET_HASH")),
             address(_erc20pool),
             address(_ajna),
             address(_quote),

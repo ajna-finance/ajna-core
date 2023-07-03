@@ -456,7 +456,7 @@ contract RegressionTestERC20PoolRewardsManager is ERC20PoolRewardsInvariants {
     }
 
     // add quote token was failing silently when the NFT position was being created in _preMemorializePositions
-    // 
+    // FIX: altered positionManager and rewardsManager tests to return when interacting with NFTs that don't have positions
     function test_regression_failure_fresh() external {
         _erc20poolrewardsHandler.lenderKickAuction(1336817465042025253525338004928960182841058778, 193634307182211386319599413, 28);
         _erc20poolrewardsHandler.bucketTake(7140164611582533744197731518, 1225291445688823278840, false, 140447174498926838356202241, 1217313358793411649232935169);
