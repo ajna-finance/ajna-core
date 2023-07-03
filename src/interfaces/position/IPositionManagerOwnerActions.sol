@@ -50,18 +50,20 @@ interface IPositionManagerOwnerActions {
 
     /**
      *  @notice Called by owners to move liquidity between two buckets.
-     *  @param  pool_      The pool address associated with positions NFT.
-     *  @param  tokenId_   The tokenId of the positions NFT.
-     *  @param  fromIndex_ The bucket index from which liquidity should be moved.
-     *  @param  toIndex_   The bucket index to which liquidity should be moved.
-     *  @param  expiry_    Timestamp after which this TX will revert, preventing inclusion in a block with unfavorable price.
+     *  @param  pool_             The pool address associated with positions NFT.
+     *  @param  tokenId_          The tokenId of the positions NFT.
+     *  @param  fromIndex_        The bucket index from which liquidity should be moved.
+     *  @param  toIndex_          The bucket index to which liquidity should be moved.
+     *  @param  expiry_           Timestamp after which this TX will revert, preventing inclusion in a block with unfavorable price.
+     *  @param  revertIfBelowLup_ The tx will revert if quote token is moved from above the `LUP` to below the `LUP` (and avoid paying fee for move below `LUP`).
      */
     function moveLiquidity(
         address pool_,
         uint256 tokenId_,
         uint256 fromIndex_,
         uint256 toIndex_,
-        uint256 expiry_
+        uint256 expiry_,
+        bool    revertIfBelowLup_
     ) external;
 
     /**

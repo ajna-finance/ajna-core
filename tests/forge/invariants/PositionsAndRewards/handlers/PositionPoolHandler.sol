@@ -114,7 +114,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
             // bound amount
             uint256 boundedAmount = constrictToRange(amountToAdd_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
             _ensureQuoteAmount(_actor, boundedAmount);
-            try _pool.addQuoteToken(boundedAmount, bucketIndex_, block.timestamp + 1 minutes) {
+            try _pool.addQuoteToken(boundedAmount, bucketIndex_, block.timestamp + 1 minutes, false) {
             } catch (bytes memory err) {
                 _ensurePoolError(err);
             }

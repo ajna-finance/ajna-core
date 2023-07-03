@@ -188,11 +188,11 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         changePrank(testMinter2);
         vm.expectRevert(IPoolErrors.BucketBankruptcyBlock.selector);
-        _positionManager.moveLiquidity(address(_pool), tokenId2, _i9_52, _i9_91, block.timestamp + 5 hours);
+        _positionManager.moveLiquidity(address(_pool), tokenId2, _i9_52, _i9_91, block.timestamp + 5 hours, false);
 
         // skip time to avoid move in same block as bucket bankruptcy
         skip(1 hours);
-        _positionManager.moveLiquidity(address(_pool), tokenId2, _i9_52, _i9_91, block.timestamp + 5 hours);
+        _positionManager.moveLiquidity(address(_pool), tokenId2, _i9_52, _i9_91, block.timestamp + 5 hours, false);
 
         // report 494: testMinter2 position at _i9_91 should not be bankrupt
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId2, _i9_91));
@@ -214,11 +214,11 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         // testMinter1 moves liquidity from bankrupt _i9_91 deposit to healthy deposit _i9_52
         // call reverts as cannot move from bankrupt bucket
         vm.expectRevert(IPositionManagerErrors.BucketBankrupt.selector);
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_91, _i9_52, block.timestamp + 5 hours);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_91, _i9_52, block.timestamp + 5 hours, false);
 
         // testMinter1 moves liquidity from healthy deposit _i9_52 to bankrupt _i9_91
         // _i9_52 should remain with 0 LP, _i9_91 should have 30_000
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_52, _i9_91, block.timestamp + 5 hours);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_52, _i9_91, block.timestamp + 5 hours, false);
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, _i9_91));
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, _i9_52));
 
@@ -266,7 +266,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         vm.expectEmit(true, true, true, true);
         emit MoveLiquidity(testAddress1, tokenId1, mintIndex, moveIndex, 2_500 * 1e18, 2_500 * 1e18);
         changePrank(address(testAddress1));
-        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30);
+        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30, false);
 
         // check from and to positions after move
         // from position should have 0 LP and 0 deposit time (FROM Position struct is deleted)
@@ -339,7 +339,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         // but the amount of LP that can be moved (constrained by available max quote token) is only 200002500
         changePrank(address(testAddress1));
         vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
-        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30);
+        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30, false);
     }
 
     /**
@@ -735,14 +735,14 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         // Move positiion upwards from _i9_81 to _i9_91
         changePrank(testMinter);
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_81, _i9_91, block.timestamp + 5 hours);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_81, _i9_91, block.timestamp + 5 hours, false);
 
         vm.revertTo(preMoveUpState);
 
         uint256 preMoveDownState = vm.snapshot();
 
         // Move positiion downwards from _i9_91 to _i9_81
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_91, _i9_81, block.timestamp + 5 hours);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_91, _i9_81, block.timestamp + 5 hours, false);
 
         vm.revertTo(preMoveDownState);
 
@@ -764,7 +764,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
             exchangeRate: 1e18
         });
 
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_81, _i9_52, block.timestamp + 5 hours);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_81, _i9_52, block.timestamp + 5 hours, false);
 
         _assertBucketAssets({
             index: _i9_81,

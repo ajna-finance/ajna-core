@@ -54,11 +54,11 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         // add liquidity to the Ajna pool
         vm.startPrank(_lender);
         usdc.approve(address(_ajnaPool), type(uint256).max);
-        _ajnaPool.addQuoteToken(2_000 * 1e18, 3696, type(uint256).max);
-        _ajnaPool.addQuoteToken(5_000 * 1e18, 3698, type(uint256).max);
-        _ajnaPool.addQuoteToken(11_000 * 1e18, 3700, type(uint256).max);
-        _ajnaPool.addQuoteToken(25_000 * 1e18, 3702, type(uint256).max);
-        _ajnaPool.addQuoteToken(30_000 * 1e18, 3704, type(uint256).max);
+        _ajnaPool.addQuoteToken(2_000 * 1e18, 3696, type(uint256).max, false);
+        _ajnaPool.addQuoteToken(5_000 * 1e18, 3698, type(uint256).max, false);
+        _ajnaPool.addQuoteToken(11_000 * 1e18, 3700, type(uint256).max, false);
+        _ajnaPool.addQuoteToken(25_000 * 1e18, 3702, type(uint256).max, false);
+        _ajnaPool.addQuoteToken(30_000 * 1e18, 3704, type(uint256).max, false);
         vm.stopPrank();
 
         // borrower draws debt

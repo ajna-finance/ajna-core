@@ -14,7 +14,7 @@ def test_quote_deposit_move_remove_scaled(
     with test_utils.GasWatcher(["addQuoteToken", "moveQuoteToken", "removeQuoteToken"]):
         add_txes = []
         for i in range(2530, 2550):
-            tx = scaled_pool.addQuoteToken(100 * 10**18, i, chain.time() + 30, {"from": lenders[0]})
+            tx = scaled_pool.addQuoteToken(100 * 10**18, i, chain.time() + 30, False, {"from": lenders[0]})
             add_txes.append(tx)
         with capsys.disabled():
             print("\n==================================")
@@ -25,7 +25,7 @@ def test_quote_deposit_move_remove_scaled(
 
         move_txes = []
         for i in range(2530, 2550):
-            tx = scaled_pool.moveQuoteToken(100 * 10**18, i, i + 30, chain.time() + 30, {"from": lenders[0]})
+            tx = scaled_pool.moveQuoteToken(100 * 10**18, i, i + 30, chain.time() + 30, False, {"from": lenders[0]})
             move_txes.append(tx)
         with capsys.disabled():
             print("\n==================================")
@@ -57,9 +57,9 @@ def test_borrow_repay_scaled(
     with test_utils.GasWatcher(["addQuoteToken", "drawDebt", "repayDebt"]):
 
         expiry = chain.time() + 30
-        scaled_pool.addQuoteToken(100 * 10**18, 2550, expiry, {"from": lenders[0]})
-        scaled_pool.addQuoteToken(100 * 10**18, 2560, expiry, {"from": lenders[0]})
-        scaled_pool.addQuoteToken(100 * 10**18, 2570, expiry, {"from": lenders[0]})
+        scaled_pool.addQuoteToken(100 * 10**18, 2550, expiry, False, {"from": lenders[0]})
+        scaled_pool.addQuoteToken(100 * 10**18, 2560, expiry, False, {"from": lenders[0]})
+        scaled_pool.addQuoteToken(100 * 10**18, 2570, expiry, False, {"from": lenders[0]})
 
         col_txes = []
         for i in range(10):

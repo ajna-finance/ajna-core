@@ -225,10 +225,11 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         // should revert if passing future timestamp but time has elapsed
         bytes memory data = abi.encodeWithSignature(
-            "addQuoteToken(uint256,uint256,uint256)",
+            "addQuoteToken(uint256,uint256,uint256,bool)",
             50_000 * 1e18,
             3333,
-            block.timestamp + 5 minutes
+            block.timestamp + 5 minutes,
+            false
         );
 
         // should succeed if time hasn't passed
@@ -1220,6 +1221,14 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             fromIndex: 4549,
             toIndex:   4459,
             expiry:    block.timestamp - 20
+        });
+
+        // should revert if move below LUP with revertIfBelowLup set to true
+        _assertMoveDepositBelowLUPRevert({
+            from:      _lender,
+            amount:    10_000 * 1e18,
+            fromIndex: 4549,
+            toIndex:   5000
         });
 
         // should be charged unutilized deposit fee if moving below LUP

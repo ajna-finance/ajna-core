@@ -368,35 +368,16 @@ abstract contract BaseHandler is Test {
         // poolLoansInfo returns 1e18 if no interest is pending or time elapsed... the contracts calculate 0 time elapsed which causes discrep
         if (pendingFactor == 1e18) return;
 
-        // get TP of worst loan, pendingInflator and poolDebt
-        uint256 maxThresholdPrice;
-        uint256 pendingInflator;
-        uint256 poolDebt;
-        {
-            (, poolDebt ,,) = _pool.debtInfo();
+        // get TP of worst loan
+        (, uint256 htp,) = _pool.loansInfo();
 
-            (uint256 inflator, uint256 inflatorUpdate) = _pool.inflatorInfo();
-
-            (, maxThresholdPrice,) =  _pool.loansInfo();
-            maxThresholdPrice = Maths.wdiv(maxThresholdPrice, inflator);
-
-            (uint256 interestRate, ) = _pool.interestRateInfo();
-
-            pendingInflator = PoolCommons.pendingInflator(
-                inflator,
-                inflatorUpdate,
-                interestRate
-            );
-        }
-
-        // get HTP and deposit above HTP
-        uint256 htp = Maths.wmul(maxThresholdPrice, pendingInflator);
         uint256 accrualIndex;
 
         if (htp > MAX_PRICE)      accrualIndex = 1;                          // if HTP is over the highest price bucket then no buckets earn interest
         else if (htp < MIN_PRICE) accrualIndex = MAX_FENWICK_INDEX;          // if HTP is under the lowest price bucket then all buckets earn interest
         else                      accrualIndex = _poolInfo.priceToIndex(htp);
 
+        (, uint256 poolDebt, , ) = _pool.debtInfo();
         uint256 lupIndex = _pool.depositIndex(poolDebt);
 
         // accrual price is less of lup and htp, and prices decrease as index increases

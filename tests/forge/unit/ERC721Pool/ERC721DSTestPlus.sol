@@ -109,7 +109,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                     }
                     deal(_pool.quoteTokenAddress(), lender, depositRequired);
                     Token(_pool.quoteTokenAddress()).approve(address(_pool) , depositRequired);
-                    _pool.addQuoteToken(depositRequired, bucketIndex, block.timestamp + 1 minutes);
+                    _pool.addQuoteToken(depositRequired, bucketIndex, block.timestamp + 1 minutes, false);
                     (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
                     lpsAsCollateral = _poolUtils.lpToCollateral(address(_pool), lenderLpBalance, bucketIndex);
                 }

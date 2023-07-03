@@ -96,7 +96,7 @@ def add_initial_liquidity(lenders, pool_helper, chain):
             price_index = price_position + MAX_BUCKET
             log(f" lender {i} depositing {deposit_amount/1e18} into bucket {price_index} "
                 f"({pool_helper.indexToPrice(price_index) / 1e18:.1f})")
-            pool_helper.pool.addQuoteToken(deposit_amount, price_index, chain.time() + 30, {"from": lenders[i]})
+            pool_helper.pool.addQuoteToken(deposit_amount, price_index, chain.time() + 30, False, {"from": lenders[i]})
 
 
 def draw_initial_debt(borrowers, pool_helper, test_utils, chain, target_utilization):
@@ -294,7 +294,7 @@ def add_quote_token(lender, lender_index, pool_helper, chain):
         return None
 
     log(f" lender   {lender_index:>4} adding {quantity / 10**18:.1f} liquidity at {deposit_price / 10**18:.1f}")
-    tx = pool_helper.pool.addQuoteToken(quantity, deposit_index, chain.time() + 15, {"from": lender})
+    tx = pool_helper.pool.addQuoteToken(quantity, deposit_index, chain.time() + 15, False, {"from": lender})
     return deposit_price
 
 

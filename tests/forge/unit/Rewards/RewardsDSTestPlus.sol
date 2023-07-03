@@ -398,7 +398,7 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         uint256[] memory lpBalances = new uint256[](indexes.length);
 
         for (uint256 i = 0; i < indexes.length; i++) {
-            ERC20Pool(address(pool)).addQuoteToken(mintAmount, indexes[i], type(uint256).max);
+            ERC20Pool(address(pool)).addQuoteToken(mintAmount, indexes[i], type(uint256).max, false);
             (lpBalances[i], ) = ERC20Pool(address(pool)).lenderInfo(indexes[i], minter);
         }
 

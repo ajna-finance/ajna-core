@@ -217,7 +217,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         changePrank(_lender);
         uint256 hpbIndex = 369;
         _quote.approve(address(emptyPool), type(uint256).max);
-        emptyPool.addQuoteToken(0.0213 * 1e18, hpbIndex, type(uint256).max);
+        emptyPool.addQuoteToken(0.0213 * 1e18, hpbIndex, type(uint256).max, false);
         assertEq(_poolUtils.momp(address(emptyPool)), _priceAt(hpbIndex));
     }
 

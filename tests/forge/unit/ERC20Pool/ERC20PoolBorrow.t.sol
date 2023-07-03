@@ -1011,6 +1011,13 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             lupIndex: 2_552
         });
 
+        // tx should revert if revert if deposit below LUP specified
+        _assertAddLiquidityPriceBelowLUPRevert({
+            from:   _lender,
+            amount: 10_000 * 1e18,
+            index:  _indexOf(200 * 1e18)
+        });
+
         // add liquidity below LUP, ensuring fee is levied
         _addLiquidityWithPenalty({
             from:        _lender,
