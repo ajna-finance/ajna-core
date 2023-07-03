@@ -168,7 +168,6 @@ abstract contract UnboundedRewardsPoolHandler is UnboundedPositionPoolHandler {
                 totalRewardsEarnedPostAction += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
             }
 
-
             require(totalRewardsEarnedPreAction == totalRewardsEarnedPostAction,
             "rewards were earned on emergency unstake");
 
