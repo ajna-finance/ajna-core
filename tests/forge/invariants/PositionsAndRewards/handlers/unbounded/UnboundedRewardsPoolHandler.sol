@@ -319,5 +319,4 @@ abstract contract UnboundedRewardsPoolHandler is UnboundedPositionPoolHandler {
             "Unexpected revert error"
         );
     }
-
 }

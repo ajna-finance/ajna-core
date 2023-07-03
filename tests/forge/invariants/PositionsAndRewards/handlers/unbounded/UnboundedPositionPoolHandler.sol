@@ -118,7 +118,6 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
             require(posIndexes.length == 0, "PM4: positions are associated with tokenId");
 
         } catch (bytes memory err) {
-            console.log("err");
             _ensurePositionsManagerError(err);
         }
     }
