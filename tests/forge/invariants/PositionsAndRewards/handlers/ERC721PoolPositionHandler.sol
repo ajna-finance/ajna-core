@@ -2,13 +2,10 @@
 
 pragma solidity 0.8.18;
 
-import { PositionManager }              from 'src/PositionManager.sol';
+import { PositionManager } from 'src/PositionManager.sol';
 
-// import { BaseERC721PoolPositionHandler } from  './BaseERC721PoolPositionHandler.sol';
-import { PositionPoolHandler }           from  './PositionPoolHandler.sol';
-import { BaseERC721PoolHandler }         from '../../ERC721Pool/handlers/unbounded/BaseERC721PoolHandler.sol';
-
-import '@std/console.sol';
+import { PositionPoolHandler }   from  './PositionPoolHandler.sol';
+import { BaseERC721PoolHandler } from '../../ERC721Pool/handlers/unbounded/BaseERC721PoolHandler.sol';
 
 contract ERC721PoolPositionHandler is PositionPoolHandler, BaseERC721PoolHandler {
 

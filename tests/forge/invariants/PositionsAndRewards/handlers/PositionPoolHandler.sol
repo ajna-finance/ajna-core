@@ -2,18 +2,11 @@
 
 pragma solidity 0.8.18;
 
-import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import { Maths } from 'src/libraries/internal/Maths.sol';
 
-import { PositionManager }              from 'src/PositionManager.sol';
-import { RewardsManager }               from 'src/RewardsManager.sol';
-
 import { UnboundedPositionPoolHandler } from './unbounded/UnboundedPositionPoolHandler.sol';
-import { ReserveERC721PoolHandler }          from '../../ERC721Pool/handlers/ReserveERC721PoolHandler.sol';
 
 abstract contract PositionPoolHandler is UnboundedPositionPoolHandler { 
-
-    using EnumerableSet for EnumerableSet.UintSet;
 
     /********************************/
     /*** Positions Test Functions ***/
@@ -195,6 +188,5 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
             (tokenId_, indexes_) = _preMemorializePositions(bucketIndex_, amountToAdd_); 
             _memorializePositions(tokenId_, indexes_);
         }
-    } 
-
+    }
 }

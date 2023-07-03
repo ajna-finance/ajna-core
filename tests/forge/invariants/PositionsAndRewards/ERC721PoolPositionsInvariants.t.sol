@@ -3,7 +3,6 @@
 pragma solidity 0.8.18;
 
 import "@std/console.sol";
-
 import { Pool }              from 'src/base/Pool.sol';
 import { ERC20Pool }         from 'src/ERC20Pool.sol';
 import { ERC721Pool }        from 'src/ERC721Pool.sol';

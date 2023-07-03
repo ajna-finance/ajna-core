@@ -2,24 +2,36 @@
 
 pragma solidity 0.8.18;
 
+import '../../../../utils/DSTestPlus.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionManagerOwnerActions.sol';
-import { _depositFeeRate }              from 'src/libraries/helpers/PoolHelper.sol';
+import { 
+    _depositFeeRate,
+    _lpToQuoteToken,
+    _priceAt
+    }                                   from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }                        from "src/libraries/internal/Maths.sol";
 
-import { UnboundedPositionPoolHandler } from './UnboundedPositionPoolHandler.sol';
+import { BaseERC20PoolHandler }         from '../../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
+import { UnboundedBasePositionHandler } from './UnboundedBasePositionHandler.sol';
 
-import { _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
+import { BaseHandler } from '../../../base/handlers/unbounded/BaseHandler.sol';
+
+import { UnboundedPositionPoolHandler } from './UnboundedPositionPoolHandler.sol';
 
 /**
  *  @dev this contract manages multiple lenders
  *  @dev methods in this contract are called in random order
  *  @dev randomly selects a lender contract to make a txn
  */ 
-abstract contract UnboundedERC20PoolRewardsHandler is UnboundedPositionPoolHandler {
+abstract contract UnboundedRewardsPoolHandler is UnboundedPositionPoolHandler {
 
     using EnumerableSet for EnumerableSet.UintSet;
+
+    /********************************/
+    /*** Rewards Helper Functions ***/
+    /********************************/
 
     function _stake(
         uint256 tokenId_
@@ -58,16 +70,18 @@ abstract contract UnboundedERC20PoolRewardsHandler is UnboundedPositionPoolHandl
         uint256 totalRewardsEarnedPreAction;
 
         uint256[] memory rewardsEarnedInEpochPreAction = new uint256[](_pool.currentBurnEpoch() + 1);
+
         for (uint256 epoch = preActionLastClaimedEpoch; epoch <= _pool.currentBurnEpoch(); epoch++) {
 
+            // for epochs already claimed by the staker, `rewardsClaimed()` should go unchanged 
             if (_rewardsManager.isEpochClaimed(tokenId_, epoch)) {
-                rewardsEarnedInEpochPreAction[epoch] = _rewardsManager.rewardsClaimed(epoch);  
+                rewardsEarnedInEpochPreAction[epoch] = _rewardsManager.rewardsClaimed(epoch);
             }
             
             // total the rewards earned pre action
             totalRewardsEarnedPreAction  += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
-        }
- 
+        } 
+
         try _rewardsManager.unstake(tokenId_) {
 
             // actor should receive tokenId, positionManager loses ownership
@@ -220,9 +234,8 @@ abstract contract UnboundedERC20PoolRewardsHandler is UnboundedPositionPoolHandl
             
             // track epochs that have already been claimed
             if (_rewardsManager.isEpochClaimed(tokenId_, epoch)) {
-                rewardsEarnedInEpochPreAction[epoch] = _rewardsManager.rewardsClaimed(epoch);  
+                rewardsEarnedInEpochPreAction[epoch] = _rewardsManager.rewardsClaimed(epoch);
             }
-
             // total the rewards earned pre action
             totalRewardsEarnedPreAction  += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
         }
@@ -270,6 +283,29 @@ abstract contract UnboundedERC20PoolRewardsHandler is UnboundedPositionPoolHandl
         }
     }
 
+    function _advanceEpochRewardStakers(
+        uint256 amountToAdd_,
+        uint256[] memory indexes_,
+        uint256 numberOfEpochs_,
+        uint256 bucketSubsetToUpdate_
+    ) internal virtual;
+
+
+    function _randomizeExchangeRateIndexes(
+        uint256[] memory indexes_,
+        uint256 bucketSubsetToUpdate_
+    ) internal pure returns (uint256[] memory boundBuckets_) {
+        
+        uint256 boundIndexes = constrictToRange(bucketSubsetToUpdate_, 0, indexes_.length);
+        boundBuckets_ = new uint256[](boundIndexes);
+
+        if (boundBuckets_.length !=0) {
+            for (uint256 i = 0; i < boundIndexes; i++) {
+                boundBuckets_[i] = indexes_[i];
+            }
+        }
+    }
+
     function _ensureRewardsManagerError(bytes memory err_) internal pure {
         bytes32 err = keccak256(err_);
 
@@ -284,4 +320,5 @@ abstract contract UnboundedERC20PoolRewardsHandler is UnboundedPositionPoolHandl
             "Unexpected revert error"
         );
     }
+
 }

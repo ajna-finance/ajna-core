@@ -27,6 +27,10 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
 
     using EnumerableSet for EnumerableSet.UintSet;
 
+    /*********************************/
+    /*** Position Helper Functions ***/
+    /*********************************/
+
     function _memorializePositions(
         uint256 tokenId_,
         uint256[] memory indexes_
@@ -44,7 +48,6 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
 
             // positionManager is assigned the most recent depositTime
             bucketIndexToDepositTime[indexes_[i]] = (actorDepositTime >= posManDepositTime) ? actorDepositTime : posManDepositTime;
-
         }
 
         try _positionManager.memorializePositions(address(_pool), tokenId_, indexes_) {
@@ -202,7 +205,6 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
 
             _ensurePositionsManagerError(err);
         }
-
     }
 
     function _getQuoteAtIndex(
@@ -292,7 +294,6 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
                 "PM6: positiionManager QT balance has increased by `1` margin"
             );
 
-
         } catch (bytes memory err) {
             _ensurePositionsManagerError(err);
         }
@@ -315,6 +316,7 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
             // assert that no positions are associated with this tokenId
             uint256[] memory posIndexes = _positionManager.getPositionIndexes(tokenId_);
             require(posIndexes.length == 0, "PM5: positions still exist after burn");
+
         } catch (bytes memory err) {
             _ensurePositionsManagerError(err);
         }
