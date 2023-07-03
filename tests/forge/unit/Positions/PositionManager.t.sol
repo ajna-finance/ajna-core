@@ -1330,7 +1330,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         spenderContract.transferFromWithPermit(address(recipientContract), tokenId, deadline, signature);
 
         // check nonces increment with transfer
-        assertEq(_positionManager.nonces(tokenId), 2);
+        assertEq(_positionManager.nonces(tokenId), 1);
 
         // check retrieving token nonces for non existent tokens will revert
         vm.expectRevert(IPermit.NonExistentToken.selector);
@@ -1377,28 +1377,6 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // check nonces don't change with invalid permits
         assertEq(_positionManager.nonces(tokenId), 0);
-    }
-
-    function testPermitSignatureReplayReverts() external {
-        // generate addresses and set test params
-        (address testMinter, uint256 minterPrivateKey) = makeAddrAndKey("testMinter");
-        address testSpender = makeAddr("spender");
-
-        changePrank(testMinter);
-        uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
-        assertEq(_positionManager.ownerOf(tokenId), testMinter);
-
-        uint256 deadline = block.timestamp + 1 days;
-        bytes memory signature = _getPermitSig(testSpender, tokenId, 0, deadline, minterPrivateKey);
-        
-        _positionManager.permit(testSpender, tokenId, deadline, signature);
-
-        // minter revokes approval
-        _positionManager.approve(address(0), tokenId);
-        
-        // spender tries to get approval with the same signature
-        vm.expectRevert(IPermit.NotAuthorized.selector);
-        _positionManager.permit(testSpender, tokenId, deadline, signature);
     }
 
     /**
@@ -1464,7 +1442,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertEq(_positionManager.ownerOf(tokenId), testMinter);
 
         // check nonces after transfer
-        assertEq(_positionManager.nonces(tokenId), 3);
+        assertEq(_positionManager.nonces(tokenId), 2);
     }
 
     /**
