@@ -2,12 +2,12 @@
 
 pragma solidity 0.8.18;
 
-import { PositionManager }              from 'src/PositionManager.sol';
+import { PositionManager } from 'src/PositionManager.sol';
 
-import { BaseERC20PoolPositionHandler } from  './BaseERC20PoolPositionHandler.sol';
-import { BaseERC20PoolHandler }     from '../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
+import { PositionPoolHandler }  from  './PositionPoolHandler.sol';
+import { BaseERC20PoolHandler } from '../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
 
-contract ERC20PoolPositionHandler is BaseERC20PoolPositionHandler {
+contract ERC20PoolPositionHandler is PositionPoolHandler, BaseERC20PoolHandler {
 
     constructor(
         address positions_,
@@ -22,5 +22,8 @@ contract ERC20PoolPositionHandler is BaseERC20PoolPositionHandler {
 
         // Position manager
         _positionManager = PositionManager(positions_);
+
+        // pool hash for mint() call
+        _poolHash = bytes32(keccak256("ERC20_NON_SUBSET_HASH"));
     }
 }

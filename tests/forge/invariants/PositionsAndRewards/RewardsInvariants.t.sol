@@ -3,46 +3,16 @@
 pragma solidity 0.8.18;
 
 import "@std/console.sol";
-import { Maths }               from 'src/libraries/internal/Maths.sol';
-import { RewardsManager }      from 'src/RewardsManager.sol';
-import { _getEpochInfo }       from 'src/RewardsManager.sol';
+import { Maths }                         from 'src/libraries/internal/Maths.sol';
+import { RewardsManager, _getEpochInfo } from 'src/RewardsManager.sol';
 
 import { IBaseHandler }                from '../interfaces/IBaseHandler.sol';
 import { IPositionsAndRewardsHandler } from '../interfaces/IPositionsAndRewardsHandler.sol';
-import { RewardsHandler }              from './handlers/RewardsHandler.sol';
-import { ERC20PoolPositionsInvariants }         from './ERC20PoolPositionsInvariants.t.sol';
+import { PositionsInvariants }         from './PositionsInvariants.sol';
 
-contract RewardsInvariants is ERC20PoolPositionsInvariants {
+abstract contract RewardsInvariants is PositionsInvariants {
 
     RewardsManager   internal _rewardsManager;
-    RewardsHandler   internal _rewardsHandler;
-
-    function setUp() public override virtual {
-
-        super.setUp();
-
-        _rewardsManager = new RewardsManager(address(_ajna), _positionManager);
-
-        // fund the rewards manager with 100M ajna
-        _ajna.mint(address(_rewardsManager), 100_000_000 * 1e18);
-
-        excludeContract(address(_erc20positionHandler));
-        excludeContract(address(_rewardsManager));
-
-        _rewardsHandler = new RewardsHandler(
-            address(_rewardsManager),
-            address(_positionManager),
-            address(_erc20pool),
-            address(_ajna),
-            address(_quote),
-            address(_collateral),
-            address(_poolInfo),
-            NUM_ACTORS,
-            address(this)
-        );
-
-        _handler = address(_rewardsHandler);
-    }
 
     function invariant_rewards_RW1_RW2() public useCurrentTimestamp {
 
@@ -76,7 +46,7 @@ contract RewardsInvariants is ERC20PoolPositionsInvariants {
 
     function invariant_call_summary() public virtual override useCurrentTimestamp {
         console.log("\nCall Summary\n");
-        console.log("--Positions--------");
+        console.log("--Rewards--------");
         console.log("UBRewardsHandler.unstake            ",  IBaseHandler(_handler).numberOfCalls("UBRewardsHandler.unstake"));
         console.log("BRewardsHandler.unstake             ",  IBaseHandler(_handler).numberOfCalls("BRewardsHandler.unstake"));
         console.log("UBRewardsHandler.emergencyUnstake   ",  IBaseHandler(_handler).numberOfCalls("UBRewardsHandler.emergencyUnstake"));

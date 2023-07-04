@@ -75,6 +75,8 @@ Invariant test scenarios can be externally configured by customizing following e
 | MAX_POOL_DEBT | ERC20 ERC721 | 1e45 | The max amount of debt that can be taken from the pool. If debt goes above this amount, borrower debt will be repaid |
 | SKIP_TIME | ERC20 ERC721 | 24 hours | The upper limit of time that can be skipped after a pool action (fuzzed) |
 | SKIP_TIME_TO_KICK | ERC20 ERC721 | 200 days | The time to be skipped and drive a new loan undercollateralized. Use a big value to ensure a successful kick |
+| MAX_EPOCH_ADVANCE | ERC20 ERC721 | 5 | The maximum number of epochs that will be created before an unstake or claimRewards call |
+| MAX_AJNA_AMOUNT | ERC20 ERC721 | 100_000_000 | The maximum amount of ajna provided to the rewards contract |
 | FOUNDRY_INVARIANT_RUNS | ERC20 ERC721 | 10 | The number of runs for each scenario |
 | FOUNDRY_INVARIANT_DEPTH | ERC20 ERC721 | 200 | The number of actions performed in each scenario |
 | LOGS_VERBOSITY | ERC20 ERC721 | 0 | <p> Details to log <p> 0 = No Logs <p> 1 = pool State  <p> 2 = pool State, Auctions details <p> 3 = pool State, Auctions details , Buckets details <p> 4 = pool State, Auctions details , Buckets details, Lender details <p> 5 = pool State, Auctions details , Buckets details, Lender details, Borrower details <p> Note - Log File with name `logFile.txt` will be generated in project directory|

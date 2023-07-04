@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 
 import { ERC20PoolPositionsInvariants } from "../../invariants/PositionsAndRewards/ERC20PoolPositionsInvariants.t.sol";
 
-contract RegressionTestPositionManager is ERC20PoolPositionsInvariants { 
+contract RegressionTestERC20PoolPositionManager is ERC20PoolPositionsInvariants { 
 
     function setUp() public override { 
         super.setUp();
@@ -119,6 +119,16 @@ contract RegressionTestPositionManager is ERC20PoolPositionsInvariants {
 
     function test_regression_position_manager() external {
         _erc20positionHandler.redeemPositions(79335468733065507138817566659594782917024872257218805, 1889027018179489664211573893, 43578107449528230070726540147644518395094194018887636259089111851, 0);
+    }
 
+    // This EVM revert fires a `NoAllowance()` error. certain pool errors fire in positionManager calls
+    // fix: import specific pool errors into positionManager catch
+    // Add quote token was failing due to a rounding issue in amount supplied that resulted in an attempt to add zero QT to the pool
+    // fix: altered the addQuoteToken call in preMemorializePosition method
+    function test_regression_failure_evm_revert_5() external {
+        _erc20positionHandler.moveLiquidity(35855801402931413691347, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 2, 3);
+        _erc20positionHandler.mint(1, 6981663636108743728471595901895228956316688268);
+        _erc20positionHandler.failed();
+        _erc20positionHandler.redeemPositions(9941, 12031, 22960, 1397);
     }
 }

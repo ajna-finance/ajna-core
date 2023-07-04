@@ -29,7 +29,8 @@ test-invariant-erc20                     :; forge t --mt invariant --nmc ${CONTR
 test-invariant-erc721                    :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc ERC721
 test-invariant-position-erc20            :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc ERC20PoolPosition 
 test-invariant-position-erc721           :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc ERC721PoolPosition
-test-invariant-rewards                   :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc Rewards
+test-invariant-rewards-erc20             :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc ERC20PoolRewards
+test-invariant-rewards-erc721            :; forge t --mt invariant --nmc ${CONTRACT_EXCLUDES} --mc ERC721PoolRewards
 test-invariant                           :; forge t --mt ${MT} --nmc RegressionTest
 test-invariant-erc20-precision           :; ./tests/forge/invariants/test-invariant-erc20-precision.sh
 test-invariant-erc721-precision          :; ./tests/forge/invariants/test-invariant-erc721-precision.sh

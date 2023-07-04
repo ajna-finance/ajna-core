@@ -2,24 +2,36 @@
 
 pragma solidity 0.8.18;
 
+import '../../../../utils/DSTestPlus.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionManagerOwnerActions.sol';
-import { _depositFeeRate }              from 'src/libraries/helpers/PoolHelper.sol';
+import { 
+    _depositFeeRate,
+    _lpToQuoteToken,
+    _priceAt
+    }                                   from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }                        from "src/libraries/internal/Maths.sol";
 
-import { UnboundedERC20PoolPositionsHandler } from './UnboundedERC20PoolPositionsHandler.sol';
+import { BaseERC20PoolHandler }         from '../../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
+import { UnboundedBasePositionHandler } from './UnboundedBasePositionHandler.sol';
 
-import { _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
+import { BaseHandler } from '../../../base/handlers/unbounded/BaseHandler.sol';
+
+import { UnboundedPositionPoolHandler } from './UnboundedPositionPoolHandler.sol';
 
 /**
  *  @dev this contract manages multiple lenders
  *  @dev methods in this contract are called in random order
  *  @dev randomly selects a lender contract to make a txn
  */ 
-abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler {
+abstract contract UnboundedRewardsPoolHandler is UnboundedPositionPoolHandler {
 
     using EnumerableSet for EnumerableSet.UintSet;
+
+    /********************************/
+    /*** Rewards Helper Functions ***/
+    /********************************/
 
     function _stake(
         uint256 tokenId_
@@ -32,6 +44,9 @@ abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler 
             // actor should loses ownership, positionManager gains it
             tokenIdsByActor[address(_rewardsManager)].add(tokenId_);
             tokenIdsByActor[address(_actor)].remove(tokenId_);
+
+            // staked position is tracked
+            stakedTokenIdsByActor[address(_actor)].add(tokenId_);
 
             require(_positionManager.ownerOf(tokenId_) == address(_rewardsManager), "RW5: owner should be rewardsManager");
 
@@ -53,22 +68,28 @@ abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler 
 
         // loop over all epochs that are going to be
         uint256 totalRewardsEarnedPreAction;
+
+        uint256[] memory rewardsEarnedInEpochPreAction = new uint256[](_pool.currentBurnEpoch() + 1);
+
         for (uint256 epoch = preActionLastClaimedEpoch; epoch <= _pool.currentBurnEpoch(); epoch++) {
-            
+
             // for epochs already claimed by the staker, `rewardsClaimed()` should go unchanged 
             if (_rewardsManager.isEpochClaimed(tokenId_, epoch)) {
-                rewardsAlreadyClaimed[epoch] = _rewardsManager.rewardsClaimed(epoch);
+                rewardsEarnedInEpochPreAction[epoch] = _rewardsManager.rewardsClaimed(epoch);
             }
             
             // total the rewards earned pre action
             totalRewardsEarnedPreAction  += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
-        }
- 
+        } 
+
         try _rewardsManager.unstake(tokenId_) {
 
             // actor should receive tokenId, positionManager loses ownership
             tokenIdsByActor[address(_actor)].add(tokenId_);
             tokenIdsByActor[address(_rewardsManager)].remove(tokenId_);
+
+            // staked position is no longer tracked
+            stakedTokenIdsByActor[address(_actor)].remove(tokenId_);
 
             // balance changes
             uint256 actorAjnaGain = _ajna.balanceOf(_actor) - actorAjnaBalanceBeforeClaim;
@@ -83,8 +104,8 @@ abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler 
                     "RW6: epoch after claim rewards is not claimed");
                 }
                 
-                if (rewardsAlreadyClaimed[epoch] != 0) {
-                    require(rewardsAlreadyClaimed[epoch] == _rewardsManager.rewardsClaimed(epoch), 
+                if (rewardsEarnedInEpochPreAction[epoch] > 0) {
+                    require(rewardsEarnedInEpochPreAction[epoch] == _rewardsManager.rewardsClaimed(epoch), 
                     "RW10: staker has claimed rewards from the same epoch twice"); 
                 }
 
@@ -132,6 +153,13 @@ abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler 
 
         try _rewardsManager.emergencyUnstake(tokenId_) {
 
+            // actor should receive tokenId, positionManager loses ownership
+            tokenIdsByActor[address(_actor)].add(tokenId_);
+            tokenIdsByActor[address(_rewardsManager)].remove(tokenId_);
+
+            // staked position is no longer tracked
+            stakedTokenIdsByActor[address(_actor)].remove(tokenId_);
+
             // loop over all epochs that have occured
             uint256 totalRewardsEarnedPostAction;
             for (uint256 epoch = 0; epoch <= _pool.currentBurnEpoch(); epoch++) {
@@ -139,10 +167,6 @@ abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler 
                 // total rewards earned across all actors in epoch post action
                 totalRewardsEarnedPostAction += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
             }
-
-            // actor should receive tokenId, positionManager loses ownership
-            tokenIdsByActor[address(_actor)].add(tokenId_);
-            tokenIdsByActor[address(_rewardsManager)].remove(tokenId_);
 
             require(totalRewardsEarnedPreAction == totalRewardsEarnedPostAction,
             "rewards were earned on emergency unstake");
@@ -203,15 +227,16 @@ abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler 
 
         // loop over all epochs that are going to be
         uint256 totalRewardsEarnedPreAction;
+
+        uint256[] memory rewardsEarnedInEpochPreAction = new uint256[](_pool.currentBurnEpoch() + 1);
         for (uint256 epoch = preActionLastClaimedEpoch; epoch <= _pool.currentBurnEpoch(); epoch++) {
             
             // track epochs that have already been claimed
             if (_rewardsManager.isEpochClaimed(tokenId_, epoch)) {
-                rewardsAlreadyClaimed[epoch] = _rewardsManager.rewardsClaimed(epoch);
+                rewardsEarnedInEpochPreAction[epoch] = _rewardsManager.rewardsClaimed(epoch);
             }
-            
-            // total staking rewards earned across all actors in epoch pre action
-            totalRewardsEarnedPreAction += _rewardsManager.rewardsClaimed(epoch);
+            // total the rewards earned pre action
+            totalRewardsEarnedPreAction  += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
         }
 
         try _rewardsManager.claimRewards(tokenId_, epoch_, 0) {
@@ -229,16 +254,17 @@ abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler 
                     "RW6: epoch after claim rewards is not claimed");
                 }
 
-                if (rewardsAlreadyClaimed[epoch] != 0) {
-                    require(rewardsAlreadyClaimed[epoch] == _rewardsManager.rewardsClaimed(epoch), 
+                if (rewardsEarnedInEpochPreAction[epoch] > 0) {
+                    require(rewardsEarnedInEpochPreAction[epoch] == _rewardsManager.rewardsClaimed(epoch), 
                     "RW10: staker has claimed rewards from the same epoch twice"); 
                 }
 
-                // total staking rewards earned across all actors in epoch post action
-                totalRewardsEarnedPostAction += _rewardsManager.rewardsClaimed(epoch);
+                // total rewards earned across all actors in epoch post action
+                totalRewardsEarnedPostAction += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
 
-                // reset staking rewards earned in epoch
-                rewardsClaimedPerEpoch[epoch] = _rewardsManager.rewardsClaimed(epoch);
+                // reset staking and updating rewards earned in epoch
+                rewardsClaimedPerEpoch[epoch]       = _rewardsManager.rewardsClaimed(epoch);
+                updateRewardsClaimedPerEpoch[epoch] = _rewardsManager.updateRewardsClaimed(epoch);
             }
 
             (, , uint256 lastClaimedEpoch) = _rewardsManager.getStakeInfo(tokenId_);
@@ -253,6 +279,29 @@ abstract contract UnboundedRewardsHandler is UnboundedERC20PoolPositionsHandler 
 
         } catch (bytes memory err) {
             _ensureRewardsManagerError(err);
+        }
+    }
+
+    function _advanceEpochRewardStakers(
+        uint256 amountToAdd_,
+        uint256[] memory indexes_,
+        uint256 numberOfEpochs_,
+        uint256 bucketSubsetToUpdate_
+    ) internal virtual;
+
+
+    function _randomizeExchangeRateIndexes(
+        uint256[] memory indexes_,
+        uint256 bucketSubsetToUpdate_
+    ) internal pure returns (uint256[] memory boundBuckets_) {
+        
+        uint256 boundIndexes = constrictToRange(bucketSubsetToUpdate_, 0, indexes_.length);
+        boundBuckets_ = new uint256[](boundIndexes);
+
+        if (boundBuckets_.length !=0) {
+            for (uint256 i = 0; i < boundIndexes; i++) {
+                boundBuckets_[i] = indexes_[i];
+            }
         }
     }
 

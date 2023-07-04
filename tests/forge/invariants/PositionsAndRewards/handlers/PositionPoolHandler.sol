@@ -2,22 +2,11 @@
 
 pragma solidity 0.8.18;
 
-import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
-import '@std/console.sol';
-
 import { Maths } from 'src/libraries/internal/Maths.sol';
 
-import { _priceAt }                     from 'src/libraries/helpers/PoolHelper.sol';
+import { UnboundedPositionPoolHandler } from './unbounded/UnboundedPositionPoolHandler.sol';
 
-import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionManagerOwnerActions.sol';
-import { PositionManager }              from 'src/PositionManager.sol';
-import { ERC20Pool }                    from 'src/ERC20Pool.sol';
-
-import { UnboundedERC20PoolPositionsHandler } from './unbounded/UnboundedERC20PoolPositionsHandler.sol';
-
-abstract contract BaseERC20PoolPositionHandler is UnboundedERC20PoolPositionsHandler {
-
-    using EnumerableSet for EnumerableSet.UintSet;
+abstract contract PositionPoolHandler is UnboundedPositionPoolHandler { 
 
     /********************************/
     /*** Positions Test Functions ***/
@@ -46,7 +35,10 @@ abstract contract BaseERC20PoolPositionHandler is UnboundedERC20PoolPositionsHan
         numberOfCalls['BPositionHandler.redeem']++;
         // Pre action //
         (uint256 tokenId, uint256[] memory indexes) = _preRedeemPositions(_lenderBucketIndex, amountToAdd_);
-        
+
+        // NFT doesn't have a position associated with it, return
+        if (indexes.length == 0) return; 
+ 
         // Action phase // 
         _redeemPositions(tokenId, indexes);
     }
@@ -98,6 +90,9 @@ abstract contract BaseERC20PoolPositionHandler is UnboundedERC20PoolPositionsHan
             ,
         ) = _pool.bucketInfo(fromIndex);
 
+        // NFT doesn't have a position associated with it, return
+        if (fromIndex == 0) return;
+
         // to avoid LP mismatch revert return if bucket has collateral or exchangeRate < 1e18
         if (bucketCollateral != 0) return;
         if (_pool.bucketExchangeRate(fromIndex) < 1e18) return;
@@ -116,8 +111,8 @@ abstract contract BaseERC20PoolPositionHandler is UnboundedERC20PoolPositionsHan
 
         // add quote token if they don't have a position
         if (lpBalanceBefore == 0) {
-            // Prepare test phase
-            uint256 boundedAmount = constrictToRange(amountToAdd_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
+            // bound amount
+            uint256 boundedAmount = constrictToRange(amountToAdd_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
             _ensureQuoteAmount(_actor, boundedAmount);
             try _pool.addQuoteToken(boundedAmount, bucketIndex_, block.timestamp + 1 minutes, false) {
             } catch (bytes memory err) {
@@ -173,8 +168,7 @@ abstract contract BaseERC20PoolPositionHandler is UnboundedERC20PoolPositionsHan
 
         uint256[] memory indexes;
         (tokenId_, indexes) = _getNFTPosition(boundedFromIndex_, amountToMove_);
-        boundedFromIndex_   = indexes[0];
-
+        boundedFromIndex_   = indexes.length != 0 ? indexes[0]: 0;
     }
 
     function _getNFTPosition(
@@ -194,5 +188,5 @@ abstract contract BaseERC20PoolPositionHandler is UnboundedERC20PoolPositionsHan
             (tokenId_, indexes_) = _preMemorializePositions(bucketIndex_, amountToAdd_); 
             _memorializePositions(tokenId_, indexes_);
         }
-    } 
+    }
 }
