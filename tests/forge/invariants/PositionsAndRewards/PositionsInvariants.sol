@@ -41,7 +41,7 @@ abstract contract PositionsInvariants is BaseInvariants {
             poolLpAccum += poolLp;
 
             // loop over tokenIds in bucket indexes
-            uint256[] memory tokenIds = IPositionsAndRewardsHandler(_handler).getTokenIdsByBucketIndex(bucketIndex);
+            uint256[] memory tokenIds = IPositionsAndRewardsHandler(_handler).getTokenIdsByBucketIndex(address(_pool), bucketIndex);
             for (uint256 k = 0; k < tokenIds.length; k++) {
                 uint256 tokenId = tokenIds[k];
                 

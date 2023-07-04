@@ -9,7 +9,7 @@ interface IPositionsAndRewardsHandler {
 
     // positionManager
     function getTokenIdsByActor() external view returns(uint256[] memory);
-    function getTokenIdsByBucketIndex(uint256) external view returns(uint256[] memory);
+    function getTokenIdsByBucketIndex(address, uint256) external view returns(uint256[] memory);
 
     // rewardsManager
     function rewardsClaimedPerEpoch(uint256) external view returns(uint256);

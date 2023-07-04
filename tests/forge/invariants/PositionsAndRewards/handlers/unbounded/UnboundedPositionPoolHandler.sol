@@ -57,7 +57,7 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
                 uint256 bucketIndex = indexes_[i];
 
                 bucketIndexesWithPosition.add(bucketIndex);
-                tokenIdsByBucketIndex[bucketIndex].add(tokenId_);
+                tokenIdsByBucketIndex[address(_pool)][bucketIndex].add(tokenId_);
 
                 // info used to tearDown buckets
                 bucketIndexesByTokenId[tokenId_].add(bucketIndex);
@@ -146,10 +146,10 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
             for ( uint256 i = 0; i < indexes_.length; i++) {
                 uint256 bucketIndex = indexes_[i];
 
-                tokenIdsByBucketIndex[bucketIndex].remove(tokenId_);
+                tokenIdsByBucketIndex[address(_pool)][bucketIndex].remove(tokenId_);
 
                 // if no other positions exist for this bucketIndex, remove from bucketIndexesWithPosition
-                if (getTokenIdsByBucketIndex(bucketIndex).length == 0) {
+                if (getTokenIdsByBucketIndex(address(_pool), bucketIndex).length == 0) {
 
                     bucketIndexesWithPosition.remove(bucketIndex); 
                 }
@@ -258,16 +258,16 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
 
             // Post Action Checks //
             // remove tracked positions
-            tokenIdsByBucketIndex[fromIndex_].remove(tokenId_);
+            tokenIdsByBucketIndex[address(_pool)][fromIndex_].remove(tokenId_);
 
             // if no other positions exist for this bucketIndex, remove from bucketIndexesWithPosition
-            if (getTokenIdsByBucketIndex(fromIndex_).length == 0) {
+            if (getTokenIdsByBucketIndex(address(_pool), fromIndex_).length == 0) {
                 bucketIndexesWithPosition.remove(fromIndex_); 
             }
 
             // track created positions
             bucketIndexesWithPosition.add(toIndex_);
-            tokenIdsByBucketIndex[toIndex_].add(tokenId_);
+            tokenIdsByBucketIndex[address(_pool)][toIndex_].add(tokenId_);
 
             // assert that fromIndex LP and deposit time are both zero
             (uint256 fromLps, uint256 fromDepositTime) = _positionManager.getPositionInfo(tokenId_, fromIndex_);

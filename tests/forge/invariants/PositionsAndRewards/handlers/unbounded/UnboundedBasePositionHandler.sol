@@ -27,8 +27,8 @@ abstract contract UnboundedBasePositionHandler is Test {
     mapping(uint256 => EnumerableSet.UintSet) internal bucketIndexesByTokenId;
 
     // positionManager
-    mapping(uint256 => EnumerableSet.UintSet) internal tokenIdsByBucketIndex;
-    mapping(address => EnumerableSet.UintSet) internal tokenIdsByActor;
+    mapping(address => mapping(uint256 => EnumerableSet.UintSet)) internal tokenIdsByBucketIndex; // pool => bucketIndex => tokenIds
+    mapping(address => EnumerableSet.UintSet) internal tokenIdsByActor; 
     // used to track changes in `_redeemPositions()` and `_memorializePositions()`
     mapping(uint256 => uint256) internal actorLpsBefore;
     mapping(uint256 => uint256) internal posManLpsBefore;
@@ -45,8 +45,8 @@ abstract contract UnboundedBasePositionHandler is Test {
         return bucketIndexesWithPosition.values();
     }
 
-    function getTokenIdsByBucketIndex(uint256 bucketIndex_) public view returns(uint256[] memory) {
-        return tokenIdsByBucketIndex[bucketIndex_].values();
+    function getTokenIdsByBucketIndex(address pool_, uint256 bucketIndex_) public view returns(uint256[] memory) {
+        return tokenIdsByBucketIndex[pool_][bucketIndex_].values();
     }
 
     function getBucketIndexesByTokenId(uint256 tokenId_) public view returns(uint256[] memory) {
