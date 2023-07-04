@@ -180,7 +180,8 @@ interface IPoolErrors {
     error PoolUnderCollateralized();
 
     /**
-     *  @notice Actor is attempting to remove using a bucket with price below the `LUP`.
+     *  @notice Actor is attempting to add or move quote tokens at a price below the `LUP`.
+     *  @notice Actor is attempting to kick with bucket price below the `LUP`.
      */
     error PriceBelowLUP();
 

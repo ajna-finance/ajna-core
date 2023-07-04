@@ -311,9 +311,12 @@ library BorrowerActions {
                 );
             }
 
-            result_.t0PoolDebt        -= vars.t0RepaidDebt;
-            result_.poolDebt          = Maths.wmul(result_.t0PoolDebt, poolState_.inflator);
-            result_.quoteTokenToRepay = Maths.ceilWmul(vars.t0RepaidDebt,  poolState_.inflator);
+            result_.quoteTokenToRepay = Maths.ceilWmul(vars.t0RepaidDebt, poolState_.inflator);
+            // revert if (due to roundings) calculated token amount to repay is 0
+            if (result_.quoteTokenToRepay == 0) revert InvalidAmount();
+
+            result_.t0PoolDebt -= vars.t0RepaidDebt;
+            result_.poolDebt   = Maths.wmul(result_.t0PoolDebt, poolState_.inflator);
 
             vars.borrowerDebt = Maths.wmul(borrower.t0Debt - vars.t0RepaidDebt, poolState_.inflator);
 
@@ -372,8 +375,6 @@ library BorrowerActions {
             // calculate LUP only if it wasn't calculated in repay action
             if (!vars.repay) result_.newLup = Deposits.getLup(deposits_, result_.poolDebt);
 
-            _revertIfPriceDroppedBelowLimit(result_.newLup, limitIndex_);
-
             uint256 encumberedCollateral = Maths.wdiv(vars.borrowerDebt, result_.newLup);
             if (
                 borrower.t0Debt != 0 && encumberedCollateral == 0 || // case when small amount of debt at a high LUP results in encumbered collateral calculated as 0
@@ -388,6 +389,9 @@ library BorrowerActions {
 
             result_.poolCollateral -= collateralAmountToPull_;
         }
+
+        // check limit price and revert if price dropped below
+        _revertIfPriceDroppedBelowLimit(result_.newLup, limitIndex_);
 
         // update loan state
         Loans.update(

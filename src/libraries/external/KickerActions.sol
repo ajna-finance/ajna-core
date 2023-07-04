@@ -67,17 +67,12 @@ library KickerActions {
         uint256 kickPenalty;        // [WAD] current debt added as kick penalty
     }
 
-    /// @dev Struct used for `kickWithDeposit` function local vars.
-    struct KickWithDepositLocalVars {
-        uint256 amountToDebitFromDeposit; // [WAD] the amount of quote tokens used to kick and debited from lender deposit
-        uint256 bucketCollateral;         // [WAD] amount of collateral in bucket
-        uint256 bucketDeposit;            // [WAD] amount of quote tokens in bucket
-        uint256 bucketLP;                 // [WAD] LP of the bucket
-        uint256 bucketPrice;              // [WAD] bucket price
-        uint256 bucketScale;              // [WAD] bucket scales
-        uint256 bucketUnscaledDeposit;    // [WAD] unscaled amount of quote tokens in bucket
-        uint256 lenderLP;                 // [WAD] LP of lender in bucket
-        uint256 redeemedLP;               // [WAD] LP used by kick action
+    /// @dev Struct used for `lenderKick` function local vars.
+    struct LenderKickLocalVars {
+        uint256 bucketDeposit;  // [WAD] amount of quote tokens in bucket
+        uint256 bucketPrice;    // [WAD] bucket price
+        uint256 entitledAmount; // [WAD] amount that lender is entitled to remove at specified index
+        uint256 lenderLP;       // [WAD] LP of lender in bucket
     }
 
     /**************/
@@ -135,18 +130,12 @@ library KickerActions {
 
     /**
      *  @notice See `IPoolKickerActions` for descriptions.
-     *  @dev    === Write state ===
-     *  @dev   - `Deposits.unscaledRemove` (remove amount in `Fenwick` tree, from index): update `values` array state
-     *  @dev   - decrement `lender.lps` accumulator
-     *  @dev   - decrement `bucket.lps` accumulator
      *  @dev    === Reverts on ===
+     *  @dev    bucket price below current pool `LUP` `PriceBelowLUP()`
      *  @dev    insufficient deposit to kick auction `InsufficientLiquidity()`
-     *  @dev    no `LP` redeemed to kick auction `InsufficientLP()`
-     *  @dev    === Emit events ===
-     *  @dev    - `RemoveQuoteToken`
      *  @return kickResult_ The `KickResult` struct result of the kick action.
      */
-    function kickWithDeposit(
+    function lenderKick(
         AuctionsState storage auctions_,
         DepositsState storage deposits_,
         mapping(uint256 => Bucket) storage buckets_,
@@ -157,35 +146,34 @@ library KickerActions {
     ) external returns (
         KickResult memory kickResult_
     ) {
+        LenderKickLocalVars memory vars;
+
+        vars.bucketPrice = _priceAt(index_);
+
+        // revert if the bucket price is below current LUP
+        if (vars.bucketPrice < Deposits.getLup(deposits_, poolState_.debt)) revert PriceBelowLUP();
+
         Bucket storage bucket = buckets_[index_];
         Lender storage lender = bucket.lenders[msg.sender];
 
-        KickWithDepositLocalVars memory vars;
+        vars.lenderLP      = bucket.bankruptcyTime < lender.depositTime ? lender.lps : 0;
+        vars.bucketDeposit = Deposits.valueAt(deposits_, index_);
 
-        if (bucket.bankruptcyTime < lender.depositTime) vars.lenderLP = lender.lps;
-
-        vars.bucketLP              = bucket.lps;
-        vars.bucketCollateral      = bucket.collateral;
-        vars.bucketPrice           = _priceAt(index_);
-        vars.bucketUnscaledDeposit = Deposits.unscaledValueAt(deposits_, index_);
-        vars.bucketScale           = Deposits.scale(deposits_, index_);
-        vars.bucketDeposit         = Maths.wmul(vars.bucketUnscaledDeposit, vars.bucketScale);
-
-        // calculate amount to remove based on lender LP in bucket
-        vars.amountToDebitFromDeposit = Buckets.lpToQuoteTokens(
-            vars.bucketCollateral,
-            vars.bucketLP,
+        // calculate amount lender is entitled in current bucket (based on lender LP in bucket)
+        vars.entitledAmount = Buckets.lpToQuoteTokens(
+            bucket.collateral,
+            bucket.lps,
             vars.bucketDeposit,
             vars.lenderLP,
             vars.bucketPrice,
             Math.Rounding.Down
         );
 
-        // cap the amount to remove at bucket deposit
-        if (vars.amountToDebitFromDeposit > vars.bucketDeposit) vars.amountToDebitFromDeposit = vars.bucketDeposit;
+        // cap the amount entitled at bucket deposit
+        if (vars.entitledAmount > vars.bucketDeposit) vars.entitledAmount = vars.bucketDeposit;
 
-        // revert if no amount that can be removed
-        if (vars.amountToDebitFromDeposit == 0) revert InsufficientLiquidity();
+        // revert if no entitled amount
+        if (vars.entitledAmount == 0) revert InsufficientLiquidity();
 
         // kick top borrower
         kickResult_ = _kick(
@@ -195,80 +183,7 @@ library KickerActions {
             poolState_,
             Loans.getMax(loans_).borrower,
             limitIndex_,
-            vars.amountToDebitFromDeposit
-        );
-
-        // amount to remove from deposit covers entire bond amount
-        if (vars.amountToDebitFromDeposit > kickResult_.amountToCoverBond) {
-            // cap amount to remove from deposit at amount to cover bond
-            vars.amountToDebitFromDeposit = kickResult_.amountToCoverBond;
-
-            // recalculate the LUP with the amount to cover bond
-            kickResult_.lup = Deposits.getLup(deposits_, poolState_.debt + vars.amountToDebitFromDeposit);
-            // entire bond is covered from deposit, no additional amount to be send by lender
-            kickResult_.amountToCoverBond = 0;
-        } else {
-            // lender should send additional amount to cover bond
-            kickResult_.amountToCoverBond -= vars.amountToDebitFromDeposit;
-        }
-
-        // revert if the bucket price used to kick and remove is below new LUP
-        if (vars.bucketPrice < kickResult_.lup) revert PriceBelowLUP();
-
-        // remove amount from deposits
-        if (vars.amountToDebitFromDeposit == vars.bucketDeposit && vars.bucketCollateral == 0) {
-            // In this case we are redeeming the entire bucket exactly, and need to ensure bucket LP are set to 0
-            vars.redeemedLP = vars.bucketLP;
-
-            Deposits.unscaledRemove(deposits_, index_, vars.bucketUnscaledDeposit);
-            vars.bucketUnscaledDeposit = 0;
-
-        } else {
-            vars.redeemedLP = Buckets.quoteTokensToLP(
-                vars.bucketCollateral,
-                vars.bucketLP,
-                vars.bucketDeposit,
-                vars.amountToDebitFromDeposit,
-                vars.bucketPrice,
-                Math.Rounding.Up
-            );
-
-            uint256 unscaledAmountToRemove = Maths.floorWdiv(vars.amountToDebitFromDeposit, vars.bucketScale);
-
-            // revert if calculated unscaled amount is 0
-            if (unscaledAmountToRemove == 0) revert InsufficientLiquidity();
-
-            Deposits.unscaledRemove(deposits_, index_, unscaledAmountToRemove);
-            vars.bucketUnscaledDeposit -= unscaledAmountToRemove;
-        }
-
-        vars.redeemedLP = Maths.min(vars.lenderLP, vars.redeemedLP);
-
-        // revert if LP redeemed amount to kick auction is 0
-        if (vars.redeemedLP == 0) revert InsufficientLP();
-
-        uint256 bucketRemainingLP = vars.bucketLP - vars.redeemedLP;
-
-        if (vars.bucketCollateral == 0 && vars.bucketUnscaledDeposit == 0 && bucketRemainingLP != 0) {
-            bucket.lps            = 0;
-            bucket.bankruptcyTime = block.timestamp;
-
-            emit BucketBankruptcy(
-                index_,
-                bucketRemainingLP
-            );
-        } else {
-            // update lender and bucket LP balances
-            lender.lps -= vars.redeemedLP;
-            bucket.lps -= vars.redeemedLP;
-        }
-
-        emit RemoveQuoteToken(
-            msg.sender,
-            index_,
-            vars.amountToDebitFromDeposit,
-            vars.redeemedLP,
-            kickResult_.lup
+            vars.entitledAmount
         );
     }
 
@@ -381,8 +296,11 @@ library KickerActions {
         kickResult_.debtPreAction       = borrower.t0Debt;
         kickResult_.collateralPreAction = borrower.collateral;
         kickResult_.t0KickedDebt        = kickResult_.debtPreAction ;
+
         // add amount to remove to pool debt in order to calculate proposed LUP
-        kickResult_.lup          = Deposits.getLup(deposits_, poolState_.debt + additionalDebt_);
+        // for regular kick this is the currrent LUP in pool
+        // for provisional kick this simulates LUP movement with additional debt
+        kickResult_.lup = Deposits.getLup(deposits_, poolState_.debt + additionalDebt_);
 
         KickLocalVars memory vars;
         vars.borrowerDebt       = Maths.wmul(kickResult_.t0KickedDebt, poolState_.inflator);
@@ -441,6 +359,10 @@ library KickerActions {
 
         kickResult_.t0PoolDebt   = poolState_.t0Debt + vars.t0KickPenalty;
         kickResult_.t0KickedDebt += vars.t0KickPenalty;
+
+        // recalculate LUP with new pool debt (including kick penalty)
+        kickResult_.poolDebt = Maths.wmul(kickResult_.t0PoolDebt, poolState_.inflator);
+        kickResult_.lup      = Deposits.getLup(deposits_, kickResult_.poolDebt);
 
         // update borrower debt with kicked debt penalty
         borrower.t0Debt = kickResult_.t0KickedDebt;

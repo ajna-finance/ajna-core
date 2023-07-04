@@ -3,6 +3,7 @@
 pragma solidity 0.8.18;
 
 import "@std/console.sol";
+import '../../utils/DSTestPlus.sol';
 
 import { IBaseHandler }           from '../interfaces/IBaseHandler.sol';
 import { BasicInvariants }        from './BasicInvariants.t.sol';
@@ -168,6 +169,8 @@ abstract contract LiquidationInvariants is BasicInvariants {
         console.log("UBLiquidationHandler.pledgeCollateral     ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.pledgeCollateral"));
         console.log("BLiquidationHandler.pullCollateral        ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.pullCollateral"));
         console.log("UBLiquidationHandler.pullCollateral       ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.pullCollateral"));
+        console.log("BLiquidationHandler.stampLoan             ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.stampLoan"));
+        console.log("UBLiquidationHandler.stampLoan            ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.stampLoan"));
         console.log("--Kicker/Taker----");
         console.log("BLiquidationHandler.kickAuction           ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickAuction"));
         console.log("UBLiquidationHandler.kickAuction          ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.kickAuction"));
@@ -179,8 +182,8 @@ abstract contract LiquidationInvariants is BasicInvariants {
         console.log("UBLiquidationHandler.settleAuction        ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.settleAuction"));
         console.log("BLiquidationHandler.withdrawBonds         ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.withdrawBonds"));
         console.log("UBLiquidationHandler.withdrawBonds        ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.withdrawBonds"));
-        console.log("BLiquidationHandler.kickWithDeposit       ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickWithDeposit"));
-        console.log("UBLiquidationHandler.kickWithDeposit      ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.kickWithDeposit"));
+        console.log("BLiquidationHandler.lenderKickAuction     ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.lenderKickAuction"));
+        console.log("UBLiquidationHandler.lenderKickAuction    ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.lenderKickAuction"));
         console.log("------------------");
         console.log(
             "Sum",
@@ -193,21 +196,21 @@ abstract contract LiquidationInvariants is BasicInvariants {
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.pullCollateral") + 
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt") + 
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt") + 
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.stampLoan") +
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.transferLps") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickAuction") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.takeAuction") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.bucketTake") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.settleAuction") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.withdrawBonds") +
-            IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickWithDeposit")
+            IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.lenderKickAuction")
         );
         console.log("------------------");
         console.log("--Successful liquidation actions----");
         console.log("kick:              ",  IBaseHandler(_handler).numberOfActions("kick"));
-        console.log("kick with deposit: ",  IBaseHandler(_handler).numberOfActions("kickWithDeposit"));
+        console.log("kick with deposit: ",  IBaseHandler(_handler).numberOfActions("lenderKickAuction"));
         console.log("take:              ",  IBaseHandler(_handler).numberOfActions("take"));
         console.log("bucket take:       ",  IBaseHandler(_handler).numberOfActions("bucketTake"));
         console.log("settle             ",  IBaseHandler(_handler).numberOfActions("settle"));
     }
-
 }

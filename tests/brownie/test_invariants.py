@@ -327,7 +327,7 @@ def test_stateful_borrow_repay(
 
         def setup(self):
             # add some initial liquidity in the pool
-            self.pool.addQuoteToken(MAX_LEND_AMOUNT, MAX_BUCKET, chain.time() + 30, {"from": lenders[0]})
+            self.pool.addQuoteToken(MAX_LEND_AMOUNT, MAX_BUCKET, chain.time() + 30, False, {"from": lenders[0]})
 
 
         ############## Lender rules ##############
@@ -343,7 +343,7 @@ def test_stateful_borrow_repay(
             success = True
 
             try:
-                self.pool.addQuoteToken(lend_amount, st_index, chain.time() + 30, {"from": lenders[st_lender]})
+                self.pool.addQuoteToken(lend_amount, st_index, chain.time() + 30, False, {"from": lenders[st_lender]})
                 chain.sleep(st_sleep)
             except:
                 success = False
@@ -363,7 +363,7 @@ def test_stateful_borrow_repay(
                 if bucket_collateral < st_bid_amount:
                     self.pool.addCollateral(st_bid_amount, st_index, chain.time() + 30, {"from": bidders[st_bidder]})
 
-                self.pool.addQuoteToken(st_lend_amount, st_index, chain.time() + 30, {"from": lenders[st_lender]})
+                self.pool.addQuoteToken(st_lend_amount, st_index, chain.time() + 30, False, {"from": lenders[st_lender]})
                 self.pool.removeCollateral(st_bid_amount, st_index, {"from": lenders[st_lender]})
                 chain.sleep(st_sleep)
             except:
@@ -388,7 +388,7 @@ def test_stateful_borrow_repay(
 
                 pool_quote_on_deposit = self.pool_helper.pool.depositSize() - self.pool_helper.debt()
                 if pool_quote_on_deposit < st_borrow_amount:
-                    self.pool.addQuoteToken(st_borrow_amount + 100*1e18, MAX_BUCKET, chain.time() + 30, {"from": lenders[st_lender]})
+                    self.pool.addQuoteToken(st_borrow_amount + 100*1e18, MAX_BUCKET, chain.time() + 30, False, {"from": lenders[st_lender]})
 
                 pool_price = self.pool_helper.lup()
                 if pool_price == MAX_PRICE:  # if there is no LUP,
@@ -441,7 +441,7 @@ def test_stateful_borrow_repay(
             try:
                 (_, _, _, bucket_deposit, _) = self.pool.bucketInfo(st_index)
                 if bucket_deposit < st_lend_amount:
-                    self.pool.addQuoteToken(st_lend_amount, st_index, chain.time() + 30, {"from": lenders[st_lender]})
+                    self.pool.addQuoteToken(st_lend_amount, st_index, chain.time() + 30, False, {"from": lenders[st_lender]})
 
                 self.pool.addCollateral(st_bid_amount, st_index, chain.time() + 30, {"from": bidders[st_bidder]})
                 self.pool.removeQuoteToken(st_lend_amount, st_index, {"from": bidders[st_bidder]})
@@ -491,8 +491,8 @@ def test_stateful_auctions(
 
         def setup(self):
             # add some initial liquidity in the pool
-            self.pool.addQuoteToken(MAX_BORROW_AMOUNT, MAX_BUCKET, chain.time() + 30, {"from": lenders[0]})
-            self.pool.addQuoteToken(MAX_BORROW_AMOUNT, MIN_BUCKET, chain.time() + 30, {"from": lenders[0]})
+            self.pool.addQuoteToken(MAX_BORROW_AMOUNT, MAX_BUCKET, chain.time() + 30, False, {"from": lenders[0]})
+            self.pool.addQuoteToken(MAX_BORROW_AMOUNT, MIN_BUCKET, chain.time() + 30, False, {"from": lenders[0]})
 
 
         ############## Borrower rules ##############
@@ -515,7 +515,7 @@ def test_stateful_auctions(
 
                 pool_quote_on_deposit = self.pool_helper.pool.depositSize() - self.pool_helper.debt()
                 if pool_quote_on_deposit < st_borrow_amount:
-                    self.pool.addQuoteToken(st_borrow_amount + 100*1e18, MAX_BUCKET, chain.time() + 30, {"from": lenders[st_lender]})
+                    self.pool.addQuoteToken(st_borrow_amount + 100*1e18, MAX_BUCKET, chain.time() + 30, False, {"from": lenders[st_lender]})
 
                 pool_price = self.pool_helper.lup()
                 if pool_price == MAX_PRICE:  # if there is no LUP,

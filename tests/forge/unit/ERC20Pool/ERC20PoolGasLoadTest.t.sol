@@ -45,8 +45,8 @@ contract ERC20PoolGasLoadTest is ERC20DSTestPlus {
             _mintQuoteAndApproveTokens(lender, 200_000 * 1e18);
 
             vm.startPrank(lender);
-            _pool.addQuoteToken(100_000 * 1e18, 7388 - i, block.timestamp + 2 minutes);
-            _pool.addQuoteToken(100_000 * 1e18, 1 + i,    block.timestamp + 2 minutes);
+            _pool.addQuoteToken(100_000 * 1e18, 7388 - i, block.timestamp + 2 minutes, false);
+            _pool.addQuoteToken(100_000 * 1e18, 1 + i,    block.timestamp + 2 minutes, false);
             vm.stopPrank();
 
             _lenders.push(lender);
@@ -272,13 +272,13 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         vm.startPrank(lender);
 
         skip(15 hours);
-        _pool.addQuoteToken(10_000 * 1e18, index_, block.timestamp + 2 minutes);
+        _pool.addQuoteToken(10_000 * 1e18, index_, block.timestamp + 2 minutes, false);
 
         skip(15 hours);
         _pool.removeQuoteToken(5_000 * 1e18, index_);
 
         skip(15 hours);
-        _pool.moveQuoteToken(1_000 * 1e18, index_, index_ + 1, block.timestamp + 2 minutes);
+        _pool.moveQuoteToken(1_000 * 1e18, index_, index_ + 1, block.timestamp + 2 minutes, false);
 
         skip(15 hours);
         _pool.removeQuoteToken(type(uint256).max, index_);
@@ -296,10 +296,10 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
             vm.startPrank(lender);
 
             skip(15 hours);
-            _pool.addQuoteToken(10_000 * 1e18, 7388 - i, block.timestamp + 2 minutes);
+            _pool.addQuoteToken(10_000 * 1e18, 7388 - i, block.timestamp + 2 minutes, false);
 
             skip(15 hours);
-            _pool.addQuoteToken(10_000 * 1e18, 1 + i,    block.timestamp + 2 minutes);
+            _pool.addQuoteToken(10_000 * 1e18, 1 + i,    block.timestamp + 2 minutes, false);
 
             skip(15 hours);
             _pool.removeQuoteToken(5_000 * 1e18, 7388 - i);
@@ -355,16 +355,16 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         vm.stopPrank();
     }
 
-    function testLoadERC20PoolGasKickWithDepositAndSettleHighestTP() public {
+    function testLoadERC20PoolGasLenderKickAuctionAndSettleHighestTP() public {
         address kicker = makeAddr("kicker");
         _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
 
         vm.startPrank(kicker);
 
-        _pool.addQuoteToken(500_000_000_000_000 * 1e18, 3_000, block.timestamp + 2 minutes);
+        _pool.addQuoteToken(500_000_000_000_000 * 1e18, 3_000, block.timestamp + 2 minutes, false);
         vm.warp(100_000 days);
 
-        _pool.kickWithDeposit(3_000, MAX_FENWICK_INDEX); // worst case scenario, pool interest accrues
+        _pool.lenderKick(3_000, MAX_FENWICK_INDEX); // worst case scenario, pool interest accrues
 
         skip(80 hours);
 
@@ -372,7 +372,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
 
         // kick remaining loans with deposit to get average gas cost
         for (uint256 i; i < LOANS_COUNT - 1; i ++) {
-            _pool.kickWithDeposit(3_000, MAX_FENWICK_INDEX);
+            _pool.lenderKick(3_000, MAX_FENWICK_INDEX);
         }
 
         vm.stopPrank();
@@ -410,7 +410,7 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         }
 
         // add quote tokens in bucket to arb
-        _pool.addQuoteToken(100_000 * 1e18, 1_000, block.timestamp + 2 minutes);
+        _pool.addQuoteToken(100_000 * 1e18, 1_000, block.timestamp + 2 minutes, false);
 
         vm.stopPrank();
 
@@ -440,7 +440,7 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         }
 
         // add quote tokens in bucket to arb
-        _pool.addQuoteToken(100_000 * 1e18, 1_000, block.timestamp + 2 minutes);
+        _pool.addQuoteToken(100_000 * 1e18, 1_000, block.timestamp + 2 minutes, false);
 
         vm.stopPrank();
 
@@ -472,7 +472,7 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
 
             vm.startPrank(lender);
 
-            _pool.addQuoteToken(200_000 * 1e18, 5000 - i, block.timestamp + 2 minutes);
+            _pool.addQuoteToken(200_000 * 1e18, 5000 - i, block.timestamp + 2 minutes, false);
 
             vm.stopPrank();
 

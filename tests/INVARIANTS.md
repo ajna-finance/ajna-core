@@ -15,7 +15,7 @@
 ## Quote Token
 - **QT1**: pool quote token balance (`Quote.balanceOf(pool)`) >= liquidation bonds (`AuctionsState.totalBondEscrowed`) + pool deposit size (`Pool.depositSize()`) + reserve auction unclaimed amount (`reserveAuction.unclaimed`) - pool t0 debt (`PoolBalancesState.t0Debt`) (with a `1e13` margin)
 - **QT2**: pool t0 debt (`PoolBalancesState.t0Debt`) = sum of t0 debt across all borrowers (`Borrower.t0Debt`)  
-- **QT3**: pool quote token balance (`Quote.balanceOf(pool)`) >= claimable liquidation bonds + reserve auction unclaimed amount (`reserveAuction.unclaimed`)
+- **QT3**: pool quote token balance (`Quote.balanceOf(pool)`) >= liquidation bonds (`AuctionsState.totalBondEscrowed`) + reserve auction unclaimed amount (`reserveAuction.unclaimed`)
 
 ## Auctions
 - **A1**: total t0 debt auctioned (`PoolBalancesState.t0DebtInAuction`) = sum of debt across all auctioned borrowers (`Borrower.t0Debt` where borrower's `kickTime != 0`)  
@@ -77,5 +77,26 @@
 - **RE11**: Reserves decrease by claimableReserves by kickReserveAuction
 - **RE12**: Reserves decrease by amount of reserve used to settle a auction
 
-Rewards:
-- Can't claim rewards for an end epoch twice
+## Rewards
+- **RW1**: Staking rewards must be less than reward cap percentage multiplied by ajna burned (`newRewards < REWARD_CAP * totalBurnedInPeriod`) for any given time period (`epoch`)
+- **RW2**: Updating (recording) rewards must be less than reward cap percentage multiplied by ajna burned (`newRewards < UPDATE_CAP * totalBurned`) for any given time period (`epoch`)
+- **RW3**: If a bucket has had it's exchange rate updated bucketExchangeRates mapping should be non-zero (`bucketExchangeRates[pool_][bucketIndex_][burnEpoch_] != 0`)
+- **RW4**: After staking, for each bucket in the staked position `lpsAtStakeTime` should equal the position's LP (`position.lps`) in the bucket and `rateAtStakeTime` should equal the bucket's exchange rate (`Buckets.getExchangeRate()`)
+- **RW5**: After staking, the Reward's manager contract should be the new owner of the position (`ERC721.ownerOf()`). Upon unstaking, The caller of unstake should be the new owner of the position (`ERC721.ownerOf()`)
+- **RW6**: After claiming rewards, `stakeInfo_.lastClaimedEpoch` should be equal to the epoch this position was staked in or the last epoch they claimed rewards for. After claiming or unstaking, `isEpochClaimed` should be equal to `true` for all epochs that the staker has claimed rewards for.
+- **RW7**: Each time the bucket rate is updated the `updateRewardsClaimed` accumulator should be updated. Each time a user claims rewards from staking the `rewardsClaimed` accumulator should be updated.
+- **RW8**: After unstaking or claiming rewards, if ajna has been burned over an epoch while the staker was staked they should have an increased amount in ajna balance `_ajna.balanceOf()` that matches the amount of ajna balance deducted from the contract `_ajna.balanceOf()`.
+- **RW9**: After unstaking, stakeInfo's tokenId mapping should be deleted and all corrosponding values should therefore be zero'd out (`StakeInfo.owner`,`StakeInfo.ajnaPool`, `StakeInfo.lastClaimedEpoch`)
+- **RW10**: a Staker can never claim rewards for the same epoch twice
+
+## Position Manager
+- **PM1**: LP balance of PositionManager in a Pool for a Bucket should be the sum of the positions[...][index].lps for all tokens/users
+- **PM2**: Sum of the LP balance of the PositionManager in a Pool across all buckets should be the sum of the positions[...].[...].lps across all indexes and tokens/users
+- **PM3**: Position deposit time (`depositTime`) tracked by tokenId in PositionManager (`positions[tokenId][index]`) should always be of equal or lesser value than the PositionManager's LP at that index in the pool contract.
+- **PM4**: mint should populate `poolKey[tokenId]`, `positionIndexes` should be empty and the owner of the NFT should be the caller.
+- **PM5**: burn should reset `poolKey[tokenId]`, `positionIndexes` should be empty and the owner of the NFT should be the zero address.
+- **PM6**: moveLiquidity should remove all LP from the from index and set deposit time to zero. To index should receive increased LP and deposit time should match positionManager's deposit time. PositionManager should have less then or equal to the same quoteToken after move.
+- **PM7**: memorializePosition should transfer all pool contract LP in the provided index to the positionManager. PositionManager should take on the greater of the lender of positionManager's deposit time. PositionManager's LP in the provided index should match what the lender had in the pool contract before memorializePosition was called.
+- **PM8**: reedemPositions should maintain the preivous owner of the NFT position and pool associated with position. Remove the passed in indexes from the positionIndexes associated token. LP of redeemer should increase with same amount that LP of PositionManager decrease (by checking the pool). tokenId associated with the indexes redeemed should be zero.
+
+

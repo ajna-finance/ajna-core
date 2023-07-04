@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import { PositionManagerERC20PoolHelperContract } from '../PositionManager.t.sol';
+import { PositionManagerERC20PoolHelperContract } from './PositionManager.t.sol';
 
 import "@std/console.sol";
 
@@ -163,7 +163,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
             from:        testMinter,
             borrower:    testBorrowerTwo,
             maxDepth:    10,
-            settledDebt: 9_891.935520844277346922 * 1e18
+            settledDebt: 9_891.935520844277346923 * 1e18
         });
 
         // bucket is insolvent, balances are reset
@@ -188,11 +188,11 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         changePrank(testMinter2);
         vm.expectRevert(IPoolErrors.BucketBankruptcyBlock.selector);
-        _positionManager.moveLiquidity(address(_pool), tokenId2, _i9_52, _i9_91, block.timestamp + 5 hours);
+        _positionManager.moveLiquidity(address(_pool), tokenId2, _i9_52, _i9_91, block.timestamp + 5 hours, false);
 
         // skip time to avoid move in same block as bucket bankruptcy
         skip(1 hours);
-        _positionManager.moveLiquidity(address(_pool), tokenId2, _i9_52, _i9_91, block.timestamp + 5 hours);
+        _positionManager.moveLiquidity(address(_pool), tokenId2, _i9_52, _i9_91, block.timestamp + 5 hours, false);
 
         // report 494: testMinter2 position at _i9_91 should not be bankrupt
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId2, _i9_91));
@@ -214,11 +214,11 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         // testMinter1 moves liquidity from bankrupt _i9_91 deposit to healthy deposit _i9_52
         // call reverts as cannot move from bankrupt bucket
         vm.expectRevert(IPositionManagerErrors.BucketBankrupt.selector);
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_91, _i9_52, block.timestamp + 5 hours);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_91, _i9_52, block.timestamp + 5 hours, false);
 
         // testMinter1 moves liquidity from healthy deposit _i9_52 to bankrupt _i9_91
         // _i9_52 should remain with 0 LP, _i9_91 should have 30_000
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_52, _i9_91, block.timestamp + 5 hours);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_52, _i9_91, block.timestamp + 5 hours, false);
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, _i9_91));
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, _i9_52));
 
@@ -266,7 +266,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         vm.expectEmit(true, true, true, true);
         emit MoveLiquidity(testAddress1, tokenId1, mintIndex, moveIndex, 2_500 * 1e18, 2_500 * 1e18);
         changePrank(address(testAddress1));
-        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30);
+        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30, false);
 
         // check from and to positions after move
         // from position should have 0 LP and 0 deposit time (FROM Position struct is deleted)
@@ -339,7 +339,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         // but the amount of LP that can be moved (constrained by available max quote token) is only 200002500
         changePrank(address(testAddress1));
         vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
-        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30);
+        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30, false);
     }
 
     /**
@@ -735,14 +735,14 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         // Move positiion upwards from _i9_81 to _i9_91
         changePrank(testMinter);
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_81, _i9_91, block.timestamp + 5 hours);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_81, _i9_91, block.timestamp + 5 hours, false);
 
         vm.revertTo(preMoveUpState);
 
         uint256 preMoveDownState = vm.snapshot();
 
         // Move positiion downwards from _i9_91 to _i9_81
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_91, _i9_81, block.timestamp + 5 hours);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_91, _i9_81, block.timestamp + 5 hours, false);
 
         vm.revertTo(preMoveDownState);
 
@@ -764,7 +764,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
             exchangeRate: 1e18
         });
 
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_81, _i9_52, block.timestamp + 5 hours);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_81, _i9_52, block.timestamp + 5 hours, false);
 
         _assertBucketAssets({
             index: _i9_81,
@@ -812,7 +812,6 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         Alice no has the 10 eth worth of lp
         Bob's transaction completes and he gets a worthless NFT
         Alice gets Bobs 9 eth
-
         Fixed by recording block of last redeem and revert if same as transfer block.
      */
     function testAdjustPositionBeforeTransfer_report_196() external {
@@ -855,57 +854,24 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         _pool.approveLPTransferors(transferors);
         _positionManager.memorializePositions(address(_pool), tokenId, indexes);
 
-        /*******************************/
-        /*** Move liquidity scenario ***/
-        /*******************************/
+        // FIXME - positions NFT can be subject of front running if buying from open markets
 
-        uint256 beforeMove = vm.snapshot();
-        // alice moves positions from bucket before transferring NFT to bob
-        _positionManager.moveLiquidity(address(_pool), tokenId, 2551, 5000, block.timestamp + 5 hours);
-
-        // alice transfer NFT to bob in the same block as move liquidity, transfer should fail
-        _positionManager.approve(address(this), tokenId);
-        vm.expectRevert(IPositionManagerErrors.TransferLocked.selector);
-        _positionManager.safeTransferFrom(alice, bob, tokenId);
-        vm.revertTo(beforeMove);
-
-        /*******************************/
-        /*** Redeem position scenario ***/
-        /*******************************/
-
+        _pool.approveLPTransferors(transferors);
         // alice redeems positions from a bucket before transferring NFT to bob
-        _pool.approveLPTransferors(transferors);
-        _positionManager.redeemPositions(address(_pool),tokenId, aliceRedeemIndex);
-
-        // alice transfer NFT to bob in the same block as redeem, transfer should fail
-        _positionManager.approve(address(this), tokenId);
-        vm.expectRevert(IPositionManagerErrors.TransferLocked.selector);
-        _positionManager.safeTransferFrom(alice, bob, tokenId);
-
-        // alice transfer NFT to bob after 1 hour lock period since last redeem
-        skip(61 minutes);
-        _positionManager.safeTransferFrom(alice, bob, tokenId);
-
-        // bob owns position NFT
-        assertEq(_positionManager.ownerOf(tokenId), bob);
-
-        // bob redeems positions
-        changePrank(bob);
-        _pool.approveLPTransferors(transferors);
         _positionManager.redeemPositions(address(_pool), tokenId, bobRedeemIndex);
 
-        // bob should be able to burn NFT in same block as redeem
-        _positionManager.burn(address(_pool), tokenId);
+        _positionManager.approve(address(this), tokenId);
+        _positionManager.safeTransferFrom(alice, bob, tokenId);
 
-        // check balances, alice should have LP in bucket 2550, bob should have LP in bucket 2551
+        // bob redeem positions revert since there's no index memorialized
+        changePrank(bob);
+        _pool.approveLPTransferors(transferors);
+        vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
+        _positionManager.redeemPositions(address(_pool), tokenId, bobRedeemIndex);
+
+        // alice has LP redeemed before transfer at index 2551
         _assertLenderLpBalance({
             lender:      alice,
-            index:       2550,
-            lpBalance:   15_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      bob,
             index:       2551,
             lpBalance:   10_000 * 1e18,
             depositTime: _startTime

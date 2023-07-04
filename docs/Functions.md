@@ -25,6 +25,8 @@
 		- pool inflator and inflatorUpdate state
 
 	reverts on:
+	- block timestamp greater than expiry TransactionExpired()
+	- head auction not cleared AuctionNotCleared()
 	- LenderActions.addQuoteToken():
 		- invalid bucket index InvalidIndex()
 		- same block when bucket becomes insolvent BucketBankruptcyBlock()
@@ -64,7 +66,9 @@
 		- pool inflator and inflatorUpdate state
 
 	reverts on:
+	- block timestamp greater than expiry TransactionExpired()
 	- deposits locked RemoveDepositLockedByAuctionDebt()
+	- head auction not cleared AuctionNotCleared()
 	- LenderActions.moveQuoteToken():
 		- same index MoveToSameIndex()
 		- dust amount DustAmountNotExceeded()
@@ -114,27 +118,27 @@
 
 ### transferLP
 	external libraries call:
-	- LenderActions.transferLP()
+	- LPActions.transferLP()
 
 	write state:
-	- LenderActions.transferLP():
+	- LPActions.transferLP():
 		- delete allowance mapping
 		- increment new lender.lps accumulator and lender.depositTime state
 		- delete old lender from bucket -> lender mapping
 
 	reverts on:
-	- LenderActions.transferLP():
+	- LPActions.transferLP():
 		- invalid index InvalidIndex()
 		- no allowance NoAllowance()
 
 	emit events:
-	- LenderActions.transferLP():
+	- LPActions.transferLP():
 		- TransferLP
 
 ### kick
 	external libraries call:
 	- PoolCommons.accrueInterest()
-	- Auctions.kick()
+	- KickerActions.kick()
 	- PoolCommons.updateInterestRate()
 
 	write state:
@@ -143,7 +147,7 @@
 			- Deposits.mult() (scale Fenwick tree with new interest accrued):
 				- update scaling array state 
 		- increment reserveAuction.totalInterestEarned accumulator
-	- Auctions.kick():
+	- KickerActions.kick():
 		- _kick():
 			- _recordAuction():
 				- borrower -> liquidation mapping update
@@ -164,20 +168,20 @@
 		- pool inflator and inflatorUpdate state
 
 	reverts on:
-	- Auctions.kick():
+	- KickerActions.kick():
 		- borrower collateralized BorrowerOk()
 		- auction active AuctionActive()
 
 	emit events:
-	- Auctions.kick():
+	- KickerActions.kick():
 		- Kick
 	- PoolCommons.updateInterestRate():
 		- UpdateInterestRate
 
-### kickWithDeposit
+### lenderKick
 	external libraries call:
 	- PoolCommons.accrueInterest()
-	- Auctions.kickWithDeposit()
+	- KickerActions.lenderKick()
 	- PoolCommons.updateInterestRate()
 
 	write state:
@@ -186,7 +190,7 @@
 			- Deposits.mult() (scale Fenwick tree with new interest accrued):
 				- update scaling array state 
     	- increment reserveAuction.totalInterestEarned accumulator
-	- Auctions.kickWithDeposit():
+	- KickerActions.lenderKick():
 		- _kick():
 			- _recordAuction():
 				- borrower -> liquidation mapping update
@@ -198,10 +202,6 @@
 				- Loans.remove():
 					- delete borrower from indices => borrower address mapping
 					- remove loan from loans array
-			- Deposits.unscaledRemove() (remove amount in Fenwick tree, from index):
-				- update values array state
-			- decrement lender.lps accumulator
-			- decrement bucket.lps accumulator
 	- increment poolBalances.t0DebtInAuction and poolBalances.t0Debt accumulators
 	- _updateInterestState():
 		- PoolCommons.updateInterestRate():
@@ -210,15 +210,14 @@
 		- pool inflator and inflatorUpdate state
 
 	reverts on:
-	- Auctions.kickWithDeposit():
-		- auction active AuctionActive()
+	- KickerActions.lenderKick():
+		- bucket price below current pool LUP PriceBelowLUP()
 		- borrower collateralized BorrowerOk()
 		- insuficient amount InsufficientLiquidity()
 
 	emit events:
-	- Auctions.kickWithDeposit():
+	- KickerActions.lenderKick():
 		- Kick
-		- RemoveQuoteToken
 	- PoolCommons.updateInterestRate():
 		- UpdateInterestRate
 
@@ -235,10 +234,10 @@
 
 ### kickReserveAuction
 	external libraries call:
-	- Auctions.kickReserveAuction()
+	- KickerActions.kickReserveAuction()
 
 	write state:
-	- Auctions.kickReserveAuction():
+	- KickerActions.kickReserveAuction():
 		- update reserveAuction.unclaimed accumulator
 		- update reserveAuction.kicked timestamp state
 	- increment latestBurnEpoch counter
@@ -246,30 +245,30 @@
 
 	reverts on:
 	- 2 weeks not passed ReserveAuctionTooSoon()
-	- Auctions.kickReserveAuction():
+	- KickerActions.kickReserveAuction():
 		- no reserves to claim NoReserves()
 
 	emit events:
-	- Auctions.kickReserveAuction():
+	- KickerActions.kickReserveAuction():
 		- KickReserveAuction
 
 
 ### takeReserves
 	external libraries call:
-	- Auctions.takeReserves()
+	- TakerActions.takeReserves()
 
 	write state:
-	- Auctions.takeReserves():
+	- TakerActions.takeReserves():
 		- decrement reserveAuction.unclaimed accumulator
 	- increment reserveAuction.totalAjnaBurned accumulator
 	- update burn event totalInterest and totalBurned accumulators
 
 	reverts on:
-	- Auctions.takeReserves():
+	- TakerActions.takeReserves():
 		- not kicked or 72 hours didn't pass NoReservesAuction()
 
 	emit events:
-	- Auctions.takeReserves():
+	- TakerActions.takeReserves():
 		- ReserveAuction
 
 ### stampLoan
@@ -387,7 +386,7 @@
 				- update scaling array state
 		- increment reserveAuction.totalInterestEarned accumulator
 	- BorrowerActions.drawDebt():
-		- Auctions._settleAuction():
+		- SettlerActions._settleAuction():
 			- _removeAuction():
 				- decrement kicker locked accumulator, increment kicker claimable accumumlator
 				- decrement auctions count accumulator
@@ -417,7 +416,7 @@
 
 	emit events:
 	- BorrowerActions.drawDebt():
-		- Auctions._settleAuction():
+		- SettlerActions._settleAuction():
 			- AuctionNFTSettle or AuctionSettle
 	- DrawDebt
 	- PoolCommons.updateInterestRate():
@@ -436,7 +435,7 @@
 				- update scaling array state
 		- increment reserveAuction.totalInterestEarned accumulator
 	- BorrowerActions.repayDebt():
-		- Auctions._settleAuction():
+		- SettlerActions._settleAuction():
 			- _removeAuction():
 				- decrement kicker locked accumulator, increment kicker claimable accumumlator
 				- decrement auctions count accumulator
@@ -466,7 +465,7 @@
 
 	emit events:
 	- BorrowerActions.repayDebt():
-		- Auctions._settleAuction:
+		- SettlerActions._settleAuction:
 			- AuctionNFTSettle or AuctionSettle
 	- RepayDebt
 	- PoolCommons.updateInterestRate():
@@ -475,7 +474,7 @@
 ### settle
 	external libraries call:
 	- PoolCommons.accrueInterest()
-	- Auctions.settlePoolDebt()
+	- SettlerActions.settlePoolDebt()
 	- PoolCommons.updateInterestRate()
 
 	write state:
@@ -484,14 +483,14 @@
 			- Deposits.mult() (scale Fenwick tree with new interest accrued):
 				- update scaling array state
 		- increment reserveAuction.totalInterestEarned accumulator
-	- Auctions.settlePoolDebt():
+	- SettlerActions.settlePoolDebt():
 		- Deposits.unscaledRemove() (remove amount in Fenwick tree, from index):
 			- update values array state
 		- Buckets.addCollateral():
 			- increment bucket.collateral and bucket.lps accumulator
 			- addLenderLP():
 				- increment lender.lps accumulator and lender.depositTime state
-		- Auctions._settleAuction():
+		- SettlerActions._settleAuction():
 			- _removeAuction():
 				- decrement kicker locked accumulator, increment kicker claimable accumumlator
 				- decrement auctions count accumulator
@@ -508,14 +507,14 @@
 		- pool inflator and inflatorUpdate state
 
 	reverts on:
-	- Auctions.settlePoolDebt():
+	- SettlerActions.settlePoolDebt():
 		- loan not kicked NoAuction()
 		- 72 hours didn't pass and auction still has collateral AuctionNotClearable()
 
 	emit events:
-	- Auctions.settlePoolDebt():
+	- SettlerActions.settlePoolDebt():
 		- Settle
-		- Auctions._settleAuction():
+		- SettlerActions._settleAuction():
 			- AuctionNFTSettle or AuctionSettle
 		- BucketBankruptcy
 	- PoolCommons.updateInterestRate():
@@ -524,7 +523,7 @@
 ### take
 	external libraries call:
 	- PoolCommons.accrueInterest()
-	- Auctions.take()
+	- TakerActions.take()
 	- PoolCommons.updateInterestRate()
 
 	write state:
@@ -533,7 +532,7 @@
 			- Deposits.mult (scale Fenwick tree with new interest accrued):
 				- update scaling array state
 		- increment reserveAuction.totalInterestEarned accumulator
-	- Auctions.take():
+	- TakerActions.take():
 		- _take():
 			- _prepareTake():
 				- update liquidation.alreadyTaken state
@@ -542,7 +541,7 @@
 				- update kicker's locked balance accumulator
 				- update auctions.totalBondEscrowed accumulator
 		- _takeLoan():
-			- Auctions._settleAuction():
+			- SettlerActions._settleAuction():
 				- _removeAuction():
 					- decrement kicker locked accumulator, increment kicker claimable accumumlator
 					- decrement auctions count accumulator
@@ -564,7 +563,7 @@
 		- pool inflator and inflatorUpdate state
 
 	reverts on:
-	- Auctions.take():
+	- TakerActions.take():
 		- insufficient collateral InsufficientCollateral()
 		- _prepareTake():
 			- loan is not in auction NoAuction()
@@ -573,7 +572,7 @@
 			- borrower debt less than pool min debt AmountLTMinDebt()
 
 	emit events:
-	- Auctions.take():
+	- TakerActions.take():
 		- Take
 	- PoolCommons.updateInterestRate():
 		- UpdateInterestRate
@@ -581,7 +580,7 @@
 ### bucketTake
 	external libraries call:
 	- PoolCommons.accrueInterest()
-	- Auctions.bucketTake()
+	- TakerActions.bucketTake()
 	- PoolCommons.updateInterestRate()
 
 	write state:
@@ -590,7 +589,7 @@
 			- Deposits.mult (scale Fenwick tree with new interest accrued):
 				- update scaling array state
 		- increment reserveAuction.totalInterestEarned accumulator
-	- Auctions.bucketTake():
+	- TakerActions.bucketTake():
 		- _takeBucket():
 			- _prepareTake():
 				- update liquidation.alreadyTaken state
@@ -605,7 +604,7 @@
 					- update values array state
 				- increment bucket.collateral and bucket.lps accumulator
 		- _takeLoan():
-			- Auctions._settleAuction():
+			- SettlerActions._settleAuction():
 				- _removeAuction():
 					- decrement kicker locked accumulator, increment kicker claimable accumumlator
 					- decrement auctions count accumulator
@@ -627,7 +626,7 @@
 		- pool inflator and inflatorUpdate state
 
 	reverts on:
-	- Auctions.bucketTake():
+	- TakerActions.bucketTake():
 		- insufficient collateral InsufficientCollateral()
 		- _prepareTake():
 			- loan is not in auction NoAuction()
@@ -636,7 +635,7 @@
 			- borrower debt less than pool min debt AmountLTMinDebt()
 
 	emit events:
-	- Auctions.bucketTake():
+	- TakerActions.bucketTake():
 		- _rewardBucketTake():
 			- BucketTakeLPAwarded
 		- BucketTake

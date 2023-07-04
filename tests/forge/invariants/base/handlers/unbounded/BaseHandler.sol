@@ -3,7 +3,7 @@
 pragma solidity 0.8.18;
 
 import '@std/Test.sol';
-import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import { EnumerableSet }   from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
 import { Pool }             from 'src/base/Pool.sol';
@@ -61,7 +61,7 @@ abstract contract BaseHandler is Test {
     mapping(address => mapping(uint256 => uint256)) public lenderDepositTime; // mapping of lender address to bucket index to deposit time
 
     address[] public actors;
-    mapping(bytes => uint256)   public numberOfCalls;  // Logging
+    mapping(bytes => uint256)   public numberOfCalls;    // Logging
     mapping(bytes => uint256)   public numberOfActions;  // Logging
     mapping(address => uint256[]) public touchedBuckets; // Bucket tracking
 
@@ -216,9 +216,7 @@ abstract contract BaseHandler is Test {
         } catch {
             changePrank(_actor);
         }
-
         _;
-
     }
 
     modifier useRandomLenderBucket(uint256 bucketIndex_) {
@@ -265,6 +263,14 @@ abstract contract BaseHandler is Test {
             _quote.mint(actor_, amount_ - normalizedActorBalance);
         }
         _quote.approve(address(_pool), _quote.balanceOf(actor_));
+    }
+
+    function _ensureAjnaAmount(address actor_, uint256 amount_) internal {
+        uint256 actorBalance = _ajna.balanceOf(actor_);
+        if (amount_> actorBalance) {
+            _ajna.mint(actor_, amount_ - actorBalance);
+        }
+        _ajna.approve(address(_pool), _ajna.balanceOf(actor_));
     }
 
     function _updatePoolState() internal {
@@ -362,35 +368,16 @@ abstract contract BaseHandler is Test {
         // poolLoansInfo returns 1e18 if no interest is pending or time elapsed... the contracts calculate 0 time elapsed which causes discrep
         if (pendingFactor == 1e18) return;
 
-        // get TP of worst loan, pendingInflator and poolDebt
-        uint256 maxThresholdPrice;
-        uint256 pendingInflator;
-        uint256 poolDebt;
-        {
-            (, poolDebt ,,) = _pool.debtInfo();
+        // get TP of worst loan
+        (, uint256 htp,) = _pool.loansInfo();
 
-            (uint256 inflator, uint256 inflatorUpdate) = _pool.inflatorInfo();
-
-            (, maxThresholdPrice,) =  _pool.loansInfo();
-            maxThresholdPrice = Maths.wdiv(maxThresholdPrice, inflator);
-
-            (uint256 interestRate, ) = _pool.interestRateInfo();
-
-            pendingInflator = PoolCommons.pendingInflator(
-                inflator,
-                inflatorUpdate,
-                interestRate
-            );
-        }
-
-        // get HTP and deposit above HTP
-        uint256 htp = Maths.wmul(maxThresholdPrice, pendingInflator);
         uint256 accrualIndex;
 
         if (htp > MAX_PRICE)      accrualIndex = 1;                          // if HTP is over the highest price bucket then no buckets earn interest
         else if (htp < MIN_PRICE) accrualIndex = MAX_FENWICK_INDEX;          // if HTP is under the lowest price bucket then all buckets earn interest
         else                      accrualIndex = _poolInfo.priceToIndex(htp);
 
+        (, uint256 poolDebt, , ) = _pool.debtInfo();
         uint256 lupIndex = _pool.depositIndex(poolDebt);
 
         // accrual price is less of lup and htp, and prices decrease as index increases
@@ -455,12 +442,16 @@ abstract contract BaseHandler is Test {
         bond_ = claimableBond + lockedBond;
     }
 
-    function _updateCurrentTakeState(address borrower_, uint256 borrowerDebt_) internal {
+    function _updateCurrentTakeState(address borrower_, uint256 borrowert0Debt_, uint256 inflator_) internal {
         if (!alreadyTaken[borrower_]) {
             alreadyTaken[borrower_] = true;
 
             // **RE7**: Reserves increase by 7% of the loan quantity upon the first take.
-            increaseInReserves += Maths.wmul(borrowerDebt_, 0.07 * 1e18);
+            increaseInReserves += Maths.wmul(
+                Maths.wmul(borrowert0Debt_, 0.07 * 1e18),
+                inflator_
+            );
+
             firstTake = true;
 
         } else firstTake = false;
@@ -554,11 +545,11 @@ abstract contract BaseHandler is Test {
         printLog("Total reserves unclaimed = ", reserveUnclaimed);
         printLog("Total interest earned    = ", totalInterest);
         printLine("");
-        printLog("Successful kicks         = ", numberOfActions["kick"]);
-        printLog("Successful deposit kicks = ", numberOfActions["kickWithDeposit"]);
-        printLog("Successful takes         = ", numberOfActions["take"]);
-        printLog("Successful bucket takes  = ", numberOfActions["bucketTake"]);
-        printLog("Successful settles       = ", numberOfActions["settle"]);
+        printLog("Successful kicks        = ", numberOfActions["kick"]);
+        printLog("Successful lender kicks = ", numberOfActions["lenderKick"]);
+        printLog("Successful takes        = ", numberOfActions["take"]);
+        printLog("Successful bucket takes = ", numberOfActions["bucketTake"]);
+        printLog("Successful settles      = ", numberOfActions["settle"]);
 
         printInNextLine("=======================");
     }

@@ -7,8 +7,8 @@ import 'src/PositionManager.sol';
 
 import 'src/interfaces/rewards/IRewardsManager.sol';
 import 'src/interfaces/position/IPositionManager.sol';
-
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 
 import { Token }               from '../../utils/Tokens.sol';
 import { Strings }             from '@openzeppelin/contracts/utils/Strings.sol';
@@ -98,6 +98,8 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         uint256[] memory indexes,
         uint256 updateExchangeRatesReward
     ) internal {
+        // token owner is Rewards manager
+        assertEq(ERC721(address(_positionManager)).ownerOf(tokenId), address(_rewardsManager));
 
         // when the token is unstaked updateExchangeRates emits
         vm.expectEmit(true, true, true, true);
@@ -114,6 +116,9 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         emit Unstake(owner, address(pool), tokenId);
         _rewardsManager.unstake(tokenId);
 
+        // token owner is staker
+        assertEq(ERC721(address(_positionManager)).ownerOf(tokenId), owner);
+
         // check exchange rates were updated
         uint256 updateEpoch = IPool(pool).currentBurnEpoch();
         _assertBucketsUpdated(pool, indexes, updateEpoch);
@@ -124,10 +129,16 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         address pool,
         uint256 tokenId
     ) internal {
-        // when the token is unstaked in emergency mode then no cliam event is emitted
+        // token owner is Rewards manager
+        assertEq(ERC721(address(_positionManager)).ownerOf(tokenId), address(_rewardsManager));
+
+        // when the token is unstaked in emergency mode then no claim event is emitted
         vm.expectEmit(true, true, true, true);
         emit Unstake(owner, address(pool), tokenId);
         _rewardsManager.emergencyUnstake(tokenId);
+
+        // token owner is staker
+        assertEq(ERC721(address(_positionManager)).ownerOf(tokenId), owner);
     }
 
     function _updateExchangeRates(
@@ -387,7 +398,7 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         uint256[] memory lpBalances = new uint256[](indexes.length);
 
         for (uint256 i = 0; i < indexes.length; i++) {
-            ERC20Pool(address(pool)).addQuoteToken(mintAmount, indexes[i], type(uint256).max);
+            ERC20Pool(address(pool)).addQuoteToken(mintAmount, indexes[i], type(uint256).max, false);
             (lpBalances[i], ) = ERC20Pool(address(pool)).lenderInfo(indexes[i], minter);
         }
 

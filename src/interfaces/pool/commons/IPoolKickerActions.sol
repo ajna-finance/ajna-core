@@ -22,11 +22,11 @@ interface IPoolKickerActions {
     ) external;
 
     /**
-     *  @notice Called by lenders to liquidate the top loan using their deposits.
+     *  @notice Called by lenders to liquidate the top loan.
      *  @param  index_        The deposit index to use for kicking the top loan.
      *  @param  npLimitIndex_ Index of the lower bound of `NP` tolerated when kicking the auction.
      */
-    function kickWithDeposit(
+    function lenderKick(
         uint256 index_,
         uint256 npLimitIndex_
     ) external;

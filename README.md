@@ -6,14 +6,19 @@ The Ajna protocol is a non-custodial, peer-to-peer, permissionless lending, borr
 - Fungible tokens (following the [ERC20 token standard](https://eips.ethereum.org/EIPS/eip-20)).
 - Non-fungible tokens (following the [ERC721 token standard](https://eips.ethereum.org/EIPS/eip-721))
 
+## Caveats:
 ### Token limitations
 - The following types of tokens are incompatible with Ajna, and no countermeasures exist to explicitly prevent creating a pool with such tokens, actors should use them at their own risk:
   - NFT and fungible tokens which charge a fee on transfer.
   - Fungible tokens whose balance rebases.
+- The following types of tokens are incompatible with Ajna, and countermeasures exist to explicitly prevent creating a pool with such tokens:
   - Fungible tokens with more than 18 decimals or 0 decimals, whose `decimals()` function does not return a constant value, or which do not implement the optional [decimals()](https://eips.ethereum.org/EIPS/eip-20#decimals) function.
+### Pool limitations
 - Borrowers cannot draw debt from a pool in the same block as when the pool was created.
-- With the exception of quantized prices, pool inputs and most accumulators are not explicitly limited.  The pool will stop functioning when the bounds of a `uint256` need to be exceeded to process a request.
-
+- With the exception of quantized prices, pool inputs and most accumulators are not explicitly limited. The pool will stop functioning when the bounds of a `uint256` need to be exceeded to process a request.
+### Position NFT limitations
+- Position NFTs are vulnerable to front running attacks when buying from open markets. Seller of such NFT could redeem positions before transfer, and then transfer an NFT without any value to the buyer.
+Ajna positions NFTs should not be purchased from open markets.
 
 
 ## Development
@@ -144,7 +149,7 @@ make analyze
 ## Licensing
 For purposes of the Business Service License: (i) the term “Licensor” means Ajna Labs, LLC, (ii) the term Licensed Work means Licensor’s proprietary software marketed under the name _The Ajna Protocol™_ and useful for purposes of facilitating the lending and borrowing of digital assets, (iii) the term “Additional Use Grants” means a grant of rights in the Licensed Work that are not included in the Business Service License and are granted by Licensor pursuant to a separate agreement between Licensor and one or more third parties, and (iv) the term “Change Date” means April 1, 2026 or such other date as Licensor may specify on or before April 1, 2026.
 
-The licnesed work is under the [Business Service License](https://github.com/ajna-finance/contracts/blob/develop/LICENSE) ("BUSL license") with but not limited to the following exceptions:
+The licensed work is under the [Business Service License](https://github.com/ajna-finance/contracts/blob/develop/LICENSE) ("BUSL license") with but not limited to the following exceptions:
 - To facilitate integrations, public-facing interfaces are licensed under `MIT`, as indicated in their SPDX headers.
 - As a derivative work of [ds-math](https://github.com/dapphub/ds-math/), `Maths.sol` is licensed under `GPL-3.0-or-later`, as indicated in its SPDX header.
 - As a derivative work of [SafeERC20Namer](https://github.com/Uniswap/solidity-lib/blob/master/contracts/libraries/SafeERC20Namer.sol), `SafeTokenNamer.sol` is licensed under `GPL-3.0-or-later`, as indicated in its SPDX header.

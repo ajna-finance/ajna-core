@@ -3,8 +3,8 @@ pragma solidity 0.8.18;
 
 import { Base64 } from '@base64-sol/base64.sol';
 
-import { ERC20HelperContract } from '../unit/ERC20Pool/ERC20DSTestPlus.sol';
-import { ERC721HelperContract } from '../unit/ERC721Pool/ERC721DSTestPlus.sol';
+import { ERC20HelperContract } from '../ERC20Pool/ERC20DSTestPlus.sol';
+import { ERC721HelperContract } from '../ERC721Pool/ERC721DSTestPlus.sol';
 
 import { IPermit } from 'src/base/PermitERC721.sol';
 
@@ -15,8 +15,8 @@ import 'src/libraries/helpers/PoolHelper.sol';
 
 import 'src/interfaces/pool/commons/IPoolErrors.sol';
 
-import '../utils/ContractNFTRecipient.sol';
-import '../utils/ContractNFTSpender.sol';
+import '../../utils/ContractNFTRecipient.sol';
+import '../../utils/ContractNFTSpender.sol';
 
 abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract {
 
@@ -942,7 +942,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             from:        testMinter,
             borrower:    testBorrowerTwo,
             maxDepth:    10,
-            settledDebt: 9_891.935520844277346922 * 1e18
+            settledDebt: 9_891.935520844277346923 * 1e18
         });
 
         // bucket is insolvent, balances are reset
@@ -962,7 +962,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // move liquidity should fail as the bucket has bankrupted
         vm.expectRevert(IPositionManagerErrors.BucketBankrupt.selector);
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_91, _i9_72, block.timestamp + 30);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_91, _i9_72, block.timestamp + 30, false);
 
         // check lender state after bankruptcy before rememorializing
         _assertLenderLpBalance({
@@ -985,7 +985,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         amounts[0] = 30_000 * 1e18;
 
         changePrank(testMinter);
-        _pool.addQuoteToken(amounts[0], _i9_91, type(uint256).max);
+        _pool.addQuoteToken(amounts[0], _i9_91, type(uint256).max, false);
 
         _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
         _pool.approveLPTransferors(transferors);
@@ -1543,7 +1543,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // move liquidity should fail because is not performed by owner
         changePrank(notOwner);
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.moveLiquidity(address(_pool), tokenId, 2550, 2551, block.timestamp + 30);
+        _positionManager.moveLiquidity(address(_pool), tokenId, 2550, 2551, block.timestamp + 30, false);
     }
 
     function testMoveLiquidity() external tearDown {
@@ -1687,7 +1687,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         vm.expectEmit(true, true, true, true);
         emit MoveLiquidity(testAddress1, tokenId1, mintIndex, moveIndex, lpRedeemed, lpAwarded);
         changePrank(address(testAddress1));
-        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30);
+        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30, false);
 
         // check pool state
         _assertLenderLpBalance({
@@ -1807,7 +1807,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         vm.expectEmit(true, true, true, true);
         emit MoveLiquidity(testAddress2, tokenId2, mintIndex, moveIndex, lpRedeemed, lpAwarded);
         changePrank(address(testAddress2));
-        _positionManager.moveLiquidity(address(_pool), tokenId2, mintIndex, moveIndex, block.timestamp + 30);
+        _positionManager.moveLiquidity(address(_pool), tokenId2, mintIndex, moveIndex, block.timestamp + 30, false);
 
         // check pool state
        _assertLenderLpBalance({
@@ -1859,7 +1859,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         changePrank(address(testAddress2));
         vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
-        _positionManager.moveLiquidity(address(_pool), tokenId2, 1000, 2000, block.timestamp + 30);
+        _positionManager.moveLiquidity(address(_pool), tokenId2, 1000, 2000, block.timestamp + 30, false);
     }
 
     function testMoveLiquidityWithInterest() external tearDown {
@@ -1938,7 +1938,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // lender 1 moves liquidity
         changePrank(lender1);
-        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30);
+        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30, false);
 
         // check pool state
         _assertLenderLpBalance({
@@ -2389,7 +2389,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // minter cannot move liquidity on behalf of lender (is not approved)
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.moveLiquidity(address(_pool), tokenId, 2550, 2551, block.timestamp + 30);
+        _positionManager.moveLiquidity(address(_pool), tokenId, 2550, 2551, block.timestamp + 30, false);
 
         // minter cannot redeem positions on behalf of lender (is not approved)
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
@@ -2404,7 +2404,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         changePrank(minter);
         // minter can move liquidity on behalf of lender
-        _positionManager.moveLiquidity(address(_pool), tokenId, 2550, 2551, block.timestamp + 30);
+        _positionManager.moveLiquidity(address(_pool), tokenId, 2550, 2551, block.timestamp + 30, false);
 
         _assertLenderLpBalance({
             lender:      lender,
@@ -2831,7 +2831,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             from:        testMinter,
             borrower:    testBorrowerTwo,
             maxDepth:    10,
-            settledDebt: 9_891.935520844277346922 * 1e18
+            settledDebt: 9_891.935520844277346923 * 1e18
         });
 
         // bucket is insolvent, balances are reset
@@ -2896,7 +2896,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // testMinter moves 8_936 QT _i9_72 to bankrupt _i9_91 deposit, should not have any pre bankruptcy LP
         changePrank(testMinter);
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_72, testIndex, block.timestamp + 5 hours);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_72, testIndex, block.timestamp + 5 hours, false);
 
         _assertBucketAssets({
             index:        _i9_91,
@@ -3251,7 +3251,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         vm.expectEmit(true, true, true, true);
         emit MoveLiquidity(testAddress1, tokenId, indexes[0], indexes[1], lpRedeemed, lpAwarded);
         changePrank(testAddress1);
-        _positionManager.moveLiquidity(address(_pool), tokenId, indexes[0], indexes[1], block.timestamp + 30);
+        _positionManager.moveLiquidity(address(_pool), tokenId, indexes[0], indexes[1], block.timestamp + 30, false);
 
         // check LP balance
         _assertLenderLpBalance({
@@ -3299,8 +3299,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
 
-        // approve and transfer NFT to testAddress2 address after 1 hour locked time
-        skip(61 minutes);
+        // approve and transfer NFT to testAddress2 address
         _positionManager.approve(address(this), tokenId);
         _positionManager.safeTransferFrom(testAddress1, testAddress2, tokenId);
 

@@ -5,7 +5,7 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/libraries/helpers/PoolHelper.sol';
 
-contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
+contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
 
     address internal _borrower1;
     address internal _borrower2;
@@ -151,7 +151,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         });
     }
     
-    function testKickWithDepositAmountHigherThanAuctionBond() external tearDown {
+    function testLenderKickAuctionAmountHigherThanAuctionBond() external tearDown {
 
         /**
             - kick with deposit amount lower than deposit available (lender can redeem less LP from bucket than deposit)
@@ -168,21 +168,18 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         });
 
         // should revert if NP goes below limit
-        _assertKickWithDepositNpUnderLimitRevert({
+        _assertLenderKickAuctionNpUnderLimitRevert({
             from:  _lender1,
             index: 2500
         });
 
-        _kickWithDeposit({
-            from:               _lender1,
-            index:              2500,
-            borrower:           _borrower1,
-            debt:               20_269.471153846153855500 * 1e18,
-            collateral:         1_000 * 1e18,
-            bond:               6_005.769230769230772000 * 1e18,
-            removedFromDeposit: 6_005.769230769230772000 * 1e18,
-            transferAmount:     0,
-            lup:                3_844.432207828138682757 * 1e18
+        _lenderKick({
+            from:       _lender1,
+            index:      2500,
+            borrower:   _borrower1,
+            debt:       20_269.471153846153855500 * 1e18,
+            collateral: 1_000 * 1e18,
+            bond:       6_005.769230769230772000 * 1e18
         });
 
         /******************************/
@@ -193,7 +190,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             PoolParams({
                 htp:                  20.019230769230769240 * 1e18,
                 lup:                  3_844.432207828138682757 * 1e18,
-                poolSize:             104_994.230769230769228000 * 1e18,
+                poolSize:             111_000 * 1e18,
                 pledgedCollateral:    5_000 * 1e18,
                 encumberedCollateral: 26.101746319376146305 * 1e18,
                 poolDebt:             100_346.394230769230815500 * 1e18,
@@ -208,8 +205,8 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         );
 
         // assert balances - no change, bond was covered from deposit
-        assertEq(_quote.balanceOf(address(_pool)), 11_000 * 1e18);
-        assertEq(_quote.balanceOf(_lender1),       49_000 * 1e18);
+        assertEq(_quote.balanceOf(address(_pool)), 17_005.769230769230772000 * 1e18);
+        assertEq(_quote.balanceOf(_lender1),       42_994.230769230769228000 * 1e18);
         assertEq(_quote.balanceOf(_lender2),       140_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower1),     20_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower2),     20_000 * 1e18);
@@ -221,7 +218,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       2500,
-            lpBalance:   43_994.230769230769228 * 1e18, // reduced by amount used to cover auction bond
+            lpBalance:   50_000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -233,9 +230,9 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         // assert bucket LP
         _assertBucket({
             index:        2500,
-            lpBalance:    53_994.230769230769228 * 1e18,    // reduced by amount used to cover auction bond
+            lpBalance:    60_000 * 1e18,
             collateral:   0,
-            deposit:      53_994.230769230769228000 * 1e18, // reduced by amount used to cover auction bond
+            deposit:      60_000 * 1e18,
             exchangeRate: 1 * 1e18
         });
         // assert lender1 as a kicker
@@ -264,7 +261,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
     }
 
-    function testKickWithDepositAmountLowerThanAuctionBond() external tearDown {
+    function testLenderKickAuctionAmountLowerThanAuctionBond() external tearDown {
         /**
             - kick with deposit amount lower than deposit available (lender can redeem less LP from bucket than deposit)
             - bond auction is not covered entirely by removed deposit (bucket still contains LP), difference to cover bond is sent by lender
@@ -301,21 +298,18 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
 
         // should revert if NP goes below limit
-        _assertKickWithDepositNpUnderLimitRevert({
+        _assertLenderKickAuctionNpUnderLimitRevert({
             from:  _lender3,
             index: 2500
         });
 
-        _kickWithDeposit({
-            from:               _lender3,
-            index:              2500,
-            borrower:           _borrower1,
-            debt:               29_390.733173076923090475 * 1e18,
-            collateral:         1_000 * 1e18,
-            bond:               8_708.365384615384619400 * 1e18,
-            removedFromDeposit: 3_863.654368867279344664 * 1e18,
-            transferAmount:     4_844.711015748105274736 * 1e18,
-            lup:                99836282890
+        _lenderKick({
+            from:       _lender3,
+            index:      2500,
+            borrower:   _borrower1,
+            debt:       29_390.733173076923090475 * 1e18,
+            collateral: 1_000 * 1e18,
+            bond:       8_708.365384615384619400 * 1e18
         });
 
         /******************************/
@@ -325,10 +319,10 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertPool(
             PoolParams({
                 htp:                  20.019230769230769240 * 1e18,
-                lup:                  99836282890,
-                poolSize:             107_136.345631132720655336 * 1e18,
+                lup:                  3_844.432207828138682757 * 1e18,
+                poolSize:             111_000 * 1e18,
                 pledgedCollateral:    5_000 * 1e18,
-                encumberedCollateral: 1096471674237.029479718793645083 * 1e18,
+                encumberedCollateral: 28.474336477334401997 * 1e18,
                 poolDebt:             109_467.656250000000050475 * 1e18,
                 actualUtilization:    0,
                 targetUtilization:    1e18,
@@ -341,10 +335,10 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         );
 
         // assert balances
-        assertEq(_quote.balanceOf(address(_pool)), 6_844.711015748105274736 * 1e18);   // increased with the amount sent to cover bond
+        assertEq(_quote.balanceOf(address(_pool)), 10_708.365384615384619400 * 1e18);   // increased with the amount sent to cover bond
         assertEq(_quote.balanceOf(_lender1),       49_000 * 1e18);
         assertEq(_quote.balanceOf(_lender2),       140_000 * 1e18);
-        assertEq(_quote.balanceOf(_lender3),       145_155.288984251894725264 * 1e18); // decreased with the amount sent to cover bond
+        assertEq(_quote.balanceOf(_lender3),       141_291.634615384615380600 * 1e18); // decreased with the amount sent to cover bond
         assertEq(_quote.balanceOf(_borrower1),     29_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower2),     20_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower3),     20_000 * 1e18);
@@ -361,15 +355,15 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender3,
             index:       2500,
-            lpBalance:   0,
+            lpBalance:   3_863.654368867279344664 * 1e18,
             depositTime: _startTime
         });
         // assert bucket LP
         _assertBucket({
             index:        2500,
-            lpBalance:    60_000 * 1e18,
+            lpBalance:    63_863.654368867279344664 * 1e18,
             collateral:   1 * 1e18,
-            deposit:      56_136.345631132720655336 * 1e18,
+            deposit:      60_000 * 1e18,
             exchangeRate: 1 * 1e18
         });
         // assert lender3 as a kicker
@@ -397,7 +391,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         );
     }
 
-    function testKickWithDepositUsingAllLpsWithinBucket() external tearDown {
+    function testLenderKickAuctionUsingAllLpsWithinBucket() external tearDown {
         /**
             - kick using entire deposit / LP from bucket
             - bond auction is not covered entirely by deposit, deposit is obliterated and difference to cover bond is sent by lender
@@ -434,22 +428,19 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_borrower5),     20_000 * 1e18);
 
         // should revert if NP goes below limit
-        _assertKickWithDepositNpUnderLimitRevert({
+        _assertLenderKickAuctionNpUnderLimitRevert({
             from:  _lender2,
             index: 2500
         });
 
-        // lender 2 kicks using all LP from bucket 2499 (10_000) and sending additional quote tokens to cover auction bond (510.096153846153851000)
-        _kickWithDeposit({
-            from:               _lender2,
-            index:              2499,
-            borrower:           _borrower1,
-            debt:               35_471.574519230769247125 * 1e18,
-            collateral:         1_000 * 1e18,
-            bond:               10_510.096153846153851000 * 1e18,
-            removedFromDeposit: 10_000 * 1e18,
-            transferAmount:     510.096153846153851000 * 1e18,
-            lup:                99836282890
+        // lender 2 kicks using bucket 2499
+        _lenderKick({
+            from:       _lender2,
+            index:      2499,
+            borrower:   _borrower1,
+            debt:       35_471.574519230769247125 * 1e18,
+            collateral: 1_000 * 1e18,
+            bond:       10_510.096153846153851000 * 1e18
         });
 
         /******************************/
@@ -459,10 +450,10 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertPool(
             PoolParams({
                 htp:                  20.019230769230769240 * 1e18,
-                lup:                  99836282890,
-                poolSize:             111_000 * 1e18,
+                lup:                  3_844.432207828138682757 * 1e18,
+                poolSize:             121_000 * 1e18,
                 pledgedCollateral:    5_000 * 1e18,
-                encumberedCollateral: 1157379804729.565349777467060503 * 1e18,
+                encumberedCollateral: 30.056063249306572459 * 1e18,
                 poolDebt:             115_548.497596153846207125 * 1e18,
                 actualUtilization:    0,
                 targetUtilization:    1e18,
@@ -475,9 +466,9 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         );
 
         // assert balances
-        assertEq(_quote.balanceOf(address(_pool)), 6_510.096153846153851000 * 1e18);   // increased with the amount sent to cover bond
+        assertEq(_quote.balanceOf(address(_pool)), 16_510.096153846153851000 * 1e18);   // increased with the amount sent to cover bond
         assertEq(_quote.balanceOf(_lender1),       49_000 * 1e18);
-        assertEq(_quote.balanceOf(_lender2),       129_489.903846153846149000 * 1e18); // decreased with the amount sent to cover bond
+        assertEq(_quote.balanceOf(_lender2),       119_489.903846153846149000 * 1e18); // decreased with the amount sent to cover bond
         assertEq(_quote.balanceOf(_lender3),       150_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower1),     35_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower2),     20_000 * 1e18);
@@ -489,15 +480,15 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       2499,
-            lpBalance:   0,
+            lpBalance:   10_000 * 1e18,
             depositTime: _startTime
         });
         // assert bucket - LP and deposit obliterated
         _assertBucket({
             index:        2499,
-            lpBalance:    0,
+            lpBalance:    10_000 * 1e18,
             collateral:   0,
-            deposit:      0,
+            deposit:      10_000 * 1e18,
             exchangeRate: 1 * 1e18
         });
         // assert lender2 as a kicker
@@ -525,7 +516,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         );
     }
 
-    function testKickWithDepositAmountHigherThanAvailableDeposit() external tearDown {
+    function testLenderKickAuctionAmountHigherThanAvailableDeposit() external tearDown {
 
         /**
             - kick with deposit amount higher than deposit available (lender can redeem more LP from bucket than deposit)
@@ -556,21 +547,18 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         });
 
         // should revert if NP goes below limit
-        _assertKickWithDepositNpUnderLimitRevert({
+        _assertLenderKickAuctionNpUnderLimitRevert({
             from:  _lender1,
             index: 2500
         });
 
-        _kickWithDeposit({
-            from:               _lender1,
-            index:              2500,
-            borrower:           _borrower1,
-            debt:               20_269.471153846153855500 * 1e18,
-            collateral:         1_000 * 1e18,
-            bond:               6_005.769230769230772000 * 1e18,
-            removedFromDeposit: 6_005.769230769230772000 * 1e18,
-            transferAmount:     0,
-            lup:                3_844.432207828138682757 * 1e18
+        _lenderKick({
+            from:       _lender1,
+            index:      2500,
+            borrower:   _borrower1,
+            debt:       20_269.471153846153855500 * 1e18,
+            collateral: 1_000 * 1e18,
+            bond:       6_005.769230769230772000 * 1e18
         });
 
         /******************************/
@@ -581,7 +569,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             PoolParams({
                 htp:                  20.019230769230769240 * 1e18,
                 lup:                  3_844.432207828138682757 * 1e18,
-                poolSize:             104_994.230769230769228000 * 1e18,
+                poolSize:             111_000 * 1e18,
                 pledgedCollateral:    5_000 * 1e18,
                 encumberedCollateral: 26.101746319376146305 * 1e18,
                 poolDebt:             100_346.394230769230815500 * 1e18,
@@ -596,8 +584,8 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         );
 
         // assert balances - no change, bond was covered from deposit
-        assertEq(_quote.balanceOf(address(_pool)), 11_000 * 1e18);
-        assertEq(_quote.balanceOf(_lender1),       49_000 * 1e18);
+        assertEq(_quote.balanceOf(address(_pool)), 17_005.769230769230772000 * 1e18); // increased by amount used to cover auction bond
+        assertEq(_quote.balanceOf(_lender1),       42_994.230769230769228000 * 1e18); // reduced by amount used to cover auction bond
         assertEq(_quote.balanceOf(_lender2),       140_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower1),     20_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower2),     20_000 * 1e18);
@@ -609,7 +597,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       2500,
-            lpBalance:   82_630.77445790356267464 * 1e18, // reduced by amount used to cover auction bond
+            lpBalance:   88_636.543688672793446640 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -621,9 +609,9 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         // assert bucket LP
         _assertBucket({
             index:        2500,
-            lpBalance:    92_630.77445790356267464 * 1e18,  // reduced by amount used to cover auction bond
+            lpBalance:    98_636.543688672793446640 * 1e18,
             collateral:   10 * 1e18,
-            deposit:      53_994.230769230769228000 * 1e18, // reduced by amount used to cover auction bond
+            deposit:      60_000 * 1e18,
             exchangeRate: 1 * 1e18
         });
         // assert lender1 as a kicker
@@ -652,7 +640,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
     }
 
-    function testKickWithDepositAllBorrowersAndSettle() external tearDown {
+    function testLenderKickAuctionAllBorrowersAndSettle() external tearDown {
         // assert loans positions in heap
         address borrower;
         uint256 thresholdPrice;
@@ -673,16 +661,13 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
 
         // kick borrower 1
-        _kickWithDeposit({
-            from:               _lender1,
-            index:              2500,
-            borrower:           _borrower1,
-            debt:               20_269.471153846153855500 * 1e18,
-            collateral:         1_000 * 1e18,
-            bond:               6_005.769230769230772000 * 1e18,
-            removedFromDeposit: 6_005.769230769230772000 * 1e18,
-            transferAmount:     0,
-            lup:                3_844.432207828138682757 * 1e18
+        _lenderKick({
+            from:       _lender1,
+            index:      2500,
+            borrower:   _borrower1,
+            debt:       20_269.471153846153855500 * 1e18,
+            collateral: 1_000 * 1e18,
+            bond:       6_005.769230769230772000 * 1e18
         });
 
         (borrower, thresholdPrice) = _pool.loanInfo(1);
@@ -712,16 +697,13 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(prev, address(0));
 
         // kick borrower 5
-        _kickWithDeposit({
-            from:               _lender1,
-            index:              2500,
-            borrower:           _borrower5,
-            debt:               20_269.471153846153855500 * 1e18,
-            collateral:         1_000 * 1e18,
-            bond:               6_005.769230769230772000 * 1e18,
-            removedFromDeposit: 6_005.769230769230772000 * 1e18,
-            transferAmount:     0,
-            lup:                99836282890
+        _lenderKick({
+            from:       _lender1,
+            index:      2500,
+            borrower:   _borrower5,
+            debt:       20_269.471153846153855500 * 1e18,
+            collateral: 1_000 * 1e18,
+            bond:       6_005.769230769230772000 * 1e18
         });
 
         (borrower, thresholdPrice) = _pool.loanInfo(1);
@@ -750,16 +732,13 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(prev, _borrower1);
 
         // kick borrower 4
-        _kickWithDeposit({
-            from:               _lender1,
-            index:              2500,
-            borrower:           _borrower4,
-            debt:               20_269.471153846153855500 * 1e18,
-            collateral:         1_000 * 1e18,
-            bond:               6_005.769230769230772000 * 1e18,
-            removedFromDeposit: 6_005.769230769230772000 * 1e18,
-            transferAmount:     0,
-            lup:                99836282890
+        _lenderKick({
+            from:       _lender1,
+            index:      2500,
+            borrower:   _borrower4,
+            debt:       20_269.471153846153855500 * 1e18,
+            collateral: 1_000 * 1e18,
+            bond:       6_005.769230769230772000 * 1e18
         });
 
         (borrower, thresholdPrice) = _pool.loanInfo(1);
@@ -792,16 +771,13 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(prev, _borrower5);
 
         // kick borrower 3
-        _kickWithDeposit({
-            from:               _lender1,
-            index:              2500,
-            borrower:           _borrower3,
-            debt:               20_269.471153846153855500 * 1e18,
-            collateral:         1_000 * 1e18,
-            bond:               6_005.769230769230772000 * 1e18,
-            removedFromDeposit: 6_005.769230769230772000 * 1e18,
-            transferAmount:     0,
-            lup:                99836282890
+        _lenderKick({
+            from:       _lender1,
+            index:      2500,
+            borrower:   _borrower3,
+            debt:       20_269.471153846153855500 * 1e18,
+            collateral: 1_000 * 1e18,
+            bond:       6_005.769230769230772000 * 1e18
         });
 
         (borrower, thresholdPrice) = _pool.loanInfo(1);
@@ -838,16 +814,13 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(prev, _borrower4);
 
         // kick borrower 2
-        _kickWithDeposit({
-            from:               _lender1,
-            index:              2500,
-            borrower:           _borrower2,
-            debt:               20_269.471153846153855500 * 1e18,
-            collateral:         1_000 * 1e18,
-            bond:               6_005.769230769230772000 * 1e18,
-            removedFromDeposit: 6_005.769230769230772000 * 1e18,
-            transferAmount:     0,
-            lup:                99836282890
+        _lenderKick({
+            from:       _lender1,
+            index:      2500,
+            borrower:   _borrower2,
+            debt:       20_269.471153846153855500 * 1e18,
+            collateral: 1_000 * 1e18,
+            bond:       6_005.769230769230772000 * 1e18
         });
 
         (borrower, thresholdPrice) = _pool.loanInfo(1);
@@ -891,10 +864,10 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertPool(
             PoolParams({
                 htp:                  0,
-                lup:                  99836282890,
-                poolSize:             80_971.153846153846140000 * 1e18,
+                lup:                  3_844.432207828138682757 * 1e18,
+                poolSize:             111_000 * 1e18,
                 pledgedCollateral:    5_000 * 1e18,
-                encumberedCollateral: 1015135508208.931167644556923668 * 1e18,
+                encumberedCollateral: 26.362112866202841031 * 1e18,
                 poolDebt:             101_347.355769230769277500 * 1e18,
                 actualUtilization:    0,
                 targetUtilization:    1e18,
@@ -1179,14 +1152,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             })
         );
 
-        // add more liquidity to settle auction
-        _addLiquidity({
-            from:    _lender1,
-            amount:  40_000 * 1e18,
-            index:   2500,
-            lpAward: 39_980.573029659913832943 * 1e18,
-            newLup:  3_863.654368867279344664 * 1e18
-        });
+
 
         _settle({
             from:        _lender1,
@@ -1238,8 +1204,8 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             19_721.271266431727390767 * 1e18,
-                pledgedCollateral:    3_978.965725315792902718 * 1e18,
+                poolSize:             9_645.701045977641587831 * 1e18,
+                pledgedCollateral:    4_973.703521110015138686 * 1e18,
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0,
@@ -1255,8 +1221,8 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       2500,
-            lpBalance:   59_951.726875813759972943 * 1e18,
-            depositTime: _startTime + 80 hours
+            lpBalance:   50_000.000000000000000000 * 1e18,
+            depositTime: _startTime
         });
         // assert lender1 as a kicker
         _assertKicker({
@@ -1268,7 +1234,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertBorrower({
             borrower:                  _borrower1,
             borrowerDebt:              0,
-            borrowerCollateral:        994.725169378126588635 * 1e18,
+            borrowerCollateral:        994.750357720674222924 * 1e18,
             borrowert0Np:              21.020192307692307702 * 1e18,
             borrowerCollateralization: 1 * 1e18
         });
@@ -1282,31 +1248,31 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertBorrower({
             borrower:                  _borrower3,
             borrowerDebt:              0,
-            borrowerCollateral:        994.751412316543869246 * 1e18,
+            borrowerCollateral:        994.725169378126588635 * 1e18,
             borrowert0Np:              21.125293269230769068 * 1e18,
             borrowerCollateralization: 1 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower4,
             borrowerDebt:              0,
-            borrowerCollateral:        994.737731304578575591 * 1e18,
+            borrowerCollateral:        994.751412316543869246 * 1e18,
             borrowert0Np:              21.125293269230769068 * 1e18,
             borrowerCollateralization: 1 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower5,
             borrowerDebt:              0,
-            borrowerCollateral:        0,
+            borrowerCollateral:        994.725169378126588635 * 1e18,
             borrowert0Np:              21.230919735576922742 * 1e18,
             borrowerCollateralization: 1 * 1e18
         });
     }
 
-    function testKickWithDepositReverts() external tearDown {
+    function testLenderKickAuctionReverts() external tearDown {
         // assert lender cannot kick with a bucket without deposit
         _assertKickWithInsufficientLiquidityRevert({
-            from:   _lender1,
-            index:  2_503
+            from:   _lender3,
+            index:  2_500
         });
 
         // assert lender cannot kick a loan if the proposed LUP doesn't render borrower uncollateralized
@@ -1325,7 +1291,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             newLup:      3_844.432207828138682757 * 1e18
         });
 
-        _assertKickPriceBelowProposedLupRevert({
+        _assertKickPriceBelowLupRevert({
             from:   _lender3,
             index:  7000
         });
@@ -1351,6 +1317,6 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
         changePrank(_lender4);
         vm.expectRevert("ERC20: transfer amount exceeds balance");
-        _pool.kickWithDeposit(2499, MAX_FENWICK_INDEX);
+        _pool.lenderKick(2499, MAX_FENWICK_INDEX);
     }
 }

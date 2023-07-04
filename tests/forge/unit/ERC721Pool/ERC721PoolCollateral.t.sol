@@ -722,7 +722,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  99836282890,
-                poolSize:             574.548281134908793280 * 1e18,
+                poolSize:             574.548281134908793200 * 1e18,
                 pledgedCollateral:    2 * 1e18,
                 encumberedCollateral: 5_992_754_428.551908353085520210 * 1e18,
                 poolDebt:             598.294326419208615388 * 1e18,
@@ -742,80 +742,80 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             index:        3060,
             lpBalance:    20 * 1e18,
             collateral:   0.0000000000000000000 * 1e18,
-            deposit:      66.831193726562997920 * 1e18,
-            exchangeRate: 3.341559686328149896 * 1e18
+            deposit:      57.465712770068876500 * 1e18,
+            exchangeRate: 2.873285638503443825 * 1e18
         });
 
         _assertBucket({
             index:        3061,
             lpBalance:    20.0 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      66.831193726562997920 * 1e18,
-            exchangeRate: 3.341559686328149896 * 1e18
+            deposit:      57.465712770068876500 * 1e18,
+            exchangeRate: 2.873285638503443825 * 1e18
         });
 
         _assertBucket({
             index:        3062,
             lpBalance:    20.0 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      66.831193726562997920 * 1e18,
-            exchangeRate: 3.341559686328149896 * 1e18
+            deposit:      57.465712770068876500 * 1e18,
+            exchangeRate: 2.873285638503443825 * 1e18
         });
 
         _assertBucket({
             index:        3063,
             lpBalance:    20.0 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      66.831193726562997920 * 1e18,
-            exchangeRate: 3.341559686328149896 * 1e18
+            deposit:      57.465712770068876500 * 1e18,
+            exchangeRate: 2.873285638503443825 * 1e18
         });
 
         _assertBucket({
             index:        3064,
             lpBalance:    20.0 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      66.831193726562997920 * 1e18,
-            exchangeRate: 3.341559686328149896 * 1e18
+            deposit:      57.465712770068876500 * 1e18,
+            exchangeRate: 2.873285638503443825 * 1e18
         });
 
         _assertBucket({
             index:        3065,
             lpBalance:    20.0 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      66.831193726562997920 * 1e18,
-            exchangeRate: 3.341559686328149896 * 1e18
+            deposit:      57.465712770068876500 * 1e18,
+            exchangeRate: 2.873285638503443825 * 1e18
         });
 
         _assertBucket({
             index:        3066,
             lpBalance:    20.0 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      66.831193726562997920 * 1e18,
-            exchangeRate: 3.341559686328149896 * 1e18
+            deposit:      57.465712770068876500 * 1e18,
+            exchangeRate: 2.873285638503443825 * 1e18
         });
 
         _assertBucket({
             index:        3067,
             lpBalance:    20.0 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      66.831193726562997920 * 1e18,
-            exchangeRate: 3.341559686328149896 * 1e18
+            deposit:      57.465712770068876500 * 1e18,
+            exchangeRate: 2.873285638503443825 * 1e18
         });
 
         _assertBucket({
             index:        3068,
             lpBalance:    20.0 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      20.003788944092390860 * 1e18,
-            exchangeRate: 1.000189447204619543 * 1e18
+            deposit:      57.465712770068876500 * 1e18,
+            exchangeRate: 2.873285638503443825 * 1e18
         });
 
         _assertBucket({
             index:        3069,
             lpBalance:    20.0 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      20.003788944092390860 * 1e18,
-            exchangeRate: 1.000189447204619543 * 1e18
+            deposit:      57.465712770068876500 * 1e18,
+            exchangeRate: 2.873285638503443825 * 1e18
         });
 
         _assertBucket({
@@ -842,17 +842,17 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _assertBucket({
             index:        3060,
             lpBalance:    20.202020202020202020 * 1e18,
-            collateral:   0.285325336911052408 * 1e18,
+            collateral:   0.245340879650286415 * 1e18,
             deposit:      0,
-            exchangeRate: 3.341559686328149897 * 1e18
+            exchangeRate: 2.873285638503443827 * 1e18
         });
 
         _assertBucket({
             index:        3061,
             lpBalance:    20.202020202020202020 * 1e18,
-            collateral:   0.286751963595607668 * 1e18,
+            collateral:   0.246567584048537845 * 1e18,
             deposit:      0,
-            exchangeRate: 3.341559686328149900 * 1e18
+            exchangeRate: 2.873285638503443827 * 1e18
         });
 
         _assertBucket({
@@ -874,8 +874,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 kickMomp:          0.000000099836282890 * 1e18,
                 totalBondEscrowed: 5.907892673985352325 * 1e18,
                 auctionPrice:      0.000004621809202112 * 1e18,
-                debtInAuction:     439.681348088864224701 * 1e18,
-                thresholdPrice:    385.774399985858744600 * 1e18,
+                debtInAuction:     467.777790958346588935 * 1e18,
+                thresholdPrice:    371.166459589091918644 * 1e18,
                 neutralPrice:      310.164365384230997074 * 1e18
             })
         );
@@ -884,10 +884,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  99836282890,
-                poolSize:             374.163546520999771310 * 1e18,
-                pledgedCollateral:    1.139736976079754220 * 1e18,
-                encumberedCollateral: 4404023621.084799631616172644 * 1e18,
-                poolDebt:             439.681348088864224701 * 1e18,
+                poolSize:             402.259989390482135517 * 1e18,
+                pledgedCollateral:    1.260291114332395208 * 1e18,
+                encumberedCollateral: 4_685_448_790.934513817364339575 * 1e18,
+                poolDebt:             467.777790958346588935 * 1e18,
                 actualUtilization:    0.750721153846153847 * 1e18,
                 targetUtilization:    0.328577182109433013 * 1e18,
                 minDebtAmount:        0,
@@ -904,10 +904,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              439.681348088864224701 * 1e18,
-            borrowerCollateral:        1.139736976079754220 * 1e18,
+            borrowerDebt:              467.777790958346588935 * 1e18,
+            borrowerCollateral:        1.260291114332395208 * 1e18,
             borrowert0Np:              78.825721153846153882 * 1e18,
-            borrowerCollateralization: 0.000000000258794474 * 1e18,
+            borrowerCollateralization: 0.000000000268979808 * 1e18,
             tokenIds:                  borrowerTokenIds
         });
 
@@ -930,10 +930,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              439.681343513273114610 * 1e18,
-            borrowerCollateral:        0.139736976079754220 * 1e18,
+            borrowerDebt:              467.777786382755478845 * 1e18,
+            borrowerCollateral:        0.260291114332395208 * 1e18,
             borrowert0Np:              78.825721153846153882 * 1e18,
-            borrowerCollateralization: 0.000000000031729389 * 1e18,
+            borrowerCollateralization: 0.000000000055553081 * 1e18,
             tokenIds:                  borrowerTokenIds
         });
 
@@ -962,8 +962,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 kickMomp:          0.000000099836282890 * 1e18,
                 totalBondEscrowed: 5.907892720203444346 * 1e18,
                 auctionPrice:      0,
-                debtInAuction:     439.681343513273114610 * 1e18,
-                thresholdPrice:    3_148.017628779219832340 * 1e18,
+                debtInAuction:     467.777786382755478845 * 1e18,
+                thresholdPrice:    1_798.004234437087055097 * 1e18,
                 neutralPrice:      310.164365384230997074 * 1e18
             })
         );
@@ -972,7 +972,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    10,
-            settledDebt: 111.718947293453085984 * 1e18
+            settledDebt: 118.857992573354662400 * 1e18
         });
 
         _assertBorrower({
@@ -1008,9 +1008,9 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _assertBucket({
             index:        3060,
             lpBalance:    20.202020202020202020 * 1e18,
-            collateral:   0.285325336911052408 * 1e18,
+            collateral:   0.245340879650286415 * 1e18,
             deposit:      0,
-            exchangeRate: 3.341559686328149897 * 1e18
+            exchangeRate: 2.873285638503443827 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _borrower,
@@ -1169,7 +1169,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             50.000004233804493307 * 1e18,
+                poolSize:             50.000004233778718162 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
                 poolDebt:             0,

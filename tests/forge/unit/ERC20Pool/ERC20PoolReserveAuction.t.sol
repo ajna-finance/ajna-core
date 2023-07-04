@@ -145,7 +145,7 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         ERC20Pool pool = ERC20Pool(address(_pool));
 
         changePrank(_actor3);
-        pool.addQuoteToken(197806, 2572, block.timestamp + 1);
+        pool.addQuoteToken(197806, 2572, block.timestamp + 1, false);
         pool.drawDebt(_actor3, 98903, 7388, 37);
         // pool balance is amount added minus new debt
         assertEq(_quote.balanceOf(address(pool)), 98903);
@@ -178,34 +178,52 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
 
         changePrank(_actor2);
         pool.updateInterest();
-        pool.take(_actor3, 506252187686489913395361995, _actor2, new bytes(0));
+        vm.expectRevert(IPoolErrors.NoReserves.selector);
+        pool.kickReserveAuction();
+
         // pool balance remains the same
         assertEq(_quote.balanceOf(address(pool)), 1017);
-
-        vm.warp(block.timestamp + 86400);
 
         changePrank(_actor3);
         pool.updateInterest();
         // not enough balance to start new auction
         vm.expectRevert(IPoolErrors.NoReserves.selector);
         pool.kickReserveAuction();
+        
+        // repay debt to have enough balance to kick new reserves auction
+        ERC20Pool(address(_pool)).repayDebt(_actor3, type(uint256).max, 0, _actor3, MAX_FENWICK_INDEX);
 
-        // add tokens to have enough balance to kick new reserves auction
-        pool.addQuoteToken(100, 2572, block.timestamp + 1);
+        uint256 initialPoolBalance     = 103934;
+        uint256 initialAvailableAmount = 102917;
+
+        assertEq(_quote.balanceOf(address(pool)), initialPoolBalance);
+        assertEq(_availableQuoteToken(), initialAvailableAmount);
+
         pool.kickReserveAuction();
-        // pool balance diminished by reward given to reserves kicker
-        assertEq(_quote.balanceOf(address(pool)), 1116);
-        assertEq(_availableQuoteToken(), 0);
+
+        uint256 kickerReward    = 12;
+        uint256 claimableTokens = 1229;
+
+        ( , , uint256 claimable, , ) = _poolUtils.poolReservesInfo(address(_pool));
+        assertEq(claimable, claimableTokens);
+
+        // pool balance diminished by reward given to reserves kicker (12)
+        assertEq(_quote.balanceOf(address(pool)), initialPoolBalance - kickerReward);
+        // available quote token (available to remove / draw debt from) diminished by kicker reward + claimable tokens
+        assertEq(_availableQuoteToken(), initialAvailableAmount - (kickerReward + claimableTokens));
+
         skip(24 hours);
 
         // mint and approve ajna tokens for taker
         deal(address(_ajna), _actor3, 1e45);
         ERC20(address(_ajna)).approve(address(_pool), type(uint256).max);
 
-        pool.takeReserves(787);
+        pool.takeReserves(claimableTokens);
 
-        assertEq(_quote.balanceOf(address(pool)), 1017);
-        assertEq(_availableQuoteToken(), 0);
+        // quote token balance diminished by quote token taken from reserve auction
+        assertEq(_quote.balanceOf(address(pool)), initialPoolBalance - kickerReward - claimableTokens);
+        // available quote token (available to remove / draw debt from) is not modified
+        assertEq(_availableQuoteToken(), initialAvailableAmount - (kickerReward + claimableTokens));
     }
 
 }

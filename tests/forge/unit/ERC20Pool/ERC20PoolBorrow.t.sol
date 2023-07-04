@@ -719,8 +719,13 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
 
-        // should revert if LUP is below the limit
-        ( , , , , , uint256 lupIndex ) = _poolUtils.poolPricesInfo(address(_pool));        
+        // should revert if LUP is below the limit when repay or pull collateral
+        ( , , , , , uint256 lupIndex ) = _poolUtils.poolPricesInfo(address(_pool));   
+        _assertRepayLimitIndexRevert({
+            from:       _borrower,
+            amount:     20 * 1e18,
+            indexLimit: lupIndex - 1
+        });     
         _assertPullLimitIndexRevert({
             from:       _borrower,
             amount:     20 * 1e18,
@@ -1004,6 +1009,13 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             hpbIndex: 2550,
             lup:      2_981.007422784467321543 * 1e18,
             lupIndex: 2_552
+        });
+
+        // tx should revert if revert if deposit below LUP specified
+        _assertAddLiquidityPriceBelowLUPRevert({
+            from:   _lender,
+            amount: 10_000 * 1e18,
+            index:  _indexOf(200 * 1e18)
         });
 
         // add liquidity below LUP, ensuring fee is levied

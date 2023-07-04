@@ -33,24 +33,27 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         bytes[] memory callsToExecute = new bytes[](3);
 
         callsToExecute[0] = abi.encodeWithSignature(
-            "addQuoteToken(uint256,uint256,uint256)",
+            "addQuoteToken(uint256,uint256,uint256,bool)",
             10_000 * 1e18,
             2550,
-            block.timestamp + 5 minutes
+            block.timestamp + 5 minutes,
+            false
         );
 
         callsToExecute[1] = abi.encodeWithSignature(
-            "addQuoteToken(uint256,uint256,uint256)",
+            "addQuoteToken(uint256,uint256,uint256,bool)",
             10_000 * 1e18,
             2551,
-            block.timestamp + 5 minutes
+            block.timestamp + 5 minutes,
+            false
         );
 
         callsToExecute[2] = abi.encodeWithSignature(
-            "addQuoteToken(uint256,uint256,uint256)",
+            "addQuoteToken(uint256,uint256,uint256,bool)",
             10_000 * 1e18,
             2552,
-            block.timestamp + 5 minutes
+            block.timestamp + 5 minutes,
+            false
         );
 
         changePrank(_lender);

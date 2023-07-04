@@ -21,8 +21,8 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         _lender    = makeAddr("lender");
         _lender1   = makeAddr("bidder");
 
-        _mintCollateralAndApproveTokens(_borrower,  100 * 1e18);
-        _mintCollateralAndApproveTokens(_borrower2,  200 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower,   5_000 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower2,  5_000 * 1e18);
 
         _mintQuoteAndApproveTokens(_lender,   200_000 * 1e18);
         _mintQuoteAndApproveTokens(_lender1,  200_000 * 1e18);
@@ -225,10 +225,11 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         // should revert if passing future timestamp but time has elapsed
         bytes memory data = abi.encodeWithSignature(
-            "addQuoteToken(uint256,uint256,uint256)",
+            "addQuoteToken(uint256,uint256,uint256,bool)",
             50_000 * 1e18,
             3333,
-            block.timestamp + 5 minutes
+            block.timestamp + 5 minutes,
+            false
         );
 
         // should succeed if time hasn't passed
@@ -913,6 +914,150 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         });
     }
 
+    function testPoolMoveQuoteTokenRevertOnHTPLUP() external {
+
+        _addLiquidity({
+            from:    _lender,
+            amount:  40_000 * 1e18,
+            index:   2549,
+            lpAward: 40_000 * 1e18,
+            newLup:  MAX_PRICE
+        });
+        _addLiquidity({
+            from:    _lender,
+            amount:  10_000 * 1e18,
+            index:   2550,
+            lpAward: 10_000 * 1e18,
+            newLup:  MAX_PRICE
+        });   
+        _addLiquidity({   
+            from:    _lender,
+            amount:  20_000 * 1e18,
+            index:   2551,
+            lpAward: 20_000 * 1e18,
+            newLup:  MAX_PRICE
+        });
+
+        _addLiquidity({   
+            from:    _lender,
+            amount:  20_000 * 1e18,
+            index:   2540,
+            lpAward: 20_000 * 1e18,
+            newLup:  MAX_PRICE
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   40_000 * 1e18,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2540,
+            lpBalance:   20_000 * 1e18,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2552,
+            lpBalance:   0,
+            depositTime: 0
+        });
+
+        uint256 snapshot = vm.snapshot();
+
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     89_000 * 1e18,
+            limitIndex:         7_388,
+            collateralToPledge: 30 * 1e18,
+            newLup:             2_995.912459898389633881 * 1e18
+        });
+
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              89_085.576923076923118000 * 1e18,
+            borrowerCollateral:        30.0 * 1e18,
+            borrowert0Np:              3_117.995192307692309130 * 1e18,
+            borrowerCollateralization: 1.008888047888587643 * 1e18
+        });
+
+        _drawDebt({
+            from:               _borrower2,
+            borrower:           _borrower2,
+            amountToBorrow:     900 * 1e18,
+            limitIndex:         7_388,
+            collateralToPledge: 5_000 * 1e18,
+            newLup:             2_995.912459898389633881 * 1e18
+        });
+
+        _assertPool(
+            PoolParams({
+                htp:                  2_969.519230769230770600 * 1e18,
+                lup:                  2_995.912459898389633881 * 1e18,
+                poolSize:             90_000.000000000000000000 * 1e18,
+                pledgedCollateral:    5_030.0 * 1e18,
+                encumberedCollateral: 30.036405773600046352 * 1e18,
+                poolDebt:             89_986.442307692307733800 * 1e18,
+                actualUtilization:    0 * 1e18,
+                targetUtilization:    1.0 * 1e18,
+                minDebtAmount:        4_499.322115384615386690 * 1e18,
+                loans:                2,
+                maxBorrower:          _borrower,
+                interestRate:         0.050000000000000000 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+
+        // ensure htp > lup to fire error
+        _assertLupBelowHTPRevert({
+            from:         _lender,
+            fromIndex:    2549,
+            toIndex:      3000,
+            amount:       40_000 * 1e18
+        });
+
+        vm.revertTo(snapshot);
+
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     89_913 * 1e18,
+            limitIndex:         7_388,
+            collateralToPledge: 5_000 * 1e18,
+            newLup:             2_995.912459898389633881 * 1e18
+        });
+
+        _assertPool(
+            PoolParams({
+                htp:                  17.999890961538461547 * 1e18,
+                lup:                  2_995.912459898389633881 * 1e18,
+                poolSize:             90_000.000000000000000000 * 1e18,
+                pledgedCollateral:    5000.0 * 1e18,
+                encumberedCollateral: 30.040749191565083066 * 1e18,
+                poolDebt:             89_999.454807692307733806 * 1e18,
+                actualUtilization:    0 * 1e18,
+                targetUtilization:    1.0 * 1e18,
+                minDebtAmount:        8_999.945480769230773381 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.050000000000000000 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+
+        skip(50 days);
+
+        // htp > lup && debt > deposit
+        _assertLupBelowHTPRevert({
+            from:         _lender,
+            fromIndex:    2549,
+            toIndex:      3000,
+            amount:       40_000 * 1e18
+        });
+    }
+
     function testPoolMoveQuoteTokenWithDifferentTime() external tearDown {
         _addLiquidity({
             from:    _lender,
@@ -1078,6 +1223,14 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             expiry:    block.timestamp - 20
         });
 
+        // should revert if move below LUP with revertIfBelowLup set to true
+        _assertMoveDepositBelowLUPRevert({
+            from:      _lender,
+            amount:    10_000 * 1e18,
+            fromIndex: 4549,
+            toIndex:   5000
+        });
+
         // should be charged unutilized deposit fee if moving below LUP
         _moveLiquidityWithPenalty({
             from:         _lender,
@@ -1099,7 +1252,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             toIndex:      4550,
             lpRedeemFrom: amountToMove,
             lpAwardTo:    amountToMove,
-            newLup:       _priceAt(4651)
+            newLup:       0.139445853940958153 * 1e18
         });
     }
 

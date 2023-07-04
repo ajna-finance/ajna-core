@@ -28,14 +28,16 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         numberOfCalls['UBBasicHandler.addQuoteToken']++;
 
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
-        (uint256 poolDebt, , ,)   = _pool.debtInfo();
-        uint256 lupIndex          = _pool.depositIndex(poolDebt);
-        (uint256 interestRate, )  = _pool.interestRateInfo();
+
+        (uint256 inflator, )     = _pool.inflatorInfo();
+        uint256 poolDebt         = Maths.wmul(_pool.totalT0Debt(), inflator);
+        uint256 lupIndex         = _pool.depositIndex(poolDebt);
+        (uint256 interestRate, ) = _pool.interestRateInfo();
 
         // ensure actor always has amount of quote to add
         _ensureQuoteAmount(_actor, amount_);
 
-        try _pool.addQuoteToken(amount_, bucketIndex_, block.timestamp + 1 minutes) {
+        try _pool.addQuoteToken(amount_, bucketIndex_, block.timestamp + 1 minutes, false) {
 
             // amount is rounded in pool to token scale
             amount_ = _roundToScale(amount_, _pool.quoteTokenScale());
@@ -110,7 +112,8 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             amount_,
             fromIndex_,
             toIndex_,
-            block.timestamp + 1 minutes
+            block.timestamp + 1 minutes,
+            false
         ) returns (uint256, uint256, uint256 movedAmount_) {
 
             (, uint256 fromBucketDepositTime) = _pool.lenderInfo(fromIndex_, _actor);
@@ -169,6 +172,14 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             // **B6**: when receiving transferred LP : receiver deposit time (`Lender.depositTime`) = max of sender and receiver deposit time
             lenderDepositTime[receiver_][bucketIndex_] = Maths.max(senderDepositTime, receiverDepositTime);
 
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
+        }
+    }
+
+    function _stampLoan() internal updateLocalStateAndPoolInterest {
+        numberOfCalls['UBBasicHandler.stampLoan']++;
+        try _pool.stampLoan() {
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }

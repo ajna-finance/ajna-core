@@ -551,6 +551,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         ERC20Pool(address(_pool)).repayDebt(from, 0, amount, from, indexLimit);
     }
 
+    function _assertRepayLimitIndexRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.LimitIndexExceeded.selector);
+        ERC20Pool(address(_pool)).repayDebt(from, amount, 0, from, indexLimit);
+    }
+
     function _assertRepayNoDebtRevert(
         address from,
         address borrower,
@@ -720,6 +730,17 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
         ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
+    }
+
+    function _assertLupBelowHTPRevert(
+        address from,
+        uint256 amount,
+        uint256 fromIndex,
+        uint256 toIndex
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.LUPBelowHTP.selector);
+        ERC20Pool(address(_pool)).moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max, false);
     }
 
 }

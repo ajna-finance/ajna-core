@@ -229,7 +229,7 @@ library PoolCommons {
 
         // calculate the highest threshold price
         newInflator_ = Maths.wmul(poolState_.inflator, pendingFactor);
-        uint256 htp = Maths.wmul(thresholdPrice_, newInflator_);
+        uint256 htp = Maths.wmul(thresholdPrice_, poolState_.inflator);
 
         uint256 accrualIndex;
         if (htp > MAX_PRICE)      accrualIndex = 1;                 // if HTP is over the highest price bucket then no buckets earn interest
@@ -281,7 +281,7 @@ library PoolCommons {
         if (poolState_.debt != 0) {
             // calculate meaningful actual utilization for interest rate update
             mau    = int256(_utilization(debtEma_, depositEma_));
-            mau102 = mau * PERCENT_102 / 1e18;
+            mau102 = (mau * PERCENT_102) / 1e18;
         }
 
         // calculate target utilization
@@ -294,7 +294,7 @@ library PoolCommons {
         if (4 * (tu - mau102) < (((tu + mau102 - 1e18) / 1e9) ** 2) - 1e18) {
             newInterestRate_ = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
         // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
-        } else if (4 * (tu - mau) > 1e18 - ((tu + mau - 1e18) ** 2) / 1e18) {
+        } else if (4 * (tu - mau) > 1e18 - ((tu + mau - 1e18) / 1e9) ** 2) {
             newInterestRate_ = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
         }
 
