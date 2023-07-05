@@ -90,6 +90,9 @@ abstract contract BaseHandler is Test {
     string  internal path = "logfile.txt";
     uint256 internal logFileVerbosity;
 
+    // randomness counter used in randomSeed()
+    uint256 internal counter = 1;
+
     constructor(
         address pool_,
         address ajna_,
@@ -725,6 +728,15 @@ abstract contract BaseHandler is Test {
 
     function getBuckets() public view returns(uint256[] memory) {
         return buckets.values();
+    }
+
+    /*************************************/
+    /*** Test Utils Internal Functions ***/
+    /*************************************/
+
+    function randomSeed() internal returns (uint256) {
+        counter++;
+        return uint256(keccak256(abi.encodePacked(block.number, block.prevrandao, counter)));
     }
 
     function _repayBorrowerDebt(address borrower_, uint256 amount_) internal virtual;
