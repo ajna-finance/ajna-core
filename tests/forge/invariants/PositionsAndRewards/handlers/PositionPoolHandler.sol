@@ -3,6 +3,7 @@
 pragma solidity 0.8.18;
 
 import { Maths } from 'src/libraries/internal/Maths.sol';
+import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
 import { UnboundedPositionPoolHandler } from './unbounded/UnboundedPositionPoolHandler.sol';
 
@@ -17,7 +18,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writePositionLogs {
         numberOfCalls['BPositionHandler.memorialize']++;
         // Pre action //
         (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositions(_lenderBucketIndex, amountToAdd_);
@@ -31,7 +32,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writePositionLogs {
         numberOfCalls['BPositionHandler.redeem']++;
         // Pre action //
         (uint256 tokenId, uint256[] memory indexes) = _preRedeemPositions(_lenderBucketIndex, amountToAdd_);
@@ -46,7 +47,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
     function mint(
         uint256 actorIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writePositionLogs {
         numberOfCalls['BPositionHandler.mint']++;        
 
         // Action phase //
@@ -58,7 +59,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 bucketIndex_,
         uint256 skippedTime_,
         uint256 amountToAdd_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writePositionLogs {
         numberOfCalls['BPositionHandler.burn']++;        
         // Pre action //
         (uint256 tokenId_) = _preBurn(_lenderBucketIndex, amountToAdd_);
@@ -73,7 +74,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 amountToMove_,
         uint256 fromIndex_,
         uint256 toIndex_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writePositionLogs {
         numberOfCalls['BPositionHandler.moveLiquidity']++;        
         // Pre action //
         (
@@ -187,6 +188,56 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
             // create a position for the actor
             (tokenId_, indexes_) = _preMemorializePositions(bucketIndex_, amountToAdd_); 
             _memorializePositions(tokenId_, indexes_);
+        }
+    }
+
+    modifier writePositionLogs() {
+        if (numberOfCalls["Write logs"]++ == 0) vm.writeFile(path, "");
+        string memory data = string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " =================="));
+        printInNextLine(data);
+        writeActorLogs();
+        writeBucketLogs();
+        _;
+    }
+
+    function writeActorLogs() internal {
+
+        for (uint256 i = 0; i < actors.length; i++) {
+
+            uint256[] memory tokenIds = getTokenIdsByActor(actors[i]);
+            if (tokenIds.length == 0) continue;
+
+            string memory actorStr = string.concat(string.concat("Actor ", Strings.toString(i)), " tokenIds: ");
+            string memory tokenIdStr;
+
+            for (uint256 k = 0; k < tokenIds.length; k++) {
+                tokenIdStr = string.concat(tokenIdStr, " ");
+                tokenIdStr = string.concat(tokenIdStr, Strings.toString(tokenIds[k]));
+            }
+
+            printLine(string.concat(actorStr,tokenIdStr)); 
+        }
+    }
+
+    function writeBucketLogs() internal {
+        uint256[] memory bucketIndexes = getBucketIndexesWithPosition();
+
+        // loop over bucket indexes with positions
+        for (uint256 i = 0; i < bucketIndexes.length; i++) {
+            uint256 bucketIndex = bucketIndexes[i];
+
+            printLine("");
+            printLog("Bucket: ", bucketIndex);
+
+            // loop over tokenIds in bucket indexes
+            uint256[] memory tokenIds = getTokenIdsByBucketIndex(bucketIndex);
+            for (uint256 k = 0; k < tokenIds.length; k++) {
+                uint256 tokenId = tokenIds[k];
+                
+                uint256 posLp = _positionManager.getLP(tokenId, bucketIndex);
+                string memory tokenIdStr = string.concat("tokenID ", Strings.toString(tokenId));
+                printLog(string.concat(tokenIdStr, " LP in positionMan = "), posLp);
+            }
         }
     }
 }
