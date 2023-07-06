@@ -207,12 +207,10 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
             uint256[] memory tokenIds = getStakedTokenIdsByActor(actors[i]);
 
             if (tokenIds.length != 0) {
-                // string memory actorStr = string.concat(string.concat("Actor ", Strings.toString(i)), " staked tokenIds: ");
                 string memory actorStr = string(abi.encodePacked("Actor ", Strings.toString(i), " staked tokenIds: "));
 
                 string memory tokenIdStr;
                 for (uint256 k = 0; k < tokenIds.length; k++) {
-                    // tokenIdStr = string.concat(tokenIdStr, " ");
                     tokenIdStr = string(abi.encodePacked(tokenIdStr, " ", Strings.toString(tokenIds[k])));
                 }
 

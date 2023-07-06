@@ -222,7 +222,6 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
                 }
 
                 printLine(string.concat(actorStr,tokenIdStr)); 
-
             }
         }
     }
