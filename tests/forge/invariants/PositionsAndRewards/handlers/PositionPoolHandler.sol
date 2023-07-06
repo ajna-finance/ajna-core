@@ -192,12 +192,18 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
     }
 
     modifier writePositionLogs() {
-        if (numberOfCalls["Write logs"]++ == 0) vm.writeFile(path, "");
-        string memory data = string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " =================="));
-        printInNextLine(data);
-        writeActorLogs();
-        writeBucketLogs();
         _;
+        logPositionToFile();
+    }
+
+    function logPositionToFile() internal {
+        logToFile();
+        if (logFileVerbosity > 5) {
+            printInNextLine("== PositionManager Details ==");
+            writeActorLogs();
+            writeBucketLogs();
+            printInNextLine("=======================");
+        }
     }
 
     function writeActorLogs() internal {
@@ -205,17 +211,19 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         for (uint256 i = 0; i < actors.length; i++) {
 
             uint256[] memory tokenIds = getTokenIdsByActor(actors[i]);
-            if (tokenIds.length == 0) continue;
 
-            string memory actorStr = string.concat(string.concat("Actor ", Strings.toString(i)), " tokenIds: ");
-            string memory tokenIdStr;
+            if (tokenIds.length != 0) {
+                string memory actorStr = string.concat(string.concat("Actor ", Strings.toString(i)), " tokenIds: ");
+                string memory tokenIdStr;
 
-            for (uint256 k = 0; k < tokenIds.length; k++) {
-                tokenIdStr = string.concat(tokenIdStr, " ");
-                tokenIdStr = string.concat(tokenIdStr, Strings.toString(tokenIds[k]));
+                for (uint256 k = 0; k < tokenIds.length; k++) {
+                    tokenIdStr = string.concat(tokenIdStr, " ");
+                    tokenIdStr = string.concat(tokenIdStr, Strings.toString(tokenIds[k]));
+                }
+
+                printLine(string.concat(actorStr,tokenIdStr)); 
+
             }
-
-            printLine(string.concat(actorStr,tokenIdStr)); 
         }
     }
 

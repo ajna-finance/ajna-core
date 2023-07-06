@@ -87,7 +87,7 @@ abstract contract BaseHandler is Test {
     bool                     public firstTake;        // if take is called on auction first time
     mapping(address => bool) public alreadyTaken;     // mapping borrower address to true if auction taken atleast once
 
-    string  internal path = "logfile.txt";
+    string  internal path = "logFile.txt";
     uint256 internal logFileVerbosity;
 
     constructor(
@@ -237,6 +237,10 @@ abstract contract BaseHandler is Test {
 
     modifier writeLogs() {
         _;
+        logToFile();
+    }
+
+    function logToFile() internal {
         if (logFileVerbosity > 0) {
             if (numberOfCalls["Write logs"]++ == 0) vm.writeFile(path, "");
             string memory data = string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " =================="));
