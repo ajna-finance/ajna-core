@@ -18,7 +18,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeRewardsLogs {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.stake']++;
         // Pre action
         (uint256 tokenId, uint256[] memory indexes) = _preStake(_lenderBucketIndex, amountToAdd_);
@@ -37,7 +37,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 skippedTime_,
         uint256 numberOfEpochs_,
         uint256 bucketSubsetToUpdate_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeRewardsLogs {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.unstake']++;
         // Pre action
         (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
@@ -65,7 +65,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 skippedTime_,
         uint256 numberOfEpochs_,
         uint256 bucketSubsetToUpdate_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeRewardsLogs {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.emergencyUnstake']++;
         
         // Pre action
@@ -88,7 +88,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeRewardsLogs {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.updateRate']++;
 
         // Pre action //
@@ -113,7 +113,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 skippedTime_,
         uint256 numberOfEpochs_,
         uint256 bucketSubsetToUpdate_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeRewardsLogs {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.claimRewards']++;
 
         // Pre action //
@@ -191,7 +191,6 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
 
     modifier writeRewardsLogs() {
         _;
-        logPositionToFile();
         if (logFileVerbosity > 6) {
             printInNextLine("== RewardsManager Details ==");
             writeStakedActorLogs();
