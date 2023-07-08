@@ -242,8 +242,6 @@ abstract contract BaseHandler is Test {
 
         if (logToFile == true) {
             if (numberOfCalls["Write logs"]++ == 0) vm.writeFile(path, "");
-            // string memory data = string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " =================="));
-            // printInNextLine(data);
             printInNextLine(string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " ==================")));
         }
 
@@ -254,29 +252,7 @@ abstract contract BaseHandler is Test {
             if (logVerbosity > 3) writeLenderLogs();
             if (logVerbosity > 4) writeBorrowerLogs();
         }
-        // logToFile();
     }
-
-    // function logToFile() internal {
-    //     // Verbosity of Log file for pools
-    //     logVerbosity = uint256(vm.envOr("LOGS_VERBOSITY_POOL", uint256(0)));
-
-    //     if (logVerbosity != 0) logToFile = true;
-
-    //     if (logToFile == true) {
-    //         if (numberOfCalls["Write logs"]++ == 0) vm.writeFile(path, "");
-    //         string memory data = string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " =================="));
-    //         printInNextLine(data);
-    //     }
-
-    //     if (logVerbosity > 0) {
-    //         writePoolStateLogs();
-    //         if (logVerbosity > 1) writeAuctionLogs();
-    //         if (logVerbosity > 2) writeBucketsLogs();
-    //         if (logVerbosity > 3) writeLenderLogs();
-    //         if (logVerbosity > 4) writeBorrowerLogs();
-    //     }
-    // }
 
     /*****************************/
     /*** Pool Helper Functions ***/
