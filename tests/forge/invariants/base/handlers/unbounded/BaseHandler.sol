@@ -88,7 +88,8 @@ abstract contract BaseHandler is Test {
     mapping(address => bool) public alreadyTaken;     // mapping borrower address to true if auction taken atleast once
 
     string  internal path = "logFile.txt";
-    uint256 internal logFileVerbosity;
+    bool    internal logToFile;
+    uint256 internal logVerbosity;
 
     constructor(
         address pool_,
@@ -106,10 +107,7 @@ abstract contract BaseHandler is Test {
         _poolInfo = PoolInfoUtils(poolInfo_);
 
         // Test invariant contract
-        testContract = ITestBase(testContract_);
-        
-        // Verbosity of Log file
-        logFileVerbosity = uint256(vm.envOr("LOGS_VERBOSITY", uint256(0)));
+        testContract = ITestBase(testContract_);    
     }
 
     /*****************/
@@ -237,21 +235,48 @@ abstract contract BaseHandler is Test {
 
     modifier writeLogs() {
         _;
-        logToFile();
+        // Verbosity of Log file for pools
+        logVerbosity = uint256(vm.envOr("LOGS_VERBOSITY_POOL", uint256(0)));
+
+        if (logVerbosity != 0) logToFile = true;
+
+        if (logToFile == true) {
+            if (numberOfCalls["Write logs"]++ == 0) vm.writeFile(path, "");
+            // string memory data = string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " =================="));
+            // printInNextLine(data);
+            printInNextLine(string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " ==================")));
+        }
+
+        if (logVerbosity > 0) {
+            writePoolStateLogs();
+            if (logVerbosity > 1) writeAuctionLogs();
+            if (logVerbosity > 2) writeBucketsLogs();
+            if (logVerbosity > 3) writeLenderLogs();
+            if (logVerbosity > 4) writeBorrowerLogs();
+        }
+        // logToFile();
     }
 
-    function logToFile() internal {
-        if (logFileVerbosity > 0) {
-            if (numberOfCalls["Write logs"]++ == 0) vm.writeFile(path, "");
-            string memory data = string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " =================="));
-            printInNextLine(data);
-            writePoolStateLogs();
-            if (logFileVerbosity > 1) writeAuctionLogs();
-            if (logFileVerbosity > 2) writeBucketsLogs();
-            if (logFileVerbosity > 3) writeLenderLogs();
-            if (logFileVerbosity > 4) writeBorrowerLogs();
-        }
-    }
+    // function logToFile() internal {
+    //     // Verbosity of Log file for pools
+    //     logVerbosity = uint256(vm.envOr("LOGS_VERBOSITY_POOL", uint256(0)));
+
+    //     if (logVerbosity != 0) logToFile = true;
+
+    //     if (logToFile == true) {
+    //         if (numberOfCalls["Write logs"]++ == 0) vm.writeFile(path, "");
+    //         string memory data = string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " =================="));
+    //         printInNextLine(data);
+    //     }
+
+    //     if (logVerbosity > 0) {
+    //         writePoolStateLogs();
+    //         if (logVerbosity > 1) writeAuctionLogs();
+    //         if (logVerbosity > 2) writeBucketsLogs();
+    //         if (logVerbosity > 3) writeLenderLogs();
+    //         if (logVerbosity > 4) writeBorrowerLogs();
+    //     }
+    // }
 
     /*****************************/
     /*** Pool Helper Functions ***/

@@ -18,7 +18,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writePositionLogs {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs {
         numberOfCalls['BPositionHandler.memorialize']++;
         // Pre action //
         (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositions(_lenderBucketIndex, amountToAdd_);
@@ -32,7 +32,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writePositionLogs {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs {
         numberOfCalls['BPositionHandler.redeem']++;
         // Pre action //
         (uint256 tokenId, uint256[] memory indexes) = _preRedeemPositions(_lenderBucketIndex, amountToAdd_);
@@ -47,7 +47,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
     function mint(
         uint256 actorIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writePositionLogs {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs {
         numberOfCalls['BPositionHandler.mint']++;        
 
         // Action phase //
@@ -59,7 +59,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 bucketIndex_,
         uint256 skippedTime_,
         uint256 amountToAdd_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writePositionLogs {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs {
         numberOfCalls['BPositionHandler.burn']++;        
         // Pre action //
         (uint256 tokenId_) = _preBurn(_lenderBucketIndex, amountToAdd_);
@@ -74,7 +74,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 amountToMove_,
         uint256 fromIndex_,
         uint256 toIndex_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writePositionLogs {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs {
         numberOfCalls['BPositionHandler.moveLiquidity']++;        
         // Pre action //
         (
@@ -192,13 +192,14 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
     }
 
     modifier writePositionLogs() {
-        _;
-        logPositionToFile();
-    }
+        // Verbosity of Log file for positionManager
+        logVerbosity = uint256(vm.envOr("LOGS_VERBOSITY_POSITION", uint256(0)));
 
-    function logPositionToFile() internal {
-        logToFile();
-        if (logFileVerbosity > 5) {
+        if (logVerbosity != 0) logToFile = true;
+
+        _;
+
+        if (logVerbosity > 0) {
             printInNextLine("== PositionManager Details ==");
             writeActorLogs();
             writeBucketLogs();
