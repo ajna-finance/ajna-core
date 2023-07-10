@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.18;
 
+import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
+
 import { PositionPoolHandler }         from './PositionPoolHandler.sol';
 import { UnboundedRewardsPoolHandler } from './unbounded/UnboundedRewardsPoolHandler.sol';
 
@@ -16,7 +18,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.stake']++;
         // Pre action
         (uint256 tokenId, uint256[] memory indexes) = _preStake(_lenderBucketIndex, amountToAdd_);
@@ -35,7 +37,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 skippedTime_,
         uint256 numberOfEpochs_,
         uint256 bucketSubsetToUpdate_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.unstake']++;
         // Pre action
         (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
@@ -63,7 +65,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 skippedTime_,
         uint256 numberOfEpochs_,
         uint256 bucketSubsetToUpdate_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.emergencyUnstake']++;
         
         // Pre action
@@ -86,7 +88,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.updateRate']++;
 
         // Pre action //
@@ -111,7 +113,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 skippedTime_,
         uint256 numberOfEpochs_,
         uint256 bucketSubsetToUpdate_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.claimRewards']++;
 
         // Pre action //
@@ -186,4 +188,53 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
             _stake(tokenId_);
         }
     } 
+
+    modifier writeRewardsLogs() {
+        // Verbosity of Log file for rewardsManager
+        logVerbosity = uint256(vm.envOr("LOGS_VERBOSITY_REWARDS", uint256(0)));
+
+        if (logVerbosity != 0) logToFile = true;
+
+        _;
+
+        if (logVerbosity > 0) {
+            printInNextLine("== RewardsManager Details ==");
+            writeStakedActorLogs();
+            writeEpochRewardLogs();
+            printInNextLine("=======================");
+        }
+    }
+
+    function writeStakedActorLogs() internal {
+
+        for (uint256 i = 0; i < actors.length; i++) {
+
+            uint256[] memory tokenIds = getStakedTokenIdsByActor(actors[i]);
+
+            if (tokenIds.length != 0) {
+                string memory actorStr = string(abi.encodePacked("Actor ", Strings.toString(i), " staked tokenIds: "));
+
+                string memory tokenIdStr;
+                for (uint256 k = 0; k < tokenIds.length; k++) {
+                    tokenIdStr = string(abi.encodePacked(tokenIdStr, " ", Strings.toString(tokenIds[k])));
+                }
+
+                printLine(string.concat(actorStr,tokenIdStr)); 
+            }
+        }
+    }
+
+    function writeEpochRewardLogs() internal {
+        uint256 epoch = 0;
+        if (_pool.currentBurnEpoch() != 0) {
+            while (epoch <= _pool.currentBurnEpoch()) {
+                printLine("");
+                printLog("Epoch = ", epoch);
+                printLog("Claimed Staking Rewards  = ", rewardsClaimedPerEpoch[epoch]);
+                printLog("Claimed Updating Rewards = ", updateRewardsClaimedPerEpoch[epoch]);
+
+                epoch++;
+            }
+        }
+    }
 }
