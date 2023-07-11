@@ -181,7 +181,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
 
         if (tokenIds.length != 0 ) {
             // use existing position NFT
-            tokenId_ = tokenIds[0];
+            tokenId_ = tokenIds[constrictToRange(randomSeed(), 0, tokenIds.length - 1)];
             indexes_ = getBucketIndexesByTokenId(tokenId_);
         } else {
             // create a position for the actor
