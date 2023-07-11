@@ -320,4 +320,22 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
             _ensurePositionsManagerError(err);
         }
     }
+
+    function _transferPosition(
+        address receiver_,
+        uint256 tokenId_
+    ) internal {
+        numberOfCalls['UBPositionHandler.transferPosition']++;
+        try _positionManager.transferFrom(_actor, receiver_, tokenId_) {
+
+            // actor should loses ownership, receiver gains it
+            tokenIdsByActor[address(_actor)].remove(tokenId_);
+            tokenIdsByActor[receiver_].add(tokenId_);
+
+            require(_positionManager.ownerOf(tokenId_) == receiver_, "new NFT owner should be receiver");
+
+        } catch (bytes memory err) {
+            _ensurePositionsManagerError(err);
+        }
+    }
 }

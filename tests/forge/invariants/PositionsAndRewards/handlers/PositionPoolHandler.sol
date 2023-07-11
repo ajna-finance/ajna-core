@@ -102,6 +102,25 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         _moveLiquidity(tokenId, fromIndex, toIndex);
     }
 
+    function transferPosition(
+        uint256 actorIndex_,
+        uint256 bucketIndex_,
+        uint256 skippedTime_,
+        uint256 amountToAdd_
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs {
+        numberOfCalls['BPositionHandler.transferPosition']++;        
+        // Pre action //
+        (uint256 tokenId_, uint256[] memory indexes) = _getNFTPosition(_lenderBucketIndex, amountToAdd_);
+
+        address receiver = actors[constrictToRange(actorIndex_, 0, actors.length - 1)];
+
+        // NFT doesn't have a position associated with it, return
+        if (indexes.length == 0) return;
+        
+        // Action phase //
+        _transferPosition(receiver, tokenId_);
+    }
+
     function _preMemorializePositions(
         uint256 bucketIndex_,
         uint256 amountToAdd_
