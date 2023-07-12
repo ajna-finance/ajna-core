@@ -33,19 +33,23 @@ interface IRewardsManagerState {
 
     /**
      *  @notice Track the total amount of rewards that have been claimed for a given epoch.
+     *  @param  pool_    The pool to get the rewards claimed for.
      *  @param  epoch_   The burn epoch to track if rewards were claimed.
      *  @return The amount of rewards claimed in given epoch.
      */
     function rewardsClaimed(
+        address pool_,
         uint256 epoch_
     ) external view returns (uint256);
 
     /**
      *  @notice Track the total amount of rewards that have been claimed for a given burn event's bucket updates.
+     *  @param  pool_    The pool to get the update rewards claimed for.
      *  @param  epoch_   The burn epoch to track if rewards were claimed.
      *  @return The amount of update rewards claimed in given epoch.
      */
     function updateRewardsClaimed(
+        address pool_,
         uint256 epoch_
     ) external view returns (uint256);
 

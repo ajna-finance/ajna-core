@@ -67,10 +67,10 @@ contract RewardsManager is IRewardsManager {
 
     /// @dev `tokenID => epoch => bool has claimed` mapping.
     mapping(uint256 => mapping(uint256 => bool)) public override isEpochClaimed;
-    /// @dev `epoch => rewards claimed` mapping.
-    mapping(uint256 => uint256) public override rewardsClaimed;
-    /// @dev `epoch => update bucket rate rewards claimed` mapping. Tracks the total amount of update rewards claimed.
-    mapping(uint256 => uint256) public override updateRewardsClaimed;
+    /// @dev `pool => epoch => rewards claimed` mapping.
+    mapping(address => mapping(uint256 => uint256)) public rewardsClaimed;
+    /// @dev `pool => epoch => update bucket rate rewards claimed` mapping. Tracks the total amount of update rewards claimed.
+    mapping(address => mapping(uint256 => uint256)) public updateRewardsClaimed;
 
     /// @dev Mapping of per pool bucket exchange rates at a given burn event `poolAddress => bucketIndex => epoch => bucket exchange rate`.
     mapping(address => mapping(uint256 => mapping(uint256 => uint256))) internal bucketExchangeRates;
@@ -358,7 +358,7 @@ contract RewardsManager is IRewardsManager {
             unchecked { ++epoch; }
 
             // update epoch token claim trackers
-            rewardsClaimed[epoch]           += nextEpochRewards;
+            rewardsClaimed[ajnaPool][epoch] += nextEpochRewards;
             isEpochClaimed[tokenId_][epoch] = true;
         }
     }
@@ -382,7 +382,7 @@ contract RewardsManager is IRewardsManager {
     ) internal view returns (uint256 epochRewards_) {
 
         uint256 nextEpoch = epoch_ + 1;
-        uint256 claimedRewardsInNextEpoch = rewardsClaimed[nextEpoch];
+        uint256 claimedRewardsInNextEpoch = rewardsClaimed[ajnaPool_][nextEpoch];
         uint256 bucketIndex;
         uint256 interestEarned;
 
@@ -628,7 +628,7 @@ contract RewardsManager is IRewardsManager {
                 }
 
                 uint256 rewardsCap            = Maths.wmul(UPDATE_CAP, totalBurnedInEpoch);
-                uint256 rewardsClaimedInEpoch = updateRewardsClaimed[curBurnEpoch];
+                uint256 rewardsClaimedInEpoch = updateRewardsClaimed[pool_][curBurnEpoch];
 
                 // update total tokens claimed for updating bucket exchange rates tracker
                 if (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap) {
@@ -637,7 +637,7 @@ contract RewardsManager is IRewardsManager {
                 }
 
                 // accumulate the full amount of additional rewards
-                updateRewardsClaimed[curBurnEpoch] += updatedRewards_;
+                updateRewardsClaimed[pool_][curBurnEpoch] += updatedRewards_;
             }
         }
 
