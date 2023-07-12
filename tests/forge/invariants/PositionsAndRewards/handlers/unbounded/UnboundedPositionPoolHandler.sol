@@ -322,4 +322,10 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
             _ensurePositionsManagerError(err);
         }
     }
+
+    /*************************/
+    /**** Helper Methods *****/
+    /*************************/
+
+    function updateTokenAndPoolAddress(uint256 tokenId) internal virtual;
 }

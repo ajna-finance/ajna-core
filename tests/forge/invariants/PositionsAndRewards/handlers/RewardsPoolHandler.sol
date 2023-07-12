@@ -169,15 +169,18 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
     ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
 
         // Check for exisiting staked positions in RewardsManager
-        uint256[] memory tokenIds = getStakedTokenIdsByActor(address(_actor));
+        uint256[] memory tokenIds = getStakedTokenIdsByActor(_actor);
 
         if (tokenIds.length != 0 ) {
             // use existing position NFT
             tokenId_ = tokenIds[0];
             indexes_ = getBucketIndexesByTokenId(tokenId_);
+            updateTokenAndPoolAddress(tokenId_);
+            
         } else {
             // retreive or create a NFT position
             (tokenId_, indexes_)= _getNFTPosition(bucketIndex_, amountToAdd_);
+            updateTokenAndPoolAddress(tokenId_);
 
             // approve rewards contract to transfer token
             _positionManager.approve(address(_rewardsManager), tokenId_);

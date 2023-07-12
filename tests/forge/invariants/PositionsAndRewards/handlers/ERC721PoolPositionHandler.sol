@@ -42,4 +42,13 @@ contract ERC721PoolPositionHandler is PositionPoolHandler, BaseERC721PoolHandler
 
         _;
     }
+
+    function updateTokenAndPoolAddress(uint256 tokenId) internal override {
+        address pool = _positionManager.poolKey(tokenId);
+        _pool = Pool(pool);
+        _erc721Pool = ERC721Pool(pool);
+
+        _quote = TokenWithNDecimals(_pool.quoteTokenAddress());
+        _collateral = NFTCollateralToken(_pool.collateralAddress());
+    }
 }

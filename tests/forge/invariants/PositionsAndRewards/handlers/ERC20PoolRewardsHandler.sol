@@ -86,4 +86,13 @@ contract ERC20PoolRewardsHandler is RewardsPoolHandler, ReserveERC20PoolHandler 
         _;
     }
 
+    function updateTokenAndPoolAddress(uint256 tokenId) internal override {
+        address pool = _positionManager.poolKey(tokenId);
+        _pool = Pool(pool);
+        _erc20Pool = ERC20Pool(pool);
+
+        _quote = TokenWithNDecimals(_pool.quoteTokenAddress());
+        _collateral = TokenWithNDecimals(_pool.collateralAddress());
+    }
+
 }
