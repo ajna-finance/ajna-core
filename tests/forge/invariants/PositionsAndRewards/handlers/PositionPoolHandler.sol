@@ -17,7 +17,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) {
         numberOfCalls['BPositionHandler.memorialize']++;
         // Pre action //
         (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositions(_lenderBucketIndex, amountToAdd_);
@@ -31,7 +31,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) {
         numberOfCalls['BPositionHandler.redeem']++;
         // Pre action //
         (uint256 tokenId, uint256[] memory indexes) = _preRedeemPositions(_lenderBucketIndex, amountToAdd_);
@@ -46,7 +46,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
     function mint(
         uint256 actorIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) {
         numberOfCalls['BPositionHandler.mint']++;        
 
         // Action phase //
@@ -58,7 +58,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 bucketIndex_,
         uint256 skippedTime_,
         uint256 amountToAdd_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) {
         numberOfCalls['BPositionHandler.burn']++;        
         // Pre action //
         (uint256 tokenId_) = _preBurn(_lenderBucketIndex, amountToAdd_);
@@ -73,7 +73,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 amountToMove_,
         uint256 fromIndex_,
         uint256 toIndex_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) {
         numberOfCalls['BPositionHandler.moveLiquidity']++;        
         // Pre action //
         (

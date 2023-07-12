@@ -113,8 +113,8 @@ abstract contract UnboundedRewardsPoolHandler is UnboundedPositionPoolHandler {
                 totalRewardsEarnedPostAction += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
 
                 // reset staking and updating rewards earned in epoch
-                rewardsClaimedPerEpoch[epoch]       = _rewardsManager.rewardsClaimed(epoch);
-                updateRewardsClaimedPerEpoch[epoch] = _rewardsManager.updateRewardsClaimed(epoch);
+                rewardsClaimedPerEpoch[address(_pool)][epoch]       = _rewardsManager.rewardsClaimed(epoch);
+                updateRewardsClaimedPerEpoch[address(_pool)][epoch] = _rewardsManager.updateRewardsClaimed(epoch);
             }
 
             require(_positionManager.ownerOf(tokenId_) == address(_actor),
@@ -263,8 +263,8 @@ abstract contract UnboundedRewardsPoolHandler is UnboundedPositionPoolHandler {
                 totalRewardsEarnedPostAction += _rewardsManager.rewardsClaimed(epoch) + _rewardsManager.updateRewardsClaimed(epoch);
 
                 // reset staking and updating rewards earned in epoch
-                rewardsClaimedPerEpoch[epoch]       = _rewardsManager.rewardsClaimed(epoch);
-                updateRewardsClaimedPerEpoch[epoch] = _rewardsManager.updateRewardsClaimed(epoch);
+                rewardsClaimedPerEpoch[address(_pool)][epoch]       = _rewardsManager.rewardsClaimed(epoch);
+                updateRewardsClaimedPerEpoch[address(_pool)][epoch] = _rewardsManager.updateRewardsClaimed(epoch);
             }
 
             (, , uint256 lastClaimedEpoch) = _rewardsManager.getStakeInfo(tokenId_);

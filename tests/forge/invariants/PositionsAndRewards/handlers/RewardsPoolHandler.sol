@@ -90,7 +90,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         numberOfCalls['BRewardsHandler.updateRate']++;
 
         // Pre action //
-        uint256[] memory indexes = getBucketIndexesWithPosition();
+        uint256[] memory indexes = getBucketIndexesWithPosition(address(_pool));
 
         // if there are no existing positions, create a position at a a random index
         if (indexes.length == 0) {

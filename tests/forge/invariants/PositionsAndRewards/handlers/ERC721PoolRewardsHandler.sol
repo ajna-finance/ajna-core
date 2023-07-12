@@ -4,6 +4,10 @@ pragma solidity 0.8.18;
 
 import { RewardsManager }  from 'src/RewardsManager.sol';
 import { PositionManager } from 'src/PositionManager.sol';
+import { Pool }            from 'src/base/Pool.sol';
+import { ERC721Pool }      from 'src/ERC721Pool.sol';
+
+import { TokenWithNDecimals, NFTCollateralToken } from '../../../utils/Tokens.sol';
 
 import { RewardsPoolHandler }       from './RewardsPoolHandler.sol';
 import { ReserveERC721PoolHandler } from '../../ERC721Pool/handlers/ReserveERC721PoolHandler.sol';
@@ -13,14 +17,16 @@ contract ERC721PoolRewardsHandler is RewardsPoolHandler, ReserveERC721PoolHandle
     constructor(
         address rewards_,
         address positions_,
-        address pool_,
+        PoolInfo[10] memory pools_,
         address ajna_,
-        address quote_,
-        address collateral_,
         address poolInfo_,
         uint256 numOfActors_,
         address testContract_
-    ) ReserveERC721PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
+    ) ReserveERC721PoolHandler(pools_[0].pool, ajna_, pools_[0].quote, pools_[0].collateral, poolInfo_, numOfActors_, testContract_) {
+
+        for (uint256 i = 0; i < pools_.length; i++) {
+            _pools.push(pools_[i]);
+        }
 
         // Position manager
         _positionManager = PositionManager(positions_); 
@@ -67,5 +73,15 @@ contract ERC721PoolRewardsHandler is RewardsPoolHandler, ReserveERC721PoolHandle
             indexes_ = _randomizeExchangeRateIndexes(indexes_, bucketSubsetToUpdate_);
             if (indexes_.length != 0) { _updateExchangeRate(indexes_); }
         }
+    }
+
+    modifier useRandomPool(uint256 poolIndex) override {
+        poolIndex   = bound(poolIndex, 0, _pools.length - 1);
+        _pool       = Pool(_pools[poolIndex].pool);
+        _collateral = NFTCollateralToken(_pools[poolIndex].collateral);
+        _quote      = TokenWithNDecimals(_pools[poolIndex].quote);
+        _erc721Pool = ERC721Pool(_pools[poolIndex].pool);
+
+        _;
     }
 }
