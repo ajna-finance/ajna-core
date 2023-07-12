@@ -227,7 +227,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
     }
 
     function writeBucketLogs() internal {
-        uint256[] memory bucketIndexes = getBucketIndexesWithPosition();
+        uint256[] memory bucketIndexes = getBucketIndexesWithPosition(address(_pool));
 
         // loop over bucket indexes with positions
         for (uint256 i = 0; i < bucketIndexes.length; i++) {
@@ -237,7 +237,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
             printLog("Bucket: ", bucketIndex);
 
             // loop over tokenIds in bucket indexes
-            uint256[] memory tokenIds = getTokenIdsByBucketIndex(bucketIndex);
+            uint256[] memory tokenIds = getTokenIdsByBucketIndex(address(_pool), bucketIndex);
             for (uint256 k = 0; k < tokenIds.length; k++) {
                 uint256 tokenId = tokenIds[k];
                 

@@ -233,8 +233,8 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
             while (epoch <= _pool.currentBurnEpoch()) {
                 printLine("");
                 printLog("Epoch = ", epoch);
-                printLog("Claimed Staking Rewards  = ", rewardsClaimedPerEpoch[epoch]);
-                printLog("Claimed Updating Rewards = ", updateRewardsClaimedPerEpoch[epoch]);
+                printLog("Claimed Staking Rewards  = ", rewardsClaimedPerEpoch[address(_pool)][epoch]);
+                printLog("Claimed Updating Rewards = ", updateRewardsClaimedPerEpoch[address(_pool)][epoch]);
 
                 epoch++;
             }
