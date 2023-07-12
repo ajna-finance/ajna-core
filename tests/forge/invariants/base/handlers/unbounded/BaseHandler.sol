@@ -87,8 +87,9 @@ abstract contract BaseHandler is Test {
     bool                     public firstTake;        // if take is called on auction first time
     mapping(address => bool) public alreadyTaken;     // mapping borrower address to true if auction taken atleast once
 
-    string  internal path = "logfile.txt";
-    uint256 internal logFileVerbosity;
+    string  internal path = "logFile.txt";
+    bool    internal logToFile;
+    uint256 internal logVerbosity;
 
     constructor(
         address pool_,
@@ -106,10 +107,7 @@ abstract contract BaseHandler is Test {
         _poolInfo = PoolInfoUtils(poolInfo_);
 
         // Test invariant contract
-        testContract = ITestBase(testContract_);
-        
-        // Verbosity of Log file
-        logFileVerbosity = uint256(vm.envOr("LOGS_VERBOSITY", uint256(0)));
+        testContract = ITestBase(testContract_);    
     }
 
     /*****************/
@@ -237,15 +235,22 @@ abstract contract BaseHandler is Test {
 
     modifier writeLogs() {
         _;
-        if (logFileVerbosity > 0) {
+        // Verbosity of Log file for pools
+        logVerbosity = uint256(vm.envOr("LOGS_VERBOSITY_POOL", uint256(0)));
+
+        if (logVerbosity != 0) logToFile = true;
+
+        if (logToFile == true) {
             if (numberOfCalls["Write logs"]++ == 0) vm.writeFile(path, "");
-            string memory data = string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " =================="));
-            printInNextLine(data);
+            printInNextLine(string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " ==================")));
+        }
+
+        if (logVerbosity > 0) {
             writePoolStateLogs();
-            if (logFileVerbosity > 1) writeAuctionLogs();
-            if (logFileVerbosity > 2) writeBucketsLogs();
-            if (logFileVerbosity > 3) writeLenderLogs();
-            if (logFileVerbosity > 4) writeBorrowerLogs();
+            if (logVerbosity > 1) writeAuctionLogs();
+            if (logVerbosity > 2) writeBucketsLogs();
+            if (logVerbosity > 3) writeLenderLogs();
+            if (logVerbosity > 4) writeBorrowerLogs();
         }
     }
 
