@@ -9,9 +9,6 @@ import { Maths }           from 'src/libraries/internal/Maths.sol';
 import { RewardsPoolHandler }      from './RewardsPoolHandler.sol';
 import { ReserveERC20PoolHandler } from '../../ERC20Pool/handlers/ReserveERC20PoolHandler.sol';
 
-
-import '@std/console.sol';
-
 contract ERC20PoolRewardsHandler is RewardsPoolHandler, ReserveERC20PoolHandler {
 
     constructor(
