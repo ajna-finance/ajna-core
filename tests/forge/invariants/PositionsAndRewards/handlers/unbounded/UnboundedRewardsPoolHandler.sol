@@ -285,25 +285,8 @@ abstract contract UnboundedRewardsPoolHandler is UnboundedPositionPoolHandler {
     function _advanceEpochRewardStakers(
         uint256 amountToAdd_,
         uint256[] memory indexes_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
+        uint256 numberOfEpochs_
     ) internal virtual;
-
-
-    function _randomizeExchangeRateIndexes(
-        uint256[] memory indexes_,
-        uint256 bucketSubsetToUpdate_
-    ) internal pure returns (uint256[] memory boundBuckets_) {
-        
-        uint256 boundIndexes = constrictToRange(bucketSubsetToUpdate_, 0, indexes_.length);
-        boundBuckets_ = new uint256[](boundIndexes);
-
-        if (boundBuckets_.length !=0) {
-            for (uint256 i = 0; i < boundIndexes; i++) {
-                boundBuckets_[i] = indexes_[i];
-            }
-        }
-    }
 
     function _ensureRewardsManagerError(bytes memory err_) internal pure {
         bytes32 err = keccak256(err_);

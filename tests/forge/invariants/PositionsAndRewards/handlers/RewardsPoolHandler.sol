@@ -35,16 +35,14 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
+        uint256 numberOfEpochs_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.unstake']++;
         // Pre action
         (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
             _lenderBucketIndex,
             amountToAdd_,
-            numberOfEpochs_,
-            bucketSubsetToUpdate_
+            numberOfEpochs_
         );
 
         // NFT doesn't have a position associated with it, return
@@ -63,8 +61,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
+        uint256 numberOfEpochs_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.emergencyUnstake']++;
         
@@ -72,8 +69,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
             _lenderBucketIndex,
             amountToAdd_,
-            numberOfEpochs_,
-            bucketSubsetToUpdate_
+            numberOfEpochs_
         );
 
         // NFT doesn't have a position associated with it, return
@@ -111,8 +107,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
+        uint256 numberOfEpochs_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.claimRewards']++;
 
@@ -120,8 +115,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
             _lenderBucketIndex,
             amountToAdd_,
-            numberOfEpochs_,
-            bucketSubsetToUpdate_
+            numberOfEpochs_
         );
 
         // NFT doesn't have a position associated with it, return
@@ -150,8 +144,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
     function _preUnstake(
         uint256 bucketIndex_,
         uint256 amountToAdd_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
+        uint256 numberOfEpochs_
     ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
         (tokenId_, indexes_)= _getStakedPosition(bucketIndex_, amountToAdd_);
 
@@ -159,8 +152,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
             _advanceEpochRewardStakers(
                 amountToAdd_,
                 indexes_,
-                numberOfEpochs_,
-                bucketSubsetToUpdate_
+                numberOfEpochs_
             );
         }
     }
@@ -175,7 +167,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
 
         if (tokenIds.length != 0 ) {
             // use existing position NFT
-            tokenId_ = tokenIds[0];
+            tokenId_ = tokenIds[constrictToRange(randomSeed(), 0, tokenIds.length - 1)];
             indexes_ = getBucketIndexesByTokenId(tokenId_);
         } else {
             // retreive or create a NFT position

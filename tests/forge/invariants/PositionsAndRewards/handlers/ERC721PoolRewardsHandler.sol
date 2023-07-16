@@ -35,8 +35,7 @@ contract ERC721PoolRewardsHandler is RewardsPoolHandler, ReserveERC721PoolHandle
     function _advanceEpochRewardStakers(
         uint256 amountToAdd_,
         uint256[] memory indexes_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
+        uint256 numberOfEpochs_
     ) internal override {
         
         numberOfEpochs_ = constrictToRange(numberOfEpochs_, 1, vm.envOr("MAX_EPOCH_ADVANCE", uint256(2)));
@@ -64,8 +63,7 @@ contract ERC721PoolRewardsHandler is RewardsPoolHandler, ReserveERC721PoolHandle
             _takeReserves(boundedTakeAmount);
 
             // exchange rates must be updated so that rewards can be claimed
-            indexes_ = _randomizeExchangeRateIndexes(indexes_, bucketSubsetToUpdate_);
-            if (indexes_.length != 0) { _updateExchangeRate(indexes_); }
+            if (indexes_.length != 0 && randomSeed() % 2 == 0) { _updateExchangeRate(indexes_); }
         }
     }
 }
