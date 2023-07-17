@@ -15,12 +15,12 @@ contract ERC721PoolPositionHandler is PositionPoolHandler, BaseERC721PoolHandler
 
     constructor(
         address positions_,
-        PoolInfo[10] memory pools_,
+        address[] memory pools_,
         address ajna_,
         address poolInfoUtils_,
         uint256 numOfActors_,
         address testContract_
-    ) BaseERC721PoolHandler(pools_[0].pool, ajna_, pools_[0].quote, pools_[0].collateral, poolInfoUtils_, numOfActors_, testContract_) {
+    ) BaseERC721PoolHandler(pools_[0], ajna_, poolInfoUtils_, numOfActors_, testContract_) {
 
         for (uint256 i = 0; i < pools_.length; i++) {
             _pools.push(pools_[i]);
@@ -35,18 +35,14 @@ contract ERC721PoolPositionHandler is PositionPoolHandler, BaseERC721PoolHandler
 
     modifier useRandomPool(uint256 poolIndex) override {
         poolIndex   = bound(poolIndex, 0, _pools.length - 1);
-        _pool       = Pool(_pools[poolIndex].pool);
-        _collateral = NFTCollateralToken(_pools[poolIndex].collateral);
-        _quote      = TokenWithNDecimals(_pools[poolIndex].quote);
-        _erc721Pool = ERC721Pool(_pools[poolIndex].pool);
+        updateTokenAndPoolAddress(_pools[poolIndex]);
 
         _;
     }
 
-    function updateTokenAndPoolAddress(uint256 tokenId) internal override {
-        address pool = _positionManager.poolKey(tokenId);
-        _pool = Pool(pool);
-        _erc721Pool = ERC721Pool(pool);
+    function updateTokenAndPoolAddress(address pool_) internal override {
+        _pool = Pool(pool_);
+        _erc721Pool = ERC721Pool(pool_);
 
         _quote = TokenWithNDecimals(_pool.quoteTokenAddress());
         _collateral = NFTCollateralToken(_pool.collateralAddress());

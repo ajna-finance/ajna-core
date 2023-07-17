@@ -327,5 +327,5 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
     /**** Helper Methods *****/
     /*************************/
 
-    function updateTokenAndPoolAddress(uint256 tokenId) internal virtual;
+    function updateTokenAndPoolAddress(address pool_) internal virtual;
 }

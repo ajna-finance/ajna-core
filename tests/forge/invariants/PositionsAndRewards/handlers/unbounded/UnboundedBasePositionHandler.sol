@@ -22,13 +22,7 @@ abstract contract UnboundedBasePositionHandler is Test {
 
     uint256 MAX_AJNA_AMOUNT = vm.envOr("MAX_AJNA_AMOUNT_ERC20", uint256(100_000_000 * 1e18));
 
-    struct PoolInfo {
-        address pool;
-        address collateral;
-        address quote;
-    }
-
-    PoolInfo[] internal _pools;
+    address[] internal _pools;
 
     // positionManager & rewardsManager
     mapping(address => EnumerableSet.UintSet) internal bucketIndexesWithPosition;

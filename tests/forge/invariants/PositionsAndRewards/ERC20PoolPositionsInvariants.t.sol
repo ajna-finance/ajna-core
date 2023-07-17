@@ -23,8 +23,7 @@ import { PositionsInvariants }         from './PositionsInvariants.sol';
 
 contract ERC20PoolPositionsInvariants is PositionsInvariants {
 
-    ERC20PoolPositionHandler              internal _erc20positionHandler;
-    ERC20PoolPositionHandler.PoolInfo[10] internal _poolsInfo;
+    ERC20PoolPositionHandler internal _erc20positionHandler;
 
     function setUp() public override virtual {
 
@@ -35,15 +34,17 @@ contract ERC20PoolPositionsInvariants is PositionsInvariants {
         _erc721impl        = _erc721poolFactory.implementation();
         _positionManager   = new PositionManager(_erc20poolFactory, _erc721poolFactory);
 
-        for (uint256 i = 0; i < 10; ++i) {
-            _poolsInfo[i].collateral = address(new TokenWithNDecimals(string(abi.encodePacked("Collateral", Strings.toString(i + 1))), "C", uint8(vm.envOr("COLLATERAL_PRECISION", uint256(18)))));
-            _poolsInfo[i].quote      = address(new TokenWithNDecimals(string(abi.encodePacked("Quote", Strings.toString(i + 1))), "Q", uint8(vm.envOr("QUOTE_PRECISION", uint256(18)))));
-            _poolsInfo[i].pool       = address(_erc20poolFactory.deployPool(_poolsInfo[i].collateral, _poolsInfo[i].quote, 0.05 * 10**18));
+        uint256 noOfPools = vm.envOr("NO_OF_POOLS", uint256(10));
 
-            excludeContract(_poolsInfo[i].collateral);
-            excludeContract(_poolsInfo[i].quote);
-            excludeContract(_poolsInfo[i].pool);
-            _pools.push(_poolsInfo[i].pool);
+        for (uint256 i = 0; i < noOfPools; ++i) {
+            address collateral = address(new TokenWithNDecimals(string(abi.encodePacked("Collateral", Strings.toString(i + 1))), "C", uint8(vm.envOr("COLLATERAL_PRECISION", uint256(18)))));
+            address quote      = address(new TokenWithNDecimals(string(abi.encodePacked("Quote", Strings.toString(i + 1))), "Q", uint8(vm.envOr("QUOTE_PRECISION", uint256(18)))));
+            address pool       = address(_erc20poolFactory.deployPool(collateral, quote, 0.05 * 10**18));
+
+            excludeContract(collateral);
+            excludeContract(quote);
+            excludeContract(pool);
+            _pools.push(pool);
         }
 
         excludeContract(address(_ajna));
@@ -57,7 +58,7 @@ contract ERC20PoolPositionsInvariants is PositionsInvariants {
 
         _erc20positionHandler = new ERC20PoolPositionHandler(
             address(_positionManager),
-            _poolsInfo,
+            _pools,
             address(_ajna),
             address(_poolInfo),
             NUM_ACTORS,

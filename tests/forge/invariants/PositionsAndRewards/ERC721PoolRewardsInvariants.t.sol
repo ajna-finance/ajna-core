@@ -21,8 +21,7 @@ import { RewardsInvariants }        from './RewardsInvariants.t.sol';
 
 contract ERC721PoolRewardsInvariants is RewardsInvariants {
 
-    ERC721PoolRewardsHandler              internal _erc721poolrewardsHandler;
-    ERC721PoolRewardsHandler.PoolInfo[10] internal _poolsInfo;
+    ERC721PoolRewardsHandler internal _erc721poolrewardsHandler;
     
     function setUp() public override virtual {
 
@@ -36,15 +35,17 @@ contract ERC721PoolRewardsInvariants is RewardsInvariants {
         _positionManager   = new PositionManager(_erc20poolFactory, _erc721poolFactory);
         _rewardsManager    = new RewardsManager(address(_ajna), _positionManager);
 
-        for (uint256 i = 0; i < 10; ++i) {
-            _poolsInfo[i].collateral = address(new NFTCollateralToken());
-            _poolsInfo[i].quote      = address(new TokenWithNDecimals(string(abi.encodePacked("Quote", Strings.toString(i + 1))), "Q", uint8(vm.envOr("QUOTE_PRECISION", uint256(18)))));
-            _poolsInfo[i].pool       = address(_erc721poolFactory.deployPool(_poolsInfo[i].collateral, _poolsInfo[i].quote, tokenIds, 0.05 * 10**18));
+        uint256 noOfPools = vm.envOr("NO_OF_POOLS", uint256(10));
 
-            excludeContract(_poolsInfo[i].collateral);
-            excludeContract(_poolsInfo[i].quote);
-            excludeContract(_poolsInfo[i].pool);
-            _pools.push(_poolsInfo[i].pool);
+        for (uint256 i = 0; i < noOfPools; ++i) {
+            address collateral = address(new NFTCollateralToken());
+            address quote      = address(new TokenWithNDecimals(string(abi.encodePacked("Quote", Strings.toString(i + 1))), "Q", uint8(vm.envOr("QUOTE_PRECISION", uint256(18)))));
+            address pool       = address(_erc721poolFactory.deployPool(collateral, quote, tokenIds, 0.05 * 10**18));
+
+            excludeContract(collateral);
+            excludeContract(quote);
+            excludeContract(pool);
+            _pools.push(pool);
         }
 
         // fund the rewards manager with 100M ajna
@@ -63,7 +64,7 @@ contract ERC721PoolRewardsInvariants is RewardsInvariants {
         _erc721poolrewardsHandler = new ERC721PoolRewardsHandler(
             address(_rewardsManager),
             address(_positionManager),
-            _poolsInfo,
+            _pools,
             address(_ajna),
             address(_poolInfo),
             NUM_ACTORS,

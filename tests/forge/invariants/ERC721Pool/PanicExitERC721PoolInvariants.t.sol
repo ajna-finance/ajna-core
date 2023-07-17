@@ -29,8 +29,6 @@ contract PanicExitERC721PoolInvariants is BasicERC721PoolInvariants, Liquidation
         _panicExitERC721PoolHandler = new PanicExitERC721PoolHandler(
             address(_erc721pool),
             address(_ajna),
-            address(_quote),
-            address(_collateral),
             address(_poolInfo),
             address(this)
         );

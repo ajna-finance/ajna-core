@@ -37,8 +37,6 @@ contract BasicERC20PoolInvariants is BasicInvariants {
         _basicERC20PoolHandler = new BasicERC20PoolHandler(
             address(_erc20pool),
             address(_ajna),
-            address(_quote),
-            address(_collateral),
             address(_poolInfo),
             _numOfActors,
             address(this)
