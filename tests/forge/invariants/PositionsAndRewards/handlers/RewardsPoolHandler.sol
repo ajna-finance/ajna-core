@@ -92,7 +92,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         numberOfCalls['BRewardsHandler.updateRate']++;
 
         // Pre action //
-        uint256[] memory indexes = getBucketIndexesWithPosition();
+        uint256[] memory indexes = getBucketIndexesWithPosition(address(_pool));
 
         // if there are no existing positions, create a position at a a random index
         if (indexes.length == 0) {
@@ -171,15 +171,18 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
     ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
 
         // Check for exisiting staked positions in RewardsManager
-        uint256[] memory tokenIds = getStakedTokenIdsByActor(address(_actor));
+        uint256[] memory tokenIds = getStakedTokenIdsByActor(_actor);
 
         if (tokenIds.length != 0 ) {
             // use existing position NFT
             tokenId_ = tokenIds[0];
             indexes_ = getBucketIndexesByTokenId(tokenId_);
+            updateTokenAndPoolAddress(_positionManager.poolKey(tokenId_));
+            
         } else {
             // retreive or create a NFT position
             (tokenId_, indexes_)= _getNFTPosition(bucketIndex_, amountToAdd_);
+            updateTokenAndPoolAddress(_positionManager.poolKey(tokenId_));
 
             // approve rewards contract to transfer token
             _positionManager.approve(address(_rewardsManager), tokenId_);
@@ -230,8 +233,8 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
             while (epoch <= _pool.currentBurnEpoch()) {
                 printLine("");
                 printLog("Epoch = ", epoch);
-                printLog("Claimed Staking Rewards  = ", rewardsClaimedPerEpoch[epoch]);
-                printLog("Claimed Updating Rewards = ", updateRewardsClaimedPerEpoch[epoch]);
+                printLog("Claimed Staking Rewards  = ", rewardsClaimedPerEpoch[address(_pool)][epoch]);
+                printLog("Claimed Updating Rewards = ", updateRewardsClaimedPerEpoch[address(_pool)][epoch]);
 
                 epoch++;
             }

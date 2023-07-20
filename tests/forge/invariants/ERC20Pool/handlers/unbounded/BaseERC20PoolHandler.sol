@@ -24,12 +24,10 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
     constructor(
         address pool_,
         address ajna_,
-        address quote_,
-        address collateral_,
         address poolInfo_,
         uint256 numOfActors_,
         address testContract_
-    ) BaseHandler(pool_, ajna_, quote_, poolInfo_, testContract_) {
+    ) BaseHandler(pool_, ajna_, poolInfo_, testContract_) {
 
         LENDER_MIN_BUCKET_INDEX = vm.envOr("BUCKET_INDEX_ERC20", uint256(2570));
         LENDER_MAX_BUCKET_INDEX = LENDER_MIN_BUCKET_INDEX + vm.envOr("NO_OF_BUCKETS", uint256(3)) - 1;
@@ -47,11 +45,11 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
             buckets.add(bucket);
         }
 
-        // Tokens
-        _collateral = TokenWithNDecimals(collateral_);
-
         // Pool
         _erc20Pool  = ERC20Pool(pool_);
+
+        // Tokens
+        _collateral = TokenWithNDecimals(_erc20Pool.collateralAddress());
 
         // Actors
         actors = _buildActors(numOfActors_);

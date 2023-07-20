@@ -33,19 +33,23 @@ interface IRewardsManagerState {
 
     /**
      *  @notice Track the total amount of rewards that have been claimed for a given epoch.
+     *  @param  pool_    The pool to get the rewards claimed for.
      *  @param  epoch_   The burn epoch to track if rewards were claimed.
      *  @return The amount of rewards claimed in given epoch.
      */
-    function rewardsClaimed(
+    function getRewardsClaimed(
+        address pool_,
         uint256 epoch_
     ) external view returns (uint256);
 
     /**
      *  @notice Track the total amount of rewards that have been claimed for a given burn event's bucket updates.
+     *  @param  pool_    The pool to get the update rewards claimed for.
      *  @param  epoch_   The burn epoch to track if rewards were claimed.
      *  @return The amount of update rewards claimed in given epoch.
      */
-    function updateRewardsClaimed(
+    function getUpdateRewardsClaimed(
+        address pool_,
         uint256 epoch_
     ) external view returns (uint256);
 
@@ -91,4 +95,11 @@ struct StakeInfo {
 struct BucketState {
     uint256 lpsAtStakeTime;  // [WAD] LP amount the NFT owner is entitled in current bucket at the time of staking
     uint256 rateAtStakeTime; // [WAD] current bucket exchange rate at the time of staking
+}
+
+/// @dev Struct holding Pool rewards info
+struct PoolRewardsInfo {
+    mapping(uint256 => uint256) rewardsClaimed;                           // staking rewards claimed in a epoch
+    mapping(uint256 => uint256) updateBucketRewardsClaimed;               // update exchange rate rewards claimed in a epoch
+    mapping(uint256 => mapping(uint256 => uint256)) bucketExchangeRates;  // bucket exchange rates at a given burn event for each bucket
 }
