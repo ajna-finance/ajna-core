@@ -39,6 +39,8 @@ abstract contract UnboundedBasePositionHandler is Test {
     mapping(uint256 => uint256) public rewardsClaimedPerEpoch;       // staking rewards per epoch
     mapping(uint256 => uint256) public updateRewardsClaimedPerEpoch; // updating rewards per epoch
 
+    uint256 internal counter = 1;
+
     using EnumerableSet for EnumerableSet.UintSet;
 
     function getBucketIndexesWithPosition() public view returns(uint256[] memory) {
@@ -59,6 +61,11 @@ abstract contract UnboundedBasePositionHandler is Test {
 
     function getStakedTokenIdsByActor(address actor_) public view returns(uint256[] memory) {
         return stakedTokenIdsByActor[actor_].values();
+    }
+
+    function randomSeed() internal returns (uint256) {
+        counter++;
+        return uint256(keccak256(abi.encodePacked(block.number, block.difficulty, counter)));
     }
 
     function _ensurePositionsManagerError(bytes memory err_) internal pure {
