@@ -838,34 +838,35 @@ contract ERC20PoolLiquidationKickFuzzyTest is ERC20FuzzyHelperContract {
     address internal _lender;
     address internal _kicker;
     address[] internal _borrowers;
-    uint256[5] internal _buckets = [2550, 2551, 2552, 2553, 2554];
     function setUp() external {
         _startTest();
         _lender = makeAddr("lender");
         _kicker = makeAddr("kicker");
     }
 
-    function testBorrowAndKickFuzzy(uint256 noOfBorrowers, uint256 totalPoolLiquidity) external tearDown {
+    function testBorrowAndKickFuzzy(uint256 noOfBorrowers, uint256 totalPoolLiquidity, uint256 startingBucket, uint256 noOfBuckets) external tearDown {
         noOfBorrowers  = bound(noOfBorrowers, 1, 10);
         totalPoolLiquidity = bound(totalPoolLiquidity, 100 * 1e18, 1_000_000_000 * 1e18);
+        startingBucket = bound(startingBucket, 1, 7300);
+        noOfBuckets = bound(noOfBuckets, 5, 10);
 
         _mintQuoteAndApproveTokens(_lender, totalPoolLiquidity);
 
         // lender deposits all liquidity in 5 buckets
-        for(uint i = 0; i < 5; i++) {
+        for(uint i = 0; i < noOfBuckets; i++) {
             _addLiquidity({
                 from:    _lender,
-                amount:  totalPoolLiquidity / 5,
-                index:   _buckets[i],
-                lpAward: totalPoolLiquidity / 5,
+                amount:  totalPoolLiquidity / noOfBuckets,
+                index:   startingBucket + i,
+                lpAward: totalPoolLiquidity / noOfBuckets,
                 newLup:  MAX_PRICE
             });
 
             _assertBucket({
-                index:        _buckets[i],
-                lpBalance:    totalPoolLiquidity / 5,
+                index:        startingBucket + i,
+                lpBalance:    totalPoolLiquidity / noOfBuckets,
                 collateral:   0,
-                deposit:      totalPoolLiquidity / 5,
+                deposit:      totalPoolLiquidity / noOfBuckets,
                 exchangeRate: 1 * 1e18
             });
         }
