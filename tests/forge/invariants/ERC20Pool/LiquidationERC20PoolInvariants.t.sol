@@ -21,8 +21,6 @@ contract LiquidationERC20PoolInvariants is BasicERC20PoolInvariants, Liquidation
         _liquidationERC20PoolHandler = new LiquidationERC20PoolHandler(
             address(_erc20pool),
             address(_ajna),
-            address(_quote),
-            address(_collateral),
             address(_poolInfo),
             _numOfActors,
             address(this)

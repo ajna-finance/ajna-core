@@ -10,12 +10,10 @@ contract LiquidationERC721PoolHandler is LiquidationPoolHandler, BasicERC721Pool
     constructor(
         address pool_,
         address ajna_,
-        address quote_,
-        address collateral_,
         address poolInfo_,
         uint256 numOfActors_,
         address testContract_
-    ) BasicERC721PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
+    ) BasicERC721PoolHandler(pool_, ajna_, poolInfo_, numOfActors_, testContract_) {
 
     }
 

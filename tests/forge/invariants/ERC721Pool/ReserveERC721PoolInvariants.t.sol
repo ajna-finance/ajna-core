@@ -23,8 +23,6 @@ contract ReserveERC721PoolInvariants is ReserveInvariants, LiquidationERC721Pool
         _reserveERC721PoolHandler = new ReserveERC721PoolHandler(
             address(_erc721pool),
             address(_ajna),
-            address(_quote),
-            address(_collateral),
             address(_poolInfo),
             _numOfActors,
             address(this)

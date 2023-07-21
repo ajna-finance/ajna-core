@@ -29,8 +29,6 @@ contract TradingERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationInva
         _tradingERC20PoolHandler = new TradingERC20PoolHandler(
             address(_erc20pool),
             address(_ajna),
-            address(_quote),
-            address(_collateral),
             address(_poolInfo),
             address(this)
         );
