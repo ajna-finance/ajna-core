@@ -652,11 +652,12 @@ contract RewardsManager is IRewardsManager {
                 // update total tokens claimed for updating bucket exchange rates tracker
                 if (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap) {
                     // if update reward is greater than cap, set to remaining difference
-                    updatedRewards_ = rewardsClaimedInEpoch > rewardsCap ? 0 : rewardsCap - rewardsClaimedInEpoch;
+                    if (rewardsClaimedInEpoch > rewardsCap) return 0;
+                    unchecked { updatedRewards_ = rewardsCap - rewardsClaimedInEpoch; }
                 }
 
                 // accumulate the full amount of additional rewards
-                updateRewardsClaimed[curBurnEpoch] += updatedRewards_;
+                updateRewardsClaimed[curBurnEpoch] = rewardsClaimedInEpoch + updatedRewards_;
             }
         }
 
