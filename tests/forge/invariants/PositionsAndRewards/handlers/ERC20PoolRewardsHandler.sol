@@ -5,6 +5,10 @@ pragma solidity 0.8.18;
 import { RewardsManager }  from 'src/RewardsManager.sol';
 import { PositionManager } from 'src/PositionManager.sol';
 import { Maths }           from 'src/libraries/internal/Maths.sol';
+import { Pool }            from 'src/base/Pool.sol';
+import { ERC20Pool }       from 'src/ERC20Pool.sol';
+
+import { TokenWithNDecimals }          from '../../../utils/Tokens.sol';
 
 import { RewardsPoolHandler }      from './RewardsPoolHandler.sol';
 import { ReserveERC20PoolHandler } from '../../ERC20Pool/handlers/ReserveERC20PoolHandler.sol';
@@ -14,14 +18,16 @@ contract ERC20PoolRewardsHandler is RewardsPoolHandler, ReserveERC20PoolHandler 
     constructor(
         address rewards_,
         address positions_,
-        address pool_,
+        address[] memory pools_,
         address ajna_,
-        address quote_,
-        address collateral_,
-        address poolInfo_,
+        address poolInfoUtils_,
         uint256 numOfActors_,
         address testContract_
-    ) ReserveERC20PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
+    ) ReserveERC20PoolHandler(pools_[0], ajna_, poolInfoUtils_, numOfActors_, testContract_) {
+
+        for (uint256 i = 0; i < pools_.length; i++) {
+            _pools.push(pools_[i]);
+        }
 
         // Position manager
         _positionManager = PositionManager(positions_); 
@@ -68,4 +74,20 @@ contract ERC20PoolRewardsHandler is RewardsPoolHandler, ReserveERC20PoolHandler 
             if (indexes_.length != 0 && randomSeed() % 2 == 0) { _updateExchangeRate(indexes_); }
         }
     }
+
+    modifier useRandomPool(uint256 poolIndex) override {
+        poolIndex   = bound(poolIndex, 0, _pools.length - 1);
+        updateTokenAndPoolAddress(_pools[poolIndex]);
+        
+        _;
+    }
+
+    function updateTokenAndPoolAddress(address pool_) internal override {
+        _pool = Pool(pool_);
+        _erc20Pool = ERC20Pool(pool_);
+
+        _quote = TokenWithNDecimals(_pool.quoteTokenAddress());
+        _collateral = TokenWithNDecimals(_pool.collateralAddress());
+    }
+
 }

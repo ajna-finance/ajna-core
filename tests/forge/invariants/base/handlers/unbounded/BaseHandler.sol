@@ -95,17 +95,16 @@ abstract contract BaseHandler is Test {
     constructor(
         address pool_,
         address ajna_,
-        address quote_,
         address poolInfo_,
         address testContract_
     ) {
-        // Tokens
-        _ajna       = BurnableToken(ajna_);
-        _quote      = TokenWithNDecimals(quote_);
-
         // Pool
         _pool     = Pool(pool_);
         _poolInfo = PoolInfoUtils(poolInfo_);
+
+        // Tokens
+        _ajna       = BurnableToken(ajna_);
+        _quote      = TokenWithNDecimals(_pool.quoteTokenAddress());
 
         // Test invariant contract
         testContract = ITestBase(testContract_);    

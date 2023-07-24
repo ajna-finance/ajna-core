@@ -3,6 +3,8 @@
 pragma solidity 0.8.18;
 
 import "@std/console.sol";
+
+import { Pool }                          from 'src/base/Pool.sol';
 import { Maths }                         from 'src/libraries/internal/Maths.sol';
 import { RewardsManager, _getEpochInfo } from 'src/RewardsManager.sol';
 
@@ -16,31 +18,34 @@ abstract contract RewardsInvariants is PositionsInvariants {
 
     function invariant_rewards_RW1_RW2() public useCurrentTimestamp {
 
-        uint256 epoch; // incremented every `kickReserve()` call
+        for (uint256 poolIndex = 0; poolIndex < _pools.length; poolIndex++) {
+            address pool = _pools[poolIndex];
+            uint256 epoch; // incremented every `kickReserve()` call
 
-        while (epoch <= _pool.currentBurnEpoch()) {
-            // get staking rewards that have been claimed
-            uint256 rewardsClaimed = IPositionsAndRewardsHandler(_handler).rewardsClaimedPerEpoch(epoch);
+            while (epoch <= Pool(pool).currentBurnEpoch()) {
+                // get staking rewards that have been claimed
+                uint256 rewardsClaimed = IPositionsAndRewardsHandler(_handler).rewardsClaimedPerEpoch(pool, epoch);
 
-            // get updating rewards that have been claimed 
-            uint256 updateRewardsClaimed = IPositionsAndRewardsHandler(_handler).updateRewardsClaimedPerEpoch(epoch);
+                // get updating rewards that have been claimed 
+                uint256 updateRewardsClaimed = IPositionsAndRewardsHandler(_handler).updateRewardsClaimedPerEpoch(pool, epoch);
 
-            // total ajna burned by the pool over the epoch
-            (, uint256 totalBurnedInPeriod,) = _getEpochInfo(address(_pool), epoch);
+                // total ajna burned by the pool over the epoch
+                (, uint256 totalBurnedInPeriod,) = _getEpochInfo(pool, epoch);
 
-            // stake rewards cap is 80% of total burned
-            uint256 stakeRewardsCap = Maths.wmul(totalBurnedInPeriod, 0.8 * 1e18);
+                // stake rewards cap is 80% of total burned
+                uint256 stakeRewardsCap = Maths.wmul(totalBurnedInPeriod, 0.8 * 1e18);
 
-            // update rewards cap is 10% of total burned
-            uint256 updateRewardsCap = Maths.wmul(totalBurnedInPeriod, 0.1 * 1e18);
+                // update rewards cap is 10% of total burned
+                uint256 updateRewardsCap = Maths.wmul(totalBurnedInPeriod, 0.1 * 1e18);
 
-            // check claimed rewards <= rewards cap
-            if (stakeRewardsCap != 0) require(rewardsClaimed <= stakeRewardsCap, "Rewards invariant RW1");
+                // check claimed rewards <= rewards cap
+                if (stakeRewardsCap != 0) require(rewardsClaimed <= stakeRewardsCap, "Rewards invariant RW1");
 
-            // check update rewards <= rewards cap
-            if (updateRewardsCap != 0) require(updateRewardsClaimed <= updateRewardsCap, "Rewards invariant RW2");
+                // check update rewards <= rewards cap
+                if (updateRewardsCap != 0) require(updateRewardsClaimed <= updateRewardsCap, "Rewards invariant RW2");
 
-            epoch++;
+                epoch++;
+            }
         }
     }
 
