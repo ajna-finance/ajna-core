@@ -434,7 +434,7 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         Test was reverting when redeemedLps = bucketLps but lenderlps < redeemedLps, this happens due to slight rounding error in deposit calculation from lps
         Fixed by updating redeemedLP calculations to `vars.redeemedLP = Maths.min(lender.lps, vars.redeemedLP)`
     */
-    function test_regression_evm_revert_12() external {
+    function test_regression_evm_revert_2() external {
         _reserveERC20PoolHandler.moveQuoteToken(1, 2, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 158129467307529830729349478455, 0);
         _reserveERC20PoolHandler.removeQuoteToken(2999999999999999484865294266928579000517539849, 20462, 1576762402919713971836094859031, 0);
         _reserveERC20PoolHandler.takeReserves(115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 0);

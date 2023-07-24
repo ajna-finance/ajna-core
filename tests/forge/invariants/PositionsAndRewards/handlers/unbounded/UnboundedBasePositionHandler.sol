@@ -65,7 +65,7 @@ abstract contract UnboundedBasePositionHandler is Test {
 
     function randomSeed() internal returns (uint256) {
         counter++;
-        return uint256(keccak256(abi.encodePacked(block.number, block.difficulty, counter)));
+        return uint256(keccak256(abi.encodePacked(block.number, block.prevrandao, counter)));
     }
 
     function _ensurePositionsManagerError(bytes memory err_) internal pure {
