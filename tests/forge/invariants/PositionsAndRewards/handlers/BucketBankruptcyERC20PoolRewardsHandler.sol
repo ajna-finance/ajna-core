@@ -95,7 +95,7 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
     ) external useRandomLenderBucket(fromBucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BPriceFall.moveQuoteTokenToLowerBucket']++;
 
-        toBucketIndex_ = constrictToRange(toBucketIndex_, fromBucketIndex_, 7388);
+        toBucketIndex_ = constrictToRange(toBucketIndex_, _lenderBucketIndex, 7388);
 
         uint256 boundedAmount = _preMoveQuoteToken(amountToMove_, _lenderBucketIndex, toBucketIndex_);
 
@@ -151,6 +151,7 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
         _moveLiquidity(tokenId, indexes[0], toIndex_);
 
         // re-stake Token
+        _positionManager.approve(address(_rewardsManager), tokenId);
         _stake(tokenId);
     }
 
@@ -159,7 +160,7 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
         uint256 takerIndex_,
         uint256 skippedTime_
     ) external useTimestamps useRandomActor(takerIndex_) skipTime(skippedTime_) writeLogs {
-        address borrower = _borrowers[constrictToRange(borrowerIndex_, 0, _borrowers.length)];
+        address borrower = _borrowers[constrictToRange(borrowerIndex_, 0, _borrowers.length - 1)];
 
         (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
