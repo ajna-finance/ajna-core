@@ -227,24 +227,29 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
     }
 
     function writeBucketLogs() internal {
-        uint256[] memory bucketIndexes = getBucketIndexesWithPosition(address(_pool));
+        for (uint256 i = 0; i < _pools.length; i++) {
+            address pool = _pools[i];
+            printLine(string.concat("Pool: ", Strings.toHexString(uint160(pool), 20)));
+            uint256[] memory bucketIndexes = getBucketIndexesWithPosition(pool);
 
-        // loop over bucket indexes with positions
-        for (uint256 i = 0; i < bucketIndexes.length; i++) {
-            uint256 bucketIndex = bucketIndexes[i];
+            // loop over bucket indexes with positions
+            for (uint256 j = 0; j < bucketIndexes.length; j++) {
+                uint256 bucketIndex = bucketIndexes[j];
 
-            printLine("");
-            printLog("Bucket: ", bucketIndex);
+                printLine("");
+                printLog("Bucket: ", bucketIndex);
 
-            // loop over tokenIds in bucket indexes
-            uint256[] memory tokenIds = getTokenIdsByBucketIndex(address(_pool), bucketIndex);
-            for (uint256 k = 0; k < tokenIds.length; k++) {
-                uint256 tokenId = tokenIds[k];
-                
-                uint256 posLp = _positionManager.getLP(tokenId, bucketIndex);
-                string memory tokenIdStr = string.concat("tokenID ", Strings.toString(tokenId));
-                printLog(string.concat(tokenIdStr, " LP in positionMan = "), posLp);
+                // loop over tokenIds in bucket indexes
+                uint256[] memory tokenIds = getTokenIdsByBucketIndex(pool, bucketIndex);
+                for (uint256 k = 0; k < tokenIds.length; k++) {
+                    uint256 tokenId = tokenIds[k];
+                    
+                    uint256 posLp = _positionManager.getLP(tokenId, bucketIndex);
+                    string memory tokenIdStr = string.concat("tokenID ", Strings.toString(tokenId));
+                    printLog(string.concat(tokenIdStr, " LP in positionMan = "), posLp);
+                }
             }
         }
+        
     }
 }
