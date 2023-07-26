@@ -2,7 +2,6 @@
 
 pragma solidity 0.8.18;
 
-import "@std/console.sol";
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
 import { Maths }             from 'src/libraries/internal/Maths.sol';

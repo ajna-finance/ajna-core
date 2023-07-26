@@ -19,7 +19,7 @@ abstract contract BaseRewardsPoolHandler is UnboundedRewardsPoolHandler, BasePos
     ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
 
         // retreive or create a NFT position
-        (tokenId_, indexes_)= _getNFTPosition(bucketIndex_, amountToAdd_);
+        (tokenId_, indexes_) = _getNFTPosition(bucketIndex_, amountToAdd_);
 
         // Approve rewards contract to transfer token
         _positionManager.approve(address(_rewardsManager), tokenId_); 
@@ -31,7 +31,7 @@ abstract contract BaseRewardsPoolHandler is UnboundedRewardsPoolHandler, BasePos
         uint256 numberOfEpochs_,
         uint256 bucketSubsetToUpdate_
     ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
-        (tokenId_, indexes_)= _getStakedPosition(bucketIndex_, amountToAdd_);
+        (tokenId_, indexes_) = _getStakedPosition(bucketIndex_, amountToAdd_);
 
         if (indexes_.length != 0) {
             _advanceEpochRewardStakers(
@@ -59,7 +59,7 @@ abstract contract BaseRewardsPoolHandler is UnboundedRewardsPoolHandler, BasePos
             
         } else {
             // retreive or create a NFT position
-            (tokenId_, indexes_)= _getNFTPosition(bucketIndex_, amountToAdd_);
+            (tokenId_, indexes_) = _getNFTPosition(bucketIndex_, amountToAdd_);
             updateTokenAndPoolAddress(_positionManager.poolKey(tokenId_));
 
             // approve rewards contract to transfer token
