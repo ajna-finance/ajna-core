@@ -230,6 +230,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
     }
 
     function writeEpochRewardLogs() internal {
+        // loop over pools
         for (uint256 i = 0; i < _pools.length; i++) {
             address pool = _pools[i];
             printLine(string.concat("Pool: ", Strings.toHexString(uint160(pool), 20)));

@@ -3,7 +3,6 @@
 pragma solidity 0.8.18;
 
 import { BasicERC20PoolInvariants } from "../../invariants/ERC20Pool/BasicERC20PoolInvariants.t.sol";
-import "@std/console.sol";
 
 contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants { 
 
