@@ -24,7 +24,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) writeLogs writePositionLogs {
         numberOfCalls['BPositionHandler.memorialize']++;
         // Pre action //
-        (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositionsMultipleBuckets(noOfBuckets_, amountToAdd_);
+        (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositions(noOfBuckets_, amountToAdd_);
 
         // Action phase // 
         _memorializePositions(tokenId, indexes);
@@ -104,7 +104,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         _moveLiquidity(tokenId, fromIndex, toIndex);
     }
 
-    function _preMemorializePositionsMultipleBuckets(
+    function _preMemorializePositions(
         uint256 noOfBuckets_,
         uint256 amountToAdd_
     ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
@@ -190,7 +190,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
             indexes_ = getBucketIndexesByTokenId(tokenId_);
         } else {
             // create a position for the actor
-            (tokenId_, indexes_) = _preMemorializePositionsMultipleBuckets(noOfBuckets_, amountToAdd_); 
+            (tokenId_, indexes_) = _preMemorializePositions(noOfBuckets_, amountToAdd_); 
             _memorializePositions(tokenId_, indexes_);
         }
     }
@@ -255,6 +255,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
     function getRandomIndexes(uint256 noOfBuckets_) internal returns (uint256[] memory randomBuckets_) {
         uint256[] memory allBuckets = buckets.values();
         randomBuckets_ = new uint256[](noOfBuckets_);
+        
         for (uint256 i = 0; i < noOfBuckets_; i++) {
             uint256 bucketIndex = constrictToRange(randomSeed(), 0, allBuckets.length - 1 - i);
             uint256 bucket = allBuckets[bucketIndex];
