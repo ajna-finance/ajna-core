@@ -56,6 +56,12 @@ abstract contract BaseRewardsPoolHandler is UnboundedRewardsPoolHandler, BasePos
             tokenId_ = tokenIds[0];
             indexes_ = getBucketIndexesByTokenId(tokenId_);
             updateTokenAndPoolAddress(_positionManager.poolKey(tokenId_));
+
+            // create position in NFT if not already there
+            if (indexes_.length == 0) {
+                indexes_ = _getPosition(bucketIndex_, amountToAdd_);
+                _memorializePositions(tokenId_, indexes_);
+            }
             
         } else {
             // retreive or create a NFT position

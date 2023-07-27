@@ -16,31 +16,10 @@ abstract contract BasePositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 bucketIndex_,
         uint256 amountToAdd_
     ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
-
-        // ensure actor has a position
-        (uint256 lpBalanceBefore,) = _pool.lenderInfo(bucketIndex_, _actor);
-
-        // add quote token if they don't have a position
-        if (lpBalanceBefore == 0) {
-            // bound amount
-            uint256 boundedAmount = constrictToRange(amountToAdd_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
-            _ensureQuoteAmount(_actor, boundedAmount);
-            try _pool.addQuoteToken(boundedAmount, bucketIndex_, block.timestamp + 1 minutes, false) {
-            } catch (bytes memory err) {
-                _ensurePoolError(err);
-            }
-        }
-
-        indexes_ = new uint256[](1);
-        indexes_[0] = bucketIndex_;
-
-        uint256[] memory lpBalances = new uint256[](1);
+        indexes_ = _getPosition(bucketIndex_, amountToAdd_);
 
         // mint position NFT
         tokenId_ = _mint();
-
-        (lpBalances[0], ) = _pool.lenderInfo(bucketIndex_, _actor);
-        _pool.increaseLPAllowance(address(_positionManager), indexes_, lpBalances);
     }
 
     function _preRedeemPositions(
@@ -94,10 +73,43 @@ abstract contract BasePositionPoolHandler is UnboundedPositionPoolHandler {
             // use existing position NFT
             tokenId_ = tokenIds[0];
             indexes_ = getBucketIndexesByTokenId(tokenId_);
+
+            // create position in NFT if not already there
+            if (indexes_.length == 0) {
+                indexes_ = _getPosition(bucketIndex_, amountToAdd_);
+                _memorializePositions(tokenId_, indexes_);
+            }
         } else {
             // create a position for the actor
             (tokenId_, indexes_) = _preMemorializePositions(bucketIndex_, amountToAdd_); 
             _memorializePositions(tokenId_, indexes_);
         }
+    }
+
+    function _getPosition(
+        uint256 bucketIndex_,
+        uint256 amountToAdd_
+    ) internal returns (uint256[] memory indexes_) {
+        // ensure actor has a position
+        (uint256 lpBalanceBefore,) = _pool.lenderInfo(bucketIndex_, _actor);
+
+        // add quote token if they don't have a position
+        if (lpBalanceBefore == 0) {
+            // bound amount
+            uint256 boundedAmount = constrictToRange(amountToAdd_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
+            _ensureQuoteAmount(_actor, boundedAmount);
+            try _pool.addQuoteToken(boundedAmount, bucketIndex_, block.timestamp + 1 minutes, false) {
+            } catch (bytes memory err) {
+                _ensurePoolError(err);
+            }
+        }
+
+        indexes_ = new uint256[](1);
+        indexes_[0] = bucketIndex_;
+
+        uint256[] memory lpBalances = new uint256[](1);
+
+        (lpBalances[0], ) = _pool.lenderInfo(bucketIndex_, _actor);
+        _pool.increaseLPAllowance(address(_positionManager), indexes_, lpBalances);
     }
 }

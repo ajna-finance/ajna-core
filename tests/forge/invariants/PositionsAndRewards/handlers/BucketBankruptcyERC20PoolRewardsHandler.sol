@@ -110,10 +110,7 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BPriceFall.stake']++;
         // Pre action
-        (uint256 tokenId, uint256[] memory indexes) = _preStake(_lenderBucketIndex, amountToAdd_);
-
-        // NFT doesn't have a position associated with it, return
-        if (indexes.length == 0) return;
+        (uint256 tokenId, ) = _preStake(_lenderBucketIndex, amountToAdd_);
 
         // Action phase
         _stake(tokenId);
@@ -135,9 +132,6 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
             numberOfEpochs_,
             bucketSubsetToUpdate_
         );
-
-        // NFT doesn't have a position associated with it, return
-        if (indexes.length == 0) return;
         
         // if rewards exceed contract balance tx will revert, return
         uint256 reward = _rewardsManager.calculateRewards(tokenId, _pool.currentBurnEpoch());
