@@ -55,6 +55,7 @@ abstract contract BaseHandler is Test {
     address internal _actor;
     uint256 internal _lenderBucketIndex;
     uint256 internal _limitIndex;
+    uint256 internal maxPoolDebt = uint256(vm.envOr("MAX_POOL_DEBT", uint256(1e55)));
 
     // deposits invariant test state
     uint256[7389]                                   internal fenwickDeposits;
@@ -148,7 +149,6 @@ abstract contract BaseHandler is Test {
             }
         }
 
-        uint256 maxPoolDebt = uint256(vm.envOr("MAX_POOL_DEBT", uint256(1e55)));
         (uint256 poolDebt, , ,) = _pool.debtInfo();
 
         // skip time only if max debt not exceeded (to prevent additional interest accumulation)
