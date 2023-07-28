@@ -4,6 +4,8 @@ pragma solidity 0.8.18;
 
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
+import { Pool } from 'src/base/Pool.sol';
+
 import { PositionPoolHandler }         from './PositionPoolHandler.sol';
 import { UnboundedRewardsPoolHandler } from './unbounded/UnboundedRewardsPoolHandler.sol';
 
@@ -220,16 +222,23 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
     }
 
     function writeEpochRewardLogs() internal {
-        uint256 epoch = 0;
-        if (_pool.currentBurnEpoch() != 0) {
-            while (epoch <= _pool.currentBurnEpoch()) {
-                printLine("");
-                printLog("Epoch = ", epoch);
-                printLog("Claimed Staking Rewards  = ", rewardsClaimedPerEpoch[address(_pool)][epoch]);
-                printLog("Claimed Updating Rewards = ", updateRewardsClaimedPerEpoch[address(_pool)][epoch]);
+        // loop over pools
+        for (uint256 i = 0; i < _pools.length; i++) {
+            address pool = _pools[i];
+            printLine(string.concat("Pool: ", Strings.toHexString(uint160(pool), 20)));
+            uint256 epoch = 0;
+            uint256 currentPoolEpoch = Pool(pool).currentBurnEpoch();
+            if (currentPoolEpoch != 0) {
+                while (epoch <= currentPoolEpoch) {
+                    printLine("");
+                    printLog("Epoch = ", epoch);
+                    printLog("Claimed Staking Rewards  = ", rewardsClaimedPerEpoch[pool][epoch]);
+                    printLog("Claimed Updating Rewards = ", updateRewardsClaimedPerEpoch[pool][epoch]);
 
-                epoch++;
+                    epoch++;
+                }
             }
         }
+        
     }
 }
