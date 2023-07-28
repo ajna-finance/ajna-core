@@ -128,7 +128,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 amountToAdd_
     ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
         noOfBuckets_ = constrictToRange(noOfBuckets_, 1, buckets.length());
-        indexes_ = getRandomIndexes(noOfBuckets_);
+        indexes_     = getRandomElements(noOfBuckets_, buckets.values());
         uint256[] memory lpBalances = new uint256[](noOfBuckets_);
 
         for (uint256 i = 0; i < noOfBuckets_; i++) {
@@ -207,6 +207,12 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
             // use existing position NFT
             tokenId_ = tokenIds[constrictToRange(randomSeed(), 0, tokenIds.length - 1)];
             indexes_ = getBucketIndexesByTokenId(tokenId_);
+            if (indexes_.length != 0) {
+                noOfBuckets_ = constrictToRange(noOfBuckets_, 1, indexes_.length);
+
+                // pick random indexes from all positions
+                indexes_ = getRandomElements(noOfBuckets_, indexes_);
+            }
         } else {
             // create a position for the actor
             (tokenId_, indexes_) = _preMemorializePositions(noOfBuckets_, amountToAdd_); 
@@ -271,17 +277,16 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         }
     }
 
-    function getRandomIndexes(uint256 noOfBuckets_) internal returns (uint256[] memory randomBuckets_) {
-        uint256[] memory allBuckets = buckets.values();
-        randomBuckets_ = new uint256[](noOfBuckets_);
+    function getRandomElements(uint256 noOfElements, uint256[] memory arr) internal returns (uint256[] memory randomBuckets_) {
+        randomBuckets_ = new uint256[](noOfElements);
         
-        for (uint256 i = 0; i < noOfBuckets_; i++) {
-            uint256 bucketIndex = constrictToRange(randomSeed(), 0, allBuckets.length - 1 - i);
-            uint256 bucket = allBuckets[bucketIndex];
+        for (uint256 i = 0; i < noOfElements; i++) {
+            uint256 bucketIndex = constrictToRange(randomSeed(), 0, arr.length - 1 - i);
+            uint256 bucket = arr[bucketIndex];
             randomBuckets_[i] = bucket;
             
             // put last element from array to choosen array and next time pick new random element from first to last second element.
-            allBuckets[bucketIndex] = allBuckets[allBuckets.length - 1 - i];
+            arr[bucketIndex] = arr[arr.length - 1 - i];
         }
     }
 }
