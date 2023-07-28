@@ -838,6 +838,7 @@ contract ERC20PoolLiquidationKickFuzzyTest is ERC20FuzzyHelperContract {
     address internal _lender;
     address internal _kicker;
     address[] internal _borrowers;
+    
     function setUp() external {
         _startTest();
         _lender = makeAddr("lender");
@@ -845,7 +846,7 @@ contract ERC20PoolLiquidationKickFuzzyTest is ERC20FuzzyHelperContract {
     }
 
     function testBorrowAndKickFuzzy(uint256 noOfBorrowers, uint256 totalPoolLiquidity, uint256 startingBucket, uint256 noOfBuckets) external tearDown {
-        noOfBorrowers  = bound(noOfBorrowers, 1, 10);
+        noOfBorrowers = bound(noOfBorrowers, 1, 10);
         totalPoolLiquidity = bound(totalPoolLiquidity, 100 * 1e18, 1_000_000_000 * 1e18);
         startingBucket = bound(startingBucket, 1, 7300);
         noOfBuckets = bound(noOfBuckets, 5, 10);
