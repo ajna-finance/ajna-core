@@ -54,12 +54,15 @@ contract ERC20PoolRewardsHandler is RewardsPoolHandler, ReserveERC20PoolHandler 
                 uint256 amountToBorrow = _preDrawDebt(amountToAdd_);
                 _drawDebt(amountToBorrow);
                 
-                skip(10 days); // epochs are spaced a minimum of 14 days apart
+                skip(10 days);
             
                 _repayDebt(type(uint256).max);
             }
 
-            skip(10 days); // epochs are spaced a minimum of 14 days apart
+            // epochs are spaced a minimum of 14 days apart
+            uint256 timeToSkip = constrictToRange(randomSeed(), 15 days, 30 days);
+
+            skip(timeToSkip);
 
             _kickReserveAuction();
 
