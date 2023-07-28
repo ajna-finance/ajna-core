@@ -73,13 +73,15 @@ abstract contract PositionsInvariants is BaseInvariants {
         console.log("BPositionHandler.redeem             ",  IBaseHandler(_handler).numberOfCalls("BPositionHandler.redeem"));
         console.log("UBPositionHandler.moveLiquidity     ",  IBaseHandler(_handler).numberOfCalls("UBPositionHandler.moveLiquidity"));
         console.log("BPositionHandler.moveLiquidity      ",  IBaseHandler(_handler).numberOfCalls("BPositionHandler.moveLiquidity"));
+        console.log("BPositionHandler.transferPosition   ",  IBaseHandler(_handler).numberOfCalls("BPositionHandler.transferPosition"));
         console.log(
             "Sum",
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.mint") + 
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.burn") +
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.memorialize") +
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.redeem") +
-            IBaseHandler(_handler).numberOfCalls("BPositionHandler.moveLiquidity") 
+            IBaseHandler(_handler).numberOfCalls("BPositionHandler.moveLiquidity") +
+            IBaseHandler(_handler).numberOfCalls("BPositionHandler.transferPosition") 
         );
     }
 }
