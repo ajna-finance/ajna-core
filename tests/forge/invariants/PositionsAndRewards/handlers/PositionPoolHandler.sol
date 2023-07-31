@@ -3,6 +3,7 @@
 pragma solidity 0.8.18;
 
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
+import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { BasePositionPoolHandler } from './BasePositionPoolHandler.sol';
 
@@ -14,13 +15,13 @@ abstract contract PositionPoolHandler is BasePositionPoolHandler {
 
     function memorializePositions(
         uint256 actorIndex_,
-        uint256 bucketIndex_,
+        uint256 noOfBuckets_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) writeLogs writePositionLogs {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) writeLogs writePositionLogs {
         numberOfCalls['BPositionHandler.memorialize']++;
         // Pre action //
-        (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositions(_lenderBucketIndex, amountToAdd_);
+        (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositions(noOfBuckets_, amountToAdd_);
 
         // Action phase // 
         _memorializePositions(tokenId, indexes);
@@ -28,13 +29,13 @@ abstract contract PositionPoolHandler is BasePositionPoolHandler {
 
     function redeemPositions(
         uint256 actorIndex_,
-        uint256 bucketIndex_,
+        uint256 noOfBuckets_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) writeLogs writePositionLogs {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) writeLogs writePositionLogs {
         numberOfCalls['BPositionHandler.redeem']++;
         // Pre action //
-        (uint256 tokenId, uint256[] memory indexes) = _preRedeemPositions(_lenderBucketIndex, amountToAdd_);
+        (uint256 tokenId, uint256[] memory indexes) = _preRedeemPositions(noOfBuckets_, amountToAdd_);
 
         // NFT doesn't have a position associated with it, return
         if (indexes.length == 0) return; 
@@ -71,7 +72,6 @@ abstract contract PositionPoolHandler is BasePositionPoolHandler {
         uint256 actorIndex_,
         uint256 skippedTime_,
         uint256 amountToMove_,
-        uint256 fromIndex_,
         uint256 toIndex_
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) writeLogs writePositionLogs {
         numberOfCalls['BPositionHandler.moveLiquidity']++;        
@@ -80,7 +80,7 @@ abstract contract PositionPoolHandler is BasePositionPoolHandler {
             uint256 tokenId,
             uint256 fromIndex,
             uint256 toIndex
-        ) = _preMoveLiquidity(amountToMove_, fromIndex_, toIndex_);
+        ) = _preMoveLiquidity(amountToMove_, toIndex_);
 
         // retrieve info of bucket from pool
         (
