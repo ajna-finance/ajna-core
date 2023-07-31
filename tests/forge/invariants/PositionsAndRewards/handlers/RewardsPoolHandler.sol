@@ -4,7 +4,9 @@ pragma solidity 0.8.18;
 
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
-import { PositionPoolHandler }    from './PositionPoolHandler.sol';
+import { Pool } from 'src/base/Pool.sol';
+
+import { PositionPoolHandler }         from './PositionPoolHandler.sol';
 import { BaseRewardsPoolHandler } from './BaseRewardsPoolHandler.sol';
 
 abstract contract RewardsPoolHandler is BaseRewardsPoolHandler, PositionPoolHandler {
@@ -35,16 +37,14 @@ abstract contract RewardsPoolHandler is BaseRewardsPoolHandler, PositionPoolHand
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
+        uint256 numberOfEpochs_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.unstake']++;
         // Pre action
         (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
             _lenderBucketIndex,
             amountToAdd_,
-            numberOfEpochs_,
-            bucketSubsetToUpdate_
+            numberOfEpochs_
         );
 
         // NFT doesn't have a position associated with it, return
@@ -63,8 +63,7 @@ abstract contract RewardsPoolHandler is BaseRewardsPoolHandler, PositionPoolHand
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
+        uint256 numberOfEpochs_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.emergencyUnstake']++;
         
@@ -72,8 +71,7 @@ abstract contract RewardsPoolHandler is BaseRewardsPoolHandler, PositionPoolHand
         (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
             _lenderBucketIndex,
             amountToAdd_,
-            numberOfEpochs_,
-            bucketSubsetToUpdate_
+            numberOfEpochs_
         );
 
         // NFT doesn't have a position associated with it, return
@@ -111,8 +109,7 @@ abstract contract RewardsPoolHandler is BaseRewardsPoolHandler, PositionPoolHand
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
+        uint256 numberOfEpochs_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.claimRewards']++;
 
@@ -120,8 +117,7 @@ abstract contract RewardsPoolHandler is BaseRewardsPoolHandler, PositionPoolHand
         (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
             _lenderBucketIndex,
             amountToAdd_,
-            numberOfEpochs_,
-            bucketSubsetToUpdate_
+            numberOfEpochs_
         );
 
         // NFT doesn't have a position associated with it, return
@@ -171,16 +167,23 @@ abstract contract RewardsPoolHandler is BaseRewardsPoolHandler, PositionPoolHand
     }
 
     function writeEpochRewardLogs() internal {
-        uint256 epoch = 0;
-        if (_pool.currentBurnEpoch() != 0) {
-            while (epoch <= _pool.currentBurnEpoch()) {
-                printLine("");
-                printLog("Epoch = ", epoch);
-                printLog("Claimed Staking Rewards  = ", rewardsClaimedPerEpoch[address(_pool)][epoch]);
-                printLog("Claimed Updating Rewards = ", updateRewardsClaimedPerEpoch[address(_pool)][epoch]);
+        // loop over pools
+        for (uint256 i = 0; i < _pools.length; i++) {
+            address pool = _pools[i];
+            printLine(string.concat("Pool: ", Strings.toHexString(uint160(pool), 20)));
+            uint256 epoch = 0;
+            uint256 currentPoolEpoch = Pool(pool).currentBurnEpoch();
+            if (currentPoolEpoch != 0) {
+                while (epoch <= currentPoolEpoch) {
+                    printLine("");
+                    printLog("Epoch = ", epoch);
+                    printLog("Claimed Staking Rewards  = ", rewardsClaimedPerEpoch[pool][epoch]);
+                    printLog("Claimed Updating Rewards = ", updateRewardsClaimedPerEpoch[pool][epoch]);
 
-                epoch++;
+                    epoch++;
+                }
             }
         }
+        
     }
 }

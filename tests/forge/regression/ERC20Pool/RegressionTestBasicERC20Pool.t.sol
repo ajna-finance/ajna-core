@@ -218,15 +218,21 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
     }
 
     function test_regression_fenwick_index_2() external {
-        uint256 depositAt2570 = 570036521745120847917211;
-        uint256 depositAt2571 = _basicERC20PoolHandler.constrictToRange(2578324552477056269186646552413, 1e6, 1e28);
-        uint256 depositAt2572 = _basicERC20PoolHandler.constrictToRange(1212, 1e6, 1e28);
+        uint256 minAmount = vm.envOr("MIN_QUOTE_AMOUNT_ERC20", uint256(1e3));
+        uint256 maxAmount = vm.envOr("MAX_QUOTE_AMOUNT_ERC20", uint256(1e30));
+        uint256 quotePrecision = vm.envOr("QUOTE_PRECISION", uint256(18));
+        uint256 scale = 10 ** (18 - quotePrecision);
+        uint256 depositAt2570 = (_basicERC20PoolHandler.constrictToRange(570036521745120847917211, minAmount, maxAmount) / scale) * scale;
+        uint256 depositAt2571 = (_basicERC20PoolHandler.constrictToRange(2578324552477056269186646552413, minAmount, maxAmount) / scale) * scale;
+        uint256 depositAt2572 = (_basicERC20PoolHandler.constrictToRange(1212, minAmount, maxAmount) / scale) * scale;
         _basicERC20PoolHandler.addQuoteToken(1, depositAt2570, 2570, 0);
         _basicERC20PoolHandler.addQuoteToken(1, depositAt2571, 2571, 0);
         _basicERC20PoolHandler.addQuoteToken(1, depositAt2572, 2572, 0);
         assertEq(_pool.depositIndex(depositAt2570), 2570);
         assertEq(_pool.depositIndex(depositAt2570 + depositAt2571), 2571);
-        assertEq(_pool.depositIndex(depositAt2570 + depositAt2571 + depositAt2572), 2572);
+        if (depositAt2572 != 0) {
+            assertEq(_pool.depositIndex(depositAt2570 + depositAt2571 + depositAt2572), 2572);
+        }
     }
 
     function test_regression_collateralBalance_CT1_CT7() external {

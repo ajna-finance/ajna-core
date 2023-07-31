@@ -28,8 +28,7 @@ abstract contract BaseRewardsPoolHandler is UnboundedRewardsPoolHandler, BasePos
     function _preUnstake(
         uint256 bucketIndex_,
         uint256 amountToAdd_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
+        uint256 numberOfEpochs_
     ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
         (tokenId_, indexes_) = _getStakedPosition(bucketIndex_, amountToAdd_);
 
@@ -37,8 +36,7 @@ abstract contract BaseRewardsPoolHandler is UnboundedRewardsPoolHandler, BasePos
             _advanceEpochRewardStakers(
                 amountToAdd_,
                 indexes_,
-                numberOfEpochs_,
-                bucketSubsetToUpdate_
+                numberOfEpochs_
             );
         }
     }

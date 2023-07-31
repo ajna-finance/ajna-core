@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
+import { ERC721HelperContract, ERC721FuzzyHelperContract } from './ERC721DSTestPlus.sol';
 
 import { ERC721Pool }  from 'src/ERC721Pool.sol';
 
@@ -1251,5 +1251,86 @@ contract ERC721SubsetPoolCollateralTest is ERC721PoolCollateralTest {
             index:    testIndex,
             expiry:   block.timestamp - 15
         });
+    }
+}
+
+contract ERC721PoolCollateralFuzzyTest is ERC721FuzzyHelperContract {
+    address internal _lender;
+    function setUp() external {
+        _startTest();
+        // deploy collection pool
+        _pool = _deployCollectionPool();
+
+        _lender = makeAddr("lender");
+        _mintAndApproveCollateralTokens(_lender, 100);
+    }
+
+    function testAddRemoveCollateralFuzzy(uint256 nftAmount, uint256 bucketIndex) external tearDown {
+        nftAmount = bound(nftAmount, 1, 100);
+        bucketIndex = bound(bucketIndex, 1, 7388);
+
+        uint256[] memory tokenIds = new uint256[](nftAmount);
+        for (uint256 i = 0; i < nftAmount; i++) {
+            tokenIds[i] = i + 1;
+        }
+
+        uint256 bucketPrice = _poolUtils.indexToPrice(bucketIndex);
+        uint256 lps = Maths.wmul(nftAmount * 1e18, bucketPrice);
+
+        // add some collateral
+        _addCollateral({
+            from:     _lender,
+            tokenIds: tokenIds,
+            index:    bucketIndex,
+            lpAward:  lps
+        });
+
+        _assertBucket({
+            index:        bucketIndex,
+            lpBalance:    lps,
+            collateral:   nftAmount * 1e18,
+            deposit:      0,
+            exchangeRate: 1e18
+        });
+
+        uint256 nftToRemove = bound(nftAmount, 1, nftAmount);
+        uint256 lpsRedeemed = Maths.wmul(nftToRemove * 1e18, bucketPrice);
+
+        // remove some collateral
+        _removeCollateral({
+            from:     _lender,
+            amount:   nftToRemove,
+            index:    bucketIndex,
+            lpRedeem: lpsRedeemed
+        });
+
+        uint256 lpsRemaining = lps - lpsRedeemed;
+        uint256 collateralRemaining = nftAmount - nftToRemove;
+
+        _assertBucket({
+            index:        bucketIndex,
+            lpBalance:    lpsRemaining,
+            collateral:   collateralRemaining,
+            deposit:      0,
+            exchangeRate: 1e18
+        });
+
+        if (collateralRemaining > 0) {
+            // remove all remaining collateral
+            _removeCollateral({
+                from:     _lender,
+                amount:   collateralRemaining,
+                index:    bucketIndex,
+                lpRedeem: lpsRemaining
+            });
+
+            _assertBucket({
+                index:        bucketIndex,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1e18
+            });
+        }
     }
 }

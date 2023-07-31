@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
+import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
+
+import { ERC20HelperContract, ERC20FuzzyHelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/interfaces/pool/commons/IPoolErrors.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
+import 'src/PoolInfoUtils.sol';
 
 contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
 
@@ -828,5 +831,102 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 interestRateUpdate:   _startTime + 100 days + 14 hours
             })
         );
+    }
+}
+
+contract ERC20PoolLiquidationKickFuzzyTest is ERC20FuzzyHelperContract {
+    address internal _lender;
+    address internal _kicker;
+    address[] internal _borrowers;
+    
+    function setUp() external {
+        _startTest();
+        _lender = makeAddr("lender");
+        _kicker = makeAddr("kicker");
+    }
+
+    function testBorrowAndKickFuzzy(uint256 noOfBorrowers, uint256 totalPoolLiquidity, uint256 startingBucket, uint256 noOfBuckets) external tearDown {
+        noOfBorrowers = bound(noOfBorrowers, 1, 10);
+        totalPoolLiquidity = bound(totalPoolLiquidity, 100 * 1e18, 1_000_000_000 * 1e18);
+        startingBucket = bound(startingBucket, 1, 7300);
+        noOfBuckets = bound(noOfBuckets, 5, 10);
+
+        _mintQuoteAndApproveTokens(_lender, totalPoolLiquidity);
+
+        // lender deposits all liquidity in 5 buckets
+        for(uint i = 0; i < noOfBuckets; i++) {
+            _addLiquidity({
+                from:    _lender,
+                amount:  totalPoolLiquidity / noOfBuckets,
+                index:   startingBucket + i,
+                lpAward: totalPoolLiquidity / noOfBuckets,
+                newLup:  MAX_PRICE
+            });
+
+            _assertBucket({
+                index:        startingBucket + i,
+                lpBalance:    totalPoolLiquidity / noOfBuckets,
+                collateral:   0,
+                deposit:      totalPoolLiquidity / noOfBuckets,
+                exchangeRate: 1 * 1e18
+            });
+        }
+
+        _borrowers = new address[](noOfBorrowers);
+
+        // total Amount to borrow is kept 80% of total Liquidity available to account origination fees 
+        uint256 totalAmountToBorrow = totalPoolLiquidity * 4 / 5;
+
+        // all borrowers draws fuzzed amount of debt
+        for (uint256 i = 0; i < noOfBorrowers; ++i) {
+            _borrowers[i] = makeAddr(string(abi.encodePacked("Borrower", Strings.toString(i))));
+
+            uint256 amountToBorrow = bound(totalAmountToBorrow, 1 * 1e18, totalAmountToBorrow / noOfBorrowers);
+
+            // calculate collateral required to borrow amount
+            (uint256 poolDebt, , , ) = _pool.debtInfo();
+            uint256 depositIndex     = _pool.depositIndex(amountToBorrow + poolDebt);
+            uint256 price = _poolUtils.indexToPrice(depositIndex);
+            uint256 collateralToPledge = Maths.wdiv(amountToBorrow, price) * 101 / 100 + 1;
+
+            _mintCollateralAndApproveTokens(_borrowers[i], collateralToPledge);
+
+            _drawDebtNoLupCheck({
+                from:               _borrowers[i],
+                borrower:           _borrowers[i],
+                amountToBorrow:     amountToBorrow,
+                limitIndex:         7_388,
+                collateralToPledge: collateralToPledge
+            });
+
+            uint256 borrowerDebt = Maths.wmul(amountToBorrow, _poolUtils.borrowFeeRate(address(_pool)) + Maths.WAD);
+
+            (,, uint256 borrowert0Np) = _poolUtils.borrowerInfo(address(_pool), _borrowers[i]);
+
+            uint256 lup = _poolUtils.lup(address(_pool));
+
+            _assertBorrower({
+                borrower:                  _borrowers[i],
+                borrowerDebt:              borrowerDebt,
+                borrowerCollateral:        collateralToPledge,
+                borrowert0Np:              borrowert0Np,
+                borrowerCollateralization: _collateralization(borrowerDebt, collateralToPledge, lup)
+            });
+        }
+
+        // skip some time to make all borrowers undercollateralized
+        skip(400 days);
+
+        changePrank(_kicker);
+        _mintQuoteAndApproveTokens(_kicker, totalPoolLiquidity / 10);
+
+        // kick all borrowers
+        for (uint256 i = 0; i < noOfBorrowers; i++) {
+            _pool.kick(_borrowers[i], 7_388);
+            (uint256 kickTime,,,,,) = _poolUtils.auctionStatus(address(_pool), _borrowers[i]);
+
+            // ensure borrower is kicked
+            assertEq(kickTime, block.timestamp);
+        }
     }
 }

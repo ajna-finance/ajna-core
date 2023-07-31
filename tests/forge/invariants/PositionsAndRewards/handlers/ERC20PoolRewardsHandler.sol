@@ -4,6 +4,7 @@ pragma solidity 0.8.18;
 
 import { RewardsManager }  from 'src/RewardsManager.sol';
 import { PositionManager } from 'src/PositionManager.sol';
+import { Maths }           from 'src/libraries/internal/Maths.sol';
 import { Pool }            from 'src/base/Pool.sol';
 import { ERC20Pool }       from 'src/ERC20Pool.sol';
 
@@ -41,8 +42,7 @@ contract ERC20PoolRewardsHandler is RewardsPoolHandler, ReserveERC20PoolHandler 
     function _advanceEpochRewardStakers(
         uint256 amountToAdd_,
         uint256[] memory indexes_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
+        uint256 numberOfEpochs_
     ) internal override {
 
         numberOfEpochs_ = constrictToRange(numberOfEpochs_, 1, vm.envOr("MAX_EPOCH_ADVANCE", uint256(5)));
@@ -53,26 +53,25 @@ contract ERC20PoolRewardsHandler is RewardsPoolHandler, ReserveERC20PoolHandler 
             if (claimableReserves == 0) {
                 uint256 amountToBorrow = _preDrawDebt(amountToAdd_);
                 _drawDebt(amountToBorrow);
-
+                
+                skip(10 days); // epochs are spaced a minimum of 14 days apart
             
                 _repayDebt(type(uint256).max);
             }
 
-            skip(20 days); // epochs are spaced a minimum of 14 days apart
-
-            (, claimableReserves, , ) = _pool.reservesInfo();
+            skip(10 days); // epochs are spaced a minimum of 14 days apart
 
             _kickReserveAuction();
 
             // skip time for price to decrease, large price decrease reduces chances of rewards exceeding rewards contract balance
-            skip(60 hours);
+            skip(30 hours);
 
+            (, claimableReserves, , ) = _pool.reservesInfo();
             uint256 boundedTakeAmount = constrictToRange(amountToAdd_, claimableReserves / 2, claimableReserves);
             _takeReserves(boundedTakeAmount);
 
             // exchange rates must be updated so that rewards can be claimed
-            indexes_ = _randomizeExchangeRateIndexes(indexes_, bucketSubsetToUpdate_);
-            if (indexes_.length != 0) { _updateExchangeRate(indexes_); }
+            if (indexes_.length != 0 && randomSeed() % 2 == 0) { _updateExchangeRate(indexes_); }
         }
     }
 

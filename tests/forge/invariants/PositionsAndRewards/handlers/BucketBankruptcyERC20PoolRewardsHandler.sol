@@ -121,16 +121,14 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
+        uint256 numberOfEpochs_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BRewardsHandler.unstake']++;
         // Pre action
         (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
             _lenderBucketIndex,
             amountToAdd_,
-            numberOfEpochs_,
-            bucketSubsetToUpdate_
+            numberOfEpochs_
         );
         
         // if rewards exceed contract balance tx will revert, return
@@ -268,8 +266,7 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
     function _advanceEpochRewardStakers(
         uint256 amountToAdd_,
         uint256[] memory indexes_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
+        uint256 numberOfEpochs_
     ) internal override {}
 
     modifier useRandomPool(uint256 poolIndex) override {

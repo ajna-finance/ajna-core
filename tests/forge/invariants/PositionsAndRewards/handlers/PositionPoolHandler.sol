@@ -101,6 +101,25 @@ abstract contract PositionPoolHandler is BasePositionPoolHandler {
         _moveLiquidity(tokenId, fromIndex, toIndex);
     }
 
+    function transferPosition(
+        uint256 actorIndex_,
+        uint256 bucketIndex_,
+        uint256 skippedTime_,
+        uint256 amountToAdd_
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs {
+        numberOfCalls['BPositionHandler.transferPosition']++;        
+        // Pre action //
+        (uint256 tokenId_, uint256[] memory indexes) = _getNFTPosition(_lenderBucketIndex, amountToAdd_);
+
+        address receiver = actors[constrictToRange(actorIndex_, 0, actors.length - 1)];
+
+        // NFT doesn't have a position associated with it, return
+        if (indexes.length == 0) return;
+        
+        // Action phase //
+        _transferPosition(receiver, tokenId_);
+    }
+    
     /********************************/
     /*** Logging Helper Functions ***/
     /********************************/
@@ -141,23 +160,28 @@ abstract contract PositionPoolHandler is BasePositionPoolHandler {
     }
 
     function writeBucketLogs() internal {
-        uint256[] memory bucketIndexes = getBucketIndexesWithPosition(address(_pool));
+        // loop over pools
+        for (uint256 i = 0; i < _pools.length; i++) {
+            address pool = _pools[i];
+            printLine(string.concat("Pool: ", Strings.toHexString(uint160(pool), 20)));
+            uint256[] memory bucketIndexes = getBucketIndexesWithPosition(pool);
 
-        // loop over bucket indexes with positions
-        for (uint256 i = 0; i < bucketIndexes.length; i++) {
-            uint256 bucketIndex = bucketIndexes[i];
+            // loop over bucket indexes with positions
+            for (uint256 j = 0; j < bucketIndexes.length; j++) {
+                uint256 bucketIndex = bucketIndexes[j];
 
-            printLine("");
-            printLog("Bucket: ", bucketIndex);
+                printLine("");
+                printLog("Bucket: ", bucketIndex);
 
-            // loop over tokenIds in bucket indexes
-            uint256[] memory tokenIds = getTokenIdsByBucketIndex(address(_pool), bucketIndex);
-            for (uint256 k = 0; k < tokenIds.length; k++) {
-                uint256 tokenId = tokenIds[k];
-                
-                uint256 posLp = _positionManager.getLP(tokenId, bucketIndex);
-                string memory tokenIdStr = string.concat("tokenID ", Strings.toString(tokenId));
-                printLog(string.concat(tokenIdStr, " LP in positionMan = "), posLp);
+                // loop over tokenIds in bucket indexes
+                uint256[] memory tokenIds = getTokenIdsByBucketIndex(pool, bucketIndex);
+                for (uint256 k = 0; k < tokenIds.length; k++) {
+                    uint256 tokenId = tokenIds[k];
+                    
+                    uint256 posLp = _positionManager.getLP(tokenId, bucketIndex);
+                    string memory tokenIdStr = string.concat("tokenID ", Strings.toString(tokenId));
+                    printLog(string.concat(tokenIdStr, " LP in positionMan = "), posLp);
+                }
             }
         }
     }

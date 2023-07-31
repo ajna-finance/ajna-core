@@ -13,7 +13,7 @@ contract RegressionTestBankBankruptcyERC20PoolRewards is BucketBankruptcyERC20Po
     // Test was failing because token needs to be reapproved for stake after unstaking
     // Fixed with approving token before stake
     function test_regression_position_evm_revert_1() external {
-        _bucketBankruptcyerc20poolrewardsHandler.moveStakedLiquidity(3, 1, 4456004777645809093369137635038884732841, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 40687908950166026711192, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
+        _bucketBankruptcyerc20poolrewardsHandler.moveStakedLiquidity(3, 1, 4456004777645809093369137635038884732841, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 40687908950166026711192);
     }
 
     // Test was failing because of unbounded bucket used for `fromBucketIndex`
