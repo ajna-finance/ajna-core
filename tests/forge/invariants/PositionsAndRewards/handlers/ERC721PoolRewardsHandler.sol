@@ -56,7 +56,10 @@ contract ERC721PoolRewardsHandler is RewardsPoolHandler, ReserveERC721PoolHandle
                 _repayDebt(type(uint256).max);
             }
 
-            skip(20 days); // epochs are spaced a minimum of 14 days apart
+            // epochs are spaced a minimum of 14 days apart
+            uint256 timeToSkip = constrictToRange(randomSeed(), 15 days, 30 days);
+
+            skip(timeToSkip);
 
             (, claimableReserves, , ) = _pool.reservesInfo();
 

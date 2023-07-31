@@ -39,7 +39,7 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
     ) internal {
         numberOfCalls['UBPositionHandler.memorialize']++;
 
-        for(uint256 i=0; i < indexes_.length; i++) {
+        for(uint256 i = 0; i < indexes_.length; i++) {
 
             // store vals pre action to check after memorializing:
             (uint256 poolPreActionActorLps, uint256 actorDepositTime)   = _pool.lenderInfo(indexes_[i], address(_actor));
@@ -130,9 +130,10 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
     ) internal {
         numberOfCalls['UBPositionHandler.redeem']++;
 
-        address preActionOwner = _positionManager.ownerOf(tokenId_);
+        address preActionOwner       = _positionManager.ownerOf(tokenId_);
+        uint256 totalPositionIndexes = _positionManager.getPositionIndexes(tokenId_).length;
 
-        for (uint256 i=0; i < indexes_.length; i++) {
+        for (uint256 i = 0; i < indexes_.length; i++) {
 
             (uint256 poolPreActionActorLps,)  = _pool.lenderInfo(indexes_[i], preActionOwner);
             (uint256 poolPreActionPosManLps,) = _pool.lenderInfo(indexes_[i], address(_positionManager));
@@ -177,11 +178,9 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
                 // delete mappings for reuse
                 delete actorLpsBefore[address(_pool)][bucketIndex];
                 delete posManLpsBefore[address(_pool)][bucketIndex];
-            }
 
-            // info for tear down
-            delete bucketIndexesByTokenId[tokenId_];
-            tokenIdsByActor[address(_actor)].remove(tokenId_);
+                bucketIndexesByTokenId[tokenId_].remove(bucketIndex);
+            }
 
             // assert that the minter is still the owner
             require(_positionManager.ownerOf(tokenId_) == preActionOwner,
@@ -191,9 +190,17 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
             require(_positionManager.poolKey(tokenId_) == address(_pool),
             'PM8: poolKey has changed on redemption');
 
-            // assert that no positions are associated with this tokenId
-            uint256[] memory posIndexes = _positionManager.getPositionIndexes(tokenId_);
-            require(posIndexes.length == 0, 'PM8: positions still exist after redemption');
+            // if all positions are redeemed
+            if (totalPositionIndexes == indexes_.length) {
+
+                // assert that no positions are associated with this tokenId
+                uint256[] memory posIndexes = _positionManager.getPositionIndexes(tokenId_);
+                require(posIndexes.length == 0, 'PM8: positions still exist after redemption');
+                
+                // info for tear down
+                delete bucketIndexesByTokenId[tokenId_];
+                tokenIdsByActor[address(_actor)].remove(tokenId_);
+            }
 
         } catch (bytes memory err) {
 
