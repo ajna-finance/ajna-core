@@ -95,7 +95,11 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *  @param tokenId_ Id of positions `NFT`.
      */
     modifier mayInteract(address pool_, uint256 tokenId_) {
+        _mayInteract(pool_, tokenId_);
+        _;
+    }
 
+    function _mayInteract(address pool_, uint256 tokenId_) private view {
         // revert if token id is not a valid / minted id
         _requireMinted(tokenId_);
 
@@ -104,8 +108,6 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
 
         // revert if the token id is not minted for given pool address
         if (pool_ != positionTokens[tokenId_].pool) revert WrongPool();
-
-        _;
     }
 
     /*******************/
@@ -306,7 +308,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         // ensure bucketDeposit accounts for accrued interest
         IPool(pool_).updateInterest();
 
-        // retrieve info of bucket from which liquidity is moved  
+        // retrieve info of bucket from which liquidity is moved
         (
             vars.bucketLP,
             vars.bucketCollateral,
