@@ -2,7 +2,6 @@
 
 pragma solidity 0.8.18;
 
-import "@std/console.sol";
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
 import { Maths }             from 'src/libraries/internal/Maths.sol';
@@ -14,20 +13,19 @@ import { ERC721PoolFactory } from 'src/ERC721PoolFactory.sol';
 import { PositionManager }   from 'src/PositionManager.sol';
 import { RewardsManager }    from 'src/RewardsManager.sol';
 
-import { NFTCollateralToken, TokenWithNDecimals } from '../../utils/Tokens.sol';
+import { TokenWithNDecimals } from '../../utils/Tokens.sol';
 
-import { ERC721PoolRewardsHandler } from './handlers/ERC721PoolRewardsHandler.sol';
-import { RewardsInvariants }        from './RewardsInvariants.t.sol';
+import { BucketBankruptcyERC20PoolRewardsHandler } from './handlers/BucketBankruptcyERC20PoolRewardsHandler.sol';
+import { RewardsInvariants }                   from './RewardsInvariants.t.sol';
 
-contract ERC721PoolRewardsInvariants is RewardsInvariants {
+contract BucketBankruptcyERC20PoolRewardsInvariants is RewardsInvariants {
 
-    ERC721PoolRewardsHandler internal _erc721poolrewardsHandler;
+    BucketBankruptcyERC20PoolRewardsHandler internal _bucketBankruptcyerc20poolrewardsHandler;
     
     function setUp() public override virtual {
 
         super.setUp();
 
-        uint256[] memory tokenIds;
         _erc20poolFactory  = new ERC20PoolFactory(address(_ajna));
         _erc20impl         = _erc20poolFactory.implementation();
         _erc721poolFactory = new ERC721PoolFactory(address(_ajna));
@@ -38,9 +36,9 @@ contract ERC721PoolRewardsInvariants is RewardsInvariants {
         uint256 noOfPools = vm.envOr("NO_OF_POOLS", uint256(10));
 
         for (uint256 i = 0; i < noOfPools; ++i) {
-            address collateral = address(new NFTCollateralToken());
+            address collateral = address(new TokenWithNDecimals(string(abi.encodePacked("Collateral", Strings.toString(i + 1))), "C", uint8(vm.envOr("COLLATERAL_PRECISION", uint256(18)))));
             address quote      = address(new TokenWithNDecimals(string(abi.encodePacked("Quote", Strings.toString(i + 1))), "Q", uint8(vm.envOr("QUOTE_PRECISION", uint256(18)))));
-            address pool       = address(_erc721poolFactory.deployPool(collateral, quote, tokenIds, 0.05 * 10**18));
+            address pool       = address(_erc20poolFactory.deployPool(collateral, quote, 0.05 * 10**18));
 
             excludeContract(collateral);
             excludeContract(quote);
@@ -61,7 +59,7 @@ contract ERC721PoolRewardsInvariants is RewardsInvariants {
         excludeContract(address(_positionManager));
         excludeContract(address(_rewardsManager));
 
-        _erc721poolrewardsHandler = new ERC721PoolRewardsHandler(
+        _bucketBankruptcyerc20poolrewardsHandler = new BucketBankruptcyERC20PoolRewardsHandler(
             address(_rewardsManager),
             address(_positionManager),
             _pools,
@@ -71,6 +69,6 @@ contract ERC721PoolRewardsInvariants is RewardsInvariants {
             address(this)
         );
 
-        _handler = address(_erc721poolrewardsHandler);
+        _handler = address(_bucketBankruptcyerc20poolrewardsHandler);
     }
 }

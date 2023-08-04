@@ -1318,6 +1318,241 @@ contract RewardsManagerTest is RewardsHelperContract {
         });
     }
 
+    function testClaimRewardsCapMultiplePools() external {
+        skip(10);
+        
+        /***************************/
+        /*** Lender Deposits NFT ***/
+        /***************************/
+        
+        // set deposit indexes
+        uint256[] memory depositIndexes = new uint256[](2);
+        uint256[] memory depositIndex1 = new uint256[](1);
+        uint256[] memory depositIndex2 = new uint256[](1);
+        depositIndexes[0] = 2770;
+        depositIndexes[1] = 2771;
+        depositIndex1[0] = 2771;
+        depositIndex2[0] = 2770;
+        
+        // configure NFT position one
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT({
+            indexes:    depositIndexes,
+            minter:     _minterOne,
+            mintAmount: 10_000 * 1e18,
+            pool:       address(_pool)
+        });
+
+        uint256 tokenIdTwo = _mintAndMemorializePositionNFT({
+            indexes:    depositIndexes,
+            minter:     _minterOne,
+            mintAmount: 10_000 * 1e18,
+            pool:       address(_poolTwo)
+        });
+
+        _stakeToken({
+            pool:    address(_pool),
+            owner:   _minterOne,
+            tokenId: tokenIdOne
+        });
+
+        _stakeToken({
+            pool:    address(_poolTwo),
+            owner:   _minterOne,
+            tokenId: tokenIdTwo
+        });
+        
+        /************************************/
+        /*** Borrower One Accrue Interest ***/
+        /************************************/
+        
+        // borrower borrows
+        (uint256 collateralToPledge) = _createTestBorrower(address(_pool), _borrower, 10_000 * 1e18, 2770);
+ 
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     5 * 1e18,
+            limitIndex:         2770,
+            collateralToPledge: collateralToPledge,
+            newLup:             1_004.989662429170775094 * 1e18
+        });
+
+        (collateralToPledge) = _createTestBorrower(address(_poolTwo), _borrower, 10_000 * 1e18, 2770);
+
+        ERC20Pool(address(_poolTwo)).drawDebt(_borrower, 5 * 1e18, 2770, collateralToPledge);
+
+        // pass time to allow interest to accrue
+        skip(2 hours);
+
+        // borrower repays their loan
+        (uint256 debt, , ) = _pool.borrowerInfo(_borrower);
+        _repayDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToRepay:      debt,
+            amountRepaid:       5.004807692307692310 * 1e18,
+            collateralToPull:   0,
+            newLup:             1_004.989662429170775094 * 1e18
+        });
+
+        (debt, , ) = _poolTwo.borrowerInfo(_borrower);
+
+        ERC20Pool(address(_poolTwo)).repayDebt(_borrower, debt, 0, _borrower, 7388);
+
+        /*****************************/
+        /*** First Reserve Auction ***/
+        /*****************************/
+        // start reserve auction
+        _kickReserveAuction({
+            pool: address(_pool),
+            bidder: _bidder
+        });
+
+        _kickReserveAuction({
+            pool: address(_poolTwo),
+            bidder: _bidder
+        });
+
+        // _borrower now takes out more debt to accumulate more interest
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     2_000 * 1e18,
+            limitIndex:         2770,
+            collateralToPledge: 0,
+            newLup:             1_004.989662429170775094 * 1e18
+        });
+
+        ERC20Pool(address(_poolTwo)).drawDebt(_borrower, 2_000 * 1e18, 2770, 0);
+
+        // allow time to pass for the reserve price to decrease
+        skip(24 hours);
+
+        _takeReserves({
+            pool: address(_pool),
+            from: _bidder
+        });
+
+        _takeReserves({
+            pool: address(_poolTwo),
+            from: _bidder
+        });
+
+        (,, uint256 tokensBurned) = IPool(address(_pool)).burnInfo(IPool(address(_pool)).currentBurnEpoch());
+
+        // recorder updates the change in exchange rates in the first index
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_pool),
+            indexes:        depositIndex1,
+            reward:         0.007075096372721386 * 1e18
+        });
+
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_poolTwo),
+            indexes:        depositIndex1,
+            reward:         0.007075096372721386 * 1e18
+        });
+        assertEq(_ajnaToken.balanceOf(_updater), 2 * 0.007075096372721386 * 1e18);
+
+        _assertBurn({
+            pool:      address(_pool),
+            epoch:     0,
+            timestamp: 0,
+            burned:    0,
+            interest:  0,
+            tokensToBurn: 0
+        });
+
+        _assertBurn({
+            pool:      address(_poolTwo),
+            epoch:     0,
+            timestamp: 0,
+            burned:    0,
+            interest:  0,
+            tokensToBurn: 0
+        });
+
+        _assertBurn({
+            pool:             address(_pool),
+            epoch:            1,
+            timestamp:        block.timestamp - 24 hours,
+            burned:           0.283003854923906684 * 1e18,
+            interest:         0.000048562908902619 * 1e18,
+            tokensToBurn:     tokensBurned
+        });
+
+        _assertBurn({
+            pool:             address(_poolTwo),
+            epoch:            1,
+            timestamp:        block.timestamp - 24 hours,
+            burned:           0.283003854923906684 * 1e18,
+            interest:         0.000048562908902619 * 1e18,
+            tokensToBurn:     tokensBurned
+        });
+
+        // skip more time to allow more interest to accrue
+        skip(10 days);
+
+        // borrower repays their loan again
+        (debt, , ) = _pool.borrowerInfo(_borrower);
+        _repayDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToRepay:      debt,
+            amountRepaid:       2001.900281182536528587 * 1e18,
+            collateralToPull:   0,
+            newLup:             1_004.989662429170775094 * 1e18
+        });
+
+        (debt, , ) = _pool.borrowerInfo(_borrower);
+
+        ERC20Pool(address(_poolTwo)).repayDebt(_borrower, debt, 0, _borrower, 7388);
+
+        // recorder updates the change in exchange rates in the second index
+        _updateExchangeRates({
+            updater:        _updater2,
+            pool:           address(_pool),
+            indexes:        depositIndex2,
+            reward:         0.021225289119669282 * 1e18
+        });
+
+        _updateExchangeRates({
+            updater:        _updater2,
+            pool:           address(_poolTwo),
+            indexes:        depositIndex2,
+            reward:         0.021225289119669282 * 1e18
+        });
+        assertEq(_ajnaToken.balanceOf(_updater2), 2 * 0.021225289119669282 * 1e18);
+
+
+        /*******************************************/
+        /*** Lender Withdraws And Claims Rewards ***/
+        /*******************************************/
+
+        // _minterOne withdraws and claims rewards, rewards should be set to the difference between total claimed and cap
+        _unstakeToken({
+            owner:                     _minterOne,
+            pool:                      address(_pool),
+            tokenId:                   tokenIdOne,
+            claimedArray:              _epochsClaimedArray(1, 0),
+            reward:                    0.226403083939125347 * 1e18,
+            indexes:                   depositIndexes,
+            updateExchangeRatesReward: 0
+        });
+
+        _unstakeToken({
+            owner:                     _minterOne,
+            pool:                      address(_poolTwo),
+            tokenId:                   tokenIdTwo,
+            claimedArray:              _epochsClaimedArray(1, 0),
+            reward:                    0.226403083939125347 * 1e18,
+            indexes:                   depositIndexes,
+            updateExchangeRatesReward: 0
+        });
+    }
+
     function testClaimRewardsInsufficientFunds() external {
         skip(10);
 

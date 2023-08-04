@@ -2,10 +2,14 @@
 
 pragma solidity 0.8.18;
 
-import { PositionPoolHandler }         from './PositionPoolHandler.sol';
-import { UnboundedRewardsPoolHandler } from './unbounded/UnboundedRewardsPoolHandler.sol';
+import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
-abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoolHandler {
+import { Pool } from 'src/base/Pool.sol';
+
+import { PositionPoolHandler }         from './PositionPoolHandler.sol';
+import { BaseRewardsPoolHandler } from './BaseRewardsPoolHandler.sol';
+
+abstract contract RewardsPoolHandler is BaseRewardsPoolHandler, PositionPoolHandler {
 
     /*******************************/
     /*** Rewards Test Functions ***/
@@ -16,7 +20,7 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.stake']++;
         // Pre action
         (uint256 tokenId, uint256[] memory indexes) = _preStake(_lenderBucketIndex, amountToAdd_);
@@ -33,16 +37,14 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+        uint256 numberOfEpochs_
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.unstake']++;
         // Pre action
         (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
             _lenderBucketIndex,
             amountToAdd_,
-            numberOfEpochs_,
-            bucketSubsetToUpdate_
+            numberOfEpochs_
         );
 
         // NFT doesn't have a position associated with it, return
@@ -61,17 +63,15 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+        uint256 numberOfEpochs_
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.emergencyUnstake']++;
         
         // Pre action
         (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
             _lenderBucketIndex,
             amountToAdd_,
-            numberOfEpochs_,
-            bucketSubsetToUpdate_
+            numberOfEpochs_
         );
 
         // NFT doesn't have a position associated with it, return
@@ -86,11 +86,11 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.updateRate']++;
 
         // Pre action //
-        uint256[] memory indexes = getBucketIndexesWithPosition();
+        uint256[] memory indexes = getBucketIndexesWithPosition(address(_pool));
 
         // if there are no existing positions, create a position at a a random index
         if (indexes.length == 0) {
@@ -109,17 +109,15 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+        uint256 numberOfEpochs_
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.claimRewards']++;
 
         // Pre action //
         (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
             _lenderBucketIndex,
             amountToAdd_,
-            numberOfEpochs_,
-            bucketSubsetToUpdate_
+            numberOfEpochs_
         );
 
         // NFT doesn't have a position associated with it, return
@@ -129,61 +127,63 @@ abstract contract RewardsPoolHandler is UnboundedRewardsPoolHandler, PositionPoo
         _claimRewards(tokenId, _pool.currentBurnEpoch());
     }
 
-    /*******************************/
-    /*** Prepare Tests Functions ***/
-    /*******************************/
+    /********************************/
+    /*** Logging Helper Functions ***/
+    /********************************/
 
-    function _preStake(
-        uint256 bucketIndex_,
-        uint256 amountToAdd_
-    ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
+    modifier writeRewardsLogs() {
+        // Verbosity of Log file for rewardsManager
+        logVerbosity = uint256(vm.envOr("LOGS_VERBOSITY_REWARDS", uint256(0)));
 
-        // retreive or create a NFT position
-        (tokenId_, indexes_)= _getNFTPosition(bucketIndex_, amountToAdd_);
+        if (logVerbosity != 0) logToFile = true;
 
-        // Approve rewards contract to transfer token
-        _positionManager.approve(address(_rewardsManager), tokenId_); 
-    }
+        _;
 
-    function _preUnstake(
-        uint256 bucketIndex_,
-        uint256 amountToAdd_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
-    ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
-        (tokenId_, indexes_)= _getStakedPosition(bucketIndex_, amountToAdd_);
-
-        if (indexes_.length != 0) {
-            _advanceEpochRewardStakers(
-                amountToAdd_,
-                indexes_,
-                numberOfEpochs_,
-                bucketSubsetToUpdate_
-            );
+        if (logVerbosity > 0) {
+            printInNextLine("== RewardsManager Details ==");
+            writeStakedActorLogs();
+            writeEpochRewardLogs();
+            printInNextLine("=======================");
         }
     }
 
-    function _getStakedPosition(
-        uint256 bucketIndex_,
-        uint256 amountToAdd_
-    ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
+    function writeStakedActorLogs() internal {
 
-        // Check for exisiting staked positions in RewardsManager
-        uint256[] memory tokenIds = getStakedTokenIdsByActor(address(_actor));
+        for (uint256 i = 0; i < actors.length; i++) {
 
-        if (tokenIds.length != 0 ) {
-            // use existing position NFT
-            tokenId_ = tokenIds[0];
-            indexes_ = getBucketIndexesByTokenId(tokenId_);
-        } else {
-            // retreive or create a NFT position
-            (tokenId_, indexes_)= _getNFTPosition(bucketIndex_, amountToAdd_);
+            uint256[] memory tokenIds = getStakedTokenIdsByActor(actors[i]);
 
-            // approve rewards contract to transfer token
-            _positionManager.approve(address(_rewardsManager), tokenId_);
+            if (tokenIds.length != 0) {
+                string memory actorStr = string(abi.encodePacked("Actor ", Strings.toString(i), " staked tokenIds: "));
 
-            // stake the position
-            _stake(tokenId_);
+                string memory tokenIdStr;
+                for (uint256 k = 0; k < tokenIds.length; k++) {
+                    tokenIdStr = string(abi.encodePacked(tokenIdStr, " ", Strings.toString(tokenIds[k])));
+                }
+
+                printLine(string.concat(actorStr,tokenIdStr)); 
+            }
         }
-    } 
+    }
+
+    function writeEpochRewardLogs() internal {
+        // loop over pools
+        for (uint256 i = 0; i < _pools.length; i++) {
+            address pool = _pools[i];
+            printLine(string.concat("Pool: ", Strings.toHexString(uint160(pool), 20)));
+            uint256 epoch = 0;
+            uint256 currentPoolEpoch = Pool(pool).currentBurnEpoch();
+            if (currentPoolEpoch != 0) {
+                while (epoch <= currentPoolEpoch) {
+                    printLine("");
+                    printLog("Epoch = ", epoch);
+                    printLog("Claimed Staking Rewards  = ", rewardsClaimedPerEpoch[pool][epoch]);
+                    printLog("Claimed Updating Rewards = ", updateRewardsClaimedPerEpoch[pool][epoch]);
+
+                    epoch++;
+                }
+            }
+        }
+        
+    }
 }

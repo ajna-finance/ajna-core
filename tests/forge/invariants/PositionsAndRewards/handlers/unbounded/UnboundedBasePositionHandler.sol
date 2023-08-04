@@ -22,31 +22,35 @@ abstract contract UnboundedBasePositionHandler is Test {
 
     uint256 MAX_AJNA_AMOUNT = vm.envOr("MAX_AJNA_AMOUNT_ERC20", uint256(100_000_000 * 1e18));
 
+    address[] internal _pools;
+
     // positionManager & rewardsManager
-    EnumerableSet.UintSet internal bucketIndexesWithPosition;
+    mapping(address => EnumerableSet.UintSet) internal bucketIndexesWithPosition;
     mapping(uint256 => EnumerableSet.UintSet) internal bucketIndexesByTokenId;
 
     // positionManager
-    mapping(uint256 => EnumerableSet.UintSet) internal tokenIdsByBucketIndex;
+    mapping(address => mapping(uint256 => EnumerableSet.UintSet)) internal tokenIdsByBucketIndex;
     mapping(address => EnumerableSet.UintSet) internal tokenIdsByActor;
     // used to track changes in `_redeemPositions()` and `_memorializePositions()`
-    mapping(uint256 => uint256) internal actorLpsBefore;
-    mapping(uint256 => uint256) internal posManLpsBefore;
-    mapping(uint256 => uint256) internal bucketIndexToDepositTime;
+    mapping(address => mapping(uint256 => uint256)) internal actorLpsBefore;
+    mapping(address => mapping(uint256 => uint256)) internal posManLpsBefore;
+    mapping(address => mapping(uint256 => uint256)) internal bucketIndexToDepositTime;
 
     // rewardsManager
     mapping(address => EnumerableSet.UintSet) internal stakedTokenIdsByActor;
-    mapping(uint256 => uint256) public rewardsClaimedPerEpoch;       // staking rewards per epoch
-    mapping(uint256 => uint256) public updateRewardsClaimedPerEpoch; // updating rewards per epoch
+    mapping(address => mapping(uint256 => uint256)) public rewardsClaimedPerEpoch;       // staking rewards per epoch
+    mapping(address => mapping(uint256 => uint256)) public updateRewardsClaimedPerEpoch; // updating rewards per epoch
+
+    uint256 internal counter = 1;
 
     using EnumerableSet for EnumerableSet.UintSet;
 
-    function getBucketIndexesWithPosition() public view returns(uint256[] memory) {
-        return bucketIndexesWithPosition.values();
+    function getBucketIndexesWithPosition(address pool_) public view returns(uint256[] memory) {
+        return bucketIndexesWithPosition[pool_].values();
     }
 
-    function getTokenIdsByBucketIndex(uint256 bucketIndex_) public view returns(uint256[] memory) {
-        return tokenIdsByBucketIndex[bucketIndex_].values();
+    function getTokenIdsByBucketIndex(address pool_, uint256 bucketIndex_) public view returns(uint256[] memory) {
+        return tokenIdsByBucketIndex[pool_][bucketIndex_].values();
     }
 
     function getBucketIndexesByTokenId(uint256 tokenId_) public view returns(uint256[] memory) {
@@ -59,6 +63,11 @@ abstract contract UnboundedBasePositionHandler is Test {
 
     function getStakedTokenIdsByActor(address actor_) public view returns(uint256[] memory) {
         return stakedTokenIdsByActor[actor_].values();
+    }
+
+    function randomSeed() internal returns (uint256) {
+        counter++;
+        return uint256(keccak256(abi.encodePacked(block.number, block.prevrandao, counter)));
     }
 
     function _ensurePositionsManagerError(bytes memory err_) internal pure {

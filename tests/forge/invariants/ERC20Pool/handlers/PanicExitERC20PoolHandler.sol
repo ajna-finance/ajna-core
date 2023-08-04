@@ -29,11 +29,9 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
     constructor(
         address pool_,
         address ajna_,
-        address quote_,
-        address collateral_,
         address poolInfo_,
         address testContract_
-    ) BaseERC20PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, 0, testContract_) {
+    ) BaseERC20PoolHandler(pool_, ajna_, poolInfo_, 0, testContract_) {
         numberOfBuckets = buckets.length();
         setUp();
     }

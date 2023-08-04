@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
+import { ERC20HelperContract, ERC20FuzzyHelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/ERC20Pool.sol';
 import 'src/interfaces/pool/commons/IPoolEvents.sol';
+
+import 'src/libraries/helpers/PoolHelper.sol';
 
 contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
@@ -1197,5 +1199,103 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         (reserves, , , ,) = _poolUtils.poolReservesInfo(address(_pool));
 
         assertEq(reserves, 58.746831970548518322 * 1e18);
+    }
+}
+
+contract ERC20PoolLiquidationSettleFuzzyTest is ERC20FuzzyHelperContract {
+    address internal _lender;
+    address internal _kicker;
+    address internal _borrower;
+
+    uint256[3] internal _buckets = [2550, 2551, 2552];
+    function setUp() external {
+        _startTest();
+        _lender   = makeAddr("lender");
+        _kicker   = makeAddr("kicker");
+        _borrower = makeAddr("borrower");
+
+        _mintQuoteAndApproveTokens(_lender, 1_000_000 * 1e18);
+        _mintQuoteAndApproveTokens(_kicker, 100_000 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower, 1_000 * 1e18);
+
+        // lender deposits all liquidity in 3 buckets
+        for(uint i = 0; i < 3; i++) {
+            _addLiquidity({
+                from:    _lender,
+                amount:  100_000 * 1e18,
+                index:   _buckets[i],
+                lpAward: 100_000 * 1e18,
+                newLup:  MAX_PRICE
+            });
+
+            _assertBucket({
+                index:        _buckets[i],
+                lpBalance:    100_000 * 1e18,
+                collateral:   0,
+                deposit:      100_000 * 1e18,
+                exchangeRate: 1 * 1e18
+            });
+        }
+
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   100 * 1e18
+        });
+        _borrow({
+            from:       _borrower,
+            amount:     290_000 * 1e18,
+            indexLimit: 7_388,
+            newLup:     2981.007422784467321543 * 1e18
+        });
+
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              290_278.84615384615398 * 1e18,
+            borrowerCollateral:        100 * 1e18,
+            borrowert0Np:              3_047.92788461538461679 * 1e18,
+            borrowerCollateralization: 1.026946145846449373 * 1e18
+        });
+
+        // skip to make borrower undercollateralized
+        skip(400 days);
+
+        _kick({
+            from:           _kicker,
+            borrower:       _borrower,
+            debt:           310_461.23296586145968703 * 1e18,
+            collateral:     100 * 1e18,
+            bond:           3_066.283782378878614193 * 1e18,
+            transferAmount: 3_066.283782378878614193 * 1e18
+        });
+
+    }
+
+    function testSettleWithDepositFuzzy(uint256 quoteAmount, uint256 bucketIndex) external {
+        quoteAmount = bound(quoteAmount, 1 * 1e18, 500_000 * 1e18);
+        bucketIndex = bound(bucketIndex, 1, 7388);
+
+        // add some deposits to be used to settle auction
+        _addLiquidityNoEventCheck({
+            from:   _lender,
+            amount: quoteAmount,
+            index:  bucketIndex
+        });
+
+        // skip some time to make auction settleable
+        skip(73 hours);
+
+        (uint256 beforeDebt, uint256 beforeCollateral,) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+
+        // settle auction with deposits
+        _pool.settle(_borrower, 2);
+
+        (uint256 afterDebt, uint256 afterCollateral,) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+
+        // ensure some borrower debt is settled
+        assertLt(afterDebt, beforeDebt);
+
+        // ensure some collateral is used to settle debt
+        assertLt(afterCollateral, beforeCollateral);
     }
 }

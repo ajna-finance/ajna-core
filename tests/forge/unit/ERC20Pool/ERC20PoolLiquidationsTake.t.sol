@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
+import { ERC20HelperContract, ERC20FuzzyHelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/libraries/helpers/PoolHelper.sol';
 
@@ -2181,5 +2181,102 @@ contract ERC20PoolLiquidationsTakeAndRepayAllDebtInPoolTest is ERC20HelperContra
             isReward:        false
         });
 
+    }
+}
+
+contract ERC20PoolLiquidationTakeFuzzyTest is ERC20FuzzyHelperContract {
+    address internal _lender;
+    address internal _taker;
+    address internal _borrower;
+
+    uint256[5] internal _buckets = [2550, 2551, 2552, 2553, 2554];
+    function setUp() external {
+        _startTest();
+        _lender   = makeAddr("lender");
+        _taker    = makeAddr("taker");
+        _borrower = makeAddr("borrower");
+
+        _mintQuoteAndApproveTokens(_lender, 500_000 * 1e18);
+        _mintQuoteAndApproveTokens(_taker, 500_000 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower, 1_000 * 1e18);
+
+        // lender deposits all liquidity in 5 buckets
+        for(uint i = 0; i < 5; i++) {
+            _addLiquidity({
+                from:    _lender,
+                amount:  100_000 * 1e18,
+                index:   _buckets[i],
+                lpAward: 100_000 * 1e18,
+                newLup:  MAX_PRICE
+            });
+        }
+
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   100 * 1e18
+        });
+
+        _borrow({
+            from:       _borrower,
+            amount:     290_000 * 1e18,
+            indexLimit: 7_388,
+            newLup:     2981.007422784467321543 * 1e18
+        });
+
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              290_278.84615384615398 * 1e18,
+            borrowerCollateral:        100 * 1e18,
+            borrowert0Np:              3_047.92788461538461679 * 1e18,
+            borrowerCollateralization: 1.026946145846449373 * 1e18
+        });
+
+        // skip to make borrower undercollateralized
+        skip(400 days);
+
+        _kick({
+            from:           _taker,
+            borrower:       _borrower,
+            debt:           310_461.23296586145968703 * 1e18,
+            collateral:     100 * 1e18,
+            bond:           3_066.283782378878614193 * 1e18,
+            transferAmount: 3_066.283782378878614193 * 1e18
+        });
+    }
+
+    function testTakeCollateralFuzzy(uint256 takeAmount, uint256 skipTimeToTake) external tearDown {
+        takeAmount = bound(takeAmount, 1, 100 * 1e18);
+        skipTimeToTake = bound(skipTimeToTake, 1.1 hours, 71 hours);
+
+        // skip some time to make auction takeable
+        skip(skipTimeToTake);
+
+        // calculate and mint quote tokens to buy collateral
+        (,,,, uint256 auctionPrice, ) = _poolUtils.auctionStatus(address(_pool), _borrower);
+        _mintQuoteAndApproveTokens(_taker, auctionPrice * takeAmount);
+
+        uint256 beforeTakerQuoteBalance = _quote.balanceOf(_taker);
+
+        (, uint256 beforeCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+
+        // taker takes fuzzed amount of collateral
+        _pool.take(_borrower, takeAmount, _taker, bytes(""));
+
+        (, uint256 afterCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+
+        // ensure borrower collateral is reduced after take
+        assertLt(afterCollateral, beforeCollateral);
+
+        uint256 takerCollateralBalance = _collateral.balanceOf(_taker);
+
+        // ensure borrower collateral is reduced same as taker gets colletaral
+        assertEq(beforeCollateral - afterCollateral, takerCollateralBalance);
+
+        // ensure taker gets collateral
+        assertGt(takerCollateralBalance, 0);
+
+        // ensure taker quote tokens are used to buy collateral
+        assertLe(_quote.balanceOf(_taker), beforeTakerQuoteBalance);
     }
 }

@@ -15,7 +15,11 @@ import {
     IRewardsManagerState,
     IRewardsManagerDerivedState
 } from './interfaces/rewards/IRewardsManager.sol';
-import { StakeInfo, BucketState } from './interfaces/rewards/IRewardsManagerState.sol';
+import { 
+    StakeInfo,
+    BucketState,
+    PoolRewardsInfo
+} from './interfaces/rewards/IRewardsManagerState.sol';
 
 import { PositionManager } from './PositionManager.sol';
 
@@ -67,13 +71,9 @@ contract RewardsManager is IRewardsManager {
 
     /// @dev `tokenID => epoch => bool has claimed` mapping.
     mapping(uint256 => mapping(uint256 => bool)) public override isEpochClaimed;
-    /// @dev `epoch => rewards claimed` mapping.
-    mapping(uint256 => uint256) public override rewardsClaimed;
-    /// @dev `epoch => update bucket rate rewards claimed` mapping. Tracks the total amount of update rewards claimed.
-    mapping(uint256 => uint256) public override updateRewardsClaimed;
 
-    /// @dev Mapping of per pool bucket exchange rates at a given burn event `poolAddress => bucketIndex => epoch => bucket exchange rate`.
-    mapping(address => mapping(uint256 => mapping(uint256 => uint256))) internal bucketExchangeRates;
+    /// @dev Mapping `pool address => Pool rewards info`.
+    mapping(address => PoolRewardsInfo) internal poolRewardsInfo;
 
     /// @dev Mapping `tokenID => Stake info`.
     mapping(uint256 => StakeInfo) internal stakes;
@@ -318,7 +318,23 @@ contract RewardsManager is IRewardsManager {
         uint256 bucketIndex_,
         uint256 epoch_
     ) external view override returns (bool) {
-        return bucketExchangeRates[pool_][bucketIndex_][epoch_] != 0;
+        return poolRewardsInfo[pool_].bucketExchangeRates[bucketIndex_][epoch_] != 0;
+    }
+
+    /// @inheritdoc IRewardsManagerState
+    function getRewardsClaimed(
+        address pool_,
+        uint256 epoch_
+    ) external view override returns (uint256) {
+        return poolRewardsInfo[pool_].rewardsClaimed[epoch_];
+    }
+
+    /// @inheritdoc IRewardsManagerState
+    function getUpdateRewardsClaimed(
+        address pool_,
+        uint256 epoch_
+    ) external view override returns (uint256) {
+        return poolRewardsInfo[pool_].updateBucketRewardsClaimed[epoch_];
     }
 
     /**************************/
@@ -340,6 +356,8 @@ contract RewardsManager is IRewardsManager {
         uint256 lastClaimedEpoch = stakes[tokenId_].lastClaimedEpoch;
         uint256 stakingEpoch     = stakes[tokenId_].stakingEpoch;
 
+        mapping(uint256 => uint256) storage rewardsClaimed = poolRewardsInfo[ajnaPool].rewardsClaimed;
+
         uint256[] memory positionIndexes = positionManager.getPositionIndexesFiltered(tokenId_);
 
         // iterate through all burn periods to calculate and claim rewards
@@ -358,7 +376,7 @@ contract RewardsManager is IRewardsManager {
             unchecked { ++epoch; }
 
             // update epoch token claim trackers
-            rewardsClaimed[epoch]           += nextEpochRewards;
+            rewardsClaimed[epoch] += nextEpochRewards;
             isEpochClaimed[tokenId_][epoch] = true;
         }
     }
@@ -382,7 +400,7 @@ contract RewardsManager is IRewardsManager {
     ) internal view returns (uint256 epochRewards_) {
 
         uint256 nextEpoch = epoch_ + 1;
-        uint256 claimedRewardsInNextEpoch = rewardsClaimed[nextEpoch];
+        uint256 claimedRewardsInNextEpoch = poolRewardsInfo[ajnaPool_].rewardsClaimed[nextEpoch];
         uint256 bucketIndex;
         uint256 interestEarned;
 
@@ -397,7 +415,7 @@ contract RewardsManager is IRewardsManager {
             if (epoch_ != stakingEpoch_) {
 
                 // if staked in a previous epoch then use the initial exchange rate of epoch
-                bucketRate = bucketExchangeRates[ajnaPool_][bucketIndex][epoch_];
+                bucketRate = poolRewardsInfo[ajnaPool_].bucketExchangeRates[bucketIndex][epoch_];
             } else {
 
                 // if staked during the epoch then use the bucket rate at the time of staking
@@ -445,7 +463,7 @@ contract RewardsManager is IRewardsManager {
 
         if (exchangeRate_ != 0) {
 
-            uint256 nextExchangeRate = bucketExchangeRates[pool_][bucketIndex_][nextEventEpoch_];
+            uint256 nextExchangeRate = poolRewardsInfo[pool_].bucketExchangeRates[bucketIndex_][nextEventEpoch_];
 
             // calculate interest earned only if next exchange rate is higher than current exchange rate
             if (nextExchangeRate > exchangeRate_) {
@@ -609,6 +627,7 @@ contract RewardsManager is IRewardsManager {
         }
         else {
             if (block.timestamp <= curBurnTime + UPDATE_PERIOD) {
+                mapping(uint256 => uint256) storage updateRewardsClaimed = poolRewardsInfo[pool_].updateBucketRewardsClaimed;
 
                 // update exchange rates and calculate rewards if tokens were burned and within allowed time period
                 uint256 noOfIndexes = indexes_.length;
@@ -657,7 +676,7 @@ contract RewardsManager is IRewardsManager {
         uint256 burnEpoch_
     ) internal {
         // cache storage pointer for reduced gas
-        mapping(uint256 => uint256) storage _bucketExchangeRates = bucketExchangeRates[pool_][bucketIndex_];
+        mapping(uint256 => uint256) storage _bucketExchangeRates = poolRewardsInfo[pool_].bucketExchangeRates[bucketIndex_];
         uint256 burnExchangeRate = _bucketExchangeRates[burnEpoch_];
 
         // update bucket exchange rate at epoch only if it wasn't previously updated
@@ -686,7 +705,7 @@ contract RewardsManager is IRewardsManager {
         uint256 interestEarned_
     ) internal returns (uint256 rewards_) {
         // cache storage pointer for reduced gas
-        mapping(uint256 => uint256) storage _bucketExchangeRates = bucketExchangeRates[pool_][bucketIndex_];
+        mapping(uint256 => uint256) storage _bucketExchangeRates = poolRewardsInfo[pool_].bucketExchangeRates[bucketIndex_];
         uint256 burnExchangeRate = _bucketExchangeRates[burnEpoch_];
 
         // update bucket exchange rate at epoch only if it wasn't previously updated

@@ -26,32 +26,37 @@ abstract contract PositionsInvariants is BaseInvariants {
     ERC721PoolFactory  internal _erc721poolFactory;
     ERC721Pool         internal _erc721impl;
     PositionManager    internal _positionManager;
+    address[]          internal _pools;
 
     function invariant_positions_PM1_PM2_PM3() public useCurrentTimestamp {
-        uint256[] memory bucketIndexes = IPositionsAndRewardsHandler(_handler).getBucketIndexesWithPosition();
+        for (uint256 poolIndex = 0; poolIndex < _pools.length; poolIndex++) {
+            address pool = _pools[poolIndex];
 
-        // loop over bucket indexes with positions
-        for (uint256 i = 0; i < bucketIndexes.length; i++) {
-            uint256 mostRecentDepositTime;
-            uint256 bucketIndex = bucketIndexes[i];
-            uint256 posLpAccum;
-            uint256 poolLpAccum;
+            uint256[] memory bucketIndexes = IPositionsAndRewardsHandler(_handler).getBucketIndexesWithPosition(pool);
 
-            (uint256 poolLp, uint256 depositTime) = _pool.lenderInfo(bucketIndex, address(_positionManager));
-            poolLpAccum += poolLp;
+            // loop over bucket indexes with positions
+            for (uint256 i = 0; i < bucketIndexes.length; i++) {
+                uint256 mostRecentDepositTime;
+                uint256 bucketIndex = bucketIndexes[i];
+                uint256 posLpAccum;
+                uint256 poolLpAccum;
 
-            // loop over tokenIds in bucket indexes
-            uint256[] memory tokenIds = IPositionsAndRewardsHandler(_handler).getTokenIdsByBucketIndex(bucketIndex);
-            for (uint256 k = 0; k < tokenIds.length; k++) {
-                uint256 tokenId = tokenIds[k];
-                
-                (, uint256 posDepositTime) = _positionManager.getPositionInfo(tokenId, bucketIndex);
-                uint256 posLp = _positionManager.getLP(tokenId, bucketIndex);
-                posLpAccum += posLp;
-                mostRecentDepositTime = (posDepositTime > mostRecentDepositTime) ? posDepositTime : mostRecentDepositTime;
+                (uint256 poolLp, uint256 depositTime) = Pool(pool).lenderInfo(bucketIndex, address(_positionManager));
+                poolLpAccum += poolLp;
+
+                // loop over tokenIds in bucket indexes
+                uint256[] memory tokenIds = IPositionsAndRewardsHandler(_handler).getTokenIdsByBucketIndex(pool, bucketIndex);
+                for (uint256 k = 0; k < tokenIds.length; k++) {
+                    uint256 tokenId = tokenIds[k];
+                    
+                    (, uint256 posDepositTime) = _positionManager.getPositionInfo(tokenId, bucketIndex);
+                    uint256 posLp = _positionManager.getLP(tokenId, bucketIndex);
+                    posLpAccum += posLp;
+                    mostRecentDepositTime = (posDepositTime > mostRecentDepositTime) ? posDepositTime : mostRecentDepositTime;
+                }
+                require(poolLpAccum == posLpAccum,            "Positions Invariant PM1 and PM2"); 
+                require(depositTime >= mostRecentDepositTime, "Positions Invariant PM3");
             }
-            require(poolLpAccum == posLpAccum,            "Positions Invariant PM1 and PM2"); 
-            require(depositTime >= mostRecentDepositTime, "Positions Invariant PM3");
         }
     }
 
@@ -68,13 +73,15 @@ abstract contract PositionsInvariants is BaseInvariants {
         console.log("BPositionHandler.redeem             ",  IBaseHandler(_handler).numberOfCalls("BPositionHandler.redeem"));
         console.log("UBPositionHandler.moveLiquidity     ",  IBaseHandler(_handler).numberOfCalls("UBPositionHandler.moveLiquidity"));
         console.log("BPositionHandler.moveLiquidity      ",  IBaseHandler(_handler).numberOfCalls("BPositionHandler.moveLiquidity"));
+        console.log("BPositionHandler.transferPosition   ",  IBaseHandler(_handler).numberOfCalls("BPositionHandler.transferPosition"));
         console.log(
             "Sum",
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.mint") + 
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.burn") +
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.memorialize") +
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.redeem") +
-            IBaseHandler(_handler).numberOfCalls("BPositionHandler.moveLiquidity") 
+            IBaseHandler(_handler).numberOfCalls("BPositionHandler.moveLiquidity") +
+            IBaseHandler(_handler).numberOfCalls("BPositionHandler.transferPosition") 
         );
     }
 }

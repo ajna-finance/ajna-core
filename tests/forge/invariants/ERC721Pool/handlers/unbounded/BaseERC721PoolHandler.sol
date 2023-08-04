@@ -24,12 +24,10 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
     constructor(
         address pool_,
         address ajna_,
-        address quote_,
-        address collateral_,
         address poolInfo_,
         uint256 numOfActors_,
         address testContract_
-    ) BaseHandler(pool_, ajna_, quote_, poolInfo_, testContract_) {
+    ) BaseHandler(pool_, ajna_, poolInfo_, testContract_) {
 
         LENDER_MIN_BUCKET_INDEX = vm.envOr("BUCKET_INDEX_ERC721", uint256(850));
         LENDER_MAX_BUCKET_INDEX = LENDER_MIN_BUCKET_INDEX + vm.envOr("NO_OF_BUCKETS", uint256(3)) - 1;
@@ -62,11 +60,11 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
             buckets.add(bucket);
         }
 
-        // Tokens
-        _collateral = NFTCollateralToken(collateral_);
-
         // ERC721Pool
         _erc721Pool = ERC721Pool(pool_);
+
+        // Tokens
+        _collateral = NFTCollateralToken(_erc721Pool.collateralAddress());
 
         // Actors
         actors = _buildActors(numOfActors_);
