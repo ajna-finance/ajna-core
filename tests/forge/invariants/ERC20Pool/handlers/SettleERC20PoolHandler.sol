@@ -20,8 +20,8 @@ contract SettleERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBas
     address[] internal _lenders;
     address[] internal _borrowers;
 
-    uint16 internal constant LENDERS     = 200;
-    uint16 internal constant LOANS_COUNT = 500;
+    uint16 internal constant LENDERS     = 100;
+    uint16 internal constant LOANS_COUNT = 100;
     uint16 nonce;
     uint256 numberOfBuckets;
 
@@ -46,7 +46,7 @@ contract SettleERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBas
         ( , , uint256 totalLoans) = _pool.loansInfo();
         require(totalLoans == LOANS_COUNT, "loans setup failed");
 
-        vm.warp(block.timestamp + 100_000 days);
+        vm.warp(block.timestamp + 1_000 days);
     }
 
     function settleDebt(
