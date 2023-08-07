@@ -466,11 +466,12 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     }
 
     /**
-     *   Add an token subset pool to the internal mapping.
+     *   Add a token subsetHash to the internal mapping.
      *      For ERC20 and ERC721 non-subset pools, adding the pool to the internal mapping will
      *          reduce the cost of subsequent lookups and mint actions.
      *      For ERC721 Subset pools, the subset must be calculated off-chain and provided as a
-     *          parameter. Adding the subset pool in this way will allow
+     *          parameter. Adding the subset pool in this way will allow ERC721 non-subset pools
+     *          to be accessed without the accompanying subsetHash.
      */
     function addSubsetPool(address pool_, bytes32 subsetHash_) public returns (bool isValid) {
         if (ajnaPools[pool_] == subsetHash_) return true;  // Already added
