@@ -48,7 +48,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     /// @dev Mapping tracking information of position tokens minted.
     mapping(uint256 tokenId => TokenInfo) internal positionTokens;
 
-    mapping(address pool => bool) internal ajnaPools;
+    mapping(address pool => bytes32 subsetHash) internal ajnaPools;
 
     /// @dev Id of the next token that will be minted. Skips `0`.
     uint176 private _nextId = 1;
@@ -472,8 +472,10 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *          parameter. Adding the subset pool in this way will allow
      */
     function addSubsetPool(address pool_, bytes32 subsetHash_) public returns (bool isValid) {
-        if (ajnaPools[pool_]) return true;  // Already added
-        isValid = ajnaPools[pool_] = _isAjnaPool(pool_, subsetHash_);
+        if (ajnaPools[pool_] == subsetHash_) return true;  // Already added
+
+        isValid = _isAjnaPool(pool_, subsetHash_);
+        if (isValid) ajnaPools[pool_] = subsetHash_;
     }
 
     /**************************/
@@ -490,6 +492,8 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         address pool_,
         bytes32 subsetHash_
     ) internal view returns (bool) {
+
+        if (ajnaPools[pool_] == subsetHash_) return true;
 
         address collateralAddress = IPool(pool_).collateralAddress();
         address quoteAddress      = IPool(pool_).quoteTokenAddress();
@@ -519,7 +523,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         address pool_
     ) internal view returns (bool) {
 
-        if (ajnaPools[pool_]) return true;
+        if (ajnaPools[pool_] != bytes32(0)) return true;
 
         address collateralAddress = IPool(pool_).collateralAddress();
         address quoteAddress      = IPool(pool_).quoteTokenAddress();

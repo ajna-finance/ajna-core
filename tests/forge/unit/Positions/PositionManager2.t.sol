@@ -28,6 +28,7 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
 
     function setUp() external {
         _startTest();
+        _positionManager.addSubsetPool(address(_pool), keccak256("ERC20_NON_SUBSET_HASH"));
     }
 
     function _mintQuoteAndApproveManagerTokens(address operator_, uint256 mintAmount_) internal {
@@ -50,6 +51,21 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
 
         changePrank(minter_);
         return _positionManager.mint(pool_, lender_, keccak256("ERC20_NON_SUBSET_HASH"));
+    }
+
+    /**
+     *  @dev Abstract away NFT Minting logic for use by multiple tests.
+     */
+    function _mintNFT(address minter_, address lender_, address pool_, bytes32 subsetHash_) internal returns (uint256 tokenId) {
+
+        changePrank(minter_);
+        return _positionManager.mint(pool_, lender_, subsetHash_);
+    }
+
+    function _mintNFTAdded(address minter_, address lender_, address pool_) internal returns (uint256 tokenId) {
+
+        changePrank(minter_);
+        return _positionManager.mint(pool_, lender_);
     }
 
     function _getPermitSig(
@@ -116,6 +132,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         _mintQuoteAndApproveManagerTokens(testAddress, mintAmount);
 
+
         // test emitted Mint event
         vm.expectEmit(true, true, true, true);
         emit Mint(testAddress, address(_pool), 1);
@@ -139,6 +156,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         vm.expectRevert(IPositionManagerErrors.NotAjnaPool.selector);
         _mintNFT(testAddress, testAddress, invalidPool);
     }
+
 
     /**
      *  @notice Tests attachment of a created position to an already existing NFT.
@@ -174,6 +192,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             amount: 3_000 * 1e18,
             index:  indexes[2]
         });
+
 
         // mint an NFT to later memorialize existing positions into
         uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
