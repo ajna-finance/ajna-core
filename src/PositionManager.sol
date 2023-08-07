@@ -48,6 +48,8 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     /// @dev Mapping tracking information of position tokens minted.
     mapping(uint256 tokenId => TokenInfo) internal positionTokens;
 
+    mapping(address pool => bool) internal ajnaPools;
+
     /// @dev Id of the next token that will be minted. Skips `0`.
     uint176 private _nextId = 1;
 
@@ -59,6 +61,9 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     ERC20PoolFactory  private immutable erc20PoolFactory;
     /// @dev The `ERC721` pools factory contract, used to check if address is an `Ajna` pool.
     ERC721PoolFactory private immutable erc721PoolFactory;
+
+    bytes32 private immutable erc20PoolSubsetHash;
+    bytes32 private immutable erc721PoolSubsetHash;
 
     /*************************/
     /*** Local Var Structs ***/
@@ -121,7 +126,9 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         ) revert DeployWithZeroAddress();
 
         erc20PoolFactory  = erc20Factory_;
+        erc20PoolSubsetHash = erc20Factory_.ERC20_NON_SUBSET_HASH();
         erc721PoolFactory = erc721Factory_;
+        erc721PoolSubsetHash = erc721Factory_.ERC721_NON_SUBSET_HASH();
     }
 
     /********************************/
@@ -249,10 +256,27 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     function mint(
         address pool_,
         address recipient_,
-        bytes32 poolSubsetHash_
-    ) external override nonReentrant returns (uint256 tokenId_) {
+        bytes32 subsetHash_
+    ) external returns (uint256 tokenId_) {
+        addSubsetPool(pool_, subsetHash_);
+        return mint(pool_, recipient_);
+    }
+
+    /**
+     *  @dev    === Write state ===
+     *  @dev    `tokenInfo`: update `tokenId => TokenInfo` mapping
+     *  @dev    === Revert on ===
+     *  @dev    provided pool not valid `NotAjnaPool()`
+     *  @dev    === Emit events ===
+     *  @dev    - `Mint`
+     *  @dev    - `Transfer`
+     */
+    function mint(
+        address pool_,
+        address recipient_
+    ) public nonReentrant returns (uint256 tokenId_) {
         // revert if the address is not a valid Ajna pool
-        if (!_isAjnaPool(pool_, poolSubsetHash_)) revert NotAjnaPool();
+        if (!_isAjnaPool(pool_)) revert NotAjnaPool();
 
         tokenId_ = _nextId++;
 
@@ -306,7 +330,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         // ensure bucketDeposit accounts for accrued interest
         IPool(pool_).updateInterest();
 
-        // retrieve info of bucket from which liquidity is moved  
+        // retrieve info of bucket from which liquidity is moved
         (
             vars.bucketLP,
             vars.bucketCollateral,
@@ -440,6 +464,18 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         emit RedeemPosition(owner, tokenId_, indexes_);
     }
 
+    /**
+     *   Add an token subset pool to the internal mapping.
+     *      For ERC20 and ERC721 non-subset pools, adding the pool to the internal mapping will
+     *          reduce the cost of subsequent lookups and mint actions.
+     *      For ERC721 Subset pools, the subset must be calculated off-chain and provided as a
+     *          parameter. Adding the subset pool in this way will allow
+     */
+    function addSubsetPool(address pool_, bytes32 subsetHash_) public returns (bool isValid) {
+        if (ajnaPools[pool_]) return true;  // Already added
+        isValid = ajnaPools[pool_] = _isAjnaPool(pool_, subsetHash_);
+    }
+
     /**************************/
     /*** Internal Functions ***/
     /**************************/
@@ -454,6 +490,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         address pool_,
         bytes32 subsetHash_
     ) internal view returns (bool) {
+
         address collateralAddress = IPool(pool_).collateralAddress();
         address quoteAddress      = IPool(pool_).quoteTokenAddress();
 
@@ -464,6 +501,36 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         );
         address erc721DeployedPoolAddress = erc721PoolFactory.deployedPools(
             subsetHash_,
+            collateralAddress,
+            quoteAddress
+        );
+
+        return (pool_ == erc20DeployedPoolAddress || pool_ == erc721DeployedPoolAddress);
+    }
+
+    /**
+     *  @notice Checks that a provided pool address was deployed by an `Ajna` factory.
+     *  @dev    Only applies to non-subset pools and subset pools that have been
+     *          included with the `addSubsetPool` function
+     *  @param  pool_       Address of the `Ajna` pool.
+     *  @return `True` if a valid `Ajna` pool, `false` otherwise.
+     */
+    function _isAjnaPool(
+        address pool_
+    ) internal view returns (bool) {
+
+        if (ajnaPools[pool_]) return true;
+
+        address collateralAddress = IPool(pool_).collateralAddress();
+        address quoteAddress      = IPool(pool_).quoteTokenAddress();
+
+        address erc20DeployedPoolAddress  = erc20PoolFactory.deployedPools(
+            erc20PoolSubsetHash,
+            collateralAddress,
+            quoteAddress
+        );
+        address erc721DeployedPoolAddress = erc721PoolFactory.deployedPools(
+            erc721PoolSubsetHash,
             collateralAddress,
             quoteAddress
         );
@@ -555,6 +622,12 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         bytes32 subsetHash_
     ) external override view returns (bool) {
         return _isAjnaPool(pool_, subsetHash_);
+    }
+
+    function isAjnaPool(
+        address pool_
+    ) external view returns (bool) {
+        return _isAjnaPool(pool_);
     }
 
     /// @inheritdoc IPositionManagerDerivedState
