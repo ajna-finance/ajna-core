@@ -45,10 +45,11 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     /*** State Variables ***/
     /***********************/
 
+    /// @dev Internal mapping of known Ajna pools.
+    mapping(address pool => bytes32 subsetHash) internal ajnaPools;
+
     /// @dev Mapping tracking information of position tokens minted.
     mapping(uint256 tokenId => TokenInfo) internal positionTokens;
-
-    mapping(address pool => bytes32 subsetHash) internal ajnaPools;
 
     /// @dev Id of the next token that will be minted. Skips `0`.
     uint176 private _nextId = 1;
