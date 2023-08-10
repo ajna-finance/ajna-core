@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
+import { PRBMath } from "@prb-math/contracts/PRBMathUD60x18.sol";
+
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/interfaces/pool/erc20/IERC20Pool.sol';
+import 'src/libraries/external/PoolCommons.sol';
 
 contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
@@ -1106,5 +1109,61 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             deposit:      1_008.406484270040092000 * 1e18,
             exchangeRate: 1.008406484270040092 * 1e18
         });
+    }
+
+    function testAccruePoolInterestRevertDueToExpLimit() external {
+        _mintQuoteAndApproveTokens(_lender, 1_000_000_000 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower, 1_000_000_000 * 1e18);
+
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 1_000_000_000 * 1e18, // 1 billion
+            index:  _i1505_26
+        });
+
+        // draw 80% of liquidity as debt
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     800_000_000 * 1e18,
+            limitIndex:         _i1505_26,
+            collateralToPledge: 1_000_000_000 * 1e18,
+            newLup:             _p1505_26
+        });
+
+        _assertPool(
+            PoolParams({
+                htp:                  0.80076923076923077 * 1e18,
+                lup:                  _p1505_26,
+                poolSize:             1_000_000_000 * 1e18,
+                pledgedCollateral:    1_000_000_000 * 1e18,
+                encumberedCollateral: 531_979.357254329691641573 * 1e18,
+                poolDebt:             800_769_230.7692307696 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        80_076_923.07692307696 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+
+        // Update interest after 12 hours
+        uint i = 0;
+        while (i < 200) {
+            // trigger an interest accumulation
+            skip(12 hours);
+
+            _updateInterest();
+
+            unchecked { ++i; }
+        }
+
+        skip(365 days);
+
+        // Reverts with PRBMathUD60x18__ExpInputTooBig
+        vm.expectRevert();
+        _updateInterest();
     }
 }
