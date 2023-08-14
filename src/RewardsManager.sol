@@ -132,7 +132,7 @@ contract RewardsManager is IRewardsManager {
         uint256 rewardsEarned = _calculateAndClaimAllRewards(
             stakeInfo,
             tokenId_,
-            uint96(IPool(ajnaPool).currentBurnEpoch()),
+            IPool(ajnaPool).currentBurnEpoch(),
             epochToClaim_,
             true,
             ajnaPool
