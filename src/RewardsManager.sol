@@ -164,13 +164,13 @@ contract RewardsManager is IRewardsManager {
         stakeInfo.owner    = msg.sender;
         stakeInfo.ajnaPool = ajnaPool;
 
-        uint96 curBurnEpoch = uint96(IPool(ajnaPool).currentBurnEpoch());
+        uint256 curBurnEpoch = IPool(ajnaPool).currentBurnEpoch();
 
         // record the staking epoch
-        stakeInfo.stakingEpoch = curBurnEpoch;
+        stakeInfo.stakingEpoch = uint96(curBurnEpoch);
 
         // initialize last time interaction at staking epoch
-        stakeInfo.lastClaimedEpoch = curBurnEpoch;
+        stakeInfo.lastClaimedEpoch = uint96(curBurnEpoch);
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
         uint256 noOfPositions = positionIndexes.length;
