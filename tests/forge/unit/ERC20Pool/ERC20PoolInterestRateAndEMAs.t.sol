@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import { PRBMath } from "@prb-math/contracts/PRBMathUD60x18.sol";
-
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/interfaces/pool/erc20/IERC20Pool.sol';
-import 'src/libraries/external/PoolCommons.sol';
-import '@std/console.sol';
 
 contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
@@ -1353,7 +1349,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
             // stop pledging more collateral to avoid t0Tp becoming 0, i = 103 is the limit where t0tp becomes 0
             if (i < 100) {
-                // check borrower collateralization and pledge more collateral if undercollateralized
+                // check borrower collateralization and pledge more collateral if undercollateralized to avoid `(((tu + mau102 - 1e18) / 1e9) ** 2)` overflow
                 (uint256 debt, uint256 collateralPledged, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
                 (uint256 poolDebt,,,) = _pool.debtInfo();
                 uint256 lupIndex = _pool.depositIndex(poolDebt);
