@@ -657,6 +657,9 @@ contract RewardsManager is IRewardsManager {
 
                 // accumulate the full amount of additional rewards
                 updateRewardsClaimed[curBurnEpoch] += updatedRewards_;
+            } else {
+                // block.timestamp is greater than curBurnTime + UPDATE_PERIOD do not emit UpdateExchangeRates
+                return 0;
             }
         }
 

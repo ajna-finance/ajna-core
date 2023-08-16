@@ -101,9 +101,11 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         // token owner is Rewards manager
         assertEq(ERC721(address(_positionManager)).ownerOf(tokenId), address(_rewardsManager));
 
-        // when the token is unstaked updateExchangeRates emits
-        vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(owner, pool, indexes, updateExchangeRatesReward);
+        if (updateExchangeRatesReward != 0) {
+            // when the token is unstaked updateExchangeRates emits
+            vm.expectEmit(true, true, true, true);
+            emit UpdateExchangeRates(owner, pool, indexes, updateExchangeRatesReward);
+        }
 
         if (claimedArray.length != 0) {
             // when the token is unstaked claimRewards emits
