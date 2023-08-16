@@ -611,7 +611,7 @@ contract RewardsManager is IRewardsManager {
         ) = _getEpochInfo(pool_, curBurnEpoch);
 
         // Update exchange rates without reward if first epoch or if the epoch does not have burned tokens associated with it
-        if (curBurnEpoch == 0 || totalBurnedInEpoch == 0) {
+        if (totalBurnedInEpoch == 0) {
             uint256 noOfIndexes = indexes_.length;
 
             for (uint256 i = 0; i < noOfIndexes; ) {
