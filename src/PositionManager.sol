@@ -473,11 +473,11 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *          parameter. Adding the subset pool in this way will allow ERC721 non-subset pools
      *          to be accessed without the accompanying subsetHash.
      */
-    function addSubsetPool(address pool_, bytes32 subsetHash_) public returns (bool isValid) {
+    function addSubsetPool(address pool_, bytes32 subsetHash_) public returns (bool isAjnaPool_) {
         if (ajnaPools[pool_] == subsetHash_) return true;  // Already added
 
-        isValid = _isAjnaPool(pool_, subsetHash_);
-        if (isValid) ajnaPools[pool_] = subsetHash_;
+        isAjnaPool_ = _isAjnaPool(pool_, subsetHash_);
+        if (isAjnaPool_) ajnaPools[pool_] = subsetHash_;
     }
 
     /**************************/
