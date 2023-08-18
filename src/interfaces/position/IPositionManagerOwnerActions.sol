@@ -37,6 +37,7 @@ interface IPositionManagerOwnerActions {
     /**
      *  @notice Called by owners to mint and receive an `Ajna` Position `NFT`.
      *  @dev    Position `NFT`s can only be minited with an association to pools that have been deployed by the `Ajna` `ERC20PoolFactory` or `ERC721PoolFactory`.
+     *  @dev    poolSubsetHash_ is required the first time an ERC721 subset pool is added to the PositionManager.
      *  @param  pool_           The pool address associated with minted positions NFT.
      *  @param  recipient_      Lender address.
      *  @param  poolSubsetHash_ Hash of pool information used to track pool in the factory after deployment.
@@ -46,6 +47,18 @@ interface IPositionManagerOwnerActions {
         address pool_,
         address recipient_,
         bytes32 poolSubsetHash_
+    ) external returns (uint256 tokenId_);
+
+    /**
+     *  @notice Called by owners to mint and receive an `Ajna` Position `NFT`.
+     *  @dev    Position `NFT`s can only be minited with an association to pools that have been deployed by the `Ajna` `ERC20PoolFactory` or `ERC721PoolFactory`.
+     *  @param  pool_           The pool address associated with minted positions NFT.
+     *  @param  recipient_      Lender address.
+     *  @return tokenId_ The `tokenId` of the newly minted `NFT`.
+     */
+    function mint(
+        address pool_,
+        address recipient_
     ) external returns (uint256 tokenId_);
 
     /**

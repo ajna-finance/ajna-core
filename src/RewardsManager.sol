@@ -511,9 +511,9 @@ contract RewardsManager is IRewardsManager {
     /**
      *  @notice Update the exchange rate of a list of buckets.
      *  @dev    Caller can claim `5%` of the rewards that have accumulated to each bucket since the last burn event, if it hasn't already been updated.
-     *  @param  pool_       Address of the pool whose exchange rates are being updated.
-     *  @param  indexes_    List of bucket indexes to be updated.
-     *  @return Returns reward amount for updating bucket exchange rates.
+     *  @param  pool_        Address of the pool whose exchange rates are being updated.
+     *  @param  indexes_     List of bucket indexes to be updated.
+     *  @return updateReward Returns reward amount for updating bucket exchange rates.
      */
     function _updateBucketExchangeRatesAndClaim(
         address pool_,

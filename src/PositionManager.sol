@@ -248,6 +248,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
      *  @inheritdoc IPositionManagerOwnerActions
      *  @dev    === Write state ===
      *  @dev    `tokenInfo`: update `tokenId => TokenInfo` mapping
+     *  @dev    `ajnaPools`: update `pool => subsetHash` mapping
      *  @dev    === Revert on ===
      *  @dev    provided pool not valid `NotAjnaPool()`
      *  @dev    === Emit events ===
@@ -259,8 +260,9 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         address recipient_,
         bytes32 subsetHash_
     ) external returns (uint256 tokenId_) {
-        addSubsetPool(pool_, subsetHash_);
-        return mint(pool_, recipient_);
+        if (!addSubsetPool(pool_, subsetHash_)) revert NotAjnaPool();
+
+        tokenId_ = _mintPosition(pool_, recipient_);
     }
 
     /**
@@ -279,14 +281,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         // revert if the address is not a valid Ajna pool
         if (!_isAjnaPool(pool_)) revert NotAjnaPool();
 
-        tokenId_ = _nextId++;
-
-        // record which pool the tokenId was minted in
-        positionTokens[tokenId_].pool = pool_;
-
-        _mint(recipient_, tokenId_);
-
-        emit Mint(recipient_, pool_, tokenId_);
+        tokenId_ = _mintPosition(pool_, recipient_);
     }
 
     /**
@@ -483,6 +478,20 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
     /**************************/
     /*** Internal Functions ***/
     /**************************/
+
+    function _mintPosition(
+        address pool_,
+        address recipient_
+    ) internal returns (uint256 tokenId_) {
+        tokenId_ = _nextId++;
+
+        // record which pool the tokenId was minted in
+        positionTokens[tokenId_].pool = pool_;
+
+        _mint(recipient_, tokenId_);
+
+        emit Mint(recipient_, pool_, tokenId_);
+    }
 
     /**
      *  @notice Checks that a provided pool address was deployed by an `Ajna` factory.
