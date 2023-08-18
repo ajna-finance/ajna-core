@@ -34,6 +34,7 @@ library PositionNFTSVG {
         // set token metadata
         string memory description = "Ajna Positions NFT-V1";
         string memory image = _generateSVGofTokenById(params_);
+        string memory encodedImage = Base64.encode(bytes(image));
         string memory name = string(
             abi.encodePacked("Ajna Token #", Strings.toString(params_.tokenId))
         );
@@ -52,7 +53,7 @@ library PositionNFTSVG {
                             description,
                             '", "image":"',
                             'data:image/svg+xml;base64,',
-                            image,
+                            encodedImage,
                             '", "owner":"',
                             ownerHexString,
                             '"}'
