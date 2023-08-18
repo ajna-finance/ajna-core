@@ -24,7 +24,7 @@ import { Maths } from './libraries/internal/Maths.sol';
 /**
  *  @title  Rewards (staking) Manager contract
  *  @notice Pool lenders can optionally mint `NFT` that represents their positions.
- *          The Rewards contract allows pool lenders with positions `NFT` to stake and earn `Ajna` tokens. 
+ *          The Rewards contract allows pool lenders with positions `NFT` to stake and earn `Ajna` tokens.
  *          Lenders with `NFT`s can:
  *          - `stake` token
  *          - `update bucket exchange rate` and earn rewards
@@ -248,17 +248,26 @@ contract RewardsManager is IRewardsManager {
         bytes32 subsetHash_,
         uint256[] calldata indexes_
     ) external override returns (uint256 updateReward) {
-        // revert if trying to update exchange rates for a non Ajna pool
-        if (!positionManager.isAjnaPool(pool_, subsetHash_)) revert NotAjnaPool();
+        if (!positionManager.addSubsetPool(pool_, subsetHash_)) revert NotAjnaPool();
 
-        updateReward = _updateBucketExchangeRates(pool_, indexes_);
-
-        // transfer bucket update rewards to sender even if there's not enough balance for entire amount
-        _transferAjnaRewards({
-            transferAmount_: updateReward,
-            minAmount_:      0
-        });
+        updateReward = _updateBucketExchangeRatesAndClaim(pool_, indexes_);
     }
+
+    /**
+     *  @inheritdoc IRewardsManagerOwnerActions
+     *  @dev    === Emit events ===
+     *  @dev    - `UpdateExchangeRates`
+     */
+    function updateBucketExchangeRatesAndClaim(
+        address pool_,
+        uint256[] calldata indexes_
+    ) external override returns (uint256 updateReward) {
+        // revert if trying to update exchange rates for a non Ajna pool
+        if (!positionManager.isAjnaPool(pool_)) revert NotAjnaPool();
+
+        updateReward = _updateBucketExchangeRatesAndClaim(pool_, indexes_);
+    }
+
 
     /*******************************/
     /*** External View Functions ***/
@@ -411,7 +420,7 @@ contract RewardsManager is IRewardsManager {
                 bucketIndex,
                 bucketSnapshot.lpsAtStakeTime,
                 bucketRate
-            ); 
+            );
             unchecked { ++i; }
         }
 
@@ -497,6 +506,26 @@ contract RewardsManager is IRewardsManager {
             // set claim reward to difference between cap and reward
             newRewards_ = rewardsClaimedInEpoch_ > rewardsCapped ? 0 : rewardsCapped - rewardsClaimedInEpoch_;
         }
+    }
+
+    /**
+     *  @notice Update the exchange rate of a list of buckets.
+     *  @dev    Caller can claim `5%` of the rewards that have accumulated to each bucket since the last burn event, if it hasn't already been updated.
+     *  @param  pool_       Address of the pool whose exchange rates are being updated.
+     *  @param  indexes_    List of bucket indexes to be updated.
+     *  @return Returns reward amount for updating bucket exchange rates.
+     */
+    function _updateBucketExchangeRatesAndClaim(
+        address pool_,
+        uint256[] calldata indexes_
+    ) internal returns (uint256 updateReward) {
+        updateReward = _updateBucketExchangeRates(pool_, indexes_);
+
+        // transfer bucket update rewards to sender even if there's not enough balance for entire amount
+        _transferAjnaRewards({
+            transferAmount_: updateReward,
+            minAmount_:      0
+        });
     }
 
     /**
@@ -708,7 +737,7 @@ contract RewardsManager is IRewardsManager {
 
                 uint256 burnFactor = Maths.wmul(totalBurned_, bucketDeposit);
 
-                // calculate rewards earned for updating bucket exchange rate 
+                // calculate rewards earned for updating bucket exchange rate
                 rewards_ = interestEarned_ == 0 ? 0 : Maths.wdiv(
                     Maths.wmul(
                         UPDATE_CLAIM_REWARD,
@@ -723,7 +752,7 @@ contract RewardsManager is IRewardsManager {
         }
     }
 
-    /** 
+    /**
      *  @notice Utility function to unstake the position token.
      *  @dev    Used by `stake` function to unstake and claim rewards.
      *  @dev    Used by `emergencyUnstake` function to unstake without claiming rewards.
