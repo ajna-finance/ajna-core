@@ -61,6 +61,7 @@ interface IPositionManagerDerivedState {
 
     /**
      *  @notice Checks if a given `pool_` address is an Ajna pool.
+     *  @dev    Pool subsetHash required for ERC721 subset pool.
      *  @param  pool_       Address of the `Ajna` pool.
      *  @param  subsetHash_ Factory's subset hash pool.
      *  @return isAjnaPool_ `True` if the address to check is an Ajna pool.
@@ -68,6 +69,15 @@ interface IPositionManagerDerivedState {
     function isAjnaPool(
         address pool_,
         bytes32 subsetHash_
+    ) external view returns (bool isAjnaPool_);
+
+    /**
+     *  @notice Checks if a given `pool_` address is an Ajna pool.
+     *  @param  pool_       Address of the `Ajna` pool.
+     *  @return isAjnaPool_ `True` if the address to check is an Ajna pool.
+    */
+    function isAjnaPool(
+        address pool_
     ) external view returns (bool isAjnaPool_);
 
     /**

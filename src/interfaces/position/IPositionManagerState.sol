@@ -31,4 +31,9 @@ interface IPositionManagerState {
         mapping(uint256 index => Position) positions;
     }
 
+    function addSubsetPool(
+        address pool_,
+        bytes32 subsetHash_
+    ) external returns (bool isAjnaPool_);
+
 }
