@@ -406,9 +406,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         );
         assertEq(updateRewards, 0);
 
-        // check unstake will only emit Unstake and UpdateExchangeRate events
-        vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_minterOne, address(_pool), depositIndexes, 0);
+        // check unstake will only emit Unstake event since block.timestamp > curBurnTime + UPDATE_PERIOD
         vm.expectEmit(true, true, true, true);
         emit Unstake(_minterOne, address(_pool), tokenId);
         _rewardsManager.unstake(tokenId);
@@ -1158,7 +1156,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             claimedArray:              _epochsClaimedArray(2, 0),
             reward:                    0 * 1e18,
             indexes:                   depositIndexes,
-            updateExchangeRatesReward: 0
+            updateExchangeRatesReward: 0 // updateExchangeRates is not emitted
         });
     }
 
