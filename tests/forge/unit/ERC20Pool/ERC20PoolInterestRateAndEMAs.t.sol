@@ -1107,4 +1107,273 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             exchangeRate: 1.008406484270040092 * 1e18
         });
     }
+
+    function testAccruePoolInterestRevertDueToExpLimit() external {
+        _mintQuoteAndApproveTokens(_lender, 1_000_000_000 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower, 1_000_000_000 * 1e18);
+
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 1_000_000_000 * 1e18, // 1 billion
+            index:  _i1505_26
+        });
+
+        // draw 80% of liquidity as debt
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     800_000_000 * 1e18,
+            limitIndex:         _i1505_26,
+            collateralToPledge: 1_000_000_000 * 1e18,
+            newLup:             _p1505_26
+        });
+
+        _assertPool(
+            PoolParams({
+                htp:                  0.80076923076923077 * 1e18,
+                lup:                  _p1505_26,
+                poolSize:             1_000_000_000 * 1e18,
+                pledgedCollateral:    1_000_000_000 * 1e18,
+                encumberedCollateral: 531_979.357254329691641573 * 1e18,
+                poolDebt:             800_769_230.7692307696 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        80_076_923.07692307696 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+
+        // Update interest after 12 hours
+        uint i = 0;
+        while (i < 200) {
+            // trigger an interest accumulation
+            skip(12 hours);
+
+            _updateInterest();
+
+            unchecked { ++i; }
+        }
+
+        skip(365 days);
+
+        // Reverts with PRBMathUD60x18__ExpInputTooBig
+        vm.expectRevert();
+        _updateInterest();
+    }
+
+    function testAccrueInterestNewInterestLimit() external {
+        _mintQuoteAndApproveTokens(_lender, 1_000_000_000 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower, 1_000_000_000 * 1e18);
+
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 1_000_000_000 * 1e18, // 1 billion
+            index:  _i1505_26
+        });
+
+        // draw 80% of liquidity as debt
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     800_000_000 * 1e18,
+            limitIndex:         _i1505_26,
+            collateralToPledge: 1_000_000_000 * 1e18,
+            newLup:             _p1505_26
+        });
+
+        _assertPool(
+            PoolParams({
+                htp:                  0.80076923076923077 * 1e18,
+                lup:                  _p1505_26,
+                poolSize:             1_000_000_000 * 1e18,
+                pledgedCollateral:    1_000_000_000 * 1e18,
+                encumberedCollateral: 531_979.357254329691641573 * 1e18,
+                poolDebt:             800_769_230.7692307696 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        80_076_923.07692307696 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+
+        // update interest rate after each 14 hours
+        uint i = 0;
+        while (i < 171) {
+            // trigger an interest accumulation
+            skip(14 hours);
+
+            _updateInterest();
+
+            unchecked { ++i; }
+        }
+
+        // Pledge some collateral to avoid tu overflow in `(((tu + mau102 - 1e18) / 1e9) ** 2)`
+        _mintCollateralAndApproveTokens(_borrower, 1_000_000_000 * 1e24);
+        IERC20Pool(address(_pool)).drawDebt(_borrower, 0, 0, 1_000_000_000 * 1e24);
+
+        skip(14 hours);
+
+        // Update interest rate after each 13 hours
+        while (i < 179) {
+            // trigger an interest accumulation
+            skip(13 hours);
+
+            _updateInterest();
+
+            unchecked { ++i; }
+        }
+
+        skip(13 hours);
+
+        // Revert with Arithmetic overflow in `Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)` in accrue interest
+        vm.expectRevert();
+        _updateInterest();
+    }
+
+    function testUpdateInterestZeroThresholdPrice() external {
+        _mintQuoteAndApproveTokens(_lender, 1_000_000_000 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower, 1_000_000_000 * 1e18);
+
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 1_000_000_000 * 1e18, // 1 billion
+            index:  _i1505_26
+        });
+
+        // draw 80% of liquidity as debt
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     800_000_000 * 1e18,
+            limitIndex:         _i1505_26,
+            collateralToPledge: 1_000_000_000 * 1e18,
+            newLup:             _p1505_26
+        });
+
+        _assertPool(
+            PoolParams({
+                htp:                  0.80076923076923077 * 1e18,
+                lup:                  _p1505_26,
+                poolSize:             1_000_000_000 * 1e18,
+                pledgedCollateral:    1_000_000_000 * 1e18,
+                encumberedCollateral: 531_979.357254329691641573 * 1e18,
+                poolDebt:             800_769_230.7692307696 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        80_076_923.07692307696 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+
+        // update interest rate after each day
+        uint i = 0;
+        while (i < 104) {
+            // trigger an interest accumulation
+            skip(1 days);
+
+            // check borrower collateralization and pledge more collateral if undercollateralized
+            (uint256 debt, uint256 collateralPledged, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+            uint256 requiredCollateral = _requiredCollateral(debt, _lupIndex());
+
+            if (requiredCollateral > collateralPledged ) {
+                uint256 collateralToPledge = requiredCollateral - collateralPledged;
+                _mintCollateralAndApproveTokens(_borrower, collateralToPledge);
+
+                // Pledge collateral reverts with `ZeroThresholdPrice()`
+                if (i == 103) {
+                    vm.expectRevert();
+                }
+
+                changePrank(_borrower);
+                IERC20Pool(address(_pool)).drawDebt(_borrower, 0, 0, collateralToPledge);
+            } else {
+                _updateInterest();
+            }
+
+            unchecked { ++i; }
+        }
+    }
+
+    function testUpdateInterestTuLimit() external {
+        _mintQuoteAndApproveTokens(_lender, 1_000_000_000 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower, 1_000_000_000 * 1e18);
+
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 1_000_000_000 * 1e18, // 1 billion
+            index:  _i1505_26
+        });
+
+        // draw 80% of liquidity as debt
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     800_000_000 * 1e18,
+            limitIndex:         _i1505_26,
+            collateralToPledge: 1_000_000_000 * 1e18,
+            newLup:             _p1505_26
+        });
+
+        _assertPool(
+            PoolParams({
+                htp:                  0.80076923076923077 * 1e18,
+                lup:                  _p1505_26,
+                poolSize:             1_000_000_000 * 1e18,
+                pledgedCollateral:    1_000_000_000 * 1e18,
+                encumberedCollateral: 531_979.357254329691641573 * 1e18,
+                poolDebt:             800_769_230.7692307696 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        80_076_923.07692307696 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+
+        // update interest rate after each day
+        uint i = 0;
+        while (i < 237) {
+            // trigger an interest accumulation
+            skip(1 days);
+
+            // stop pledging more collateral to avoid t0Tp becoming 0, i = 103 is the limit where t0tp becomes 0
+            if (i < 100) {
+                // check borrower collateralization and pledge more collateral if undercollateralized to avoid `(((tu + mau102 - 1e18) / 1e9) ** 2)` overflow
+                (uint256 debt, uint256 collateralPledged, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+                (uint256 poolDebt,,,) = _pool.debtInfo();
+                uint256 lupIndex = _pool.depositIndex(poolDebt);
+                uint256 requiredCollateral = _requiredCollateral(debt, lupIndex);
+                
+                if (requiredCollateral > collateralPledged) {
+                    uint256 collateralToPledge = requiredCollateral - collateralPledged;
+                    _mintCollateralAndApproveTokens(_borrower, collateralToPledge);
+
+                    changePrank(_borrower);
+                    IERC20Pool(address(_pool)).drawDebt(_borrower, 0, 0, collateralToPledge);
+                }
+
+            } else {
+                _updateInterest();
+            }
+
+            unchecked { ++i; }
+        }
+
+        skip(1 days);
+
+        // Revert with Arithmetic overflow in `(((tu + mau102 - 1e18) / 1e9) ** 2)` in update interest
+        vm.expectRevert();
+        _updateInterest();
+    }
 }
