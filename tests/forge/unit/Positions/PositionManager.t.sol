@@ -2863,6 +2863,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertTrue(_positionManager.isPositionBucketBankrupt(tokenId, _i9_81));
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, _i9_72));
 
+        // check buckets that are not bankrupt in NFT
+        uint256[] memory bucketsWithPosition = new uint256[](1);
+        bucketsWithPosition[0] = _i9_72;
+
+        assertEq(_positionManager.getPositionIndexesFiltered(tokenId), bucketsWithPosition);
+
         // minter two needs to add to their position not on bankruptcy block
         skip(1 days);
 
