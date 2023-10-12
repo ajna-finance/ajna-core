@@ -139,22 +139,22 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         _kick({
             from:           testMinter,
             borrower:       testBorrowerTwo,
-            debt:           9_976.561670003961916237 * 1e18,
+            debt:           9_853.394241979221645666 * 1e18,
             collateral:     1_000 * 1e18,
-            bond:           98.533942419792216457 * 1e18,
-            transferAmount: 98.533942419792216457 * 1e18
+            bond:           149.577873638769639523 * 1e18,
+            transferAmount: 149.577873638769639523 * 1e18
         });
 
         // skip ahead so take can be called on the loan
-        skip(10 hours);
+        skip(9 hours);
 
         // take entire collateral
         _take({
             from:            testMinter,
             borrower:        testBorrowerTwo,
             maxCollateral:   1_000 * 1e18,
-            bondChange:      6.531114528261135360 * 1e18,
-            givenAmount:     653.111452826113536000 * 1e18,
+            bondChange:      60.911699561320164197 * 1e18,
+            givenAmount:     4_012.538586931187076 * 1e18,
             collateralTaken: 1_000 * 1e18,
             isReward:        true
         });
@@ -163,7 +163,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
             from:        testMinter,
             borrower:    testBorrowerTwo,
             maxDepth:    10,
-            settledDebt: 9_891.935520844277346923 * 1e18
+            settledDebt: 5_821.65265251164695163 * 1e18
         });
 
         // bucket is insolvent, balances are reset

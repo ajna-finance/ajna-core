@@ -9,17 +9,16 @@ interface IPoolState {
 
     /**
      *  @notice Returns details of an auction for a given borrower address.
-     *  @param  borrower_     Address of the borrower that is liquidated.
-     *  @return kicker_       Address of the kicker that is kicking the auction.
-     *  @return bondFactor_   The factor used for calculating bond size.
-     *  @return bondSize_     The bond amount in quote token terms.
-     *  @return kickTime_     Time the liquidation was initiated.
-     *  @return kickMomp_     Price where the average loan utilizes deposit, at the time when the loan is liquidated (kicked).
-     *  @return neutralPrice_ `Neutral Price` of auction.
-     *  @return head_         Address of the head auction.
-     *  @return next_         Address of the next auction in queue.
-     *  @return prev_         Address of the prev auction in queue.
-     *  @return alreadyTaken_ True if take has been called on auction
+     *  @param  borrower_       Address of the borrower that is liquidated.
+     *  @return kicker_         Address of the kicker that is kicking the auction.
+     *  @return bondFactor_     The factor used for calculating bond size.
+     *  @return bondSize_       The bond amount in quote token terms.
+     *  @return kickTime_       Time the liquidation was initiated.
+     *  @return referencePrice_ Price used to determine auction start price.
+     *  @return neutralPrice_   `Neutral Price` of auction.
+     *  @return head_           Address of the head auction.
+     *  @return next_           Address of the next auction in queue.
+     *  @return prev_           Address of the prev auction in queue.
      */
     function auctionInfo(address borrower_)
         external
@@ -29,12 +28,11 @@ interface IPoolState {
             uint256 bondFactor_,
             uint256 bondSize_,
             uint256 kickTime_,
-            uint256 kickMomp_,
+            uint256 referencePrice_,
             uint256 neutralPrice_,
             address head_,
             address next_,
-            address prev_,
-            bool alreadyTaken_
+            address prev_
         );
 
     /**
@@ -60,7 +58,7 @@ interface IPoolState {
      *  @param  borrower_   Address of the borrower.
      *  @return t0Debt_     Amount of debt borrower would have had if their loan was the first debt drawn from the pool.
      *  @return collateral_ Amount of collateral that the borrower has deposited, in collateral token.
-     *  @return t0Np_       t0 `Neutral Price`
+     *  @return npTpRatio_  Np to Tp ratio of borrower at the time of last borrow or pull collateral.
      */
     function borrowerInfo(address borrower_)
         external
@@ -68,7 +66,7 @@ interface IPoolState {
         returns (
             uint256 t0Debt_,
             uint256 collateral_,
-            uint256 t0Np_
+            uint256 npTpRatio_
         );
 
     /**
@@ -388,7 +386,7 @@ struct Loan {
 struct Borrower {
     uint256 t0Debt;     // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
     uint256 collateral; // [WAD] Collateral deposited by borrower.
-    uint256 t0Np;       // [WAD] Neutral Price time-adjusted as if it was incurred upon first loan of pool.
+    uint256 npTpRatio;  // [WAD] Np to Tp ratio at the time of last borrow or pull collateral.
 }
 
 /**********************/
@@ -407,15 +405,14 @@ struct AuctionsState {
 
 /// @dev Struct holding liquidation state.
 struct Liquidation {
-    address kicker;       // address that initiated liquidation
-    uint96  bondFactor;   // [WAD] bond factor used to start liquidation
-    uint96  kickTime;     // timestamp when liquidation was started
-    address prev;         // previous liquidated borrower in auctions queue
-    uint96  kickMomp;     // [WAD] Momp when liquidation was started
-    address next;         // next liquidated borrower in auctions queue
-    uint160 bondSize;     // [WAD] liquidation bond size
-    uint96  neutralPrice; // [WAD] Neutral Price when liquidation was started
-    bool    alreadyTaken; // true if take has been called on auction
+    address kicker;         // address that initiated liquidation
+    uint96  bondFactor;     // [WAD] bond factor used to start liquidation
+    uint96  kickTime;       // timestamp when liquidation was started
+    address prev;           // previous liquidated borrower in auctions queue
+    uint96  referencePrice; // [WAD] used to calculate auction start price
+    address next;           // next liquidated borrower in auctions queue
+    uint160 bondSize;       // [WAD] liquidation bond size
+    uint96  neutralPrice;   // [WAD] Neutral Price when liquidation was started
 }
 
 /// @dev Struct holding kicker state.

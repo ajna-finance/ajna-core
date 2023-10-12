@@ -23,8 +23,8 @@
 - **A3**: number of borrowers with debt (`LoansState.borrowers.length` with `t0Debt != 0`) = number of loans (`LoansState.loans.length -1`) + number of auctioned borrowers (`AuctionsState.noOfAuctions`)  
 - **A4**: number of recorded auctions (`AuctionsState.noOfAuctions`) = length of auctioned borrowers (count of borrowers in `AuctionsState.liquidations` with `kickTime != 0`)
 - **A5**: for each `Liquidation` recorded in liquidation mapping (`AuctionsState.liquidations`) the kicker address (`Liquidation.kicker`) has a locked balance (`Kicker.locked`) equal or greater than liquidation bond size (`Liquidation.bondSize`)  
-- **A6**: if a `Liquidation` is not taken then the take flag (`Liquidation.alreadyTaken`) should be `False`, if already taken then the take flag should be `True`  
 - **A7**: total bond escrowed accumulator (`AuctionsState.totalBondEscrowed`) should increase when auction is kicked with the difference needed to cover the bond and should decrease only when kicker bonds withdrawn (`Pool.withdrawBonds`). Claimable bonds should be available for withdrawal from pool at any time.  
+- **A8**: Upon a take/arbtake/deposittake the kicker reward <= borrower penalty
 
 ## Loans
 - **L1**: for each `Loan` in loans array (`LoansState.loans`) starting from index 1, the corresponding address (`Loan.borrower`) is not `0x`, the threshold price (`Loan.thresholdPrice`) is different than 0 and the id mapped in indices mapping (`LoansState.indices`) equals index of loan in loans array.  
@@ -70,12 +70,13 @@
 - **RE4**:  Reserves are unchanged by withdrawing deposit (quote token) from a bucket after the penalty period hes expired
 - **RE5**:  Reserves are unchanged by adding collateral token into a bucket
 - **RE6**:  Reserves are unchanged by removing collateral token from a bucket
-- **RE7**:  Reserves increase by 7% of the loan quantity upon the first take (including depositTake or arbTake) and increase/decrease by bond penalty/reward on take.
-- **RE8**:  Reserves are unchanged under takes/depositTakes/arbTakes after the first take but increase/decrease by bond penalty/reward on take.
-- **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
+- **RE7**:  Reserves increase by bond penalty/reward plus borrower penalty on take above TP.
+- **RE8**:  Reserves increase by bond penalty/reward plus borrower penalty on bucket takes above TP.
+- **RE9**:  Reserves unchanges by takes and bucket takes below TP.
 - **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
 - **RE11**: Reserves decrease by claimableReserves by kickReserveAuction
 - **RE12**: Reserves decrease by amount of reserve used to settle a auction
+- **RE13**: Reserves are unchanged by kick
 
 ## Rewards
 - **RW1**: Staking rewards must be less than reward cap percentage multiplied by ajna burned (`newRewards < REWARD_CAP * totalBurnedInPeriod`) for any given time period (`epoch`)

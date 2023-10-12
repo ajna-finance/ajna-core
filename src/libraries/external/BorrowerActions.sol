@@ -25,7 +25,6 @@ import {
     _revertOnMinDebt
 }                           from '../helpers/RevertsHelper.sol';
 
-import { Buckets }  from '../internal/Buckets.sol';
 import { Deposits } from '../internal/Deposits.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
@@ -51,7 +50,7 @@ library BorrowerActions {
         uint256 t0BorrowAmount;        // [WAD] t0 amount to borrow
         uint256 t0DebtChange;          // [WAD] additional t0 debt resulted from draw debt action
         bool    pledge;                // true if pledge action
-        bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when drawing debt or pledge settles auction)
+        bool    stampNpTpRatio;        // true if loan's Np to Tp ratio should be restamped (when drawing debt or pledge settles auction)
     }
 
     /// @dev Struct used for `repayDebt` function local vars.
@@ -60,8 +59,7 @@ library BorrowerActions {
         uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LP (NFTs only)
         bool    pull;                  // true if pull action
         bool    repay;                 // true if repay action
-        bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when repay settles auction or pull collateral)
-        uint256 t0DebtInAuctionChange; // [WAD] t0 change amount of debt after repayment
+        bool    stampNpTpRatio;        // true if loan's Np to Tp ratio should be restamped (when repay settles auction or pull collateral)
         uint256 t0RepaidDebt;          // [WAD] t0 debt repaid
     }
 
@@ -93,10 +91,6 @@ library BorrowerActions {
     /**
      *  @notice See `IERC20PoolBorrowerActions` and `IERC721PoolBorrowerActions` for descriptions
      *  @dev    === Write state ===
-     *  @dev    - `SettlerActions._settleAuction` (`_removeAuction`):
-     *  @dev      decrement kicker locked accumulator, increment kicker claimable accumumlator
-     *  @dev      decrement auctions count accumulator
-     *  @dev      update auction queue state
      *  @dev    - `Loans.update` (`_upsert`):
      *  @dev      insert or update loan in loans array
      *  @dev      remove loan from loans array
@@ -107,12 +101,10 @@ library BorrowerActions {
      *  @dev    borrower debt less than pool min debt `AmountLTMinDebt()`
      *  @dev    limit price reached `LimitIndexExceeded()`
      *  @dev    borrower cannot draw more debt `BorrowerUnderCollateralized()`
-     *  @dev    === Emit events ===
-     *  @dev    - `SettlerActions._settleAuction`: `AuctionNFTSettle` or `AuctionSettle`
+     *  @dev    borrower cannot be in auction `AuctionActive()`
      */
     function drawDebt(
         AuctionsState storage auctions_,
-        mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
         LoansState    storage loans_,
         PoolState calldata poolState_,
@@ -127,6 +119,9 @@ library BorrowerActions {
         // revert if not enough pool balance to borrow
         if (amountToBorrow_ > maxAvailable_) revert InsufficientLiquidity();
 
+        // revert if borrower is in auction
+        if(_inAuction(auctions_, borrowerAddress_)) revert AuctionActive();
+
         DrawDebtLocalVars memory vars;
         vars.pledge = collateralToPledge_ != 0;
         vars.borrow = amountToBorrow_ != 0;
@@ -138,7 +133,6 @@ library BorrowerActions {
 
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
 
-        result_.inAuction           = _inAuction(auctions_, borrowerAddress_);
         result_.debtPreAction       = borrower.t0Debt;
         result_.collateralPreAction = borrower.collateral;
         result_.t0PoolDebt          = poolState_.t0Debt;
@@ -153,36 +147,6 @@ library BorrowerActions {
             result_.remainingCollateral += collateralToPledge_;
             result_.newLup              = Deposits.getLup(deposits_, result_.poolDebt);
 
-            // if loan is auctioned and becomes collateralized by newly pledged collateral then settle auction
-            if (
-                result_.inAuction &&
-                _isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)
-            ) {
-                // stamp borrower t0Np when exiting from auction
-                vars.stampT0Np = true;
-
-                // borrower becomes re-collateralized, entire borrower debt is removed from pool auctions debt accumulator
-                result_.inAuction             = false;
-                result_.settledAuction        = true;
-                result_.t0DebtInAuctionChange = borrower.t0Debt;
-
-                // settle auction and update borrower's collateral with value after settlement
-                (
-                    result_.remainingCollateral,
-                    vars.compensatedCollateral
-                ) = SettlerActions._settleAuction(
-                    auctions_,
-                    buckets_,
-                    deposits_,
-                    borrowerAddress_,
-                    borrower.collateral,
-                    poolState_.poolType
-                );
-                result_.poolCollateral -= vars.compensatedCollateral;
-
-                borrower.collateral = result_.remainingCollateral;                
-            }
-
             // add new amount of collateral to pledge to pool balance
             result_.poolCollateral += collateralToPledge_;
         }
@@ -190,9 +154,6 @@ library BorrowerActions {
         if (vars.borrow) {
             // only intended recipient can borrow quote
             if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
-
-            // an auctioned borrower in not allowed to draw more debt (even if collateralized at the new LUP) if auction is not settled
-            if (result_.inAuction) revert AuctionActive();
 
             vars.t0BorrowAmount = Maths.ceilWdiv(amountToBorrow_, poolState_.inflator);
 
@@ -225,22 +186,18 @@ library BorrowerActions {
                 revert BorrowerUnderCollateralized();
             }
 
-            // stamp borrower t0Np when draw debt
-            vars.stampT0Np = true;
+            // stamp borrower Np to Tp ratio when draw debt
+            vars.stampNpTpRatio = true;
         }
 
         // update loan state
         Loans.update(
             loans_,
-            auctions_,
-            deposits_,
             borrower,
             borrowerAddress_,
-            result_.poolDebt,
             poolState_.rate,
-            result_.newLup,
-            result_.inAuction,
-            vars.stampT0Np
+            false,                          // loan not in auction
+            vars.stampNpTpRatio
         );
 
         result_.debtPostAction       = borrower.t0Debt;
@@ -250,10 +207,6 @@ library BorrowerActions {
     /**
      *  @notice See `IERC20PoolBorrowerActions` and `IERC721PoolBorrowerActions` for descriptions
      *  @dev    === Write state ===
-     *  @dev    - `SettlerActions._settleAuction` (`_removeAuction`):
-     *  @dev      decrement kicker locked accumulator, increment kicker claimable accumumlator
-     *  @dev      decrement auctions count accumulator
-     *  @dev      update auction queue state
      *  @dev    - `Loans.update` (`_upsert`):
      *  @dev      insert or update loan in loans array
      *  @dev      remove loan from loans array
@@ -264,12 +217,10 @@ library BorrowerActions {
      *  @dev    borrower not sender `BorrowerNotSender()`
      *  @dev    not enough collateral to pull `InsufficientCollateral()`
      *  @dev    limit price reached `LimitIndexExceeded()`
-     *  @dev    === Emit events ===
-     *  @dev    - `SettlerActions._settleAuction`: `AuctionNFTSettle` or `AuctionSettle`
+     *  @dev    borrower cannot be in auction `AuctionActive()`
      */
     function repayDebt(
         AuctionsState storage auctions_,
-        mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
         LoansState    storage loans_,
         PoolState calldata poolState_,
@@ -287,11 +238,12 @@ library BorrowerActions {
         // revert if no amount to pull or repay
         if (!vars.repay && !vars.pull) revert InvalidAmount();
 
+        if(_inAuction(auctions_, borrowerAddress_)) revert AuctionActive();
+
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
 
-        result_.inAuction           = _inAuction(auctions_, borrowerAddress_);
         result_.debtPreAction       = borrower.t0Debt;
         result_.collateralPreAction = borrower.collateral;
         result_.t0PoolDebt          = poolState_.t0Debt;
@@ -329,48 +281,12 @@ library BorrowerActions {
             );
 
             result_.newLup = Deposits.getLup(deposits_, result_.poolDebt);
-
-            // if loan is auctioned and becomes collateralized by repaying debt then settle auction
-            if (result_.inAuction) {
-                if (_isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)) {
-                     // stamp borrower t0Np when exiting from auction
-                    vars.stampT0Np = true;
-
-                    // borrower becomes re-collateralized, entire borrower debt is removed from pool auctions debt accumulator
-                    result_.inAuction             = false;
-                    result_.settledAuction        = true;
-                    result_.t0DebtInAuctionChange = borrower.t0Debt;
-
-                    // settle auction and update borrower's collateral with value after settlement
-                    (
-                        result_.remainingCollateral,
-                        vars.compensatedCollateral
-                    ) = SettlerActions._settleAuction(
-                        auctions_,
-                        buckets_,
-                        deposits_,
-                        borrowerAddress_,
-                        borrower.collateral,
-                        poolState_.poolType
-                    );
-                    result_.poolCollateral -= vars.compensatedCollateral;
-
-                    borrower.collateral = result_.remainingCollateral;
-                } else {
-                    // partial repay, remove only the paid debt from pool auctions debt accumulator
-                    result_.t0DebtInAuctionChange = vars.t0RepaidDebt;
-                }
-            }
-
             borrower.t0Debt -= vars.t0RepaidDebt;
         }
 
         if (vars.pull) {
             // only intended recipient can pull collateral
             if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
-
-            // an auctioned borrower in not allowed to pull collateral (even if collateralized at the new LUP) if auction is not settled
-            if (result_.inAuction) revert AuctionActive();
 
             // calculate LUP only if it wasn't calculated in repay action
             if (!vars.repay) result_.newLup = Deposits.getLup(deposits_, result_.poolDebt);
@@ -382,8 +298,8 @@ library BorrowerActions {
                 borrower.collateral - encumberedCollateral < collateralAmountToPull_
             ) revert InsufficientCollateral();
 
-            // stamp borrower t0Np when pull collateral action
-            vars.stampT0Np = true;
+            // stamp borrower Np to Tp ratio when pull collateral action
+            vars.stampNpTpRatio = true;
 
             borrower.collateral -= collateralAmountToPull_;
 
@@ -396,15 +312,11 @@ library BorrowerActions {
         // update loan state
         Loans.update(
             loans_,
-            auctions_,
-            deposits_,
             borrower,
             borrowerAddress_,
-            result_.poolDebt,
             poolState_.rate,
-            result_.newLup,
-            result_.inAuction,
-            vars.stampT0Np
+            false,                         // loan not in auction
+            vars.stampNpTpRatio
         );
 
         result_.debtPostAction       = borrower.t0Debt;
@@ -449,18 +361,14 @@ library BorrowerActions {
             )
         ) revert BorrowerUnderCollateralized();
 
-        // update loan state to stamp Neutral Price
+        // update loan state to stamp Np to Tp ratio
         Loans.update(
             loans_,
-            auctions_,
-            deposits_,
             borrower,
             msg.sender,
-            poolState_.debt,
             poolState_.rate,
-            newLup_,
             false,          // loan not in auction
-            true            // stamp Neutral Price of the loan
+            true            // stamp Np to Tp ratio of the loan
         );
 
         emit LoanStamped(msg.sender);

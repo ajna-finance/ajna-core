@@ -55,13 +55,13 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
 
         address borrower;
         // try to take from head auction if any
-        (, , , , , , address headAuction, , , ) = _pool.auctionInfo(address(0));
+        (, , , , , , address headAuction, , ) = _pool.auctionInfo(address(0));
         if (headAuction != address(0)) {
             (, uint256 auctionedCollateral, ) = _poolInfo.borrowerInfo(address(_pool), headAuction);
             borrower = headAuction;
             amount_  = auctionedCollateral / 2;
 
-            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
+            (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
             // skip to make auction takeable
             if (block.timestamp - kickTime < 1 hours) {
                 vm.warp(block.timestamp + 61 minutes);
@@ -91,11 +91,11 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
 
         address borrower;
         // try to take from head auction if any
-        (, , , , , , address headAuction, , , ) = _pool.auctionInfo(address(0));
+        (, , , , , , address headAuction, , ) = _pool.auctionInfo(address(0));
         if (headAuction != address(0)) {
             borrower = headAuction;
 
-            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
+            (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
             // skip to make auction takeable
             if (block.timestamp - kickTime < 1 hours) {
                 vm.warp(block.timestamp + 61 minutes);
@@ -126,7 +126,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
 
         address borrower;
         // try to settle head auction if any
-        (, , , , , , address headAuction, , , ) = _pool.auctionInfo(address(0));
+        (, , , , , , address headAuction, , ) = _pool.auctionInfo(address(0));
         if (headAuction != address(0)) {
             borrower = headAuction;
         } else {
@@ -139,8 +139,6 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
 
         _settleAuction(borrower, LENDER_MAX_BUCKET_INDEX - LENDER_MIN_BUCKET_INDEX);
 
-        // Cleanup phase
-        _auctionSettleStateReset(borrower);
     }
 
     /*******************************/
@@ -152,7 +150,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         borrower_      = actors[borrowerIndex_];
         amount_        = constrictToRange(amount_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
 
-        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
+        ( , , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower_);
 
         borrowerKicked_ = kickTime != 0;
 

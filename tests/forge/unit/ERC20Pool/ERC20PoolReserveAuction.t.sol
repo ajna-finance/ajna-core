@@ -88,7 +88,7 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         // kick off a new auction
         _kickReserveAuction({
             from:              _bidder,
-            remainingReserves: 1.411317956425859163 * 1e18,
+            remainingReserves: 1.425573693359453700 * 1e18,
             price:             1000000000 * 1e18,
             epoch:             1
         });
@@ -96,22 +96,75 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         skip(60 hours);
 
         _assertReserveAuction({
-            reserves:                   0.000001743377232837 * 1e18,
-            claimableReserves :         0.000000736933594537 * 1e18,
-            claimableReservesRemaining: 1.411317956425859163 * 1e18,
+            reserves:                   0.000001006443638300 * 1e18,
+            claimableReserves :         0,
+            claimableReservesRemaining: 1.425573693359453700 * 1e18,
             auctionPrice:               0.000000000867361737 * 1e18,
             timeRemaining:              43200
         });
 
-        assertEq(USDC.balanceOf(address(_pool)),   1_007.854958 * 1e6);
-        assertEq(USDC.balanceOf(address(_bidder)), 0.014255 * 1e6); // kicker reward
+        // taking 0 amount forbidden
+        vm.expectRevert(IPoolErrors.InvalidAmount.selector);
+        _pool.takeReserves(0);
+
+        // take all reserves
+        assertEq(USDC.balanceOf(address(_pool)),   1_007.869213 * 1e6);
         assertEq(AJNA.balanceOf(address(_bidder)), 10 * 1e18);
-
         _pool.takeReserves(10 * 1e18);
+        assertEq(USDC.balanceOf(address(_pool)),   1_006.443640 * 1e6);
+        assertEq(USDC.balanceOf(address(_bidder)), 1.425573 * 1e6);
+        assertEq(AJNA.balanceOf(address(_bidder)), 9.999999998763511925 * 1e18);
+    }
 
-        assertEq(USDC.balanceOf(address(_pool)),   1_006.443641 * 1e6);
-        assertEq(USDC.balanceOf(address(_bidder)), 1.425572 * 1e6);
-        assertEq(AJNA.balanceOf(address(_bidder)), 9.999999998775876805 * 1e18);
+    function testZeroBid() external {
+        // mint into the pool to simulate reserves
+        deal(address(USDC), address(_pool), 1_000_000 * 1e6);
+        _assertReserveAuction({
+            reserves:                   999_300.2884615384615386 * 1e18,
+            claimableReserves :         999_298.787018230769230907 * 1e18,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });
+
+        // kick off a new auction
+        _kickReserveAuction({
+            from:              _bidder,
+            remainingReserves: 999_298.787018230769230907 * 1e18,
+            price:             1_000_000_000 * 1e18,
+            epoch:             1
+        });
+
+        // price cannot hit zero, but wait for it to be reasonably small
+        skip(71 hours);
+        _assertReserveAuction({
+            reserves:                   1.501443307692307693 * 1e18,
+            claimableReserves :         0,
+            claimableReservesRemaining: 999_298.787018230769230907 * 1e18,
+            auctionPrice:               0.000000000000423516 * 1e18,
+            timeRemaining:              1 hours
+        });
+
+        // try to take the smallest amount of USDC possible
+        assertEq(USDC.balanceOf(address(_bidder)), 0);
+        assertEq(AJNA.balanceOf(address(_bidder)), 10 * 1e18);
+        _pool.takeReserves(1 * 1e6);
+        // bidder got nothing, but burned 1wei of AJNA
+        assertEq(USDC.balanceOf(address(_bidder)), 0);
+        assertEq(AJNA.balanceOf(address(_bidder)), 9.999999999999999999 * 1e18);
+
+        // try to take a smaller-than-possible amount of USDC
+        _pool.takeReserves(1);
+        // bidder got nothing, but burned another 1wei of AJNA
+        assertEq(USDC.balanceOf(address(_bidder)), 0);
+        assertEq(AJNA.balanceOf(address(_bidder)), 9.999999999999999998 * 1e18);
+
+        // take a reasonable amount of USDC
+        assertEq(USDC.balanceOf(address(_bidder)), 0);
+        _pool.takeReserves(100 * 1e18);
+        // bidder burned some AJNA
+        assertEq(USDC.balanceOf(address(_bidder)), 100 * 1e6);
+        assertEq(AJNA.balanceOf(address(_bidder)), 9.999999999957648398 * 1e18);
     }
 }
 
@@ -150,14 +203,10 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         // pool balance is amount added minus new debt
         assertEq(_quote.balanceOf(address(pool)), 98903);
 
-        vm.warp(block.timestamp + 17280000);
+        vm.warp(block.timestamp + 17_280_000);
 
         changePrank(_actor9);
         pool.updateInterest();
-        pool.kick(_actor3, 7388);
-        // pool balance increased by kick bond
-        assertEq(_quote.balanceOf(address(pool)), 99920);
-        // available quote token does not account the kick bond
         assertEq(_availableQuoteToken(), 98903);
 
         vm.warp(block.timestamp + 86400);
@@ -168,21 +217,23 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         vm.expectRevert(IPoolErrors.InsufficientLiquidity.selector);
         pool.drawDebt(_actor7, 99266, 7388, 999234524847);
 
-        pool.drawDebt(_actor7, 98903, 7388, 999234524847);
+        // actor 7 draws almost all available quote token
+        pool.drawDebt(_actor7, 98703, 7388, 999234524847);
         // pool balance decreased by new debt
-        assertEq(_quote.balanceOf(address(pool)), 1017);
+        assertEq(_quote.balanceOf(address(pool)), 200);
         // available quote token decreased with new debt
-        assertEq(_availableQuoteToken(), 0);
+        assertEq(_availableQuoteToken(), 200);
 
         vm.warp(block.timestamp + 86400);
 
+        // attempt to kick reserves and verify pool balance is unchanged
         changePrank(_actor2);
         pool.updateInterest();
         vm.expectRevert(IPoolErrors.NoReserves.selector);
         pool.kickReserveAuction();
+        assertEq(_quote.balanceOf(address(pool)), 200);
 
-        // pool balance remains the same
-        assertEq(_quote.balanceOf(address(pool)), 1017);
+        vm.warp(block.timestamp + 86400);
 
         changePrank(_actor3);
         pool.updateInterest();
@@ -192,25 +243,20 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         
         // repay debt to have enough balance to kick new reserves auction
         ERC20Pool(address(_pool)).repayDebt(_actor3, type(uint256).max, 0, _actor3, MAX_FENWICK_INDEX);
+        ERC20Pool(address(_pool)).repayDebt(_actor7, type(uint256).max, 0, _actor7, MAX_FENWICK_INDEX);
 
-        uint256 initialPoolBalance     = 103934;
-        uint256 initialAvailableAmount = 102917;
+        uint256 initialPoolBalance     = 200784;
+        uint256 initialAvailableAmount = 200784;
 
         assertEq(_quote.balanceOf(address(pool)), initialPoolBalance);
         assertEq(_availableQuoteToken(), initialAvailableAmount);
 
         pool.kickReserveAuction();
 
-        uint256 kickerReward    = 12;
-        uint256 claimableTokens = 1229;
+        uint256 claimableTokens = 591;
 
         ( , , uint256 claimable, , ) = _poolUtils.poolReservesInfo(address(_pool));
         assertEq(claimable, claimableTokens);
-
-        // pool balance diminished by reward given to reserves kicker (12)
-        assertEq(_quote.balanceOf(address(pool)), initialPoolBalance - kickerReward);
-        // available quote token (available to remove / draw debt from) diminished by kicker reward + claimable tokens
-        assertEq(_availableQuoteToken(), initialAvailableAmount - (kickerReward + claimableTokens));
 
         skip(24 hours);
 
@@ -221,9 +267,9 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         pool.takeReserves(claimableTokens);
 
         // quote token balance diminished by quote token taken from reserve auction
-        assertEq(_quote.balanceOf(address(pool)), initialPoolBalance - kickerReward - claimableTokens);
+        assertEq(_quote.balanceOf(address(pool)), initialPoolBalance - claimableTokens);
         // available quote token (available to remove / draw debt from) is not modified
-        assertEq(_availableQuoteToken(), initialAvailableAmount - (kickerReward + claimableTokens));
+        assertEq(_availableQuoteToken(), initialAvailableAmount - claimableTokens);
     }
 
 }

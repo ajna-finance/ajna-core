@@ -92,10 +92,10 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
     }
 
     function testPoolInfoUtilsBorrowerInfo() external {
-        (uint256 debt, uint256 collateral, uint256 t0Np) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        (uint256 debt, uint256 collateral, uint256 npTpRatio) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,       21_020.192307692307702000 * 1e18);
         assertEq(collateral, 100 * 1e18);
-        assertEq(t0Np,       220.712019230769230871 * 1e18);
+        assertEq(npTpRatio,  242.111289450059087705 * 1e18);
     }
 
     function testPoolInfoUtilsBucketInfo() external {
@@ -203,22 +203,6 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
     function testPoolInfoUtilsLenderInterestMargin() external {
         uint256 lenderInterestMargin = _poolUtils.lenderInterestMargin(address(_pool));
         assertEq(lenderInterestMargin, 0.849999999999999999 * 1e18);
-    }
-
-    function testMomp() external {
-        assertEq(_poolUtils.momp(address(_pool)), 2_981.007422784467321543 * 1e18);
-
-        // ensure calculation does not revert on pools with no loans and no deposit
-        IERC20     otherCollateral = new Token("MompTestCollateral", "MTC");
-        IERC20Pool emptyPool       = ERC20Pool(_poolFactory.deployPool(address(otherCollateral), address(_quote), 0.05 * 10**18));
-        assertEq(_poolUtils.momp(address(emptyPool)), MIN_PRICE);
-
-        // should return HPB on pools with liquidity but no loans
-        changePrank(_lender);
-        uint256 hpbIndex = 369;
-        _quote.approve(address(emptyPool), type(uint256).max);
-        emptyPool.addQuoteToken(0.0213 * 1e18, hpbIndex, type(uint256).max, false);
-        assertEq(_poolUtils.momp(address(emptyPool)), _priceAt(hpbIndex));
     }
 
     function testBorrowFeeRate() external {
