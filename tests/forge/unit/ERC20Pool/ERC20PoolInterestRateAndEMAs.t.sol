@@ -1365,7 +1365,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         // update interest rate after each day
         uint i = 0;
-        while (i < 237) {
+        while (i < 4865) {
             // trigger an interest accumulation
             skip(1 days);
 
@@ -1394,7 +1394,6 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         skip(1 days);
 
-        // FIXME: We no longer revert here; should we not expect revert, or find a new higher limit to revert upon?
         // Revert with Arithmetic overflow in `(((tu + mau102 - 1e18) / 1e9) ** 2)` in update interest
         vm.expectRevert();
         _updateInterest();
