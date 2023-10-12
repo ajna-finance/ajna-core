@@ -235,6 +235,8 @@ contract RegressionTestBankBankruptcyERC20PoolRewardsWith12QuotePrecision is Buc
         _bucketBankruptcyerc20poolrewardsHandler.takeOrSettleAuction(0, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 439349802057718495654968534586028);
     }
     
+    // Test was failing because of interest accumalation to overflow uint256 max limit.
+    // Fixed by Reducing max interest rate from 50000% to 400%.
     function test_regression_interest_accumalation_overflow() external {
         _bucketBankruptcyerc20poolrewardsHandler.stake(320307692307692307841, 2490, 10917, 403196809217289663458043223580906563641609617294);
         _bucketBankruptcyerc20poolrewardsHandler.failed();

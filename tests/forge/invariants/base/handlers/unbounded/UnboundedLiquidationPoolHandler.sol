@@ -237,6 +237,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 
             // reserves are increased by take penalty of borrower (Deposit used from bucket - Borrower debt reduced)
             increaseInReserves += borrowerPenalty;
+
+            // reserves are decreased by kicker reward
+            decreaseInReserves += kickerReward;
             
             if (beforeBucketTakeVars.kickerBond > afterBucketTakeVars.kickerBond) {
                 // **RE7**: Reserves increase by bond penalty on take.

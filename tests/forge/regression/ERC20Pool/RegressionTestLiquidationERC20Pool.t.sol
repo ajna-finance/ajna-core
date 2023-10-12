@@ -513,6 +513,10 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
         invariant_auction();
     }
 
+    /*
+        Test was failing in bucket take due to incorrect borrower penalty calculations in invariants.
+        Fixed by calculating borrower penalty = borrower collateral taken * auction price - debt repaid.
+    */
     function test_regression_failure_A8_1() external {
         _liquidationERC20PoolHandler.addCollateral(12589, 3027, 11546, 12397);
         _liquidationERC20PoolHandler.kickAuction(5580373056879638310723579957702553697154185800606952317169116065283, 673628694582737773359188839547197377524455313247730645, 3238434615599720181679028733329070536752833214808374986356341951234757433, 1);
@@ -521,6 +525,10 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
         invariant_auction();
     }
 
+    /*
+        Test was failing in take due to collateral constraint being round down and less collateral was used to repay all borrower debt.
+        Fixed by rounding up to scale collateral constraint and compare it with total borrower collateral.
+    */
     function test_regression_failure_A8_2() external {
         _liquidationERC20PoolHandler.lenderKickAuction(32707, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
         _liquidationERC20PoolHandler.stampLoan(1, 115792089237316195423570985008687907853269984665640564039457584007913129639934);
@@ -529,11 +537,19 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
         invariant_auction();
     }
 
+    /*
+        Test was failing in take due to collateral constraint being round down while calculating through borrower debt and borrowerDebt.
+        Fixed by using CeilWdiv instead of wdiv while calculating collateral constraint to always round up.
+    */
     function test_regression_failure_A8_3() external {
         _liquidationERC20PoolHandler.takeAuction(26177409091395859259214754727, 2228, 1235, 1028254131108805440);
         invariant_auction();
     }
 
+    /*
+        Test was failing in arb take due to incorrect kicker penalty calculation when kicker and taker are same and both gets lp as reward.
+        Fixed by calculating kicker penalty to be equals to total lp rewards - Taker reward (collateral taken * difference in bucket price and auction price).
+    */
     function test_regression_failure_A8_4() external {
         _liquidationERC20PoolHandler.withdrawBonds(115792089237316195423570985008687907853269984665640564039457584007913129639934, 1106571879666471992422126415932998667, 1);
         _liquidationERC20PoolHandler.takeAuction(1, 4357181303565761581481420624418625341908084, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 1);
