@@ -157,7 +157,11 @@ The licensed work is under the [Business Service License](https://github.com/ajn
 
 Prior to the Change Date, Licensor intends to transfer ownership of the Licensed Work to a to-be-organized not-for-profit foundation or similar public benefit focused entity (the “Ajna Foundation”), whereupon the rights, duties and obligations of Licensor under the BUSL License shall, without further act or deed of the parties, be assigned to Ajna Foundation, which entity shall thereafter be, and assume all rights, duties and obligations of (but not the liabilities, if any, of), the Licensor under the Business Service License.
 
-Licensor reserves the right to specify Additional Use Grants at their discretion and to facilitate changes enacted by the Grant Coordination process, provided always that Additional Use Grants shall not conflict with the Business License.
+Licensor reserves the right to specify Additional Use Grants at their discretion and to facilitate changes enacted by the Grant Coordination process, provided always that Additional Use Grants shall not conflict with the Business License. Licensor grants third parties permission to deploy The Ajna Protocol to other public blockchains and scaling solutions, hereby referred to as the "target chain", so long as:
+- No other functional and successful deployment of Ajna is available on the target chain.
+- No modification to Solidity source files in the protocol is made, and no changes are made which conflict with the Business License.
+- Prior to deployment, the canonical burn-wrapped AJNA token (bwAJNA) on Ethereum mainnet is bridged to the target chain.
+- Upon deployment, the protocol is configured to use the bwAJNA token on the target chain.
 
 Prior to the Change Date, Licensor shall elect the Change License governing the Licensed Work after the Change Date, which license shall be an [Open Source Initiative](https://opensource.org/licenses) compliant license, provided always that the Change License shall be GPL Version 2.0 compatible. Once elected, Licensor may change its Change License designation at any time on or before the Change Date by updating this file in the master branch of [source control](https://github.com/ajna-finance/contracts/tree/master).
 
