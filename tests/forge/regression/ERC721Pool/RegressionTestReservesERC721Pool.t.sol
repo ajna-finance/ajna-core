@@ -1265,10 +1265,9 @@ contract RegressionTestReserveEvmRevertERC721Pool is ReserveERC721PoolInvariants
     /*
         Test failed because neutral price doesn't fit in uint96 type.
             pool inflator               1788146574311565067709708
-            borrower t0NP               1226147737092460887612598
+            borrower npTpRatio          1226147737092460887612598
             borrower debt         4502726079310150309955771136797
             borrower collateral              87000000000000000000
-            momp                        6822206200573474997951871
             bond bondSize           45027260793101503099557711368
             bond factor                         10000000000000000
             neutral price         2192531875681761460142783972780

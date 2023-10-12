@@ -672,6 +672,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             depositEma:   19_999.990463256835940000 * 1e18
         });
     }
+
     function testPoolLargeCollateralPostedTargetUtilization() external tearDown {
 
         // add initial quote to the pool
@@ -1148,7 +1149,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         // Update interest after 12 hours
         uint i = 0;
-        while (i < 200) {
+        while (i < 93) {
             // trigger an interest accumulation
             skip(12 hours);
 
@@ -1157,7 +1158,27 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             unchecked { ++i; }
         }
 
-        skip(365 days);
+        // confirm we hit 400% max rate
+        _assertPool(
+            PoolParams({
+                htp:                  0.897414066911426240 * 1e18,
+                lup:                  _p1505_26,
+                poolSize:             1_088_327_685.946146186000000000 * 1e18,
+                pledgedCollateral:    1_000_000_000 * 1e18,
+                encumberedCollateral: 596_183.944340533059305233 * 1e18,
+                poolDebt:             897_414_066.911426239994562461 * 1e18,
+                actualUtilization:    0.822492351372651041 * 1e18,
+                targetUtilization:    0.000573363809855153 * 1e18,
+                minDebtAmount:        89_741_406.691142623999456246 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         4 * 1e18,
+                interestRateUpdate:   _startTime + 1104 hours
+            })
+        );
+
+        // wait 32 years
+        skip(365 days * 32);
 
         // Reverts with PRBMathUD60x18__ExpInputTooBig
         vm.expectRevert();
@@ -1220,7 +1241,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         skip(14 hours);
 
         // Update interest rate after each 13 hours
-        while (i < 179) {
+        while (i < 11087) {
             // trigger an interest accumulation
             skip(13 hours);
 
@@ -1343,7 +1364,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         // update interest rate after each day
         uint i = 0;
-        while (i < 237) {
+        while (i < 4865) {
             // trigger an interest accumulation
             skip(1 days);
 

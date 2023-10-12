@@ -26,6 +26,11 @@ interface IPoolErrors {
     error AuctionNotClearable();
 
     /**
+     *  @notice Auction does not meet requirements to take liquidity.
+     */
+    error AuctionNotTakeable();
+
+    /**
      *  @notice Head auction should be cleared prior of executing this action.
      */
     error AuctionNotCleared();
@@ -194,11 +199,6 @@ interface IPoolErrors {
      * @notice User attempted to kick off a new auction less than `2` weeks since the last auction completed.
      */
     error ReserveAuctionTooSoon();
-
-    /**
-     *  @notice Take was called before `1` hour had passed from kick time.
-     */
-    error TakeNotPastCooldown();
 
     /**
      *  @notice Current block timestamp has reached or exceeded a user-provided expiration.

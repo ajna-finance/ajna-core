@@ -340,8 +340,8 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when a loan `Neutral Price` is restamped.
-     *  @param  borrower Identifies the loan to update the `Neutral Price`.
+     *  @notice Emitted when a loan `Np to Tp ratio` is restamped.
+     *  @param  borrower Identifies the loan to update the `Np to Tp ratio`.
      */
     event LoanStamped(
         address indexed borrower

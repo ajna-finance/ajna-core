@@ -121,10 +121,9 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     /**
      *  @inheritdoc IERC20PoolBorrowerActions
      *  @dev    === Write state ===
-     *  @dev    - decrement `poolBalances.t0DebtInAuction` accumulator
      *  @dev    - increment `poolBalances.pledgedCollateral` accumulator
      *  @dev    - increment `poolBalances.t0Debt` accumulator
-     *  @dev    - update `t0Debt2ToCollateral` ratio only if loan not in auction, debt and collateral pre action are considered 0 if auction settled
+     *  @dev    - update `t0Debt2ToCollateral` ratio
      *  @dev    === Emit events ===
      *  @dev    - `DrawDebt`
      */
@@ -143,7 +142,6 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         DrawDebtResult memory result = BorrowerActions.drawDebt(
             auctions,
-            buckets,
             deposits,
             loans,
             poolState,
@@ -161,21 +159,13 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         poolState.t0Debt     = result.t0PoolDebt;
         poolState.collateral = result.poolCollateral;
 
-        // update t0 debt in auction in memory pool state struct and pool balances state
-        if (result.t0DebtInAuctionChange != 0) {
-            poolState.t0DebtInAuction    -= result.t0DebtInAuctionChange;
-            poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
-        }
-
-        // adjust t0Debt2ToCollateral ratio if loan not in auction
-        if (!result.inAuction) {
-            _updateT0Debt2ToCollateral(
-                result.settledAuction ? 0 : result.debtPreAction,       // debt pre settle (for loan in auction) not taken into account
-                result.debtPostAction,
-                result.settledAuction ? 0 : result.collateralPreAction, // collateral pre settle (for loan in auction) not taken into account
-                result.collateralPostAction
-            );
-        }
+        // adjust t0Debt2ToCollateral ratio
+        _updateT0Debt2ToCollateral(
+            result.debtPreAction,
+            result.debtPostAction,
+            result.collateralPreAction,
+            result.collateralPostAction
+        );
 
         // update pool interest rate state
         _updateInterestState(poolState, result.newLup);
@@ -201,9 +191,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
      *  @inheritdoc IERC20PoolBorrowerActions
      *  @dev    === Write state ===
      *  @dev    - decrement `poolBalances.t0Debt accumulator`
-     *  @dev    - decrement `poolBalances.t0DebtInAuction accumulator`
      *  @dev    - decrement `poolBalances.pledgedCollateral accumulator`
-     *  @dev    - update `t0Debt2ToCollateral` ratio only if loan not in auction, debt and collateral pre action are considered 0 if auction settled
+     *  @dev    - update `t0Debt2ToCollateral` ratio
      *  @dev    === Emit events ===
      *  @dev    - `RepayDebt`
      */
@@ -223,7 +212,6 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         RepayDebtResult memory result = BorrowerActions.repayDebt(
             auctions,
-            buckets,
             deposits,
             loans,
             poolState,
@@ -240,21 +228,13 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         poolState.t0Debt     = result.t0PoolDebt;
         poolState.collateral = result.poolCollateral;
 
-        // update t0 debt in auction in memory pool state struct and pool balances state
-        if (result.t0DebtInAuctionChange != 0) {
-            poolState.t0DebtInAuction    -= result.t0DebtInAuctionChange;
-            poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
-        }
-
-        // adjust t0Debt2ToCollateral ratio if loan not in auction
-        if (!result.inAuction) {
-            _updateT0Debt2ToCollateral(
-                result.settledAuction ? 0 : result.debtPreAction,       // debt pre settle (for loan in auction) not taken into account
-                result.debtPostAction,
-                result.settledAuction ? 0 : result.collateralPreAction, // collateral pre settle (for loan in auction) not taken into account
-                result.collateralPostAction
-            );
-        }
+        // adjust t0Debt2ToCollateral ratio
+        _updateT0Debt2ToCollateral(
+            result.debtPreAction,
+            result.debtPostAction,
+            result.collateralPreAction,
+            result.collateralPostAction
+        );
 
         // update pool interest rate state
         _updateInterestState(poolState, result.newLup);
