@@ -516,8 +516,6 @@
 		- increment reserveAuction.totalInterestEarned accumulator
 	- TakerActions.take():
 		- _take():
-			- _prepareTake():
-				- update liquidation.alreadyTaken state
 			- _rewardTake():
 				- update liquidation bond size accumulator
 				- update kicker's locked balance accumulator
@@ -572,8 +570,6 @@
 		- increment reserveAuction.totalInterestEarned accumulator
 	- TakerActions.bucketTake():
 		- _takeBucket():
-			- _prepareTake():
-				- update liquidation.alreadyTaken state
 			- _rewardBucketTake():
 				- Buckets.addLenderLP:
 					- increment taker lender.lps accumulator and lender.depositTime state
