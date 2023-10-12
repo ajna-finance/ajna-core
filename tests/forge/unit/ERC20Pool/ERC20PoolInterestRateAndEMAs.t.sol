@@ -1241,7 +1241,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         skip(14 hours);
 
         // Update interest rate after each 13 hours
-        while (i < 179) {
+        while (i < 11087) {
             // trigger an interest accumulation
             skip(13 hours);
 
@@ -1252,7 +1252,6 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         skip(13 hours);
 
-        // FIXME: We no longer revert here; should we not expect revert, or find a new higher limit to revert upon?
         // Revert with Arithmetic overflow in `Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)` in accrue interest
         vm.expectRevert();
         _updateInterest();
