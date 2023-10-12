@@ -30,6 +30,7 @@ interface IERC20PoolBorrowerActions {
      *  @param  collateralAmountToPull_     The max amount of collateral to be puled from the pool (`WAD` precision).
      *  @param  recipient_                  The address to receive amount of pulled collateral.
      *  @param  limitIndex_                 Ensures `LUP` has not moved far from state when borrower pulls collateral.
+     *  @return amountRepaid_               The amount of quote token repaid (`WAD` precision).
      */
     function repayDebt(
         address borrowerAddress_,
@@ -37,5 +38,5 @@ interface IERC20PoolBorrowerActions {
         uint256 collateralAmountToPull_,
         address recipient_,
         uint256 limitIndex_
-    ) external;
+    ) external returns (uint256 amountRepaid_);
 }

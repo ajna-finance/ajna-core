@@ -202,7 +202,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         uint256 collateralAmountToPull_,
         address collateralReceiver_,
         uint256 limitIndex_
-    ) external nonReentrant {
+    ) external nonReentrant returns (uint256 amountRepaid_) {
         PoolState memory poolState = _accruePoolInterest();
 
         // ensure accounting is performed using the appropriate token scale
@@ -253,6 +253,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             // move collateral from pool to address specified as collateral receiver
             _transferCollateral(collateralReceiver_, collateralAmountToPull_);
         }
+
+        amountRepaid_ = result.quoteTokenToRepay;
     }
 
     /*********************************/
@@ -376,7 +378,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         uint256        maxAmount_,
         address        callee_,
         bytes calldata data_
-    ) external override nonReentrant {
+    ) external override nonReentrant returns (uint256 collateralTaken_) {
         PoolState memory poolState = _accruePoolInterest();
 
         uint256 collateralTokenScale = _getArgUint256(COLLATERAL_SCALE);
@@ -410,6 +412,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         }
 
         _transferQuoteTokenFrom(msg.sender, result.quoteTokenAmount);
+
+        collateralTaken_ = result.collateralAmount;
     }
 
     /**

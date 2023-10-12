@@ -218,7 +218,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256 noOfNFTsToPull_,
         address collateralReceiver_,
         uint256 limitIndex_
-    ) external nonReentrant {
+    ) external nonReentrant returns (uint256 amountRepaid_) {
         PoolState memory poolState = _accruePoolInterest();
 
         // ensure accounting is performed using the appropriate token scale
@@ -268,6 +268,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             // move collateral from pool to address specified as collateral receiver
             _transferFromPoolToAddress(collateralReceiver_, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
         }
+
+        amountRepaid_ = result.quoteTokenToRepay;
     }
 
     /*********************************/
@@ -430,7 +432,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256        collateral_,
         address        callee_,
         bytes calldata data_
-    ) external override nonReentrant {
+    ) external override nonReentrant returns (uint256 collateralTaken_) {
         PoolState memory poolState = _accruePoolInterest();
 
         TakeResult memory result = TakerActions.take(
@@ -471,6 +473,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
         if (result.excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, result.excessQuoteToken);
+
+        collateralTaken_ = result.collateralAmount / 1e18;
     }
 
     /**
