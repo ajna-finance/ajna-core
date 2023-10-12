@@ -2863,6 +2863,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertTrue(_positionManager.isPositionBucketBankrupt(tokenId, _i9_81));
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, _i9_72));
 
+        // check buckets that are not bankrupt in NFT
+        uint256[] memory bucketsWithPosition = new uint256[](1);
+        bucketsWithPosition[0] = _i9_72;
+
+        assertEq(_positionManager.getPositionIndexesFiltered(tokenId), bucketsWithPosition);
+
         // minter two needs to add to their position not on bankruptcy block
         skip(1 days);
 
@@ -2942,18 +2948,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
     }
 }
 
-abstract contract PositionManagerERC721PoolHelperContract is ERC721HelperContract {
-
+abstract contract PositionManagerHelperContract is ERC721HelperContract {
     PositionManager  internal _positionManager;
-
-    constructor() ERC721HelperContract() {
-        _positionManager = new PositionManager(new ERC20PoolFactory(_ajna), _poolFactory);
-        _pool = _deployCollectionPool();
-    }
-
-    function setUp() external {
-        _startTest();
-    }
+    bytes32          internal _subsetHash;
 
     function _mintQuoteAndApproveManagerTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_quote), operator_, mintAmount_);
@@ -2973,7 +2970,7 @@ abstract contract PositionManagerERC721PoolHelperContract is ERC721HelperContrac
     }
 }
 
-contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContract {
+abstract contract PositionManagerERC721PoolTest is PositionManagerHelperContract {
     function testPositionFlowForERC721Pool() external {
 
         address testAddress1  = makeAddr("testAddress1");
@@ -3006,7 +3003,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         });
 
         // mint an NFT to later memorialize existing positions into
-        uint256 tokenId = _mintNFT(testAddress1, testAddress1, address(_pool), keccak256("ERC721_NON_SUBSET_HASH"));
+        uint256 tokenId = _mintNFT(testAddress1, testAddress1, address(_pool), _subsetHash);
 
         // check LP
         _assertLenderLpBalance({
@@ -3400,5 +3397,37 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         vm.expectRevert("ERC721: invalid token ID");
         _positionManager.ownerOf(tokenId);
 
+    }
+}
+
+contract PositionManagerERC721CollectionPoolTest is PositionManagerERC721PoolTest {
+    constructor() ERC721HelperContract() {
+        _positionManager = new PositionManager(new ERC20PoolFactory(_ajna), _poolFactory);
+        _pool = _deployCollectionPool();
+        _subsetHash = keccak256("ERC721_NON_SUBSET_HASH");
+    }
+
+    function setUp() external {
+        _startTest();
+    }
+}
+
+contract PositionManagerERC721SubsetPoolTest is PositionManagerERC721PoolTest {
+    constructor() ERC721HelperContract() {
+        _positionManager = new PositionManager(new ERC20PoolFactory(_ajna), _poolFactory);
+        // deploy subset pool
+        uint256[] memory subsetTokenIds = new uint256[](6);
+        subsetTokenIds[0] = 1;
+        subsetTokenIds[1] = 2;
+        subsetTokenIds[2] = 3;
+        subsetTokenIds[3] = 4;
+        subsetTokenIds[4] = 5;
+        subsetTokenIds[5] = 6;
+        _pool = _deploySubsetPool(subsetTokenIds);
+        _subsetHash = keccak256(abi.encode(subsetTokenIds));
+    }
+
+    function setUp() external {
+        _startTest();
     }
 }

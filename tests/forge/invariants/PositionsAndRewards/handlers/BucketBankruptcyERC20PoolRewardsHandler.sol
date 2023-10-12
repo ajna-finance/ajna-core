@@ -69,7 +69,7 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
         ( , , uint256 totalLoans) = _pool.loansInfo();
         require(totalLoans == LOANS_COUNT, "loans setup failed");
 
-        vm.warp(block.timestamp + 100_000 days);
+        vm.warp(block.timestamp + 1_000 days);
     }
 
     function lenderKickAuction(

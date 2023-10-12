@@ -88,6 +88,10 @@ abstract contract BaseHandler is Test {
     // All Buckets used in invariant testing that also includes Buckets where collateral is added when a borrower is in auction and has partial NFT
     EnumerableSet.UintSet internal buckets;
 
+    // auctions invariant test state
+    bool                     public firstTake;        // if take is called on auction first time
+    mapping(address => bool) public alreadyTaken;     // mapping borrower address to true if auction taken atleast once
+
     string  internal path = "logFile.txt";
     bool    internal logToFile;
     uint256 internal logVerbosity;
@@ -432,9 +436,39 @@ abstract contract BaseHandler is Test {
     /*** Auctions Helper Functions ***/
     /*********************************/
 
+    /**
+     * @dev Called by actions that can settle auctions in order to reset test state.
+     */
+    function _auctionSettleStateReset(address actor_) internal {
+        (address kicker, , , , , , , , ) = _pool.auctionInfo(actor_);
+
+        // auction is settled if kicker is 0x
+        bool auctionSettled = kicker == address(0);
+        // reset alreadyTaken flag if auction is settled
+        if (auctionSettled) alreadyTaken[actor_] = false;
+    }
+
     function _getKickerBond(address kicker_) internal view returns (uint256 bond_) {
         (uint256 claimableBond, uint256 lockedBond) = _pool.kickerInfo(kicker_);
         bond_ = claimableBond + lockedBond;
+    }
+
+    function _updateCurrentTakeState(address borrower_, uint256 borrowert0Debt_, uint256 inflator_) internal {
+        if (!alreadyTaken[borrower_]) {
+            alreadyTaken[borrower_] = true;
+
+            // **RE7**: Reserves increase by 7% of the loan quantity upon the first take.
+            increaseInReserves += Maths.wmul(
+                Maths.wmul(borrowert0Debt_, 0.07 * 1e18),
+                inflator_
+            );
+
+            firstTake = true;
+
+        } else firstTake = false;
+
+        // reset taken flag in case auction was settled by take action
+        _auctionSettleStateReset(borrower_);
     }
 
     function _recordSettleBucket(
