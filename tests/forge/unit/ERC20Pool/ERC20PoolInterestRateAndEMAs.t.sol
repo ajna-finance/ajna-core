@@ -1159,6 +1159,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         skip(365 days);
 
+        // FIXME: We no longer revert here; should we not expect revert, or find a new higher limit to revert upon?
         // Reverts with PRBMathUD60x18__ExpInputTooBig
         vm.expectRevert();
         _updateInterest();
@@ -1231,6 +1232,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         skip(13 hours);
 
+        // FIXME: We no longer revert here; should we not expect revert, or find a new higher limit to revert upon?
         // Revert with Arithmetic overflow in `Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)` in accrue interest
         vm.expectRevert();
         _updateInterest();
@@ -1372,6 +1374,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         skip(1 days);
 
+        // FIXME: We no longer revert here; should we not expect revert, or find a new higher limit to revert upon?
         // Revert with Arithmetic overflow in `(((tu + mau102 - 1e18) / 1e9) ** 2)` in update interest
         vm.expectRevert();
         _updateInterest();
