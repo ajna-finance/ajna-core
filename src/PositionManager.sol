@@ -5,7 +5,6 @@ pragma solidity 0.8.18;
 import { ERC20 }           from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import { IERC20 }          from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { EnumerableSet }   from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
-import { Multicall }       from '@openzeppelin/contracts/utils/Multicall.sol';
 import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import { SafeERC20 }       from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
@@ -37,7 +36,7 @@ import { PositionNFTSVG } from './libraries/external/PositionNFTSVG.sol';
  *          - `redeem` positions for given buckets
  *          - `burn` positions `NFT`
  */
-contract PositionManager is PermitERC721, IPositionManager, Multicall, ReentrancyGuard {
+contract PositionManager is PermitERC721, IPositionManager, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;
     using SafeERC20     for ERC20;
 
