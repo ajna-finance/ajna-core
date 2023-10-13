@@ -149,7 +149,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             decreaseInReserves += borrowerDebtBeforeTake - borrowerDebtAfterTake;
             
             // **A8**: kicker reward <= Borrower penalty
-            borrowerPenalty = Maths.wmul(borrowerCollateralBeforeTake - borrowerCollateralAfterTake, auctionPrice) - (borrowerDebtBeforeTake - borrowerDebtAfterTake);
+            borrowerPenalty = Maths.ceilWmul(borrowerCollateralBeforeTake - borrowerCollateralAfterTake, auctionPrice) - (borrowerDebtBeforeTake - borrowerDebtAfterTake);
 
             if (totalBondBeforeTake > totalBondAfterTake) {
                 // **RE7**: Reserves increase by bond penalty on take.
@@ -230,9 +230,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             // **A8**: kicker reward <= Borrower penalty
             if (depositTake_) {
-                borrowerPenalty = Maths.wmul(borrowerCollateralBeforeTake - borrowerCollateralAfterTake, _priceAt(bucketIndex_)) - (borrowerDebtBeforeTake - borrowerDebtAfterTake);
+                borrowerPenalty = Maths.ceilWmul(borrowerCollateralBeforeTake - borrowerCollateralAfterTake, _priceAt(bucketIndex_)) - (borrowerDebtBeforeTake - borrowerDebtAfterTake);
             } else {
-                borrowerPenalty = Maths.wmul(borrowerCollateralBeforeTake - borrowerCollateralAfterTake, auctionPrice) - (borrowerDebtBeforeTake - borrowerDebtAfterTake);
+                borrowerPenalty = Maths.ceilWmul(borrowerCollateralBeforeTake - borrowerCollateralAfterTake, auctionPrice) - (borrowerDebtBeforeTake - borrowerDebtAfterTake);
             }
                 
             // reserves are increased by take penalty of borrower (Deposit used from bucket - Borrower debt reduced)
