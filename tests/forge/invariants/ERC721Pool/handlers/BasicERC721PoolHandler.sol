@@ -88,12 +88,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         numberOfCalls['BBasicHandler.pledgeCollateral']++;
 
         //  borrower cannot make any action when in auction
-        (uint256 kickTime, 
-        uint256 collateral, 
-        uint256 debtToCover, 
-        bool isCollateralized, 
-        uint256 price, 
-        uint256 np) = _poolInfo.auctionStatus(address(_pool), _actor);
+        (uint256 kickTime,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
         if (kickTime != 0) return;
 
         // Prepare test phase
@@ -111,12 +106,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         numberOfCalls['BBasicHandler.pullCollateral']++;
 
         //  borrower cannot make any action when in auction
-        (uint256 kickTime, 
-        uint256 collateral, 
-        uint256 debtToCover, 
-        bool isCollateralized, 
-        uint256 price, 
-        uint256 np) = _poolInfo.auctionStatus(address(_pool), _actor);
+        (uint256 kickTime,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
         if (kickTime != 0) return;
 
         // Prepare test phase
@@ -134,12 +124,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         numberOfCalls['BBasicHandler.drawDebt']++;
 
         //  borrower cannot make any action when in auction
-        (uint256 kickTime, 
-        uint256 collateral, 
-        uint256 debtToCover, 
-        bool isCollateralized, 
-        uint256 price, 
-        uint256 np) = _poolInfo.auctionStatus(address(_pool), _actor);
+        (uint256 kickTime,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
         if (kickTime != 0) return;
 
         // Prepare test phase
@@ -157,12 +142,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         numberOfCalls['BBasicHandler.repayDebt']++;
 
         //  borrower cannot make any action when in auction
-        (uint256 kickTime, 
-        uint256 collateral, 
-        uint256 debtToCover, 
-        bool isCollateralized, 
-        uint256 price, 
-        uint256 np) = _poolInfo.auctionStatus(address(_pool), _actor);
+        (uint256 kickTime,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
         if (kickTime != 0) return;
 
         // Prepare test phase
@@ -229,12 +209,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         boundedAmount_ = constrictToRange(amountToBorrow_, MIN_DEBT_AMOUNT, MAX_DEBT_AMOUNT);
 
         //  borrower cannot make any action when in auction
-        (uint256 kickTime, 
-        uint256 collateral, 
-        uint256 debt, 
-        bool isCollateralized, 
-        uint256 price, 
-        uint256 np) = _poolInfo.auctionStatus(address(_pool), _actor);
+        (uint256 kickTime, uint256 collateral, uint256 debt,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
         if (kickTime != 0) return boundedAmount_;
 
         // Pre Condition

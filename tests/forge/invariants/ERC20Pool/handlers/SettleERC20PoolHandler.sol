@@ -84,7 +84,6 @@ contract SettleERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBas
         _actor = borrower;
         _settle(borrower, numberOfBuckets);
 
-        _auctionSettleStateReset(borrower);
         _resetSettledAuction(borrower, borrowerIndex_);
     }
 
@@ -131,7 +130,6 @@ contract SettleERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBas
         changePrank(payer);
         _repayDebtByThirdParty(payer, borrower, type(uint256).max);
 
-        _auctionSettleStateReset(borrower);
         _resetSettledAuction(borrower, borrowerIndex_);
     }
 
