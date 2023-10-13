@@ -784,7 +784,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         });
     }
     
-     function testNoRewardsToClaimPostBankrupt() external {
+    function testNoRewardsToClaimPostBankrupt() external {
         skip(10);
         
         /***************************/
