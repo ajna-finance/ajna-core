@@ -87,52 +87,6 @@ contract SettleERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBas
         _resetSettledAuction(borrower, borrowerIndex_);
     }
 
-    function repayDebtByThirdParty(
-        uint256 actorIndex_,
-        uint256 kickerIndex_,
-        uint256 borrowerIndex_,
-        uint256 skippedTime_
-    ) external useTimestamps skipTime(skippedTime_) writeLogs {
-        numberOfCalls['SettlePoolHandler.repayLoan']++;
-
-        borrowerIndex_   = constrictToRange(borrowerIndex_, 0, _activeBorrowers.values().length - 1);
-        address borrower = _borrowers[borrowerIndex_];
-
-        kickerIndex_   = constrictToRange(kickerIndex_, 0, LENDERS - 1);
-        address kicker = _lenders[kickerIndex_];
-
-        actorIndex_    = constrictToRange(actorIndex_, 0, LENDERS - 1);
-        address payer = _lenders[actorIndex_];
-
-        (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower);
-
-        // Kick auction if not already kicked
-        if (kickTime == 0) {
-            changePrank(kicker);
-            _actor = kicker;
-            _kickAuction(borrower);
-        }
-
-        (,,, kickTime,,,,,) = _pool.auctionInfo(borrower);
-
-        if (kickTime == 0) return;
-
-        // skip time to make auction settleable
-        if (block.timestamp < kickTime + 72 hours) {
-            skip(kickTime + 73 hours - block.timestamp);
-        }
-
-        // skip time to make auction settleable
-        if (block.timestamp < kickTime + 72 hours) {
-            skip(kickTime + 73 hours - block.timestamp);
-        }
-
-        changePrank(payer);
-        _repayDebtByThirdParty(payer, borrower, type(uint256).max);
-
-        _resetSettledAuction(borrower, borrowerIndex_);
-    }
-
     function _settle(
         address borrower_,
         uint256 maxDepth_
@@ -230,21 +184,6 @@ contract SettleERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBas
             buckets.add(7388);
             lenderDepositTime[borrower_][7388] = block.timestamp;
         }
-    }
-
-    function _repayDebtByThirdParty(
-        address payer_,
-        address borrower_,
-        uint256 amountToRepay_
-    ) internal updateLocalStateAndPoolInterest {
-        numberOfCalls['UBBasicHandler.repayDebt']++;
-
-        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
-
-        // ensure actor always has amount of quote to repay
-        _ensureQuoteAmount(payer_, borrowerDebt + 10 * 1e18);
-
-        _erc20Pool.repayDebt(borrower_, amountToRepay_, 0, borrower_, 7388);
     }
 
     function _setupLendersAndDeposits(uint256 count_) internal virtual {
