@@ -1109,7 +1109,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         });
     }
 
-    function testAccruePoolInterestRevertDueToExpLimit() external {
+    function testAccruePoolInterestRevertDueToExpLimit() external tearDown {
         _mintQuoteAndApproveTokens(_lender, 1_000_000_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower, 1_000_000_000 * 1e18);
 
@@ -1181,11 +1181,12 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         skip(365 days * 32);
 
         // Reverts with PRBMathUD60x18__ExpInputTooBig
-        vm.expectRevert();
+        vm.expectEmit(true, true, false, true);
+        emit InterestOverflow();
         _updateInterest();
     }
 
-    function testAccrueInterestNewInterestLimit() external {
+    function testAccrueInterestNewInterestLimit() external tearDown {
         _mintQuoteAndApproveTokens(_lender, 1_000_000_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower, 1_000_000_000 * 1e18);
 
@@ -1253,7 +1254,8 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         skip(13 hours);
 
         // Revert with Arithmetic overflow in `Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)` in accrue interest
-        vm.expectRevert();
+        vm.expectEmit(true, true, false, true);
+        emit InterestOverflow();
         _updateInterest();
     }
 
@@ -1324,7 +1326,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         }
     }
 
-    function testUpdateInterestTuLimit() external {
+    function testUpdateInterestTuLimit() external tearDown {
         _mintQuoteAndApproveTokens(_lender, 1_000_000_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower, 1_000_000_000 * 1e18);
 
@@ -1394,7 +1396,8 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         skip(1 days);
 
         // Revert with Arithmetic overflow in `(((tu + mau102 - 1e18) / 1e9) ** 2)` in update interest
-        vm.expectRevert();
+        vm.expectEmit(true, true, false, true);
+        emit InterestOverflow();
         _updateInterest();
     }
 }
