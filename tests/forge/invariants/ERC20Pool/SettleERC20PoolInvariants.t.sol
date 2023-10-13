@@ -4,15 +4,15 @@ pragma solidity 0.8.18;
 
 import "@std/console.sol";
 
-import { LiquidationInvariants }     from '../base/LiquidationInvariants.t.sol';
-import { BaseInvariants }            from '../base/BaseInvariants.sol';
-import { BasicInvariants }           from '../base/BasicInvariants.t.sol';
-import { PanicExitERC20PoolHandler } from './handlers/PanicExitERC20PoolHandler.sol';
-import { BasicERC20PoolInvariants }  from './BasicERC20PoolInvariants.t.sol';
+import { LiquidationInvariants }    from '../base/LiquidationInvariants.t.sol';
+import { BaseInvariants }           from '../base/BaseInvariants.sol';
+import { BasicInvariants }          from '../base/BasicInvariants.t.sol';
+import { SettleERC20PoolHandler }   from './handlers/SettleERC20PoolHandler.sol';
+import { BasicERC20PoolInvariants } from './BasicERC20PoolInvariants.t.sol';
 
-contract PanicExitERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationInvariants {
+contract SettleERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationInvariants {
     
-    PanicExitERC20PoolHandler internal _panicExitERC20PoolHandler;
+    SettleERC20PoolHandler internal _settleERC20PoolHandler;
 
     address[] internal _lenders;
     address[] internal _borrowers;
@@ -26,14 +26,14 @@ contract PanicExitERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationIn
 
         excludeContract(address(_basicERC20PoolHandler));
 
-        _panicExitERC20PoolHandler = new PanicExitERC20PoolHandler(
+        _settleERC20PoolHandler = new SettleERC20PoolHandler(
             address(_erc20pool),
             address(_ajna),
             address(_poolInfo),
             address(this)
         );
 
-        _handler = address(_panicExitERC20PoolHandler);
+        _handler = address(_settleERC20PoolHandler);
     }
 
     function invariant_all_erc20() public useCurrentTimestamp {

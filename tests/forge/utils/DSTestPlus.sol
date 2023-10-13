@@ -78,7 +78,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 bondSize;
         uint256 bondFactor;
         uint256 kickTime;
-        uint256 kickMomp;
+        uint256 referencePrice;
         uint256 totalBondEscrowed;
         uint256 auctionPrice;
         uint256 debtInAuction;
@@ -433,7 +433,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 auctionBondFactor;
         uint256 auctionBondSize;
         uint256 auctionKickTime;
-        uint256 auctionKickMomp;
+        uint256 auctionReferencePrice;
         uint256 auctionNeutralPrice;
         uint256 auctionTotalBondEscrowed;
         uint256 auctionDebtInAuction;
@@ -447,9 +447,8 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             vars.auctionBondFactor,
             vars.auctionBondSize,
             vars.auctionKickTime,
-            vars.auctionKickMomp,
+            vars.auctionReferencePrice,
             vars.auctionNeutralPrice,
-            ,
             ,
             ,
         ) = _pool.auctionInfo(state_.borrower);
@@ -466,11 +465,10 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(vars.auctionBondSize,          state_.bondSize);
         assertEq(vars.auctionBondFactor,        state_.bondFactor);
         assertEq(vars.auctionKickTime,          state_.kickTime);
-        assertEq(vars.auctionKickMomp,          state_.kickMomp);
+        assertEq(vars.auctionReferencePrice,    state_.referencePrice);
         assertEq(vars.auctionTotalBondEscrowed, state_.totalBondEscrowed);
         assertEq(_auctionPrice(
-            vars.auctionKickMomp,
-            vars.auctionNeutralPrice,
+            vars.auctionReferencePrice,
             vars.auctionKickTime),              state_.auctionPrice);
         assertEq(vars.auctionDebtInAuction,     state_.debtInAuction);
         assertEq(vars.auctionNeutralPrice,      state_.neutralPrice);
@@ -662,8 +660,8 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(t0Np,        borrowert0Np);
         assertEq(
             _collateralization(
-                borrowerDebt,
-                borrowerCollateral,
+                debt,
+                col,
                 lup
             ),
             borrowerCollateralization
@@ -844,16 +842,6 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.bucketTake(borrower, false, index);
     }
 
-    function _assertArbTakeAuctionInCooldownRevert(
-        address from,
-        address borrower,
-        uint256 index
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('TakeNotPastCooldown()'));
-        _pool.bucketTake(borrower, false, index);
-    }
-
     function _assertArbTakeAuctionInsufficientLiquidityRevert(
         address from,
         address borrower,
@@ -862,6 +850,16 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InsufficientLiquidity.selector);
         _pool.bucketTake(borrower,false, index);
+    }
+
+    function _assertArbTakeAuctionNotTakeableRevert(
+        address from,
+        address borrower,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AuctionNotTakeable.selector);
+        _pool.bucketTake(borrower, false, index);
     }
 
     function _assertArbTakeAuctionPriceGreaterThanBucketPriceRevert(
@@ -904,14 +902,14 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.bucketTake(borrower, false, index);
     }
 
-    function _assertDepositTakeAuctionInCooldownRevert(
+    function _assertArbTakeZeroBidRevert(
         address from,
         address borrower,
         uint256 index
     ) internal {
         changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('TakeNotPastCooldown()'));
-        _pool.bucketTake(borrower, true, index);
+        vm.expectRevert(IPoolErrors.InvalidAmount.selector);
+        _pool.bucketTake(borrower, false, index);
     }
 
     function _assertDepositTakeAuctionInsufficientLiquidityRevert(
@@ -921,6 +919,16 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InsufficientLiquidity.selector);
+        _pool.bucketTake(borrower, true, index);
+    }
+
+    function _assertDepositTakeAuctionNotTakeableRevert(
+        address from,
+        address borrower,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AuctionNotTakeable.selector);
         _pool.bucketTake(borrower, true, index);
     }
 
@@ -961,6 +969,16 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('NoAuction()'));
+        _pool.bucketTake(borrower, true, index);
+    }
+
+    function _assertDepositTakeZeroBidRevert(
+        address from,
+        address borrower,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InvalidAmount.selector);
         _pool.bucketTake(borrower, true, index);
     }
 
@@ -1326,14 +1344,11 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max, true);
     }
 
-    function _assertTakeAuctionInCooldownRevert(
+    function _assertRepayAuctionActiveRevert(
         address from,
-        address borrower,
-        uint256 maxCollateral
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('TakeNotPastCooldown()'));
-        _pool.take(borrower, maxCollateral, from, new bytes(0));
+        uint256 maxAmount
+    ) internal virtual {
+        // to be overidden by ERC20/ERC721DSTestPlus 
     }
 
     function _assertTakeDebtUnderMinPoolDebtRevert(
@@ -1376,6 +1391,16 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     function _assertTakeReservesNoReservesRevert() internal {
         vm.expectRevert(IPoolErrors.NoReserves.selector);
         _pool.kickReserveAuction();
+    }
+
+    function _assertTakeZeroBidRevert(
+        address from,
+        address borrower,
+        uint256 maxCollateral
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InvalidAmount.selector);
+        _pool.take(borrower, maxCollateral, from, new bytes(0));
     }
 
     function _lup() internal view returns (uint256 lup_) {

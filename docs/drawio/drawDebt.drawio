@@ -1,244 +1,210 @@
-<mxfile host="app.diagrams.net" modified="2023-04-18T07:01:38.251Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/112.0" etag="p-YwtwrE9k8hFrW96bim" version="21.1.8" type="device">
-  <diagram name="Page-1" id="13e1069c-82ec-6db2-03f1-153e76fe0fe0">
-    <mxGraphModel dx="2534" dy="748" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" background="none" math="0" shadow="0">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="7baba1c4bc27f4b0-2" value="BorrowerActions" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;rounded=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="1" vertex="1">
-          <mxGeometry x="244" y="82" width="164" height="750" as="geometry" />
-        </mxCell>
-        <mxCell id="7baba1c4bc27f4b0-10" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="7baba1c4bc27f4b0-2" vertex="1">
-          <mxGeometry x="76" y="222" width="10" height="293" as="geometry" />
-        </mxCell>
-        <mxCell id="7baba1c4bc27f4b0-3" value="PoolCommons" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;rounded=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="1" vertex="1">
-          <mxGeometry x="450" y="79" width="100" height="750" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-4" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="7baba1c4bc27f4b0-3" vertex="1">
-          <mxGeometry x="45" y="60" width="10" height="120" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-36" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="7baba1c4bc27f4b0-3" vertex="1">
-          <mxGeometry x="42.5" y="531" width="10" height="120" as="geometry" />
-        </mxCell>
-        <mxCell id="7baba1c4bc27f4b0-4" value="&lt;font&gt;Deposits&lt;/font&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;rounded=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="1" vertex="1">
-          <mxGeometry x="620" y="80" width="100" height="750" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-14" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="7baba1c4bc27f4b0-4" vertex="1">
-          <mxGeometry x="45" y="80" width="10" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="7baba1c4bc27f4b0-8" value="Pool" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;rounded=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="1" vertex="1">
-          <mxGeometry x="100" y="80" width="100" height="750" as="geometry" />
-        </mxCell>
-        <mxCell id="7baba1c4bc27f4b0-9" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="7baba1c4bc27f4b0-8" vertex="1">
-          <mxGeometry x="45" y="60" width="10" height="590" as="geometry" />
-        </mxCell>
-        <mxCell id="7baba1c4bc27f4b0-41" value="&lt;font style=&quot;font-size: 10px;&quot; face=&quot;Tahoma&quot;&gt;External library&lt;br&gt;&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12" parent="1" vertex="1">
-          <mxGeometry x="276" y="30" width="100" height="35" as="geometry" />
-        </mxCell>
-        <mxCell id="7baba1c4bc27f4b0-42" value="&lt;font style=&quot;font-size: 10px;&quot; face=&quot;Tahoma&quot;&gt;External library&lt;br&gt;&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12" parent="1" vertex="1">
-          <mxGeometry x="450" y="30" width="100" height="35" as="geometry" />
-        </mxCell>
-        <mxCell id="7baba1c4bc27f4b0-43" value="&lt;font style=&quot;font-size: 10px;&quot; face=&quot;Tahoma&quot;&gt;Internal library&lt;br&gt;&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12" parent="1" vertex="1">
-          <mxGeometry x="621" y="30" width="100" height="35" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Tahoma;fontSize=10;entryX=0;entryY=0.092;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="7baba1c4bc27f4b0-9" target="4Fi33i3VNf01kXt7bkc9-4" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="490" y="150" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="210" y="151" />
-              <mxPoint x="210" y="151" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-11" value="&lt;div&gt;accrueInterest&lt;/div&gt;&lt;div&gt;(thresholdPrice, timeElapsed)&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontFamily=Tahoma;" parent="4Fi33i3VNf01kXt7bkc9-8" vertex="1" connectable="0">
-          <mxGeometry x="-0.0824" relative="1" as="geometry">
-            <mxPoint x="8" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Tahoma;fontSize=10;dashed=1;endArrow=open;endFill=0;" parent="1" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="492" y="253" as="sourcePoint" />
-            <mxPoint x="157" y="253" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="207" y="253" />
-              <mxPoint x="207" y="253" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-13" value="(newInflator, accruedInterest)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontFamily=Tahoma;" parent="4Fi33i3VNf01kXt7bkc9-10" vertex="1" connectable="0">
-          <mxGeometry x="0.1284" y="-1" relative="1" as="geometry">
-            <mxPoint x="28" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Tahoma;fontSize=10;endArrow=classic;endFill=1;" parent="1" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="505" y="175" as="sourcePoint" />
-            <mxPoint x="665" y="175" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="550" y="175" />
-              <mxPoint x="550" y="175" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-18" value="mult()" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontFamily=Tahoma;" parent="4Fi33i3VNf01kXt7bkc9-17" vertex="1" connectable="0">
-          <mxGeometry x="-0.125" y="-3" relative="1" as="geometry">
-            <mxPoint x="8" y="-4" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-20" value="&lt;div&gt;Scale Fenwick Tree with the new interest accrued&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;update scaling array state&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="682" y="163" width="145" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-22" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Verdana;fontSize=10;endArrow=open;endFill=0;exitX=-0.1;exitY=0.917;exitDx=0;exitDy=0;exitPerimeter=0;dashed=1;" parent="1" source="4Fi33i3VNf01kXt7bkc9-14" target="4Fi33i3VNf01kXt7bkc9-4" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="510" y="215" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="540" y="215" />
-              <mxPoint x="540" y="215" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Verdana;fontSize=10;endArrow=classic;endFill=1;" parent="1" source="7baba1c4bc27f4b0-9" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="320" y="320" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="190" y="320" />
-              <mxPoint x="190" y="320" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-35" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;fontFamily=Verdana;fontSize=10;endArrow=open;endFill=0;" parent="1" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="320" y="589" as="sourcePoint" />
-            <mxPoint x="155" y="589" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-37" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.1;entryY=0.05;entryDx=0;entryDy=0;entryPerimeter=0;fontFamily=Verdana;fontSize=10;endArrow=classic;endFill=1;" parent="1" target="4Fi33i3VNf01kXt7bkc9-36" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="152.5" y="617" as="sourcePoint" />
-            <Array as="points">
-              <mxPoint x="237.5" y="617" />
-              <mxPoint x="237.5" y="617" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-39" value="&lt;div&gt;updateInterestState&lt;/div&gt;&lt;div&gt;(PoolState, LUP)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontFamily=Verdana;" parent="4Fi33i3VNf01kXt7bkc9-37" vertex="1" connectable="0">
-          <mxGeometry x="0.3959" y="-1" relative="1" as="geometry">
-            <mxPoint x="-73" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-38" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;fontFamily=Verdana;fontSize=10;endArrow=open;endFill=0;exitX=0.1;exitY=0.917;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="4Fi33i3VNf01kXt7bkc9-36" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="487.5" y="721" as="sourcePoint" />
-            <mxPoint x="152.5" y="721" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="322.5" y="720" />
-              <mxPoint x="322.5" y="721" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-40" value="&lt;div&gt;update EMAs state&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;update interestRate and interestRateUpdate time&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;emit UpdateInterestRate()&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="507.5" y="631" width="145" height="90" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-41" value="&lt;div&gt;update inflator&lt;/div&gt;&lt;div&gt;update inflatorUpdate time&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="162.5" y="751" width="145" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-56" value="&lt;div&gt;transfer collateral amount from sender to pool contract&lt;/div&gt;&lt;div&gt;transfer quote amount from pool contract to sender&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;ERC721Pool: add tokenIds to borrowerTokenIds array&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="165" y="790" width="145" height="99" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-58" value="SettlerActions" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;rounded=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="1" vertex="1">
-          <mxGeometry x="988" y="80" width="102" height="750" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-59" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="4Fi33i3VNf01kXt7bkc9-58" vertex="1">
-          <mxGeometry x="45" y="227" width="10" height="83" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-60" value="&lt;div&gt;&lt;font style=&quot;font-size: 10px;&quot; face=&quot;Tahoma&quot;&gt;External library&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font style=&quot;font-size: 10px;&quot; face=&quot;Tahoma&quot;&gt;BorrowerActions use internal function (no additional delegate call)&lt;br&gt;&lt;/font&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12" parent="1" vertex="1">
-          <mxGeometry x="940" y="20" width="220" height="55" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-61" value="Loans" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;rounded=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="1" vertex="1">
-          <mxGeometry x="800" y="79" width="100" height="750" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-73" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="4Fi33i3VNf01kXt7bkc9-61" vertex="1">
-          <mxGeometry x="45" y="430" width="10" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-63" value="&lt;font style=&quot;font-size: 10px;&quot; face=&quot;Tahoma&quot;&gt;Internal library&lt;br&gt;&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12" parent="1" vertex="1">
-          <mxGeometry x="801" y="29" width="100" height="35" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-64" value="&lt;div&gt;drawDebt&lt;/div&gt;&lt;div&gt;(borrower,&lt;/div&gt;&lt;div&gt;amount,&lt;/div&gt;&lt;div&gt;limitPrice,&lt;/div&gt;&lt;div&gt;collateral)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontFamily=Verdana;" parent="1" vertex="1" connectable="0">
-          <mxGeometry x="237.50273893619305" y="320.00234068039606" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-65" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Verdana;fontSize=10;endArrow=classic;endFill=1;" parent="1" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="331" y="314.5" as="sourcePoint" />
-            <mxPoint x="1033" y="314.5" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-66" value="_settleAuction(borrower, collateral)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontFamily=Verdana;" parent="4Fi33i3VNf01kXt7bkc9-65" vertex="1" connectable="0">
-          <mxGeometry x="-0.0969" y="2" relative="1" as="geometry">
-            <mxPoint x="52" y="1" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-67" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Verdana;fontSize=10;endArrow=open;endFill=0;dashed=1;" parent="1" source="4Fi33i3VNf01kXt7bkc9-59" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="330" y="375" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="850" y="375" />
-              <mxPoint x="850" y="375" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-68" value="ERC721: rounded remainingCollateral " style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontFamily=Verdana;" parent="4Fi33i3VNf01kXt7bkc9-67" vertex="1" connectable="0">
-          <mxGeometry x="0.1209" y="2" relative="1" as="geometry">
-            <mxPoint x="61" y="-7" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-71" value="" style="swimlane;startSize=0;labelBackgroundColor=none;fontFamily=Verdana;fontSize=12;gradientColor=none;opacity=50;strokeWidth=2;" parent="1" vertex="1">
-          <mxGeometry x="290" y="280" width="780" height="130" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-72" value="&lt;div align=&quot;center&quot;&gt;&lt;b&gt;&lt;font face=&quot;Tahoma&quot;&gt;Pledge Collateral&lt;/font&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontFamily=Verdana;fontColor=#666666;" parent="4Fi33i3VNf01kXt7bkc9-71" vertex="1">
-          <mxGeometry x="260" y="-3" width="140" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-69" value="decrement kicker locked accumulator, increment kicker claimable&lt;br&gt;decrement auctions count&lt;br&gt;decrement auctions.totalBondEscrowed&lt;br&gt;&lt;div&gt;update auction queue state&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;emit ERC20Pool: AuctionSettle()&lt;/div&gt;&lt;div&gt;emit ERC721Pool: AuctionNFTSettle()&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="1050" y="289" width="290" height="107" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-75" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Tahoma;fontSize=12;fontColor=#666666;endArrow=classic;endFill=1;" parent="1" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="331" y="529.5" as="sourcePoint" />
-            <mxPoint x="840" y="530" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="710" y="530" />
-              <mxPoint x="710" y="530" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-77" value="" style="swimlane;startSize=0;labelBackgroundColor=none;fontFamily=Verdana;fontSize=12;gradientColor=none;opacity=50;strokeWidth=2;" parent="1" vertex="1">
-          <mxGeometry x="290" y="420" width="370" height="80" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-78" value="Draw Debt" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontFamily=Verdana;fontColor=#666666;fontStyle=1" parent="4Fi33i3VNf01kXt7bkc9-77" vertex="1">
-          <mxGeometry x="272.5" width="90" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-70" value="&lt;div&gt;reverts:&lt;/div&gt;&lt;div&gt;BorrowerNotSender()&lt;/div&gt;&lt;div&gt;AmountLTMinDebt()&lt;/div&gt;&lt;div&gt;LimitIndexReached()&lt;/div&gt;&lt;div&gt;BorrowerUnderCollateralized()&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="4Fi33i3VNf01kXt7bkc9-77" vertex="1">
-          <mxGeometry x="42.5" y="5" width="170" height="65" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-76" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;fontFamily=Tahoma;fontSize=12;fontColor=#666666;endArrow=open;endFill=0;" parent="1" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="840" y="564" as="sourcePoint" />
-            <mxPoint x="330" y="564" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="332" y="564" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-80" value="&lt;div&gt;emit DrawDebt()&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;decrement poolBalances.t0DebtInAuction&lt;br&gt;increment poolBalances.pledgedCollateral &lt;br&gt;increment poolBalances.t0Debt&lt;/div&gt;&lt;div&gt;update interestState.t0Debt2ToCollateral&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="-90" y="530" width="227.5" height="80" as="geometry" />
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-82" value="update()" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontFamily=Tahoma;" parent="1" vertex="1" connectable="0">
-          <mxGeometry x="598" y="217" as="geometry">
-            <mxPoint x="-16" y="301" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-83" value="- _upsert():&lt;br&gt;&amp;nbsp; - insert or update loan in loans array&lt;br&gt;- remove():&lt;br&gt;&amp;nbsp; - remove loan from loans array&lt;br&gt;- update borrower in address =&amp;gt; borrower mapping" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="860" y="512" width="290" height="70" as="geometry" />
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="65bd71144e">
+    <diagram name="Page-1" id="13e1069c-82ec-6db2-03f1-153e76fe0fe0">
+        <mxGraphModel dx="2230" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" background="none" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="7baba1c4bc27f4b0-2" value="BorrowerActions" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;rounded=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="244" y="82" width="164" height="750" as="geometry"/>
+                </mxCell>
+                <mxCell id="7baba1c4bc27f4b0-10" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="7baba1c4bc27f4b0-2" vertex="1">
+                    <mxGeometry x="76" y="222" width="10" height="293" as="geometry"/>
+                </mxCell>
+                <mxCell id="7baba1c4bc27f4b0-3" value="PoolCommons" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;rounded=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="450" y="79" width="100" height="750" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-4" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="7baba1c4bc27f4b0-3" vertex="1">
+                    <mxGeometry x="45" y="60" width="10" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-36" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="7baba1c4bc27f4b0-3" vertex="1">
+                    <mxGeometry x="42.5" y="531" width="10" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="7baba1c4bc27f4b0-4" value="&lt;font&gt;Deposits&lt;/font&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;rounded=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="620" y="80" width="100" height="750" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-14" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="7baba1c4bc27f4b0-4" vertex="1">
+                    <mxGeometry x="45" y="80" width="10" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="7baba1c4bc27f4b0-8" value="Pool" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;rounded=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="100" y="80" width="100" height="750" as="geometry"/>
+                </mxCell>
+                <mxCell id="7baba1c4bc27f4b0-9" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="7baba1c4bc27f4b0-8" vertex="1">
+                    <mxGeometry x="45" y="60" width="10" height="590" as="geometry"/>
+                </mxCell>
+                <mxCell id="7baba1c4bc27f4b0-41" value="&lt;font style=&quot;font-size: 10px;&quot; face=&quot;Tahoma&quot;&gt;External library&lt;br&gt;&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12" parent="1" vertex="1">
+                    <mxGeometry x="276" y="30" width="100" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="7baba1c4bc27f4b0-42" value="&lt;font style=&quot;font-size: 10px;&quot; face=&quot;Tahoma&quot;&gt;External library&lt;br&gt;&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12" parent="1" vertex="1">
+                    <mxGeometry x="450" y="30" width="100" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="7baba1c4bc27f4b0-43" value="&lt;font style=&quot;font-size: 10px;&quot; face=&quot;Tahoma&quot;&gt;Internal library&lt;br&gt;&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12" parent="1" vertex="1">
+                    <mxGeometry x="621" y="30" width="100" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Tahoma;fontSize=10;entryX=0;entryY=0.092;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="7baba1c4bc27f4b0-9" target="4Fi33i3VNf01kXt7bkc9-4" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="490" y="150" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="210" y="151"/>
+                            <mxPoint x="210" y="151"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-11" value="&lt;div&gt;accrueInterest&lt;/div&gt;&lt;div&gt;(thresholdPrice, timeElapsed)&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontFamily=Tahoma;" parent="4Fi33i3VNf01kXt7bkc9-8" vertex="1" connectable="0">
+                    <mxGeometry x="-0.0824" relative="1" as="geometry">
+                        <mxPoint x="8" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Tahoma;fontSize=10;dashed=1;endArrow=open;endFill=0;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="492" y="253" as="sourcePoint"/>
+                        <mxPoint x="157" y="253" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="207" y="253"/>
+                            <mxPoint x="207" y="253"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-13" value="(newInflator, accruedInterest)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontFamily=Tahoma;" parent="4Fi33i3VNf01kXt7bkc9-10" vertex="1" connectable="0">
+                    <mxGeometry x="0.1284" y="-1" relative="1" as="geometry">
+                        <mxPoint x="28" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Tahoma;fontSize=10;endArrow=classic;endFill=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="505" y="175" as="sourcePoint"/>
+                        <mxPoint x="665" y="175" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="550" y="175"/>
+                            <mxPoint x="550" y="175"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-18" value="mult()" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontFamily=Tahoma;" parent="4Fi33i3VNf01kXt7bkc9-17" vertex="1" connectable="0">
+                    <mxGeometry x="-0.125" y="-3" relative="1" as="geometry">
+                        <mxPoint x="8" y="-4" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-20" value="&lt;div&gt;Scale Fenwick Tree with the new interest accrued&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;update scaling array state&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="682" y="163" width="145" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-22" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Verdana;fontSize=10;endArrow=open;endFill=0;exitX=-0.1;exitY=0.917;exitDx=0;exitDy=0;exitPerimeter=0;dashed=1;" parent="1" source="4Fi33i3VNf01kXt7bkc9-14" target="4Fi33i3VNf01kXt7bkc9-4" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="510" y="215" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="540" y="215"/>
+                            <mxPoint x="540" y="215"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Verdana;fontSize=10;endArrow=classic;endFill=1;" parent="1" source="7baba1c4bc27f4b0-9" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="320" y="320" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="190" y="320"/>
+                            <mxPoint x="190" y="320"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-35" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;fontFamily=Verdana;fontSize=10;endArrow=open;endFill=0;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="320" y="589" as="sourcePoint"/>
+                        <mxPoint x="155" y="589" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-37" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.1;entryY=0.05;entryDx=0;entryDy=0;entryPerimeter=0;fontFamily=Verdana;fontSize=10;endArrow=classic;endFill=1;" parent="1" target="4Fi33i3VNf01kXt7bkc9-36" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="152.5" y="617" as="sourcePoint"/>
+                        <Array as="points">
+                            <mxPoint x="237.5" y="617"/>
+                            <mxPoint x="237.5" y="617"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-39" value="&lt;div&gt;updateInterestState&lt;/div&gt;&lt;div&gt;(PoolState, LUP)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontFamily=Verdana;" parent="4Fi33i3VNf01kXt7bkc9-37" vertex="1" connectable="0">
+                    <mxGeometry x="0.3959" y="-1" relative="1" as="geometry">
+                        <mxPoint x="-73" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-38" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;fontFamily=Verdana;fontSize=10;endArrow=open;endFill=0;exitX=0.1;exitY=0.917;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="4Fi33i3VNf01kXt7bkc9-36" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="487.5" y="721" as="sourcePoint"/>
+                        <mxPoint x="152.5" y="721" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="322.5" y="720"/>
+                            <mxPoint x="322.5" y="721"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-40" value="&lt;div&gt;update EMAs state&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;update interestRate and interestRateUpdate time&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;emit UpdateInterestRate()&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="507.5" y="631" width="145" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-41" value="&lt;div&gt;update inflator&lt;/div&gt;&lt;div&gt;update inflatorUpdate time&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="162.5" y="751" width="145" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-56" value="&lt;div&gt;transfer collateral amount from sender to pool contract&lt;/div&gt;&lt;div&gt;transfer quote amount from pool contract to sender&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;ERC721Pool: add tokenIds to borrowerTokenIds array&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="165" y="790" width="145" height="99" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-60" value="&lt;div&gt;&lt;font style=&quot;font-size: 10px;&quot; face=&quot;Tahoma&quot;&gt;External library&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font style=&quot;font-size: 10px;&quot; face=&quot;Tahoma&quot;&gt;BorrowerActions use internal function (no additional delegate call)&lt;br&gt;&lt;/font&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12" parent="1" vertex="1">
+                    <mxGeometry x="940" y="20" width="220" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-61" value="Loans" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;rounded=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="79" width="100" height="750" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-73" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12;align=center;" parent="4Fi33i3VNf01kXt7bkc9-61" vertex="1">
+                    <mxGeometry x="45" y="430" width="10" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-63" value="&lt;font style=&quot;font-size: 10px;&quot; face=&quot;Tahoma&quot;&gt;Internal library&lt;br&gt;&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=12" parent="1" vertex="1">
+                    <mxGeometry x="801" y="29" width="100" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-64" value="&lt;div&gt;drawDebt&lt;/div&gt;&lt;div&gt;(borrower,&lt;/div&gt;&lt;div&gt;amount,&lt;/div&gt;&lt;div&gt;limitPrice,&lt;/div&gt;&lt;div&gt;collateral)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontFamily=Verdana;" parent="1" vertex="1" connectable="0">
+                    <mxGeometry x="237.50273893619305" y="320.00234068039606" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-71" value="" style="swimlane;startSize=0;labelBackgroundColor=none;fontFamily=Verdana;fontSize=12;gradientColor=none;opacity=50;strokeWidth=2;" parent="1" vertex="1">
+                    <mxGeometry x="290" y="280" width="190" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-72" value="&lt;div align=&quot;center&quot;&gt;&lt;b&gt;&lt;font face=&quot;Tahoma&quot;&gt;Pledge Collateral&lt;/font&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontFamily=Verdana;fontColor=#666666;" parent="4Fi33i3VNf01kXt7bkc9-71" vertex="1">
+                    <mxGeometry x="50" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-75" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Tahoma;fontSize=12;fontColor=#666666;endArrow=classic;endFill=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="331" y="529.5" as="sourcePoint"/>
+                        <mxPoint x="840" y="530" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="710" y="530"/>
+                            <mxPoint x="710" y="530"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-77" value="" style="swimlane;startSize=0;labelBackgroundColor=none;fontFamily=Verdana;fontSize=12;gradientColor=none;opacity=50;strokeWidth=2;" parent="1" vertex="1">
+                    <mxGeometry x="290" y="420" width="370" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-78" value="Draw Debt" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontFamily=Verdana;fontColor=#666666;fontStyle=1" parent="4Fi33i3VNf01kXt7bkc9-77" vertex="1">
+                    <mxGeometry x="272.5" width="90" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-70" value="&lt;div&gt;reverts:&lt;/div&gt;&lt;div&gt;BorrowerNotSender()&lt;/div&gt;&lt;div&gt;AmountLTMinDebt()&lt;/div&gt;&lt;div&gt;LimitIndexReached()&lt;/div&gt;&lt;div&gt;BorrowerUnderCollateralized()&lt;br&gt;&lt;/div&gt;&lt;div&gt;AuctionActive()&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="4Fi33i3VNf01kXt7bkc9-77" vertex="1">
+                    <mxGeometry x="42.5" y="5" width="170" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-76" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;fontFamily=Tahoma;fontSize=12;fontColor=#666666;endArrow=open;endFill=0;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="840" y="564" as="sourcePoint"/>
+                        <mxPoint x="330" y="564" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="332" y="564"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-80" value="&lt;div&gt;emit DrawDebt()&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;increment poolBalances.pledgedCollateral &lt;br&gt;increment poolBalances.t0Debt&lt;/div&gt;&lt;div&gt;update interestState.t0Debt2ToCollateral&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="-90" y="530" width="227.5" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-82" value="update()" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontFamily=Tahoma;" parent="1" vertex="1" connectable="0">
+                    <mxGeometry x="598" y="217" as="geometry">
+                        <mxPoint x="-16" y="301" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4Fi33i3VNf01kXt7bkc9-83" value="- _upsert():&lt;br&gt;&amp;nbsp; - insert or update loan in loans array&lt;br&gt;- remove():&lt;br&gt;&amp;nbsp; - remove loan from loans array&lt;br&gt;- update borrower in address =&amp;gt; borrower mapping" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="860" y="512" width="290" height="70" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>

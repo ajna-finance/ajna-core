@@ -70,7 +70,6 @@ contract PanicExitERC721PoolInvariants is BasicERC721PoolInvariants, Liquidation
         _invariant_A2();
         _invariant_A3_A4();
         _invariant_A5();
-        _invariant_A6();
         _invariant_A7();
 
         invariant_call_summary();

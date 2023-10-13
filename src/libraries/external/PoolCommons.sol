@@ -298,8 +298,8 @@ library PoolCommons {
             newInterestRate_ = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
         }
 
-        // bound rates between 10 bps and 50000%
-        newInterestRate_ = Maths.min(500 * 1e18, Maths.max(0.001 * 1e18, newInterestRate_));
+        // bound rates between 10 bps and 400%
+        newInterestRate_ = Maths.min(4 * 1e18, Maths.max(0.001 * 1e18, newInterestRate_));
     }
 
     /**

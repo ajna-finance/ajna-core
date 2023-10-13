@@ -27,13 +27,14 @@ interface IPoolTakerActions {
      *  @param  data_             If provided, take will assume the callee implements `IERC*Taker`.  Take will send collateral to 
      *                            callee before passing this data to `IERC*Taker.atomicSwapCallback`.  If not provided, 
      *                            the callback function will not be invoked.
+     *  @return collateralTaken_  Amount of collateral taken from the auction (`WAD` precision for `ERC20` pools, max number of `NFT`s for `ERC721` pools).
      */
     function take(
         address        borrowerAddress_,
         uint256        maxAmount_,
         address        callee_,
         bytes calldata data_
-    ) external;
+    ) external returns (uint256 collateralTaken_);
 
     /***********************/
     /*** Reserve Auction ***/

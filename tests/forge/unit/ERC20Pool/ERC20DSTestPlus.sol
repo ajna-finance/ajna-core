@@ -34,6 +34,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         address borrower
     ) internal {
         changePrank(borrower);
+
         uint256 borrowerT0debt;
         uint256 borrowerCollateral;
         (borrowerT0debt, borrowerCollateral, ) = _pool.borrowerInfo(borrower);
@@ -120,6 +121,32 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         assertEq(collateralBalanceNormalized, bucketCollateral + pledgedCollateral);
     }
 
+    function redeemBankruptBucketCollateral(
+        EnumerableSet.UintSet storage buckets,
+        address lender
+    ) internal {
+        //  skip some time to pass bucket bankruptcy block
+        skip(1 hours);
+
+        for (uint256 i = 0; i < buckets.length(); i++) {
+            uint256 bucketIndex = buckets.at(i);
+            (, uint256 quoteTokens, uint256 collateral, uint256 bucketLps, ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
+            if (bucketLps == 0 && quoteTokens == 0 && collateral != 0) {
+                changePrank(lender);
+
+                // mint and approve collateral tokens
+                deal(_pool.collateralAddress(), lender, 1 * 1e18);
+                IERC20(_pool.collateralAddress()).approve(address(_pool), type(uint256).max);
+                
+                // add collateral to get some lps.
+                ERC20Pool(address(_pool)).addCollateral(1 * 1e18, bucketIndex, block.timestamp + 10 minutes);
+
+                // remove all collateral
+                ERC20Pool(address(_pool)).removeCollateral(type(uint256).max, bucketIndex);
+            }
+        }
+    }
+
     function validateEmpty(
         EnumerableSet.UintSet storage buckets
     ) internal {
@@ -133,8 +160,9 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
             assertEq(collateral, 0);
         }
         ( , uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
-        (uint256 debt, , ,) = _pool.debtInfo();
+        (uint256 debt, , uint256 t0DebtInAuction ,) = _pool.debtInfo();
         assertEq(debt, 0);
+        assertEq(t0DebtInAuction, 0);
         assertEq(loansCount, 0);
         assertEq(_pool.pledgedCollateral(), 0);
     }
@@ -143,13 +171,33 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         _;
         validateCollateral(bucketsUsed, borrowers);
 
+        // Skip time to make all auctioned borrowers settleable
+        skip(73 hours);
+
+        // Settle any auctions and then repay debt
         for (uint i = 0; i < borrowers.length(); i++) {
-            repayDebt(borrowers.at(i));
+            address borrower = borrowers.at(i);
+            (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower);
+            if (kickTime != 0) {
+                changePrank(borrower);
+                _pool.settle(borrower, bucketsUsed.length() + 1);
+
+                // Settle again if not settled, this can happen when less reserves calculated with DEPOSIT_BUFFER and borrower is not fully settled
+                (,,, kickTime,,,,,) = _pool.auctionInfo(borrower);
+                if (kickTime != 0) {
+                    _pool.settle(borrower, bucketsUsed.length() + 1);
+                }
+            }
+            repayDebt(borrower);
         }
 
+        // Lenders pull all liquidity and collateral from buckets
         for (uint i = 0; i < lenders.length(); i++) {
             redeemLendersLp(lenders.at(i), lendersDepositedIndex[lenders.at(i)]);
         }
+
+        //  Redeem all collateral in bankrupt buckets
+        if (lenders.length() != 0) redeemBankruptBucketCollateral(bucketsUsed, lenders.at(0));
 
         validateEmpty(bucketsUsed);
     }
@@ -579,6 +627,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         changePrank(from);
         vm.expectRevert(IPoolErrors.BorrowerNotSender.selector);
         ERC20Pool(address(_pool)).repayDebt(borrower, 0, amount, borrower, MAX_FENWICK_INDEX);
+    }
+
+    function _assertRepayAuctionActiveRevert(
+        address from,
+        uint256 maxAmount
+    ) internal override {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AuctionActive.selector);
+        ERC20Pool(address(_pool)).repayDebt(from, maxAmount, 0, from, MAX_FENWICK_INDEX);
     }
 
     function _assertRepayMinDebtRevert(

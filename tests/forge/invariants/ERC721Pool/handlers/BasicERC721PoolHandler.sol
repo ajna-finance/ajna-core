@@ -87,14 +87,15 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.pledgeCollateral']++;
 
+        //  borrower cannot make any action when in auction
+        (uint256 kickTime,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
+        if (kickTime != 0) return;
+
         // Prepare test phase
         uint256 boundedAmount = _prePledgeCollateral(amountToPledge_);
 
         // Action phase
         _pledgeCollateral(boundedAmount);
-
-        // Cleanup phase
-        _auctionSettleStateReset(_actor);
     }
 
     function pullCollateral(
@@ -103,6 +104,10 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.pullCollateral']++;
+
+        //  borrower cannot make any action when in auction
+        (uint256 kickTime,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
+        if (kickTime != 0) return;
 
         // Prepare test phase
         uint256 boundedAmount = _prePullCollateral(amountToPull_);
@@ -118,14 +123,15 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.drawDebt']++;
 
+        //  borrower cannot make any action when in auction
+        (uint256 kickTime,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
+        if (kickTime != 0) return;
+
         // Prepare test phase
         uint256 boundedAmount = _preDrawDebt(amountToBorrow_);
         
         // Action phase
         _drawDebt(boundedAmount);
-
-        // Cleanup phase
-        _auctionSettleStateReset(_actor);
     }
 
     function repayDebt(
@@ -135,14 +141,15 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.repayDebt']++;
 
+        //  borrower cannot make any action when in auction
+        (uint256 kickTime,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
+        if (kickTime != 0) return;
+
         // Prepare test phase
         uint256 boundedAmount = _preRepayDebt(amountToRepay_);
 
         // Action phase
         _repayDebt(boundedAmount);
-
-        // Cleanup phase
-        _auctionSettleStateReset(_actor);
     }
 
     /*******************************/
@@ -201,13 +208,17 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
     ) internal override returns (uint256 boundedAmount_) {
         boundedAmount_ = constrictToRange(amountToBorrow_, MIN_DEBT_AMOUNT, MAX_DEBT_AMOUNT);
 
+        //  borrower cannot make any action when in auction
+        (uint256 kickTime, uint256 collateral, uint256 debt,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
+        if (kickTime != 0) return boundedAmount_;
+
         // Pre Condition
         // 1. borrower's debt should exceed minDebt
         // 2. pool needs sufficent quote token to draw debt
         // 3. drawDebt should not make borrower under collateralized
 
         // 1. borrower's debt should exceed minDebt
-        (uint256 debt, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+        (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
         (uint256 minDebt, , , ) = _poolInfo.poolUtilizationInfo(address(_pool));
 
         if (boundedAmount_ < minDebt && minDebt < MAX_DEBT_AMOUNT) boundedAmount_ = minDebt + 1;

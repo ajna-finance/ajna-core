@@ -60,7 +60,7 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
 
         _actor = _borrowers[borrowerIndex_];
         changePrank(_actor);
-        (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(_actor);
+        (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(_actor);
         if (block.timestamp > kickTime + 72 hours) {
             numberOfCalls['BPanicExitPoolHandler.settleDebt']++;
             _settleAuction(_actor, numberOfBuckets);
@@ -71,7 +71,6 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
         (, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
         _pullCollateral(collateral);
 
-        _auctionSettleStateReset(_actor);
         _resetSettledAuction(_actor, borrowerIndex_);
     }
 
@@ -165,7 +164,7 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
     function settleHeadAuction(
         uint256 skippedTime_
     ) external useTimestamps skipTime(skippedTime_) writeLogs {
-        (, , , , , , address headAuction, , , ) = _pool.auctionInfo(address(0));
+        (, , , , , , address headAuction, , ) = _pool.auctionInfo(address(0));
         if (headAuction != address(0)) {
             _settleAuction(headAuction, 10);
             _resetSettledAuction(headAuction, 0);
@@ -219,9 +218,8 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
     }
 
     function _resetSettledAuction(address borrower_, uint256 borrowerIndex_) internal {
-        (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(borrower_);
+        (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower_);
         if (kickTime == 0) {
-            alreadyTaken[borrower_] = false;
             if (borrowerIndex_ != 0) _activeBorrowers.remove(borrowerIndex_);
         }
     }

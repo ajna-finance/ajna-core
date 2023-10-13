@@ -226,8 +226,7 @@ library SettlerActions {
                 compensatedCollateral_ = borrowerCollateral_ - remainingCollateral_;
 
                 uint256 auctionPrice = _auctionPrice(
-                    auctions_.liquidations[borrowerAddress_].kickMomp,
-                    auctions_.liquidations[borrowerAddress_].neutralPrice,
+                    auctions_.liquidations[borrowerAddress_].referencePrice,
                     auctions_.liquidations[borrowerAddress_].kickTime
                 );
 

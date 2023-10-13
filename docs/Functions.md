@@ -386,19 +386,12 @@
 				- update scaling array state
 		- increment reserveAuction.totalInterestEarned accumulator
 	- BorrowerActions.drawDebt():
-		- SettlerActions._settleAuction():
-			- _removeAuction():
-				- decrement kicker locked accumulator, increment kicker claimable accumumlator
-				- decrement auctions count accumulator
-				- decrement auctions.totalBondEscrowed accumulator
-				- update auction queue state
 		- Loans.update():
 			- _upsert():
 				- insert or update loan in loans array
 			- remove():
 				- remove loan from loans array
 			- update borrower in address => borrower mapping
-	- decrement poolBalances.t0DebtInAuction accumulator
 	- increment poolBalances.pledgedCollateral accumulator
 	- increment poolBalances.t0Debt accumulator
 	- _updateInterestState():
@@ -416,8 +409,6 @@
 
 	emit events:
 	- BorrowerActions.drawDebt():
-		- SettlerActions._settleAuction():
-			- AuctionNFTSettle or AuctionSettle
 	- DrawDebt
 	- PoolCommons.updateInterestRate():
 		- UpdateInterestRate
@@ -435,12 +426,6 @@
 				- update scaling array state
 		- increment reserveAuction.totalInterestEarned accumulator
 	- BorrowerActions.repayDebt():
-		- SettlerActions._settleAuction():
-			- _removeAuction():
-				- decrement kicker locked accumulator, increment kicker claimable accumumlator
-				- decrement auctions count accumulator
-				- decrement auctions.totalBondEscrowed accumulator
-				- update auction queue state
 		- Loans.update():
 			- _upsert():
 				- insert or update loan in loans array
@@ -448,7 +433,6 @@
 				- remove loan from loans array
 			- update borrower in address => borrower mapping
 	- decrement poolBalances.t0Debt accumulator
-	- decrement poolBalances.t0DebtInAuction accumulator
 	- decrement poolBalances.pledgedCollateral accumulator
 	- _updateInterestState():
 		- PoolCommons.updateInterestRate():
@@ -465,8 +449,6 @@
 
 	emit events:
 	- BorrowerActions.repayDebt():
-		- SettlerActions._settleAuction:
-			- AuctionNFTSettle or AuctionSettle
 	- RepayDebt
 	- PoolCommons.updateInterestRate():
 		- UpdateInterestRate
@@ -534,8 +516,6 @@
 		- increment reserveAuction.totalInterestEarned accumulator
 	- TakerActions.take():
 		- _take():
-			- _prepareTake():
-				- update liquidation.alreadyTaken state
 			- _rewardTake():
 				- update liquidation bond size accumulator
 				- update kicker's locked balance accumulator
@@ -567,7 +547,6 @@
 		- insufficient collateral InsufficientCollateral()
 		- _prepareTake():
 			- loan is not in auction NoAuction()
-			- in 1 hour cool down period TakeNotPastCooldown()
 		- _takeLoan():
 			- borrower debt less than pool min debt AmountLTMinDebt()
 
@@ -591,8 +570,6 @@
 		- increment reserveAuction.totalInterestEarned accumulator
 	- TakerActions.bucketTake():
 		- _takeBucket():
-			- _prepareTake():
-				- update liquidation.alreadyTaken state
 			- _rewardBucketTake():
 				- Buckets.addLenderLP:
 					- increment taker lender.lps accumulator and lender.depositTime state
@@ -630,7 +607,6 @@
 		- insufficient collateral InsufficientCollateral()
 		- _prepareTake():
 			- loan is not in auction NoAuction()
-			- in 1 hour cool down period TakeNotPastCooldown()
 		- _takeLoan():
 			- borrower debt less than pool min debt AmountLTMinDebt()
 

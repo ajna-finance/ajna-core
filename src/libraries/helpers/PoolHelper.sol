@@ -25,7 +25,7 @@ import { Maths }   from '../internal/Maths.sol';
     uint256 constant MIN_PRICE = 99_836_282_890;
     uint256 constant MAX_PRICE = 1_004_968_987.606512354182109771 * 1e18;
 
-    uint256 constant MAX_NEUTRAL_PRICE = 50_248_449_380.325617709105488550 * 1e18; // 50 * MAX_PRICE
+    uint256 constant MAX_INFLATED_PRICE = 50_248_449_380.325617709105488550 * 1e18; // 50 * MAX_PRICE
 
     /// @dev deposit buffer (extra margin) used for calculating reserves
     uint256 constant DEPOSIT_BUFFER = 1.000000001 * 1e18;
@@ -346,24 +346,27 @@ import { Maths }   from '../internal/Maths.sol';
 
     /**
      *  @notice Calculates auction price.
-     *  @param  kickMomp_     `MOMP` recorded at the time of kick.
-     *  @param  neutralPrice_ `Neutral Price` of the auction.
-     *  @param  kickTime_      Time when auction was kicked.
-     *  @return price_         Calculated auction price.
+     *  @param  referencePrice_ Recorded at kick, used to calculate start price.
+     *  @param  kickTime_       Time when auction was kicked.
+     *  @return price_          Calculated auction price.
      */
     function _auctionPrice(
-        uint256 kickMomp_,
-        uint256 neutralPrice_,
+        uint256 referencePrice_,
         uint256 kickTime_
     ) view returns (uint256 price_) {
-        uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime_) * 1e18, 1 hours * 1e18);
+        uint256 elapsedMinutes = Maths.wdiv((block.timestamp - kickTime_) * 1e18, 1 minutes * 1e18);
 
-        elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
-
-        int256 timeAdjustment  = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours)); 
-        uint256 referencePrice = Maths.max(kickMomp_, neutralPrice_); 
-
-        price_ = 32 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
+        int256 timeAdjustment;
+        if (elapsedMinutes < 120 * 1e18) {
+            timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedMinutes / 20));
+            price_ = 256 * Maths.wmul(referencePrice_, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
+        } else if (elapsedMinutes < 840 * 1e18) {
+            timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256((elapsedMinutes - 120 * 1e18) / 120));
+            price_ = 4 * Maths.wmul(referencePrice_, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
+        } else {
+            timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256((elapsedMinutes - 840 * 1e18) / 60));
+            price_ = Maths.wmul(referencePrice_, uint256(PRBMathSD59x18.exp2(timeAdjustment))) / 16;
+        }
     }
 
     /**
@@ -409,29 +412,18 @@ import { Maths }   from '../internal/Maths.sol';
 
     /**
      *  @notice Calculates bond parameters of an auction.
-     *  @param  borrowerDebt_ Borrower's debt before entering in liquidation.
-     *  @param  collateral_   Borrower's collateral before entering in liquidation.
-     *  @param  momp_         Current pool `momp`.
+     *  @param  borrowerDebt_   Borrower's debt before entering in liquidation.
+     *  @param  npTpRatio_      Borrower's Np to Tp ratio
      */
     function _bondParams(
         uint256 borrowerDebt_,
-        uint256 collateral_,
-        uint256 momp_
+        uint256 npTpRatio_
     ) pure returns (uint256 bondFactor_, uint256 bondSize_) {
-        uint256 thresholdPrice = (borrowerDebt_ * Maths.WAD) / collateral_;
-
-        // bondFactor = min(30%, max(1%, (MOMP - thresholdPrice) / MOMP))
-        if (thresholdPrice >= momp_) {
-            bondFactor_ = 0.01 * 1e18;
-        } else {
-            bondFactor_ = Maths.min(
-                0.3 * 1e18,
-                Maths.max(
-                    0.01 * 1e18,
-                    1e18 - Maths.wdiv(thresholdPrice, momp_)
-                )
-            );
-        }
+        // bondFactor = min((NP-to-TP-ratio - 1)/10, 0.03)
+        bondFactor_ = Maths.min(
+            0.03 * 1e18,
+            (npTpRatio_ - 1e18) / 10
+        );
 
         bondSize_ = Maths.wmul(bondFactor_,  borrowerDebt_);
     }

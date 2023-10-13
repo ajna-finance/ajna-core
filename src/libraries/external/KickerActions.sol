@@ -25,8 +25,7 @@ import {
 }                             from '../../interfaces/pool/commons/IPoolInternals.sol';
 
 import {
-    MAX_NEUTRAL_PRICE,
-    _auctionPrice,
+    MAX_INFLATED_PRICE,
     _bondParams,
     _bpf,
     _claimableReserves,
@@ -59,12 +58,10 @@ library KickerActions {
         uint256 borrowerDebt;       // [WAD] the accrued debt of kicked borrower
         uint256 borrowerCollateral; // [WAD] amount of kicked borrower collateral
         uint256 neutralPrice;       // [WAD] neutral price recorded in kick action
-        uint256 noOfLoans;          // number of loans and auctions in pool (used to calculate MOMP)
-        uint256 momp;               // [WAD] MOMP of kicked auction
+        uint256 htp;                // [WAD] highest threshold price in pool
+        uint256 referencePrice;     // [WAD] used to calculate auction start price
         uint256 bondFactor;         // [WAD] bond factor of kicked auction
         uint256 bondSize;           // [WAD] bond size of kicked auction
-        uint256 t0KickPenalty;      // [WAD] t0 debt added as kick penalty
-        uint256 kickPenalty;        // [WAD] current debt added as kick penalty
     }
 
     /// @dev Struct used for `lenderKick` function local vars.
@@ -200,13 +197,12 @@ library KickerActions {
      *  @dev    no reserves to claim `NoReserves()`
      *  @dev    === Emit events ===
      *  @dev    - `KickReserveAuction`
-     *  @return kickerAward_ The `LP`s awarded to reserve auction kicker.
      */
     function kickReserveAuction(
         AuctionsState storage auctions_,
         ReserveAuctionState storage reserveAuction_,
         KickReserveAuctionParams calldata params_
-    ) external returns (uint256 kickerAward_) {
+    ) external {
         // retrieve timestamp of latest burn event and last burn timestamp
         uint256 latestBurnEpoch   = reserveAuction_.latestBurnEventEpoch;
         uint256 lastBurnTimestamp = reserveAuction_.burnEvents[latestBurnEpoch].timestamp;
@@ -226,9 +222,7 @@ library KickerActions {
             params_.poolBalance
         );
 
-        kickerAward_ = Maths.wmul(0.01 * 1e18, claimable);
-
-        curUnclaimedAuctionReserve += claimable - kickerAward_;
+        curUnclaimedAuctionReserve += claimable;
 
         if (curUnclaimedAuctionReserve == 0) revert NoReserves();
 
@@ -293,9 +287,8 @@ library KickerActions {
 
         Borrower storage borrower = loans_.borrowers[borrowerAddress_];
 
-        kickResult_.debtPreAction       = borrower.t0Debt;
+        kickResult_.t0KickedDebt        = borrower.t0Debt;
         kickResult_.collateralPreAction = borrower.collateral;
-        kickResult_.t0KickedDebt        = kickResult_.debtPreAction ;
 
         // add amount to remove to pool debt in order to calculate proposed LUP
         // for regular kick this is the currrent LUP in pool
@@ -312,28 +305,22 @@ library KickerActions {
         }
 
         // calculate auction params
+        // neutral price = Tp * Np to Tp ratio
         // neutral price is capped at 50 * max pool price
         vars.neutralPrice = Maths.min(
-            Maths.wmul(borrower.t0Np, poolState_.inflator),
-            MAX_NEUTRAL_PRICE
+            Math.mulDiv(vars.borrowerDebt, borrower.npTpRatio, vars.borrowerCollateral),
+            MAX_INFLATED_PRICE
         );
         // check if NP is not less than price at the limit index provided by the kicker - done to prevent frontrunning kick auction call with a large amount of loan
         // which will make it harder for kicker to earn a reward and more likely that the kicker is penalized
         _revertIfPriceDroppedBelowLimit(vars.neutralPrice, limitIndex_);
 
-        vars.noOfLoans = Loans.noOfLoans(loans_) + auctions_.noOfAuctions;
-
-        vars.momp = _priceAt(
-            Deposits.findIndexOfSum(
-                deposits_,
-                Maths.wdiv(poolState_.debt, vars.noOfLoans * 1e18)
-            )
-        );
+        vars.htp            = Maths.wmul(Loans.getMax(loans_).thresholdPrice, poolState_.inflator);
+        vars.referencePrice = Maths.min(Maths.max(vars.htp, vars.neutralPrice), MAX_INFLATED_PRICE);
 
         (vars.bondFactor, vars.bondSize) = _bondParams(
             vars.borrowerDebt,
-            vars.borrowerCollateral,
-            vars.momp
+            borrower.npTpRatio
         );
 
         // record liquidation info
@@ -343,7 +330,7 @@ library KickerActions {
             borrowerAddress_,
             vars.bondSize,
             vars.bondFactor,
-            vars.momp,
+            vars.referencePrice,
             vars.neutralPrice
         );
 
@@ -353,23 +340,9 @@ library KickerActions {
         // remove kicked loan from heap
         Loans.remove(loans_, borrowerAddress_, loans_.indices[borrowerAddress_]);
 
-        // when loan is kicked, penalty of three months of interest is added
-        vars.t0KickPenalty = Maths.wdiv(Maths.wmul(kickResult_.t0KickedDebt, poolState_.rate), 4 * 1e18);
-        vars.kickPenalty   = Maths.wmul(vars.t0KickPenalty, poolState_.inflator);
-
-        kickResult_.t0PoolDebt   = poolState_.t0Debt + vars.t0KickPenalty;
-        kickResult_.t0KickedDebt += vars.t0KickPenalty;
-
-        // recalculate LUP with new pool debt (including kick penalty)
-        kickResult_.poolDebt = Maths.wmul(kickResult_.t0PoolDebt, poolState_.inflator);
-        kickResult_.lup      = Deposits.getLup(deposits_, kickResult_.poolDebt);
-
-        // update borrower debt with kicked debt penalty
-        borrower.t0Debt = kickResult_.t0KickedDebt;
-
         emit Kick(
             borrowerAddress_,
-            vars.borrowerDebt + vars.kickPenalty,
+            vars.borrowerDebt,
             vars.borrowerCollateral,
             vars.bondSize
         );
@@ -417,7 +390,7 @@ library KickerActions {
      *  @param  borrowerAddress_ Address of the borrower that is kicked.
      *  @param  bondSize_        Bond size to cover newly kicked auction.
      *  @param  bondFactor_      Bond factor of the newly kicked auction.
-     *  @param  momp_            Current pool `MOMP`.
+     *  @param  referencePrice_  Used to calculate auction start price.
      *  @param  neutralPrice_    Current pool `Neutral Price`.
      */
     function _recordAuction(
@@ -426,16 +399,16 @@ library KickerActions {
         address borrowerAddress_,
         uint256 bondSize_,
         uint256 bondFactor_,
-        uint256 momp_,
+        uint256 referencePrice_,
         uint256 neutralPrice_
     ) internal {
         // record liquidation info
-        liquidation_.kicker       = msg.sender;
-        liquidation_.kickTime     = uint96(block.timestamp);
-        liquidation_.kickMomp     = uint96(momp_); // cannot exceed max price enforced by _priceAt() function
-        liquidation_.bondSize     = SafeCast.toUint160(bondSize_);
-        liquidation_.bondFactor   = SafeCast.toUint96(bondFactor_);
-        liquidation_.neutralPrice = SafeCast.toUint96(neutralPrice_);
+        liquidation_.kicker         = msg.sender;
+        liquidation_.kickTime       = uint96(block.timestamp);
+        liquidation_.referencePrice = SafeCast.toUint96(referencePrice_);
+        liquidation_.bondSize       = SafeCast.toUint160(bondSize_);
+        liquidation_.bondFactor     = SafeCast.toUint96(bondFactor_);
+        liquidation_.neutralPrice   = SafeCast.toUint96(neutralPrice_);
 
         // increment number of active auctions
         ++auctions_.noOfAuctions;

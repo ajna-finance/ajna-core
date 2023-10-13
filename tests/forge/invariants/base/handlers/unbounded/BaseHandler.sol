@@ -81,12 +81,15 @@ abstract contract BaseHandler is Test {
     uint256 public increaseInBonds;    // amount of bond increase
     uint256 public decreaseInBonds;    // amount of bond decrease
 
+    // Take penalty test state
+    uint256 public borrowerPenalty; // Borrower penalty on take
+    uint256 public kickerReward;    // Kicker reward on take
+
     // All Buckets used in invariant testing that also includes Buckets where collateral is added when a borrower is in auction and has partial NFT
     EnumerableSet.UintSet internal buckets;
 
     // auctions invariant test state
     bool                     public firstTake;        // if take is called on auction first time
-    mapping(address => bool) public alreadyTaken;     // mapping borrower address to true if auction taken atleast once
 
     string  internal path = "logFile.txt";
     bool    internal logToFile;
@@ -132,9 +135,9 @@ abstract contract BaseHandler is Test {
         address currentActor = _actor;
 
         // clear head auction if more than 72 hours passed
-        (, , , , , , address headAuction, , , ) = _pool.auctionInfo(address(0));
+        (, , , , , , address headAuction, , ) = _pool.auctionInfo(address(0));
         if (headAuction != address(0)) {
-            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(headAuction);
+            (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(headAuction);
             if (block.timestamp - kickTime > 72 hours) {
                 (uint256 auctionedDebt, , ) = _poolInfo.borrowerInfo(address(_pool), headAuction);
 
@@ -145,7 +148,6 @@ abstract contract BaseHandler is Test {
 
                 _ensureQuoteAmount(headAuction, auctionedDebt);
                 _repayBorrowerDebt(headAuction, auctionedDebt);
-                _auctionSettleStateReset(headAuction);
             }
         }
 
@@ -299,6 +301,7 @@ abstract contract BaseHandler is Test {
             err == keccak256(abi.encodeWithSignature("InvalidIndex()")) ||
             err == keccak256(abi.encodeWithSignature("InsufficientLP()")) || 
             err == keccak256(abi.encodeWithSignature("AuctionNotCleared()")) ||
+            err == keccak256(abi.encodeWithSignature("AuctionNotTakeable()")) ||
             err == keccak256(abi.encodeWithSignature("TransferorNotApproved()")) ||
             err == keccak256(abi.encodeWithSignature("TransferToSameOwner()")) ||
             err == keccak256(abi.encodeWithSignature("NoAllowance()")) ||
@@ -311,7 +314,6 @@ abstract contract BaseHandler is Test {
             err == keccak256(abi.encodeWithSignature("LimitIndexExceeded()")) ||
             err == keccak256(abi.encodeWithSignature("PriceBelowLUP()")) ||
             err == keccak256(abi.encodeWithSignature("NoAuction()")) ||
-            err == keccak256(abi.encodeWithSignature("TakeNotPastCooldown()")) ||
             err == keccak256(abi.encodeWithSignature("AuctionPriceGtBucketPrice()")) ||
             err == keccak256(abi.encodeWithSignature("AuctionNotClearable()")) ||
             err == keccak256(abi.encodeWithSignature("ReserveAuctionTooSoon()")) ||
@@ -345,6 +347,10 @@ abstract contract BaseHandler is Test {
         decreaseInReserves = 0;
         // record reserves before each action
         (previousReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
+
+        // reset penalties before each action
+        borrowerPenalty = 0;
+        kickerReward = 0;
 
         // reset the bonds before each action
         increaseInBonds = 0;
@@ -429,39 +435,9 @@ abstract contract BaseHandler is Test {
     /*** Auctions Helper Functions ***/
     /*********************************/
 
-    /**
-     * @dev Called by actions that can settle auctions in order to reset test state.
-     */
-    function _auctionSettleStateReset(address actor_) internal {
-        (address kicker, , , , , , , , , ) = _pool.auctionInfo(actor_);
-
-        // auction is settled if kicker is 0x
-        bool auctionSettled = kicker == address(0);
-        // reset alreadyTaken flag if auction is settled
-        if (auctionSettled) alreadyTaken[actor_] = false;
-    }
-
     function _getKickerBond(address kicker_) internal view returns (uint256 bond_) {
         (uint256 claimableBond, uint256 lockedBond) = _pool.kickerInfo(kicker_);
         bond_ = claimableBond + lockedBond;
-    }
-
-    function _updateCurrentTakeState(address borrower_, uint256 borrowert0Debt_, uint256 inflator_) internal {
-        if (!alreadyTaken[borrower_]) {
-            alreadyTaken[borrower_] = true;
-
-            // **RE7**: Reserves increase by 7% of the loan quantity upon the first take.
-            increaseInReserves += Maths.wmul(
-                Maths.wmul(borrowert0Debt_, 0.07 * 1e18),
-                inflator_
-            );
-
-            firstTake = true;
-
-        } else firstTake = false;
-
-        // reset taken flag in case auction was settled by take action
-        _auctionSettleStateReset(borrower_);
     }
 
     function _recordSettleBucket(
@@ -516,7 +492,7 @@ abstract contract BaseHandler is Test {
 
         (
             , , , , , ,
-            address headAuction, , ,
+            address headAuction, ,
         ) = _pool.auctionInfo(address(0));
 
         printLog("Time                     = ", block.timestamp);
@@ -619,21 +595,21 @@ abstract contract BaseHandler is Test {
         string memory data;
         address nextBorrower;
         uint256 kickTime;
-        uint256 kickMomp;
+        uint256 referencePrice;
         uint256 bondFactor;
         uint256 bondSize;
         uint256 neutralPrice;
-        (,,,,,, nextBorrower,,,) = _pool.auctionInfo(address(0));
+        (,,,,,, nextBorrower,,) = _pool.auctionInfo(address(0));
         while (nextBorrower != address(0)) {
             data = string(abi.encodePacked("Borrower ", Strings.toHexString(uint160(nextBorrower), 20), " Auction Details :"));
             printInNextLine(data);
-            (, bondFactor, bondSize, kickTime, kickMomp, neutralPrice,, nextBorrower,,) = _pool.auctionInfo(nextBorrower);
+            (, bondFactor, bondSize, kickTime, referencePrice, neutralPrice,, nextBorrower,) = _pool.auctionInfo(nextBorrower);
 
-            printLog("Bond Factor   = ", bondFactor);
-            printLog("Bond Size     = ", bondSize);
-            printLog("Kick Time     = ", kickTime);
-            printLog("Kick Momp     = ", kickMomp);
-            printLog("Neutral Price = ", neutralPrice);
+            printLog("Bond Factor     = ", bondFactor);
+            printLog("Bond Size       = ", bondSize);
+            printLog("Kick Time       = ", kickTime);
+            printLog("Reference Price = ", referencePrice);
+            printLog("Neutral Price   = ", neutralPrice);
         }
         printInNextLine("=======================");
     }

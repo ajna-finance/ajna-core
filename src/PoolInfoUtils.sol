@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.18;
 
+import { Math } from '@openzeppelin/contracts/utils/math/Math.sol';
+
 import { IPool, IERC20Token } from './interfaces/pool/IPool.sol';
 
 import {
@@ -56,8 +58,8 @@ contract PoolInfoUtils {
         )
     {
         IPool pool = IPool(ajnaPool_);
-        uint256 kickMomp;
-        ( , , , kickTime_, kickMomp, neutralPrice_, , , , ) = pool.auctionInfo(borrower_);
+        uint256 referencePrice;
+        ( , , , kickTime_, referencePrice, neutralPrice_, , , ) = pool.auctionInfo(borrower_);
         if (kickTime_ != 0) {
             (debtToCover_, collateral_, ) = this.borrowerInfo(ajnaPool_, borrower_);
             
@@ -65,7 +67,7 @@ contract PoolInfoUtils {
             uint256 lup_           = _priceAt(pool.depositIndex(poolDebt));
             isCollateralized_      = _isCollateralized(debtToCover_, collateral_, lup_, pool.poolType());
 
-            price_ = _auctionPrice(kickMomp, neutralPrice_, kickTime_);
+            price_ = _auctionPrice(referencePrice, kickTime_);
         }
     }
 
@@ -98,7 +100,10 @@ contract PoolInfoUtils {
         uint256 pendingInflator = PoolCommons.pendingInflator(inflator, lastInflatorUpdate, interestRate);
 
         uint256 t0Debt;
-        (t0Debt, collateral_, t0Np_)  = pool.borrowerInfo(borrower_);
+        uint256 npTpRatio;
+        (t0Debt, collateral_, npTpRatio)  = pool.borrowerInfo(borrower_);
+
+        t0Np_ = collateral_ == 0 ? 0 : Math.mulDiv(t0Debt, npTpRatio, collateral_);
 
         debt_ = Maths.ceilWmul(t0Debt, pendingInflator);
     }
@@ -405,26 +410,6 @@ contract PoolInfoUtils {
         address ajnaPool_
     ) external view returns (uint256 htp_) {
         (, htp_, ) = IPool(ajnaPool_).loansInfo();
-    }
-
-    /**
-     *  @notice Returns current `MOMP` for a given pool.
-    */
-    function momp(
-        address ajnaPool_
-    ) external view returns (uint256) {
-        IPool pool = IPool(ajnaPool_);
-
-        ( , , uint256 noOfLoans) = pool.loansInfo();
-        noOfLoans += pool.totalAuctionsInPool();
-        if (noOfLoans == 0) {
-            // if there are no borrowers, return the HPB
-            return _priceAt(pool.depositIndex(1));
-        } else {
-            // otherwise, calculate the MOMP
-            (uint256 debt, , , ) = pool.debtInfo();
-            return _priceAt(pool.depositIndex(Maths.wdiv(debt, noOfLoans * 1e18)));
-        }
     }
 
     /**

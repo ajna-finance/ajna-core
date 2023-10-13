@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
+import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
+
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 import { Token }               from '../../utils/Tokens.sol';
 
@@ -8,6 +10,7 @@ import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/interfaces/pool/erc20/IERC20Pool.sol';
 
 import 'src/ERC20Pool.sol';
+import 'src/PoolInfoUtilsMulticall.sol';
 
 contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
 
@@ -92,10 +95,10 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
     }
 
     function testPoolInfoUtilsBorrowerInfo() external {
-        (uint256 debt, uint256 collateral, uint256 t0Np) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        (uint256 debt, uint256 collateral, uint256 npTpRatio) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,       21_020.192307692307702000 * 1e18);
         assertEq(collateral, 100 * 1e18);
-        assertEq(t0Np,       220.712019230769230871 * 1e18);
+        assertEq(npTpRatio,  242.111289450059087705 * 1e18);
     }
 
     function testPoolInfoUtilsBucketInfo() external {
@@ -205,22 +208,6 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(lenderInterestMargin, 0.849999999999999999 * 1e18);
     }
 
-    function testMomp() external {
-        assertEq(_poolUtils.momp(address(_pool)), 2_981.007422784467321543 * 1e18);
-
-        // ensure calculation does not revert on pools with no loans and no deposit
-        IERC20     otherCollateral = new Token("MompTestCollateral", "MTC");
-        IERC20Pool emptyPool       = ERC20Pool(_poolFactory.deployPool(address(otherCollateral), address(_quote), 0.05 * 10**18));
-        assertEq(_poolUtils.momp(address(emptyPool)), MIN_PRICE);
-
-        // should return HPB on pools with liquidity but no loans
-        changePrank(_lender);
-        uint256 hpbIndex = 369;
-        _quote.approve(address(emptyPool), type(uint256).max);
-        emptyPool.addQuoteToken(0.0213 * 1e18, hpbIndex, type(uint256).max, false);
-        assertEq(_poolUtils.momp(address(emptyPool)), _priceAt(hpbIndex));
-    }
-
     function testBorrowFeeRate() external {
         assertEq(_poolUtils.borrowFeeRate(address(_pool)), 0.000961538461538462 * 1e18);
     }
@@ -276,5 +263,52 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
                 high
             ), 20000000000000000000
         );
+    }
+
+    function testPoolInfoUtilsMulticallPoolAndBucketInfo() external {
+        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
+
+        PoolInfoUtilsMulticall.BucketInfo memory bucketInfo;
+
+        (,,, bucketInfo) = poolUtilsMulticall.poolDetailsAndBucketInfo(address(_pool), high);
+
+        assertEq(bucketInfo.bucketLP, 10_000 * 1e18);
+    }
+
+    function testPoolInfoUtilsMulticall() external {
+        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
+
+        string[] memory functionSignatures = new string[](2);
+        functionSignatures[0] = "hpb(address)";
+        functionSignatures[1] = "htp(address)";
+
+        string[] memory args = new string[](2);
+        args[0] = Strings.toHexString(address(_pool));
+        args[1] = Strings.toHexString(address(_pool));
+
+        bytes[] memory result = poolUtilsMulticall.multicall(functionSignatures, args);
+
+        assertEq(abi.decode(result[0], (uint256)), _poolUtils.hpb(address(_pool)));
+        assertEq(abi.decode(result[1], (uint256)), _poolUtils.htp(address(_pool)));
+    }
+
+    function testPoolInfoMulticallBorrowerInfo() external {
+        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
+
+        string[] memory functionSignatures = new string[](2);
+        functionSignatures[0] = "borrowerInfo(address,address)";
+        functionSignatures[1] = "htp(address)";
+
+        string[] memory args = new string[](3);
+        args[0] = Strings.toHexString(address(_pool));
+        args[1] = Strings.toHexString(_borrower);
+        args[2] = Strings.toHexString(address(_pool));
+
+        bytes[] memory result = poolUtilsMulticall.multicall(functionSignatures, args);
+
+        (uint256 debt,,) = abi.decode(result[0], (uint256, uint256, uint256));
+
+        assertEq(debt,       21_020.192307692307702000 * 1e18);
+        assertEq(abi.decode(result[1], (uint256)), _poolUtils.htp(address(_pool)));
     }
 }

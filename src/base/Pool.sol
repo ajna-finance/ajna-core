@@ -306,20 +306,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // update in memory pool state struct
-        poolState.debt            =  result.poolDebt;
-        poolState.t0Debt          =  result.t0PoolDebt;
         poolState.t0DebtInAuction += result.t0KickedDebt;
 
         // adjust t0Debt2ToCollateral ratio
         _updateT0Debt2ToCollateral(
-            result.debtPreAction,
+            result.t0KickedDebt,
             0, // debt post kick (for loan in auction) not taken into account
             result.collateralPreAction,
             0  // collateral post kick (for loan in auction) not taken into account
         );
 
         // update pool balances state
-        poolBalances.t0Debt          = poolState.t0Debt;
         poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
         // update pool interest rate state
         _updateInterestState(poolState, result.lup);
@@ -330,8 +327,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /**
      *  @inheritdoc IPoolKickerActions
      *  @dev    === Write state ===
-     *  @dev    increment `poolBalances.t0DebtInAuction` and `poolBalances.t0Debt` accumulators
-     *  @dev    update `t0Debt2ToCollateral` ratio, debt and collateral post action are considered 0
      */
     function lenderKick(
         uint256 index_,
@@ -351,20 +346,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // update in memory pool state struct
-        poolState.debt            =  result.poolDebt;
-        poolState.t0Debt          =  result.t0PoolDebt;
         poolState.t0DebtInAuction += result.t0KickedDebt;
 
         // adjust t0Debt2ToCollateral ratio
         _updateT0Debt2ToCollateral(
-            result.debtPreAction,
+            result.t0KickedDebt,
             0, // debt post kick (for loan in auction) not taken into account
             result.collateralPreAction,
             0 // collateral post kick (for loan in auction) not taken into account
         );
 
         // update pool balances state
-        poolBalances.t0Debt          = poolState.t0Debt;
         poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
 
         // update pool interest rate state
@@ -418,7 +410,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      */
     function kickReserveAuction() external override nonReentrant {
         // start a new claimable reserve auction, passing in relevant parameters such as the current pool size, debt, balance, and inflator value
-        uint256 kickerAward = KickerActions.kickReserveAuction(
+        KickerActions.kickReserveAuction(
             auctions,
             reserveAuction,
             KickReserveAuctionParams({
@@ -428,9 +420,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 inflator:    inflatorState.inflator
             })
         );
-
-        // transfer kicker award to msg.sender
-        _transferQuoteToken(msg.sender, kickerAward);
     }
 
     /**
@@ -601,7 +590,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         // update in memory pool state struct
         poolState_.debt            =  result_.poolDebt;
         poolState_.t0Debt          =  result_.t0PoolDebt;
-        poolState_.t0DebtInAuction += result_.t0DebtPenalty;
         poolState_.t0DebtInAuction -= result_.t0DebtInAuctionChange;
         poolState_.collateral      -= (result_.collateralAmount + result_.compensatedCollateral); // deduct collateral taken plus collateral compensated if NFT auction settled
 
@@ -757,12 +745,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 bondFactor_,
         uint256 bondSize_,
         uint256 kickTime_,
-        uint256 kickMomp_,
+        uint256 referencePrice_,
         uint256 neutralPrice_,
         address head_,
         address next_,
-        address prev_,
-        bool alreadyTaken_
+        address prev_
     ) {
         Liquidation storage liquidation = auctions.liquidations[borrower_];
         return (
@@ -770,12 +757,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             liquidation.bondFactor,
             liquidation.bondSize,
             liquidation.kickTime,
-            liquidation.kickMomp,
+            liquidation.referencePrice,
             liquidation.neutralPrice,
             auctions.head,
             liquidation.next,
-            liquidation.prev,
-            liquidation.alreadyTaken
+            liquidation.prev
         );
     }
 
@@ -787,7 +773,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return (
             borrower.t0Debt,
             borrower.collateral,
-            borrower.t0Np
+            borrower.npTpRatio
         );
     }
 
