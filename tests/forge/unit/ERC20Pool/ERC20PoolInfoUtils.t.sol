@@ -279,7 +279,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
 
         string[] memory functionSignatures = new string[](2);
-        functionSignatures[0] = "momp(address)";
+        functionSignatures[0] = "hpb(address)";
         functionSignatures[1] = "htp(address)";
 
         string[] memory args = new string[](2);
@@ -288,7 +288,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
 
         bytes[] memory result = poolUtilsMulticall.multicall(functionSignatures, args);
 
-        assertEq(abi.decode(result[0], (uint256)), _poolUtils.momp(address(_pool)));
+        assertEq(abi.decode(result[0], (uint256)), _poolUtils.hpb(address(_pool)));
         assertEq(abi.decode(result[1], (uint256)), _poolUtils.htp(address(_pool)));
     }
 
