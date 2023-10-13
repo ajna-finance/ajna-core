@@ -435,24 +435,9 @@ abstract contract BaseHandler is Test {
     /*** Auctions Helper Functions ***/
     /*********************************/
 
-    /**
-     * @dev Called by actions that can settle auctions in order to reset test state.
-     */
-    function _auctionSettleStateReset(address actor_) internal {
-        (address kicker, , , , , , , , ) = _pool.auctionInfo(actor_);
-
-        // auction is settled if kicker is 0x
-        bool auctionSettled = kicker == address(0);
-    }
-
     function _getKickerBond(address kicker_) internal view returns (uint256 bond_) {
         (uint256 claimableBond, uint256 lockedBond) = _pool.kickerInfo(kicker_);
         bond_ = claimableBond + lockedBond;
-    }
-
-    function _updateCurrentTakeState(address borrower_, uint256 borrowert0Debt_, uint256 inflator_) internal {
-        // reset taken flag in case auction was settled by take action
-        _auctionSettleStateReset(borrower_);
     }
 
     function _recordSettleBucket(
