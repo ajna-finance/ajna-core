@@ -220,8 +220,11 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                     uint256 totalReward = lpToQuoteToken(afterBucketTakeVars.kickerLps - beforeBucketTakeVars.kickerLps, bucketIndex_);
                     uint256 takerReward = Maths.wmul(borrowerCollateralBeforeTake - borrowerCollateralAfterTake, _priceAt(bucketIndex_) - auctionPrice);
 
-                    // **A8**: kicker reward <= Borrower penalty
-                    kickerReward = totalReward - takerReward;
+                    // Total reward can be little less(1-2 unit) than taker reward to due to rounding in calculations
+                    if (totalReward > takerReward) {
+                        // **A8**: kicker reward <= Borrower penalty
+                        kickerReward = totalReward - takerReward;
+                    }
                 } else {
                     // **A8**: kicker reward <= Borrower penalty
                     kickerReward = lpToQuoteToken(afterBucketTakeVars.kickerLps - beforeBucketTakeVars.kickerLps, bucketIndex_);

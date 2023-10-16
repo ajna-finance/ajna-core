@@ -1103,6 +1103,10 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         invariant_reserves();
     }
 
+    /**
+        Test was failing in bucket take because of total reward calculated 1 unit less than taker reward due to rounding.
+        Fixed by calculating kicker reward only when total reward is greater than taker reward.
+     */
     function test_regression_bucket_take_arithmetic_over_underflow() external {
         _reserveERC20PoolHandler.pullCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639932, 1644755755592, 1959341507995549485252446);
         _reserveERC20PoolHandler.transferLps(978535271576710676299781512516, 16098465890038718399935149108, 1448369905976755312991, 2000000437612435879631304211889, 2334526172727163946751610);
