@@ -1109,7 +1109,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         });
     }
 
-    function testAccruePoolInterestRevertDueToExpLimit() external tearDown {
+    function testAccruePoolInterestInterestUpdateFailureDueToExpLimit() external tearDown {
         _mintQuoteAndApproveTokens(_lender, 1_000_000_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower, 1_000_000_000 * 1e18);
 
@@ -1180,13 +1180,27 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         // wait 32 years
         skip(365 days * 32);
 
-        // Reverts with PRBMathUD60x18__ExpInputTooBig
+        // Interest update should fail
         vm.expectEmit(true, true, false, true);
-        emit InterestOverflow();
+        emit InterestUpdateFailure();
         _updateInterest();
+
+        // repay all borrower debt based on last inflator
+        (uint256 inflator, ) = _pool.inflatorInfo();
+        (uint256 debt, , ) = _pool.borrowerInfo(_borrower);
+
+        _mintQuoteAndApproveTokens(_borrower, Maths.ceilWmul(inflator, debt));
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    type(uint256).max,
+            amountRepaid:     Maths.ceilWmul(inflator, debt),
+            collateralToPull: 0,
+            newLup:           MAX_PRICE
+        });
     }
 
-    function testAccrueInterestNewInterestLimit() external tearDown {
+    function testAccrueInterestInterestUpdateFailure() external tearDown {
         _mintQuoteAndApproveTokens(_lender, 1_000_000_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower, 1_000_000_000 * 1e18);
 
@@ -1253,9 +1267,9 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         skip(13 hours);
 
-        // Revert with Arithmetic overflow in `Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)` in accrue interest
+        // Interest update should fail
         vm.expectEmit(true, true, false, true);
-        emit InterestOverflow();
+        emit InterestUpdateFailure();
         _updateInterest();
     }
 
@@ -1326,7 +1340,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         }
     }
 
-    function testUpdateInterestTuLimit() external tearDown {
+    function testTuLimitInterestUpdateFailure() external tearDown {
         _mintQuoteAndApproveTokens(_lender, 1_000_000_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower, 1_000_000_000 * 1e18);
 
@@ -1395,9 +1409,9 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         skip(1 days);
 
-        // Revert with Arithmetic overflow in `(((tu + mau102 - 1e18) / 1e9) ** 2)` in update interest
+        // Interest update should fail
         vm.expectEmit(true, true, false, true);
-        emit InterestOverflow();
+        emit InterestUpdateFailure();
         _updateInterest();
     }
 }

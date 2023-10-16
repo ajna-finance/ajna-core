@@ -575,7 +575,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                     // update total interest earned accumulator with the newly accrued interest
                     reserveAuction.totalInterestEarned += newInterest;
                 } catch {
-                    emit InterestOverflow();
+                    poolState_.isNewInterestAccrued = false;
+                    emit InterestUpdateFailure();
                 }
             }
         }
@@ -683,7 +684,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 lup_
     ) internal {
         try PoolCommons.updateInterestState(interestState, emaState, deposits, poolState_, lup_) {} catch {
-            emit InterestOverflow();
+            emit InterestUpdateFailure();
         }
 
         // update pool inflator

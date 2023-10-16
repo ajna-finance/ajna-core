@@ -370,6 +370,6 @@ interface IPoolEvents {
     /**
      *  @notice Emitted when interest accural or update interest overflows.
      */
-    event InterestOverflow();
+    event InterestUpdateFailure();
 
 }
