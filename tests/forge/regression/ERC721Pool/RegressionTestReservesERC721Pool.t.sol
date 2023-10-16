@@ -468,6 +468,19 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
         _reserveERC721PoolHandler.lenderKickAuction(1, 2380963819538393125633366019791981, 0);
     }
 
+    function test_regression_bucket_take_reserves_failure() external {
+        _reserveERC721PoolHandler.takeAuction(5614, 5711, 150000000000000001, 11889);
+        _reserveERC721PoolHandler.takeAuction(51, 17159, 13313, 1965);
+        _reserveERC721PoolHandler.failed();
+        _reserveERC721PoolHandler.pledgeCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639935, 3, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
+        _reserveERC721PoolHandler.drawDebt(4037, 1015403262, 413376868404700886282978542123985269303539411280089634060);
+        _reserveERC721PoolHandler.bucketTake(14110, 4985, false, 1366, 13954);
+        _reserveERC721PoolHandler.lenderKickAuction(190601454519858205896974049525891537012496008839583350325368160, 2813171022655068506479644642529791249126593717492917545887718879120, 336250622645138163229276253658670571624001551213796);
+        _reserveERC721PoolHandler.bucketTake(59580, 11550, false, 7965, 6543);
+        invariant_auction();
+        invariant_reserves();
+    }
+
 }
 
 contract RegressionTestReserveEvmRevertERC721Pool is ReserveERC721PoolInvariants {
