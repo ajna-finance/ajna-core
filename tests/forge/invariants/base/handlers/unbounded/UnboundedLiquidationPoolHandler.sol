@@ -171,6 +171,12 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // **RE7**: Reserves increase with the quote token paid by taker.
             increaseInReserves += totalBalanceAfterTake - totalBalanceBeforeTake;
 
+            // **RE9**: Reserves are unchanged by take below tp
+            if (auctionPrice < Maths.wdiv(borrowerDebtBeforeTake, borrowerCollateralBeforeTake)) {
+                increaseInReserves = 0;
+                decreaseInReserves = 0;
+            }
+
             if (_pool.poolType() == 1) {
                 _recordSettleBucket(
                     borrower_,
@@ -254,6 +260,12 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // **R7**: Exchange rates are unchanged under depositTakes
             // **R8**: Exchange rates are unchanged under arbTakes
             exchangeRateShouldNotChange[bucketIndex_] = true;
+
+            // **RE9**: Reserves are unchanged by take below tp
+            if (auctionPrice < Maths.wdiv(borrowerDebtBeforeTake, borrowerCollateralBeforeTake)) {
+                increaseInReserves = 0;
+                decreaseInReserves = 0;
+            }
 
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
             (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower_);
