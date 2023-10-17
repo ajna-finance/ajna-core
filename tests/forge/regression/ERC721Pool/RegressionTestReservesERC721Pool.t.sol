@@ -468,6 +468,10 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
         _reserveERC721PoolHandler.lenderKickAuction(1, 2380963819538393125633366019791981, 0);
     }
 
+    /**
+        Test failed after bucket take with incorrect reserves due to incorrect borrower penalty and kicker reward calculation when borrower and kicker are same and borrower partial collateral is settled
+        Fixed by calculating borrower penalty and kicker reward from emitted event collateral values to separate kicker lp reward and borrower lp compensation for partial collateral.
+     */
     function test_regression_bucket_take_reserves_failure() external {
         _reserveERC721PoolHandler.takeAuction(5614, 5711, 150000000000000001, 11889);
         _reserveERC721PoolHandler.takeAuction(51, 17159, 13313, 1965);
