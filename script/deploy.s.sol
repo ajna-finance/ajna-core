@@ -26,8 +26,8 @@ contract Deploy is Script {
         vm.stopBroadcast();
 
         console.log("=== Deployment addresses ===");
-        console.log("ERC20  factory         %s", address(erc20factory));
-        console.log("ERC721 factory         %s", address(erc721factory));
+        console.log("ERC20PoolFactory       %s", address(erc20factory));
+        console.log("ERC721PoolFactory      %s", address(erc721factory));
         console.log("PoolInfoUtils          %s", address(poolInfoUtils));
         console.log("PoolInfoUtilsMulticall %s", address(poolInfoUtilsMulticall));
         console.log("PositionManager        %s", address(positionManager));
