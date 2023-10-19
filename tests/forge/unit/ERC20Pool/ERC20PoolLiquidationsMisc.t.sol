@@ -5,6 +5,7 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/interfaces/pool/erc20/IERC20Pool.sol';
+import 'src/interfaces/pool/commons/IPoolErrors.sol';
 
 contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
 
@@ -612,4 +613,216 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             exchangeRate: 0.289043175401015481 * 1e18
         });
     }
- }
+}
+
+contract ERC20PoolLiquidationSherlockTest is ERC20HelperContract {
+    address internal _borrower;
+    address internal _lender;
+    address internal _attacker;
+
+    function setUp() external {
+        _startTest();
+
+        _borrower = makeAddr("borrower");
+        _lender   = makeAddr("lender");
+        _attacker = makeAddr("attacker");
+
+        _mintQuoteAndApproveTokens(_lender,   120_000 * 1e18);
+        _mintQuoteAndApproveTokens(_attacker, 120_000 * 1e18);
+        _mintQuoteAndApproveTokens(_borrower, 120_000 * 1e18);
+
+        _mintCollateralAndApproveTokens(_borrower,  4_000 * 1e18);
+        _mintCollateralAndApproveTokens(_attacker,  1_000 * 1e18);
+
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 50_000 * 1e18,
+            index:  _i9_91
+        });
+
+        // first borrower adds collateral token and borrows
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   3_000 * 1e18
+        });
+        _borrow({
+            from:       _borrower,
+            amount:     11_000 * 1e18,
+            indexLimit: _i9_91,
+            newLup:     9.917184843435912074 * 1e18
+        });
+
+        // skip some time to generate reserves
+        skip(300 days);
+
+        _assertReserveAuction({
+            reserves:                   10.576923076923082000 * 1e18,
+            claimableReserves :         0,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });
+
+        // repay all debt
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    type(uint256).max,
+            amountRepaid:     11_472.492799884530972178 * 1e18,
+            collateralToPull: 0,
+            newLup:           MAX_PRICE
+        });
+
+        // remove all liquidity from the pool
+        _removeAllLiquidity({
+            from:     _lender,
+            amount:   50_392.6284952864667 * 1e18,
+            index:    _i9_91,
+            newLup:   MAX_PRICE,
+            lpRedeem: 50_000 * 1e18
+        });
+
+        // Lender add 201 quote tokens at bucket with price 1
+        _addLiquidity({
+            from:    _lender,
+            amount:  201 * 1e18,
+            index:   4156,
+            lpAward: 201 * 1e18,
+            newLup:  MAX_PRICE
+        });
+
+        // Legit borrower pledges 200 collateral and borrow 100 quote tokens
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   200 * 1e18
+        });
+
+        _borrow({
+            from:       _borrower,
+            amount:     100 * 1e18,
+            indexLimit: 4156,
+            newLup:     1 * 1e18
+        });
+    }
+
+    function test_sherlock_reserves_draining() external {
+
+        uint256 attackerQuoteBalanceBefore      = _quote.balanceOf(_attacker);
+        uint256 attackerCollateralBalanceBefore = _collateral.balanceOf(_attacker);
+
+        // borrower pledges 150 collateral and borrows 100 quote
+        _pledgeCollateral({
+            from:     _attacker,
+            borrower: _attacker,
+            amount:   150 * 1e18
+        });
+
+        _borrow({
+            from:       _attacker,
+            amount:     100 * 1e18,
+            indexLimit: 4156,
+            newLup:     1 * 1e18
+        });
+
+        // Add liquidity on bucket with price - 10.01
+        _addLiquidity({
+            from:    _attacker,
+            amount:  210 * 1e18,
+            index:   3694,
+            lpAward: 210 * 1e18,
+            newLup:  10.016604621491356933 * 1e18
+        });
+
+        // Borrower pulls 140 collateral
+        _repayDebt({
+            from:             _attacker,
+            borrower:         _attacker,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 140 * 1e18,
+            newLup:           10.016604621491356933 * 1e18
+        });
+
+        // Attacker kicks his loan through lender kick
+        _lenderKick({
+            from:       _attacker,
+            index:      3694,
+            borrower:   _attacker,
+            debt:       100.0865384615384615 * 1e18,
+            collateral: 10 * 1e18,
+            bond:       1.461924204620784506 * 1e18
+        });
+
+        // Lender cannot remove even 1 Quote token from top bucket due to whole bucket deposits being locked by auction debt
+        // remove Liquidity reverts with `RemoveDepositLockedByAuctionDebt()`
+        vm.expectRevert(IPoolErrors.RemoveDepositLockedByAuctionDebt.selector);
+        changePrank(_attacker);
+        _pool.removeQuoteToken(1 * 1e18, 3694);
+
+        // skip some to make auction price just below Highest price bucket
+        skip(6.4 hours);
+        _assertAuction(
+            AuctionParams({
+                borrower:          _attacker,
+                active:            true,
+                kicker:            _attacker,
+                bondSize:          1.461924204620784506 * 1e18,
+                bondFactor:        0.014606601717798212 * 1e18,
+                kickTime:          block.timestamp - 6.4 hours,
+                referencePrice:    11.470578050774630736 * 1e18,
+                totalBondEscrowed: 1.461924204620784506 * 1e18,
+                auctionPrice:      9.985718183434012388 * 1e18,
+                debtInAuction:     100.0865384615384615 * 1e18,
+                thresholdPrice:    10.008982903196271575 * 1e18,
+                neutralPrice:      11.470578050774630736 * 1e18
+            })
+        );
+
+        // Attacker performs deposit take with highest bucket
+        _depositTake({
+            from:             _attacker,
+            borrower:         _attacker,
+            kicker:           _attacker,
+            index:            3694,
+            collateralArbed:  10 * 1e18,
+            quoteTokenAmount: 100.166046214913569330 * 1e18,
+            bondChange:       1.463085542707811633 * 1e18,
+            isReward:         true,
+            lpAwardTaker:     0,
+            lpAwardKicker:    1.463065349857958764 * 1e18
+        });
+
+        // Attacker settles remaining debt
+        _settle({
+            from:        _attacker,
+            borrower:    _attacker,
+            maxDepth:    1,
+            settledDebt: 1.386822764834366152 * 1e18
+        });
+
+        // Attacker removes all quote from highest bucket
+        _removeAllLiquidity({
+            from:     _attacker,
+            amount:   111.299937693523096503 * 1e18,
+            index:    3694,
+            newLup:   1 * 1e18,
+            lpRedeem: 111.298401581747759409 * 1e18
+        });
+
+        // Attacker removes all collateral from highest bucket
+        _removeCollateral({
+            from:     _attacker,
+            amount:   10 * 1e18,
+            index:    3694,
+            lpRedeem: 100.164663768110199355 * 1e18
+        });
+
+        // Attacker gets all the collateral back
+        assertEq(_collateral.balanceOf(_attacker), attackerCollateralBalanceBefore);
+
+        // Attacker loses some quote token in process
+        assertLt(_quote.balanceOf(_attacker), attackerQuoteBalanceBefore);
+    }
+}
