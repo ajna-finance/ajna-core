@@ -295,7 +295,7 @@ library BorrowerActions {
             if (
                 borrower.t0Debt != 0 && encumberedCollateral == 0 || // case when small amount of debt at a high LUP results in encumbered collateral calculated as 0
                 borrower.collateral < encumberedCollateral ||
-                borrower.collateral - encumberedCollateral < collateralAmountToPull_
+                !_isCollateralized(vars.borrowerDebt, borrower.collateral - encumberedCollateral, result_.newLup, poolState_.poolType)
             ) revert InsufficientCollateral();
 
             // stamp borrower Np to Tp ratio when pull collateral action
