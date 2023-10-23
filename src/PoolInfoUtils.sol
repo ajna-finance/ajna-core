@@ -3,6 +3,7 @@
 pragma solidity 0.8.18;
 
 import { Math } from '@openzeppelin/contracts/utils/math/Math.sol';
+import { Multicall } from '@openzeppelin/contracts/utils/Multicall.sol';
 
 import { IPool, IERC20Token } from './interfaces/pool/IPool.sol';
 
@@ -32,7 +33,7 @@ import { PoolCommons } from './libraries/external/PoolCommons.sol';
  *  @notice Contract for providing information for any deployed pool.
  *  @dev    Pool info is calculated using same helper functions / logic as in `Pool` contracts.
  */
-contract PoolInfoUtils {
+contract PoolInfoUtils is Multicall {
 
     /**
      *  @notice Exposes status of a liquidation auction.

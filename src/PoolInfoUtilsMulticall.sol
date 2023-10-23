@@ -2,9 +2,11 @@
 
 pragma solidity 0.8.18;
 
+import { Multicall } from '@openzeppelin/contracts/utils/Multicall.sol';
+
 import { PoolInfoUtils } from "./PoolInfoUtils.sol";
 
-contract PoolInfoUtilsMulticall {
+contract PoolInfoUtilsMulticall is Multicall {
 
     PoolInfoUtils public immutable poolInfoUtils;
 
@@ -98,6 +100,15 @@ contract PoolInfoUtilsMulticall {
         ) = poolInfoUtils.bucketInfo(ajnaPool_, bucketIndex_);
     }
 
+    // TODO: finish implementing
+    // function poolDetailsMulticall(address ajnaPool_) external returns (
+    //     PoolPriceInfo memory poolPriceInfo_,
+    //     PoolReservesInfo memory poolReservesInfo_,
+    //     PoolUtilizationInfo memory poolUtilizationInfo_
+    // ) {
+
+    // }
+
     /**
      *  @notice Retrieves info of lenderInterestMargin, borrowFeeRate and depositFeeRate
      *  @param  ajnaPool_            Address of `Ajna` pool
@@ -118,6 +129,28 @@ contract PoolInfoUtilsMulticall {
         lenderInterestMargin = poolInfoUtils.lenderInterestMargin(ajnaPool_);
         borrowFeeRate        = poolInfoUtils.borrowFeeRate(ajnaPool_);
         depositFeeRate       = poolInfoUtils.unutilizedDepositFeeRate(ajnaPool_);
+    }
+
+    function poolRatesAndFeesMulticall(address ajnaPool_)
+        external
+        returns
+        (
+            uint256 lenderInterestMargin,
+            uint256 borrowFeeRate,
+            uint256 depositFeeRate
+        )
+    {
+        bytes[] memory callData = new bytes[](3);
+
+        callData[0] = abi.encodeWithSelector(bytes4(keccak256("lenderInterestMargin(address)")), ajnaPool_);
+        callData[1] = abi.encodeWithSelector(bytes4(keccak256("borrowFeeRate(address)")), ajnaPool_);
+        callData[2] = abi.encodeWithSelector(bytes4(keccak256("unutilizedDepositFeeRate(address)")), ajnaPool_);
+
+        bytes[] memory result = poolInfoUtils.multicall(callData);
+
+        lenderInterestMargin = abi.decode(result[0], (uint256));
+        borrowFeeRate        = abi.decode(result[1], (uint256));
+        depositFeeRate       = abi.decode(result[2], (uint256));
     }
 
     /**

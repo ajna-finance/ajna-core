@@ -311,4 +311,14 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(debt,       21_020.192307692307702000 * 1e18);
         assertEq(abi.decode(result[1], (uint256)), _poolUtils.htp(address(_pool)));
     }
+
+    function testPoolInfoUtilsMulticallRatesAndFees() external {
+        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
+
+        (uint256 lim, uint256 bfr, uint256 dfr) = poolUtilsMulticall.poolRatesAndFeesMulticall(address(_pool));
+
+        assertGe(lim, 0.000136986301369863 * 1e18);
+        assertGe(bfr, 0.000961538461538462 * 1e18);
+        assertGe(dfr, 0.000136986301369863 * 1e18);
+    }
 }
