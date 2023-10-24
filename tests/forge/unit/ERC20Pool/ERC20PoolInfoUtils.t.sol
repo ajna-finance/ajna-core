@@ -265,16 +265,6 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         );
     }
 
-    function testPoolInfoUtilsMulticallPoolAndBucketInfo() external {
-        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
-
-        PoolInfoUtilsMulticall.BucketInfo memory bucketInfo;
-
-        (,,, bucketInfo) = poolUtilsMulticall.poolDetailsAndBucketInfo(address(_pool), high);
-
-        assertEq(bucketInfo.bucketLP, 10_000 * 1e18);
-    }
-
     function testPoolInfoUtilsMulticall() external {
         PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
 
@@ -330,11 +320,13 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             PoolInfoUtilsMulticall.PoolPriceInfo memory poolPriceInfo,
             PoolInfoUtilsMulticall.PoolRatesAndFees memory poolRatesAndFees,
             PoolInfoUtilsMulticall.PoolReservesInfo memory poolReservesInfo,
-            PoolInfoUtilsMulticall.PoolUtilizationInfo memory poolUtilizationInfo 
+            PoolInfoUtilsMulticall.PoolUtilizationInfo memory poolUtilizationInfo
         ) = poolUtilsMulticall.poolDetailsMulticall(address(_pool));
 
         assertGe(poolRatesAndFees.lenderInterestMargin, 0.000136986301369863 * 1e18);
         assertGe(poolRatesAndFees.borrowFeeRate, 0.000961538461538462 * 1e18);
         assertGe(poolRatesAndFees.depositFeeRate, 0.000136986301369863 * 1e18);
+
+        assertEq(poolReservesInfo.reserves,                   20.192307692307702000 * 1e18);
     }
 }
