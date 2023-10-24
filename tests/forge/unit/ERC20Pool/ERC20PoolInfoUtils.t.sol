@@ -321,4 +321,20 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertGe(bfr, 0.000961538461538462 * 1e18);
         assertGe(dfr, 0.000136986301369863 * 1e18);
     }
+
+    function testPoolInfoUtilsMulticallPoolDetails() external {
+        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
+
+        (
+            PoolInfoUtilsMulticall.PoolLoansInfo memory poolLoansInfo,
+            PoolInfoUtilsMulticall.PoolPriceInfo memory poolPriceInfo,
+            PoolInfoUtilsMulticall.PoolRatesAndFees memory poolRatesAndFees,
+            PoolInfoUtilsMulticall.PoolReservesInfo memory poolReservesInfo,
+            PoolInfoUtilsMulticall.PoolUtilizationInfo memory poolUtilizationInfo 
+        ) = poolUtilsMulticall.poolDetailsMulticall(address(_pool));
+
+        assertGe(poolRatesAndFees.lenderInterestMargin, 0.000136986301369863 * 1e18);
+        assertGe(poolRatesAndFees.borrowFeeRate, 0.000961538461538462 * 1e18);
+        assertGe(poolRatesAndFees.depositFeeRate, 0.000136986301369863 * 1e18);
+    }
 }
