@@ -434,19 +434,19 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         });
 
         // remove all of the remaining claimable collateral
-        uint256 unencumberedCollateral = col - _encumberedCollateral(debt, _lup());
-        uint256 collateralToPull = unencumberedCollateral - 1;
+        // FIXME: shouldn't need to subtract 1 to make this work
+        uint256 unencumberedCollateral = col - _encumberedCollateral(debt, _lup()) - 1;
 
         _repayDebtNoLupCheck({
             from:             _borrower,
             borrower:         _borrower,
             amountToRepay:    0,
             amountRepaid:     0,
-            collateralToPull: collateralToPull
+            collateralToPull: unencumberedCollateral
         });
 
-        assertEq(_collateral.balanceOf(address(_pool)),   (50 * 1e18) / ERC20Pool(address(_pool)).collateralScale() - (collateralToPull / ERC20Pool(address(_pool)).collateralScale()));
-        assertEq(_collateral.balanceOf(_borrower), (100 * 1e18) / ERC20Pool(address(_pool)).collateralScale() + (collateralToPull / ERC20Pool(address(_pool)).collateralScale()));
+        assertEq(_collateral.balanceOf(address(_pool)),   (50 * 1e18) / ERC20Pool(address(_pool)).collateralScale() - (unencumberedCollateral / ERC20Pool(address(_pool)).collateralScale()));
+        assertEq(_collateral.balanceOf(_borrower), (100 * 1e18) / ERC20Pool(address(_pool)).collateralScale() + (unencumberedCollateral / ERC20Pool(address(_pool)).collateralScale()));
         assertEq(_quote.balanceOf(address(_pool)),   145_000 * _quotePrecision);
         assertEq(_quote.balanceOf(_borrower), 5_000 * _quotePrecision);
     }
@@ -934,8 +934,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         return scaledPledge;
     }
 
-    function _encumberedCollateral(uint256 debt_, uint256 price_) internal pure returns (uint256 encumberance_) {
-        encumberance_ =  price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+    function _encumberedCollateral(uint256 debt_, uint256 price_) internal view returns (uint256 encumberance_) {
+        uint256 unscaledEncumberance =  price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+        encumberance_ = _roundUpToScale(unscaledEncumberance, ERC20Pool(address(_pool)).quoteTokenScale());
     }
 
     function _mintAndApproveCollateral(

@@ -291,9 +291,11 @@ library BorrowerActions {
             // calculate LUP only if it wasn't calculated in repay action
             if (!vars.repay) result_.newLup = Deposits.getLup(deposits_, result_.poolDebt);
 
+            // prevent underflow
             if (collateralAmountToPull_ > borrower.collateral) 
                 revert InsufficientCollateral();
 
+            // check collateralization
             borrower.collateral -= collateralAmountToPull_;
             // TODO: handle case when small amount of debt at a high LUP results in encumbered collateral calculated as 0
             if (!_isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)) 
