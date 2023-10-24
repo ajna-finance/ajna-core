@@ -6,7 +6,7 @@ import { Multicall } from '@openzeppelin/contracts/utils/Multicall.sol';
 
 import { PoolInfoUtils } from "./PoolInfoUtils.sol";
 
-contract PoolInfoUtilsMulticall is Multicall {
+contract PoolInfoUtilsMulticall {
 
     PoolInfoUtils public immutable poolInfoUtils;
 
@@ -48,72 +48,15 @@ contract PoolInfoUtilsMulticall is Multicall {
         uint256 poolTargetUtilization;
     }
 
-    struct BucketInfo {
-        uint256 price;
-        uint256 quoteTokens;
-        uint256 collateral;
-        uint256 bucketLP;
-        uint256 scale;
-        uint256 exchangeRate;
-    }
-
     constructor(PoolInfoUtils poolInfoUtils_) {
         poolInfoUtils = poolInfoUtils_;
     }
 
     /**
-     *  @notice Retrieves PoolPriceInfo, PoolReservesInfo, PoolUtilizationInfo and BucketInfo
-     *  @param  ajnaPool_    Address of `Ajna` pool
-     *  @param  bucketIndex_ The index of the bucket to retrieve
-     *  @return poolPriceInfo_       Pool price info struct
-     *  @return poolReservesInfo_    Pool reserves info struct
-     *  @return poolUtilizationInfo_ Pool utilization info struct
-     *  @return bucketInfo_          Bucket info struct
+     * @notice Generate the encoded calldata required for the `poolDetailsMulticall` function
+     * @param  ajnaPool_    Address of `Ajna` pool
+     * @return callData_    Array of encoded calldata for the `poolDetailsMulticall` function
      */
-    function poolDetailsAndBucketInfo(address ajnaPool_, uint256 bucketIndex_) 
-        external
-        view
-        returns(
-            PoolPriceInfo memory poolPriceInfo_,
-            PoolReservesInfo memory poolReservesInfo_,
-            PoolUtilizationInfo memory poolUtilizationInfo_,
-            BucketInfo memory bucketInfo_
-        )
-    {
-        (
-            poolPriceInfo_.hpb,
-            poolPriceInfo_.hpbIndex,
-            poolPriceInfo_.htp,
-            poolPriceInfo_.htpIndex,
-            poolPriceInfo_.lup,
-            poolPriceInfo_.lupIndex
-        ) = poolInfoUtils.poolPricesInfo(ajnaPool_);
-
-        (
-            poolReservesInfo_.reserves,
-            poolReservesInfo_.claimableReserves,
-            poolReservesInfo_.claimableReservesRemaining,
-            poolReservesInfo_.auctionPrice,
-            poolReservesInfo_.timeRemaining
-        ) = poolInfoUtils.poolReservesInfo(ajnaPool_);
-
-        (
-            poolUtilizationInfo_.poolMinDebtAmount,
-            poolUtilizationInfo_.poolCollateralization,
-            poolUtilizationInfo_.poolActualUtilization,
-            poolUtilizationInfo_.poolTargetUtilization
-        ) = poolInfoUtils.poolUtilizationInfo(ajnaPool_);
-        
-        (
-            bucketInfo_.price,
-            bucketInfo_.quoteTokens,
-            bucketInfo_.collateral,
-            bucketInfo_.bucketLP,
-            bucketInfo_.scale,
-            bucketInfo_.exchangeRate
-        ) = poolInfoUtils.bucketInfo(ajnaPool_, bucketIndex_);
-    }
-
     function encodePoolDetailsCalldata(address ajnaPool_) internal pure returns (bytes[] memory callData_) {
         callData_ = new bytes[](7);
         // encode loans info
@@ -129,6 +72,15 @@ contract PoolInfoUtilsMulticall is Multicall {
         callData_[6] = abi.encodeWithSelector(bytes4(keccak256("poolUtilizationInfo(address)")), ajnaPool_);
     }
 
+    /**
+     *  @notice Retrieves PoolLoansInfo, PoolPriceInfo, PoolRatesAndFees, PoolReservesInfo and PoolUtilizationInfo in a single multicall to PoolInfoUtils
+     *  @param  ajnaPool_    Address of `Ajna` pool
+     *  @return poolLoansInfo_       Pool loans info struct
+     *  @return poolPriceInfo_       Pool price info struct
+     *  @return poolRatesAndFees_    Pool rates and fees struct
+     *  @return poolReservesInfo_    Pool reserves info struct
+     *  @return poolUtilizationInfo_ Pool utilization info struct
+     */
     function poolDetailsMulticall(address ajnaPool_) external returns (
         PoolLoansInfo memory poolLoansInfo_,
         PoolPriceInfo memory poolPriceInfo_,
@@ -179,6 +131,7 @@ contract PoolInfoUtilsMulticall is Multicall {
         ) = abi.decode(result[6], (uint256, uint256, uint256, uint256));
     }
 
+    // TODO: update to return ratesAndFees struct or remove?
     /**
      *  @notice Retrieves info of lenderInterestMargin, borrowFeeRate and depositFeeRate
      *  @param  ajnaPool_            Address of `Ajna` pool
@@ -186,22 +139,6 @@ contract PoolInfoUtilsMulticall is Multicall {
      *  @return borrowFeeRate        Borrow fee rate calculated from the pool interest ra
      *  @return depositFeeRate       Deposit fee rate calculated from the pool interest rate
      */
-    function poolRatesAndFees(address ajnaPool_)
-        external
-        view
-        returns 
-        (
-            uint256 lenderInterestMargin,
-            uint256 borrowFeeRate,
-            uint256 depositFeeRate
-        ) 
-    {
-        lenderInterestMargin = poolInfoUtils.lenderInterestMargin(ajnaPool_);
-        borrowFeeRate        = poolInfoUtils.borrowFeeRate(ajnaPool_);
-        depositFeeRate       = poolInfoUtils.unutilizedDepositFeeRate(ajnaPool_);
-    }
-
-    // TODO: update to return ratesAndFees struct or remove?
     function poolRatesAndFeesMulticall(address ajnaPool_)
         external
         returns
