@@ -433,9 +433,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             depositTime: start
         });
 
-        // remove all of the remaining claimable collateral
-        // FIXME: shouldn't need to subtract 1 to make this work
-        uint256 unencumberedCollateral = col - _encumberedCollateral(debt, _lup()) - 1;
+        // remove all remaining claimable collateral
+        uint256 unencumberedCollateral = col - _encumberedCollateral(debt, _lup());
 
         _repayDebtNoLupCheck({
             from:             _borrower,
@@ -935,7 +934,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
     }
 
     function _encumberedCollateral(uint256 debt_, uint256 price_) internal view returns (uint256 encumberance_) {
-        uint256 unscaledEncumberance =  price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+        uint256 unscaledEncumberance =  price_ != 0 && debt_ != 0 ? Maths.ceilWdiv(debt_, price_) : 0;
         encumberance_ = _roundUpToScale(unscaledEncumberance, ERC20Pool(address(_pool)).quoteTokenScale());
     }
 
