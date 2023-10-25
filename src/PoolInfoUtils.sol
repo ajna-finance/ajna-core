@@ -496,7 +496,6 @@ contract PoolInfoUtils {
         uint256 debt_,
         uint256 price_
     ) pure returns (uint256 encumberance_) {
-        // TODO: should use ceilWdiv
         return price_ != 0 ? Maths.wdiv(debt_, price_) : 0;
     }
 
