@@ -297,7 +297,6 @@ library BorrowerActions {
 
             // check collateralization
             borrower.collateral -= collateralAmountToPull_;
-            // TODO: handle case when small amount of debt at a high LUP results in encumbered collateral calculated as 0
             if (!_isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)) 
                 revert InsufficientCollateral();
 
