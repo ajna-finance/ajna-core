@@ -110,7 +110,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             borrowerDebt:              19.268509615384615394 * 1e18,
             borrowerCollateral:        2 * 1e18,
             borrowert0Np:              11.096767433127708186 * 1e18,
-            borrowerCollateralization: 1.009034539679184679 * 1e18
+            borrowerCollateralization: 1.009034539679184678 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower2,
@@ -380,7 +380,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             borrowerDebt:              19.940331663853531575 * 1e18,
             borrowerCollateral:        2 * 1e18,
             borrowert0Np:              11.096767433127708186 * 1e18,
-            borrowerCollateralization: 150.976799568254654687 * 1e18
+            borrowerCollateralization: 150.976799568254653064 * 1e18
         });
         _assertBucket({
             index:        _i1505_26,
@@ -517,7 +517,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             borrowerDebt:              5.281889311322257910 * 1e18,
             borrowerCollateral:        1.990034968812238781 * 1e18,
             borrowert0Np:              2.954082977863112822 * 1e18,
-            borrowerCollateralization: 3.662651292618643252 * 1e18
+            borrowerCollateralization: 3.662651292618643253 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _taker,

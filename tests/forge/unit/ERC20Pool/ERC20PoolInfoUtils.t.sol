@@ -198,7 +198,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         ) = _poolUtils.poolUtilizationInfo(address(_pool));
 
         assertEq(poolMinDebtAmount,     2_102.019230769230770200 * 1e18);
-        assertEq(poolCollateralization, 14.181637252165253251 * 1e18);
+        assertEq(poolCollateralization, 14.18163725216525325 * 1e18);
         assertEq(poolActualUtilization, 0);
         assertEq(poolTargetUtilization, 1 * 1e18);
     }

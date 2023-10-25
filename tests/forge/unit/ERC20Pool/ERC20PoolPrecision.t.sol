@@ -397,7 +397,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             borrowerDebt:              debt,
             borrowerCollateral:        col,
             borrowert0Np:              114.804959297694401926 * 1e18,
-            borrowerCollateralization: 30.207183159927296805 * 1e18
+            borrowerCollateralization: 30.207183159927296803 * 1e18
         });
         _assertPoolPrices({
             htp:      100.173076923076923000 * 1e18,

@@ -134,7 +134,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             borrowerDebt:              15.014423076923076930 * 1e18,
             borrowerCollateral:        3 * 1e18,
             borrowert0Np:              5.764554510715692564 * 1e18,
-            borrowerCollateralization: 1.981531649793150539 * 1e18
+            borrowerCollateralization: 1.981531649793150538 * 1e18
         });
 
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
@@ -211,7 +211,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             borrowerDebt:              17.218727143819483943 * 1e18,
             borrowerCollateral:        3 * 1e18,
             borrowert0Np:              5.764554510715692564 * 1e18,
-            borrowerCollateralization: 1.727860269914713433 * 1e18
+            borrowerCollateralization: 1.727860269914713432 * 1e18
         });
 
         assertEq(_quote.balanceOf(_lender), 46_999.654970307775265454 * 1e18);
@@ -490,7 +490,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             borrowerDebt:              17.218727143819483943 * 1e18,
             borrowerCollateral:        3 * 1e18,
             borrowert0Np:              5.764554510715692564 * 1e18,
-            borrowerCollateralization: 1.727860269914713433 * 1e18
+            borrowerCollateralization: 1.727860269914713432 * 1e18
         });
 
         assertEq(_quote.balanceOf(_lender), 46_999.654970307775265454 * 1e18);

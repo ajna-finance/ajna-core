@@ -108,7 +108,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             borrowerDebt:              19.268509615384615394 * 1e18,
             borrowerCollateral:        2 * 1e18,
             borrowert0Np:              11.096767433127708186 * 1e18,
-            borrowerCollateralization: 1.009034539679184679 * 1e18
+            borrowerCollateralization: 1.009034539679184678 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower2,
@@ -379,7 +379,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             borrowerDebt:              19.534779720182741511 * 1e18,
             borrowerCollateral:        2 * 1e18,
             borrowert0Np:              11.096767433127708186 * 1e18,
-            borrowerCollateralization: 154.111154569495900146 * 1e18
+            borrowerCollateralization: 154.111154569495905655 * 1e18
         });
 
         // Amount is restricted by the debt in the loan
@@ -509,7 +509,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             borrowerDebt:              4.876337367651467845 * 1e18,
             borrowerCollateral:        1.057176198768911289 * 1e18,
             borrowert0Np:              5.240398686048708221 * 1e18,
-            borrowerCollateralization: 2.107549546895251001  * 1e18
+            borrowerCollateralization: 2.107549546895251  * 1e18
         });
         _assertLenderLpBalance({
             lender:      _taker,
@@ -679,7 +679,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             borrowerDebt:              19.534528847054102585 * 1e18,
             borrowerCollateral:        2 * 1e18,
             borrowert0Np:              11.096767433127708186 * 1e18,
-            borrowerCollateralization: 0.995293609704622699 * 1e18
+            borrowerCollateralization: 0.995293609704622698 * 1e18
         });
 
         // borrower cannot repay amidst auction
