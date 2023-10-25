@@ -345,7 +345,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     function settle(
         address borrowerAddress_,
         uint256 maxDepth_
-    ) external override nonReentrant {
+    ) external override nonReentrant returns (uint256 debtSettled_, uint256 collateralSettled_) {
         PoolState memory poolState = _accruePoolInterest();
 
         SettleResult memory result = SettlerActions.settlePoolDebt(
@@ -363,6 +363,9 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         );
 
         _updatePostSettleState(result, poolState);
+
+        debtSettled_       = Maths.wmul(result.t0DebtSettled, poolState.inflator);
+        collateralSettled_ = result.collateralSettled;
     }
 
     /**

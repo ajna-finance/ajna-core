@@ -394,7 +394,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     function settle(
         address borrowerAddress_,
         uint256 maxDepth_
-    ) external nonReentrant override {
+    ) external nonReentrant override returns (uint256 debtSettled_, uint256 collateralSettled_) {
         PoolState memory poolState = _accruePoolInterest();
 
         SettleParams memory params = SettleParams({
@@ -417,6 +417,9 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         // move token ids from borrower array to pool claimable array if any collateral used to settle bad debt
         _rebalanceTokens(params.borrower, result.collateralRemaining);
+
+        debtSettled_       = Maths.wmul(result.t0DebtSettled, poolState.inflator);
+        collateralSettled_ = result.collateralSettled;
     }
 
     /**
