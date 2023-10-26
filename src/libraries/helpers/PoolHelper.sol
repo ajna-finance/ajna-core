@@ -165,7 +165,7 @@ import { Maths }   from '../internal/Maths.sol';
         else {
             //slither-disable-next-line divide-before-multiply
             collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
-            return Maths.wmul(collateral_, price_) >= debt_;
+            return  Maths.wmul(collateral_, price_) >= Maths.wmul(1.04 * 1e18, debt_);
         }
     }
 
