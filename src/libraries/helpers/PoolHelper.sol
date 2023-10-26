@@ -307,7 +307,7 @@ import { Maths }   from '../internal/Maths.sol';
 
         // calculate claimable reserves if there's quote token excess
         if (quoteTokenBalance_ > guaranteedFunds) {
-            claimable_ = Maths.wmul(0.995 * 1e18, debt_) + quoteTokenBalance_;
+            claimable_ = debt_ + quoteTokenBalance_;
 
             claimable_ -= Maths.min(
                 claimable_,
