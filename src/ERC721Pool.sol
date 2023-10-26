@@ -399,7 +399,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         SettleParams memory params = SettleParams({
             borrower:    borrowerAddress_,
-            poolBalance: _getNormalizedPoolQuoteTokenBalance(),
             bucketDepth: maxDepth_
         });
 
@@ -408,7 +407,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             buckets,
             deposits,
             loans,
-            reserveAuction,
             poolState,
             params
         );
