@@ -419,10 +419,13 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 borrowerDebt_,
         uint256 npTpRatio_
     ) pure returns (uint256 bondFactor_, uint256 bondSize_) {
-        // bondFactor = min((NP-to-TP-ratio - 1)/10, 0.03)
-        bondFactor_ = Maths.min(
-            0.03 * 1e18,
-            (npTpRatio_ - 1e18) / 10
+        // bondFactor = max(min(0.03,(((NP/TP_ratio)-1)/10)),0.005)
+        bondFactor_ = Maths.max(
+            Maths.min(
+                0.03 * 1e18,
+                (npTpRatio_ - 1e18) / 10
+            ),
+            0.005 * 1e18
         );
 
         bondSize_ = Maths.wmul(bondFactor_,  borrowerDebt_);
