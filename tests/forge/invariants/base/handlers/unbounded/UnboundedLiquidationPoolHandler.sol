@@ -252,7 +252,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             exchangeRateShouldNotChange[bucketIndex_] = true;
 
             // Reserves can increase with roundings in deposit calculations when auction Price is very small
-            if (auctionPrice < 100) {
+            if (auctionPrice != 0 && auctionPrice < 100) {
                 reservesErrorMargin = (beforeTakeVars.deposit - afterTakeVars.deposit) / auctionPrice;
             }
 
