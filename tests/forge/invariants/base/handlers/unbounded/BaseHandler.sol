@@ -75,6 +75,7 @@ abstract contract BaseHandler is Test {
     uint256 public previousReserves;    // reserves before action
     uint256 public increaseInReserves;  // amount of reserve increase
     uint256 public decreaseInReserves;  // amount of reserve decrease
+    uint256 public reservesErrorMargin; // change in reserve error acceptance margin
 
     // Auction bond invariant test state
     uint256 public previousTotalBonds; // total bond before action

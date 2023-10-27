@@ -251,6 +251,11 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // **R8**: Exchange rates are unchanged under arbTakes
             exchangeRateShouldNotChange[bucketIndex_] = true;
 
+            // Reserves can increase with roundings in deposit calculations when auction Price is very small
+            if (auctionPrice < 100) {
+                reservesErrorMargin = (beforeTakeVars.deposit - afterTakeVars.deposit) / auctionPrice;
+            }
+
             // **RE9**: Reserves are unchanged by take below tp
             if (auctionPrice < Maths.wdiv(beforeTakeVars.borrowerDebt, beforeTakeVars.borrowerCollateral)) {
                 increaseInReserves = 0;
@@ -270,7 +275,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             fenwickDeposits[bucketIndex_] = afterTakeVars.deposit;
 
         } catch (bytes memory err) {
-            Vm.Log[] memory entries = vm.getRecordedLogs();
+            // Reset Logs
+            vm.getRecordedLogs();
+
             _ensurePoolError(err);
         }
     }

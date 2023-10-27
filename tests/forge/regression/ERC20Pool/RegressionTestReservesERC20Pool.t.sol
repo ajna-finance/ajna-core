@@ -1432,6 +1432,10 @@ contract RegressionTestReservesWith8QuotePrecision12CollateralPrecisionERC20Pool
         super.setUp();
     }
 
+    /**
+        Test was failing in bucket take below tp due to Reserves increase with roundings in deposit calculations when auction Price is very small.
+        Fixed by adding a reserves error acceptance margin of quoteToken/auctionPrice.
+     */
     function test_regression_bucket_take_re9_failure() external {
         _reserveERC20PoolHandler.drawDebt(24508, 6004, 12873);
         _reserveERC20PoolHandler.settleAuction(1622320951432348052667116641401087769239742492942, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 3, 3);
