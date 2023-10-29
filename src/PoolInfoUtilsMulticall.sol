@@ -3,8 +3,13 @@
 pragma solidity 0.8.18;
 
 import { Multicall } from '@openzeppelin/contracts/utils/Multicall.sol';
+import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import { PoolInfoUtils } from "./PoolInfoUtils.sol";
+
+import { IPool } from "./interfaces/pool/IPool.sol";
+import { IERC20Pool } from "./interfaces/pool/erc20/IERC20Pool.sol";
 
 contract PoolInfoUtilsMulticall {
 
@@ -46,6 +51,16 @@ contract PoolInfoUtilsMulticall {
         uint256 poolCollateralization;
         uint256 poolActualUtilization;
         uint256 poolTargetUtilization;
+    }
+
+    struct PoolBalanceDetails {
+        uint256 debt;                   // debtInfo()
+        uint256 accruedDebt;            // debtInfo()
+        uint256 debtInAuction;          // debtInfo()
+        uint256 t0Debt2ToCollateral;    // debtInfo()
+        uint256 depositUpToIndex;
+        uint256 quoteTokenBalance;
+        uint256 collateralTokenBalance;
     }
 
     constructor(PoolInfoUtils poolInfoUtils_) {
@@ -159,6 +174,45 @@ contract PoolInfoUtilsMulticall {
         lenderInterestMargin = abi.decode(result[0], (uint256));
         borrowFeeRate        = abi.decode(result[1], (uint256));
         depositFeeRate       = abi.decode(result[2], (uint256));
+    }
+
+    /**
+        *  @notice Retrieves pool debtInfo, depositUpToIndex, quoteTokenBalance and collateralTokenBalance
+        *  @dev    This function is used to retrieve pool balance details in a single RPC call for Indexers.
+        *  @param  ajnaPool_               Address of `Ajna` pool
+        *  @param  index_                  Index of deposit
+        *  @param  quoteTokenAddress_      Address of quote token
+        *  @param  collateralTokenAddress_ Address of collateral token
+        *  @param  isNFT_                  Boolean indicating if the pool is an NFT pool
+        *  @return poolBalanceDetails_     Pool balance details struct
+     */
+    function poolBalanceDetails(address ajnaPool_, uint256 index_, address quoteTokenAddress_, address collateralTokenAddress_, bool isNFT_)
+        external view
+        returns (PoolBalanceDetails memory poolBalanceDetails_)
+    {
+        IPool pool = IPool(ajnaPool_);
+
+        // pool debtInfo
+        (poolBalanceDetails_.debt, poolBalanceDetails_.accruedDebt, poolBalanceDetails_.debtInAuction, poolBalanceDetails_.t0Debt2ToCollateral) = pool.debtInfo();
+
+        // depositUpToIndex(index_)
+        poolBalanceDetails_.depositUpToIndex = pool.depositUpToIndex(index_);
+
+        // get pool quote token balance
+        uint256 poolQuoteBalance = IERC20(quoteTokenAddress_).balanceOf(ajnaPool_);
+        uint256 quoteScale = pool.quoteTokenScale();
+        // round quote token balance to scale as performed in the pool contract
+        poolBalanceDetails_.quoteTokenBalance = (poolQuoteBalance / quoteScale) * quoteScale;
+
+        // get pool collateral token balance
+        if (isNFT_) {
+            poolBalanceDetails_.collateralTokenBalance = IERC721(collateralTokenAddress_).balanceOf(ajnaPool_);
+        } else {
+            // round collateral token balance to scale as performed in the pool contract
+            uint256 collateralScale = IERC20Pool(ajnaPool_).collateralScale();
+            uint256 poolCollateralBalance = IERC20(collateralTokenAddress_).balanceOf(ajnaPool_);
+            poolBalanceDetails_.collateralTokenBalance = (poolCollateralBalance / collateralScale) * collateralScale;
+        }
     }
 
     /**
