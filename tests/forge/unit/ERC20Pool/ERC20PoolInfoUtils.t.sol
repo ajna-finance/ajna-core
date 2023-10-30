@@ -323,10 +323,35 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             PoolInfoUtilsMulticall.PoolUtilizationInfo memory poolUtilizationInfo
         ) = poolUtilsMulticall.poolDetailsMulticall(address(_pool));
 
+        assertEq(poolLoansInfo.poolSize,                   50_000 * 1e18);
+
+        assertEq(poolPriceInfo.hpb,      3_010.892022197881557845 * 1e18);
+        assertEq(poolPriceInfo.hpbIndex, 2550);
+        assertEq(poolPriceInfo.htp,      210.201923076923077020 * 1e18);
+        assertEq(poolPriceInfo.htpIndex, 3083);
+        assertEq(poolPriceInfo.lup,      2981.007422784467321543 * 1e18);
+        assertEq(poolPriceInfo.lupIndex, 2552);
+
         assertGe(poolRatesAndFees.lenderInterestMargin, 0.000136986301369863 * 1e18);
         assertGe(poolRatesAndFees.borrowFeeRate, 0.000961538461538462 * 1e18);
         assertGe(poolRatesAndFees.depositFeeRate, 0.000136986301369863 * 1e18);
 
         assertEq(poolReservesInfo.reserves,                   20.192307692307702000 * 1e18);
+
+        assertEq(poolUtilizationInfo.poolMinDebtAmount,     2_102.019230769230770200 * 1e18);
+    }
+
+    function testPoolInfoUtilsMulticallPoolBalanceDetails() external {
+        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
+
+        uint256 meaningfulIndex = 5000;
+        address quoteTokenAddress = IPool(_pool).quoteTokenAddress();
+        address collateralTokenAddress = IPool(_pool).collateralAddress();
+
+        PoolInfoUtilsMulticall.PoolBalanceDetails memory poolBalanceDetails = poolUtilsMulticall.poolBalanceDetails(address(_pool), meaningfulIndex, quoteTokenAddress, collateralTokenAddress, false);
+
+        assertEq(poolBalanceDetails.debt,        21_020.192307692307702000 * 1e18);
+        assertEq(poolBalanceDetails.quoteTokenBalance,  29_000 * 1e18);
+        assertEq(poolBalanceDetails.collateralTokenBalance,  100 * 1e18);
     }
 }
