@@ -201,17 +201,18 @@ contract PoolInfoUtilsMulticall {
         // get pool quote token balance
         uint256 poolQuoteBalance = IERC20(quoteTokenAddress_).balanceOf(ajnaPool_);
         uint256 quoteScale = pool.quoteTokenScale();
-        // round quote token balance to scale as performed in the pool contract
-        poolBalanceDetails_.quoteTokenBalance = (poolQuoteBalance / quoteScale) * quoteScale;
+        // normalize token balance to WAD scale
+        poolBalanceDetails_.quoteTokenBalance = poolQuoteBalance * quoteScale;
 
         // get pool collateral token balance
         if (isNFT_) {
-            poolBalanceDetails_.collateralTokenBalance = IERC721(collateralTokenAddress_).balanceOf(ajnaPool_);
+            // convert whole NFT amounts to WAD to match pool accounting
+            poolBalanceDetails_.collateralTokenBalance = IERC721(collateralTokenAddress_).balanceOf(ajnaPool_) * 10**18;
         } else {
-            // round collateral token balance to scale as performed in the pool contract
+            // normalize token balance to WAD scale
             uint256 collateralScale = IERC20Pool(ajnaPool_).collateralScale();
             uint256 poolCollateralBalance = IERC20(collateralTokenAddress_).balanceOf(ajnaPool_);
-            poolBalanceDetails_.collateralTokenBalance = (poolCollateralBalance / collateralScale) * collateralScale;
+            poolBalanceDetails_.collateralTokenBalance = poolCollateralBalance * collateralScale;
         }
     }
 
