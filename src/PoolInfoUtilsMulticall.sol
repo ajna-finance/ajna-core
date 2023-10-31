@@ -68,27 +68,8 @@ contract PoolInfoUtilsMulticall {
     }
 
     /**
-     * @notice Generate the encoded calldata required for the `poolDetailsMulticall` function
-     * @param  ajnaPool_    Address of `Ajna` pool
-     * @return callData_    Array of encoded calldata for the `poolDetailsMulticall` function
-     */
-    function encodePoolDetailsCalldata(address ajnaPool_) internal pure returns (bytes[] memory callData_) {
-        callData_ = new bytes[](7);
-        // encode loans info
-        callData_[0] = abi.encodeWithSelector(bytes4(keccak256("poolLoansInfo(address)")), ajnaPool_);
-        // encode prices info
-        callData_[1] = abi.encodeWithSelector(bytes4(keccak256("poolPricesInfo(address)")), ajnaPool_);
-        // encode rates and fees
-        callData_[2] = abi.encodeWithSelector(bytes4(keccak256("lenderInterestMargin(address)")), ajnaPool_);
-        callData_[3] = abi.encodeWithSelector(bytes4(keccak256("borrowFeeRate(address)")), ajnaPool_);
-        callData_[4] = abi.encodeWithSelector(bytes4(keccak256("unutilizedDepositFeeRate(address)")), ajnaPool_);
-        // encode reserves info
-        callData_[5] = abi.encodeWithSelector(bytes4(keccak256("poolReservesInfo(address)")), ajnaPool_);
-        callData_[6] = abi.encodeWithSelector(bytes4(keccak256("poolUtilizationInfo(address)")), ajnaPool_);
-    }
-
-    /**
-     *  @notice Retrieves PoolLoansInfo, PoolPriceInfo, PoolRatesAndFees, PoolReservesInfo and PoolUtilizationInfo in a single multicall to PoolInfoUtils
+     *  @notice Retrieves PoolLoansInfo, PoolPriceInfo, PoolRatesAndFees, PoolReservesInfo and PoolUtilizationInfo
+     *  @dev    This function is used to retrieve pool details available from PoolInfoUtils in a single RPC call for Indexers.
      *  @param  ajnaPool_    Address of `Ajna` pool
      *  @return poolLoansInfo_       Pool loans info struct
      *  @return poolPriceInfo_       Pool price info struct
@@ -96,24 +77,23 @@ contract PoolInfoUtilsMulticall {
      *  @return poolReservesInfo_    Pool reserves info struct
      *  @return poolUtilizationInfo_ Pool utilization info struct
      */
-    function poolDetailsMulticall(address ajnaPool_) external returns (
+    function poolDetailsMulticall(address ajnaPool_) external view returns (
         PoolLoansInfo memory poolLoansInfo_,
         PoolPriceInfo memory poolPriceInfo_,
         PoolRatesAndFees memory poolRatesAndFees_,
         PoolReservesInfo memory poolReservesInfo_,
         PoolUtilizationInfo memory poolUtilizationInfo_
     ) {
-        bytes[] memory result = poolInfoUtils.multicall(encodePoolDetailsCalldata(ajnaPool_));
-
-        // decode loans info
+        // retrieve loans info
         (
             poolLoansInfo_.poolSize,
             poolLoansInfo_.loansCount,
             poolLoansInfo_.maxBorrower,
             poolLoansInfo_.pendingInflator,
             poolLoansInfo_.pendingInterestFactor
-        ) = abi.decode(result[0], (uint256, uint256, address, uint256, uint256));
-        // decode prices info
+        ) = poolInfoUtils.poolLoansInfo(ajnaPool_);
+
+        // retrieve prices info
         (
             poolPriceInfo_.hpb,
             poolPriceInfo_.hpbIndex,
@@ -121,32 +101,31 @@ contract PoolInfoUtilsMulticall {
             poolPriceInfo_.htpIndex,
             poolPriceInfo_.lup,
             poolPriceInfo_.lupIndex
-        ) = abi.decode(result[1], (uint256, uint256, uint256, uint256, uint256, uint256));
+        ) = poolInfoUtils.poolPricesInfo(ajnaPool_);
 
-        // decode rates and fees
-        poolRatesAndFees_.lenderInterestMargin = abi.decode(result[2], (uint256));
-        poolRatesAndFees_.borrowFeeRate        = abi.decode(result[3], (uint256));
-        poolRatesAndFees_.depositFeeRate       = abi.decode(result[4], (uint256));
+        // retrieve rates and fees
+        poolRatesAndFees_.lenderInterestMargin = poolInfoUtils.lenderInterestMargin(ajnaPool_);
+        poolRatesAndFees_.borrowFeeRate        = poolInfoUtils.borrowFeeRate(ajnaPool_);
+        poolRatesAndFees_.depositFeeRate       = poolInfoUtils.unutilizedDepositFeeRate(ajnaPool_);
 
-        // decode reserves info
+        // retrieve reserves info
         (
             poolReservesInfo_.reserves,
             poolReservesInfo_.claimableReserves,
             poolReservesInfo_.claimableReservesRemaining,
             poolReservesInfo_.auctionPrice,
             poolReservesInfo_.timeRemaining
-        ) = abi.decode(result[5], (uint256, uint256, uint256, uint256, uint256));
+        ) = poolInfoUtils.poolReservesInfo(ajnaPool_);
 
-        // decode utilization info
+        // retrieve utilization info
         (
             poolUtilizationInfo_.poolMinDebtAmount,
             poolUtilizationInfo_.poolCollateralization,
             poolUtilizationInfo_.poolActualUtilization,
             poolUtilizationInfo_.poolTargetUtilization
-        ) = abi.decode(result[6], (uint256, uint256, uint256, uint256));
+        ) = poolInfoUtils.poolUtilizationInfo(ajnaPool_);
     }
 
-    // TODO: update to return ratesAndFees struct or remove?
     /**
      *  @notice Retrieves info of lenderInterestMargin, borrowFeeRate and depositFeeRate
      *  @param  ajnaPool_            Address of `Ajna` pool
@@ -163,17 +142,9 @@ contract PoolInfoUtilsMulticall {
             uint256 depositFeeRate
         )
     {
-        bytes[] memory callData = new bytes[](3);
-
-        callData[0] = abi.encodeWithSelector(bytes4(keccak256("lenderInterestMargin(address)")), ajnaPool_);
-        callData[1] = abi.encodeWithSelector(bytes4(keccak256("borrowFeeRate(address)")), ajnaPool_);
-        callData[2] = abi.encodeWithSelector(bytes4(keccak256("unutilizedDepositFeeRate(address)")), ajnaPool_);
-
-        bytes[] memory result = poolInfoUtils.multicall(callData);
-
-        lenderInterestMargin = abi.decode(result[0], (uint256));
-        borrowFeeRate        = abi.decode(result[1], (uint256));
-        depositFeeRate       = abi.decode(result[2], (uint256));
+        lenderInterestMargin = poolInfoUtils.lenderInterestMargin(ajnaPool_);
+        borrowFeeRate        = poolInfoUtils.borrowFeeRate(ajnaPool_);
+        depositFeeRate       = poolInfoUtils.unutilizedDepositFeeRate(ajnaPool_);
     }
 
     /**
