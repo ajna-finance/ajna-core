@@ -53,79 +53,76 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             newLup:     1.0 * 1e18
         });
 
-        skip(150 days);
-
-        _assertBorrower({
-            borrower:                  _borrower,
-            borrowerDebt:              1_012.546227883006932020 * 1e18,
-            borrowerCollateral:        1_000.0 * 1e18,
-            borrowert0Np:              1.102856477351990821 * 1e18,
-            borrowerCollateralization: 0.000000098599234426 * 1e18
-        });
+        skip(500 days);
 
         _kick({
             from:           _lender,
             borrower:       _borrower,
-            debt:           1_012.546227883006932019 * 1e18,
+            debt:           1_062.275580978447336880 * 1e18,
             collateral:     1_000 * 1e18,
-            bond:           11.320610979536981887 * 1e18,
-            transferAmount: 11.320610979536981887 * 1e18
+            bond:           11.876602049529453524 * 1e18,
+            transferAmount: 11.876602049529453524 * 1e18
         });
 
         skip(73 hours);
+
+        _assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  0.000000099836282890 * 1e18,
+                poolSize:             1_059.774376990334082000 * 1e18,
+                pledgedCollateral:    1_000.000000000000000000 * 1e18,
+                encumberedCollateral: 10_645_053_462.679700356660584401 * 1e18,
+                poolDebt:             1_062.762568879264622268 * 1e18,
+                actualUtilization:    0.991952784519230770 * 1e18,
+                targetUtilization:    0.991952784519230770 * 1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.055 * 1e18,
+                interestRateUpdate:   block.timestamp - 73 hours
+            })
+        );
+
+        // 7388 bankrupts then settle emit occurs
+        vm.expectEmit(true, true, false, true);
+        emit BucketBankruptcy(7388, 0);
 
         _settle({
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    10,
-            settledDebt: 991.952784519230769688 * 1e18
+            settledDebt: 989.604567844708659388 * 1e18
         });
 
-        // Settle, settles debt successfully.
-
-        _assertBorrower({
-            borrower:                  _borrower,
-            borrowerDebt:              0 * 1e18,
-            borrowerCollateral:        0 * 1e18,
-            borrowert0Np:              0 * 1e18,
-            borrowerCollateralization: 1.0 * 1e18
-        });
-
-        _assertPool(
-            PoolParams({
-                htp:                  0,
-                lup:                  1_004_968_987.606512354182109771 * 1e18,
-                poolSize:             4.944245932031523809 * 1e18,
-                pledgedCollateral:    0,
-                encumberedCollateral: 0,
-                poolDebt:             0,
-                actualUtilization:    0.745136886473306591 * 1e18,
-                targetUtilization:    0.991952784519230770 * 1e18,
-                minDebtAmount:        0,
-                loans:                0,
-                maxBorrower:          address(0),
-                interestRate:         0.0495 * 1e18,
-                interestRateUpdate:   block.timestamp
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          11.876602049529453524 * 1e18,
+                bondFactor:        0.011180339887498948 * 1e18,
+                kickTime:          block.timestamp - 73 hours,
+                referencePrice:    1.181041601473741876 * 1e18,
+                totalBondEscrowed: 11.876602049529453524 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     2.515842310488378269 * 1e18,
+                thresholdPrice:    0 * 1e18,
+                neutralPrice:      1.181041601473741876 * 1e18
             })
         );
 
-        // Pool seems fine, actors are able to interact with the pool
-        _addInitialLiquidity({
-            from:   _lender,
-            amount: 1_000 * 1e18,
-            index:  4160
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              2.515842310488378269 * 1e18,
+            borrowerCollateral:        0,
+            borrowert0Np:              0,
+            borrowerCollateralization: 0
         });
 
-        _pledgeCollateral({
-            from:     _borrower2,
-            borrower: _borrower2,
-            amount:   1_000 * 1e18
-        });
-        _borrow({
-            from:       _borrower2,
-            amount:     200.0 * 1e18,
-            indexLimit: 7388,
-            newLup:     0.980247521701303221 * 1e18
-        });
+        // Pool is burned, actors are able to interact with pool
+        changePrank(_lender);
+        vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
+        _pool.addQuoteToken(1_000 * 1e18, 4160, type(uint256).max, false);
     }
 }
