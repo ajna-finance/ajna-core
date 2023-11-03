@@ -2,9 +2,9 @@
 pragma solidity 0.8.18;
 
 import '../utils/DSTestPlus.sol';
+import '../utils/AuctionQueueInstance.sol';
 
 contract AuctionsTest is DSTestPlus {
-
     /**
      *  @notice Tests bond penalty/reward factor calculation for varying parameters
      */
@@ -103,5 +103,57 @@ contract AuctionsTest is DSTestPlus {
         assertEq(_claimableReserves(debt, 11_000 * 1e18, 11_000 * 1e18, reserveAuctionUnclaimed, 0),                       0);
         assertEq(_claimableReserves(debt, poolSize, 11_000 * 1e18, 10_895 * 1e18, quoteTokenBalance),                      0);
     }
+}
 
+contract AuctionQueueTest is DSTestPlus {
+    AuctionQueueInstance private _auctions;
+
+    function setUp() public {
+       _auctions = new AuctionQueueInstance();
+    }
+
+    function testAuctionsQueueAddRemove() external {
+        address b1 = makeAddr("b1");
+        address b2 = makeAddr("b2");
+        address b3 = makeAddr("b3");
+        assertEq(_auctions.count(), 0);
+
+        _auctions.add(b1);
+        assertEq(_auctions.count(), 1);
+        _auctions.add(b2);
+        assertEq(_auctions.count(), 2);
+        _auctions.add(b3);
+        assertEq(_auctions.count(), 3);
+
+        _auctions.remove(b2);
+        assertEq(_auctions.count(), 2);
+        _auctions.remove(b1);
+        assertEq(_auctions.count(), 1);
+        _auctions.remove(b3);
+        assertEq(_auctions.count(), 0);
+    }
+
+    function testAuctionsQueueRemoveOnlyAuction() external {
+        address b1 = makeAddr("b1");
+        address b2 = makeAddr("b2");
+        address b3 = makeAddr("b3");
+
+        // add and remove the only auction on the queue
+        _auctions.add(b1);
+        assertEq(_auctions.count(), 1);
+        _auctions.remove(b1);
+        assertEq(_auctions.count(), 0);
+
+        // add new auctions
+        _auctions.add(b2);
+        assertEq(_auctions.count(), 1);
+        _auctions.add(b3);
+        assertEq(_auctions.count(), 2);
+
+        // remove new auctions
+        _auctions.remove(b2);
+        assertEq(_auctions.count(), 1);
+        _auctions.remove(b3);
+        assertEq(_auctions.count(), 0);
+    }
 }
