@@ -454,7 +454,6 @@ contract PoolInfoUtils {
             bucketCollateral,
             bucketDeposit,
             lp_,
-            bucketDeposit,
             _priceAt(index_)
         );
     }

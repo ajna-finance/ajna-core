@@ -324,7 +324,6 @@ contract PositionManager is PermitERC721, IPositionManager, ReentrancyGuard {
             vars.bucketCollateral,
             vars.bucketDeposit,
             vars.fromLP,
-            vars.bucketDeposit,
             _priceAt(fromIndex_)
         );
 
