@@ -100,7 +100,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
             borrowerDebt:              5_004.807692307692310000 * 1e18,
             borrowerCollateral:        2 * 1e18,
             borrowert0Np:              2_882.277255357846282204 * 1e18,
-            borrowerCollateralization: 1.543977154129479546 * 1e18
+            borrowerCollateralization: 1.543977154129479545 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower2,
@@ -169,7 +169,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
             borrowerDebt:              5_007.093514461301878824 * 1e18,
             borrowerCollateral:        3 * 1e18,
             borrowert0Np:              1_921.518170238564188136 * 1e18,
-            borrowerCollateralization: 2.314908454001357886 * 1e18
+            borrowerCollateralization: 2.314908454001357885 * 1e18
         });
 
         assertEq(_quote.balanceOf(address(_pool)), 6_151.949363681600046878 * 1e18); // increased by bonds size

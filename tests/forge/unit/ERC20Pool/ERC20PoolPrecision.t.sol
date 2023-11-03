@@ -397,7 +397,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             borrowerDebt:              debt,
             borrowerCollateral:        col,
             borrowert0Np:              114.804959297694401926 * 1e18,
-            borrowerCollateralization: 30.207183159927296805 * 1e18
+            borrowerCollateralization: 30.207183159927296803 * 1e18
         });
         _assertPoolPrices({
             htp:      100.173076923076923000 * 1e18,
@@ -433,7 +433,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             depositTime: start
         });
 
-        // remove all of the remaining claimable collateral
+        // remove all remaining claimable collateral
         uint256 unencumberedCollateral = col - _encumberedCollateral(debt, _lup());
 
         _repayDebtNoLupCheck({
@@ -933,8 +933,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         return scaledPledge;
     }
 
-    function _encumberedCollateral(uint256 debt_, uint256 price_) internal pure returns (uint256 encumberance_) {
-        encumberance_ =  price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+    function _encumberedCollateral(uint256 debt_, uint256 price_) internal view returns (uint256 encumberance_) {
+        uint256 unscaledEncumberance =  price_ != 0 && debt_ != 0 ? Maths.ceilWdiv(debt_, price_) : 0;
+        encumberance_ = _roundUpToScale(unscaledEncumberance, ERC20Pool(address(_pool)).quoteTokenScale());
     }
 
     function _mintAndApproveCollateral(

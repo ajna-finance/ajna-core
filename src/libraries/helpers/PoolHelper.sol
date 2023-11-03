@@ -153,7 +153,7 @@ import { Maths }   from '../internal/Maths.sol';
      *  @param collateral_ Collateral to calculate collateralization for.
      *  @param price_      Price to calculate collateralization for.
      *  @param type_       Type of the pool.
-     *  @return `True` if collateralization calculated is equal or greater than `1`.
+     *  @return `True` if value of collateral exceeds or equals debt.
      */
     function _isCollateralized(
         uint256 debt_,

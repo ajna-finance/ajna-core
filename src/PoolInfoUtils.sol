@@ -496,7 +496,7 @@ contract PoolInfoUtils {
         uint256 debt_,
         uint256 price_
     ) pure returns (uint256 encumberance_) {
-        return price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+        return price_ != 0 ? Maths.wdiv(debt_, price_) : 0;
     }
 
     /**
@@ -511,8 +511,9 @@ contract PoolInfoUtils {
         uint256 collateral_,
         uint256 price_
     ) pure returns (uint256) {
-        uint256 encumbered = _encumberance(debt_, price_);
-        return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
+        // cannot be undercollateralized if there is no debt
+        if (debt_ == 0) return 1e18;
+        return Maths.wdiv(Maths.wmul(collateral_, price_), debt_);
     }
 
     /**
