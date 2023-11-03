@@ -11,6 +11,7 @@ import 'src/ERC20Pool.sol';
 
 import '@std/console.sol';
 
+
 contract ERC20PoolBorrowTest is ERC20HelperContract {
 
     address internal _borrower;
@@ -33,6 +34,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender,   200_000 * 1e18);
         _mintQuoteAndApproveTokens(_attacker, 200_000 * 1e18);
 
+        // fund reserves
+        deal(address(_quote), address(_pool), 50 * 1e18);
 
         // lender deposits 1_000 quote in price of 1.0
         _addInitialLiquidity({
@@ -144,6 +147,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
     function testStealReservesWithMargin() external {
 
+        // Pool's reserves are already seeded with 50 quote token in setUp()
+
         // Deposit 100 qt at a price of 1
         _removeLiquidity({
             from:     _lender,
@@ -186,8 +191,13 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
 
-        // 50 quote token to the pool address, just to create a bunch of reserves.
-        deal(address(_quote), address(_pool), 50.0 * 1e18);
+        _assertReserveAuction({
+            reserves:                   50.048076923076923100 * 1e18,
+            claimableReserves :         50.048076823076923100 * 1e18,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });
 
         _assertPool(
             PoolParams({
@@ -227,7 +237,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             newLup:  100.834029983998419124 * 1e18
         });
 
-        // 2b. posts 1.04 collateral and borrows 100 quote token
+        // 2b. posts 1.04 collateral and borrows 99.9 quote token
         _pledgeCollateral({
             from:     _attacker,
             borrower: _attacker,
@@ -281,9 +291,17 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
 
+        _assertBucket({
+            index:        3231,
+            lpBalance:    100.0 * 1e18,
+            collateral:   0 * 1e18,
+            deposit:      100.000000000000000000 * 1e18,
+            exchangeRate: 1.0 * 1e18
+        });
+
         // In a single block finish the attack:
 
-        // 2a. Call arbtake using 100 price bucket --> FIXME: 100.5 price bucket?
+        // 2a. Call arbtake using 100.5 price bucket --> FIXME: 100.5 price bucket?
         _arbTake({
             from:             _attacker,
             borrower:         _attacker,
@@ -297,12 +315,28 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             lpAwardKicker:    0.621474395662361706 * 1e18
         });
 
+        _assertBucket({
+            index:        3231,
+            lpBalance:    149.899452254309694969 * 1e18,
+            collateral:   1.040000000000000000 * 1e18,
+            deposit:      45.036425965937656883 * 1e18,
+            exchangeRate: 1.000029118818786027 * 1e18
+        });
+
+        _assertReserveAuction({
+            reserves:                   50.145162338400592903 * 1e18,
+            claimableReserves :         50.145162193361255055 * 1e18,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });
+
         // 2b. Call settle
         _settle({
             from:        _attacker,
             borrower:    _attacker,
             maxDepth:    10,
-            settledDebt: 45032081604265944855
+            settledDebt: 45.032081604265944855 * 1e18
         });
 
         _assertBucket({
@@ -317,24 +351,26 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             index:        3231,
             lpBalance:    149.899452254309694969 * 1e18,
             collateral:   1.040000000000000000 * 1e18,
-            deposit:      0.147450248651705349 * 1e18,
-            exchangeRate: 0.700568546800615975 * 1e18
+            deposit:      45.036425965937656883 * 1e18,
+            exchangeRate: 1.000029118818786027 * 1e18
         });
 
-        // 2c. Withdraw the deposit remaing (should be about 50) and the collateral moved (should be 1.04) from the 100 price bucket (all go to the attacker)
+        // 2c. Withdraw the deposit remaing (should be about 50)
+        //     the collateral moved (should be 1.04) from the 100 price bucket (all go to the attacker)
+
         _removeAllLiquidity({
             from:     _attacker,
-            amount:   0.147450248651705349 * 1e18,
+            amount:   45.036425965937656883 * 1e18,
             index:    3231,
             newLup:   1.0 * 1e18,
-            lpRedeem: 0.210472264741383197 * 1e18
+            lpRedeem: 45.035114596596710669 * 1e18
         });
 
         _removeAllCollateral({
             from: _attacker,
             amount: 1.040000000000000000 * 1e18,
             index: 3231,
-            lpRedeem: 149.688979989568311772 * 1e18
+            lpRedeem: 104.864337657712984300 * 1e18
         });
     }
 
