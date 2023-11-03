@@ -211,6 +211,11 @@ Failing that, manual verification is possible.  Following steps show how to do t
     forge verify-contract --chain-id 5 --watch 0x12874db433dBF1D0f3c73B39F96B009093A56E0E PoolInfoUtilsMulticall --constructor-args $(cast abi-encode "constructor(address)" 0x08F304cBeA7FAF48C93C27ae1305E220913a571d)
     forge verify-contract --chain-id 5 --watch 0xC4114D90F51960854ab574297Cf7CC131d445F29 PositionManager --constructor-args $(cast abi-encode "constructor(address,address)" 0x14F2474fB5ea9DF82059053c4F85A8C803Ab10C9 0xb0d1c875B240EE9f6C2c3284a31b10f1EC6De7d2)
     ```
+* To verify pool contracts, return to the `run-latest.json` file and search for the factory contracts.  After the factory bytecode, under the `additionalContracts` section should be a _CREATE_ action.  Copy the address for the "seed" pool from each factory deployment, and verify this seed pool.
+    ```
+    forge verify-contract --chain-id 5 --watch 0x5a4fB4f6a83282D62c3fc87c4DFE9A2849D987E9 ERC20Pool
+    forge verify-contract --chain-id 5 --watch 0x7c79C719081d987678b1cFAb5f95B48f3CEC55b2 ERC721Pool
+    ```
 
 ### Validation
 
