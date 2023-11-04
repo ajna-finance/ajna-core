@@ -22,7 +22,6 @@ import {
 
 import {
     _auctionPrice,
-    _borrowFeeRate,
    _indexOf,
     _priceAt,
     MAX_FENWICK_INDEX,
@@ -145,8 +144,8 @@ library SettlerActions {
             // capped at half of the origination fee rate, based on current book fees
             if (assets > liabilities) {
                 uint256 t0ReserveSettleAmount = Maths.min(borrower.t0ReserveSettleAmount, borrower.t0Debt);
-                t0ReserveSettleAmount = Maths.min(t0ReserveSettleAmount, Maths.floorWdiv(assets - liabilities, poolState_.inflator));
-                borrower.t0Debt -= t0ReserveSettleAmount;
+                t0ReserveSettleAmount         = Maths.min(t0ReserveSettleAmount, Maths.floorWdiv(assets - liabilities, poolState_.inflator));
+                borrower.t0Debt                -= t0ReserveSettleAmount;
                 borrower.t0ReserveSettleAmount -= t0ReserveSettleAmount;
             }
 
