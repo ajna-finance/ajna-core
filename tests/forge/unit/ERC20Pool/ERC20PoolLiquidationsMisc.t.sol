@@ -563,7 +563,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             2_312.355002439841726602 * 1e18,
+                poolSize:             2_295.174026146791282624 * 1e18,
                 pledgedCollateral:    1.371773711622291235 * 1e18,
                 encumberedCollateral: 0,
                 poolDebt:             0,
@@ -608,8 +608,8 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             index:        _i9_52,
             lpBalance:    8_000.033210373171973128 * 1e18,
             collateral:   0,          
-            deposit:      2_312.355002439841725846 * 1e18,
-            exchangeRate: 0.289043175401015481 * 1e18
+            deposit:      2_295.174026146791281873 * 1e18,
+            exchangeRate: 0.286895562279763324 * 1e18
         });
     }
  }

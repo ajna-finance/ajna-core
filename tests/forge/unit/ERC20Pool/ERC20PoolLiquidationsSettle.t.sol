@@ -383,8 +383,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   0,
-            deposit:      10_525.670272469343333339 * 1e18,
-            exchangeRate: 0.956879115679031213 * 1e18
+            deposit:      10_500.511388947038456358 * 1e18,
+            exchangeRate: 0.954591944449730769 * 1e18
         });
         _assertBucket({
             index:        _i9_62,
@@ -397,7 +397,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             PoolParams({
                 htp:                  9.771304290202671377 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             65_525.670272469343333339 * 1e18,
+                poolSize:             65_500.511388947038456358 * 1e18,
                 pledgedCollateral:    2 * 1e18,
                 encumberedCollateral: 2.010288427770370775 * 1e18,
                 poolDebt:             19.542608580405342754 * 1e18,
@@ -585,8 +585,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   284.461568985676739989 * 1e18,
-            deposit:      8_290.291541398624686508 * 1e18,
-            exchangeRate: 1.005056965067230573 * 1e18
+            deposit:      8_265.094009100584293624 * 1e18,
+            exchangeRate: 1.002766280312863265 * 1e18
         });
         _assertBucket({
             index:        _i9_62,
@@ -885,8 +885,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   0 * 1e18,
-            deposit:      9_565.123570257669797761 * 1e18,
-            exchangeRate: 0.869556688205242709 * 1e18
+            deposit:      9_540.267352956814706357 * 1e18,
+            exchangeRate: 0.867297032086983156 * 1e18
         });
 
         _pool.moveQuoteToken(10000000000 * 1e18, _i9_72, _i9_91, type(uint256).max, false);
