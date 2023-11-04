@@ -149,6 +149,10 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         // Pool's reserves are already seeded with 50 quote token in setUp()
 
+        // assert attacker's balances
+        assertEq(200_000.0 * 1e18, _quote.balanceOf(address(_attacker)));
+        assertEq(10 * 1e18, _collateral.balanceOf(address(_attacker)));
+
         // Deposit 100 qt at a price of 1
         _removeLiquidity({
             from:     _lender,
@@ -372,6 +376,20 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             index: 3231,
             lpRedeem: 104.864337657712984300 * 1e18
         });
+
+        _assertReserveAuction({
+            reserves:                   5.111024427753386315 * 1e18,
+            claimableReserves :         5.111024327750474433 * 1e18,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });
+
+        // assert attacker's balances
+        // attacker profits by: 43.818436053527703184 QT
+        assertEq(200_043.818436053527703184 * 1e18, _quote.balanceOf(address(_attacker)));
+        assertEq(10 * 1e18, _collateral.balanceOf(address(_attacker)));
+
     }
 
 }
