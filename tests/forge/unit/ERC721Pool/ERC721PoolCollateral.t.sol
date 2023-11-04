@@ -831,7 +831,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(3), address(_pool));
 
         // exchange collateral for lpb 3060 - 3070, going down in price
-        for (uint256 i = _i236_59; i < (3060 + 3); i++) {
+        for (uint256 i = _i236_59; i < (_i236_59 + 3); i++) {
             _depositTake({
                 from:     _lender,
                 borrower: _borrower,
@@ -968,11 +968,13 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             })
         );
 
+        console.log(">>>> Just before settle <<<<<");
+
         _settle({
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    11,
-            settledDebt: 102.279542068763557824 * 1e18
+            settledDebt: 106.339800629932799697 * 1e18
         });
         // FIXME: still have 15.987308394039922868 debt, but was expecting full settlement
 
@@ -984,7 +986,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             borrowerCollateralization: 1.0 * 1e18,
             tokenIds:                  borrowerTokenIds
         });
-        return;
 
         // after take: NFT, 1 pledged by liquidated borrower is owned by the taker
         assertEq(_collateral.ownerOf(1), address(_pool));
