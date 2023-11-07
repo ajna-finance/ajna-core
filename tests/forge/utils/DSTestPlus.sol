@@ -1458,6 +1458,16 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _nonce = seed;
     }
 
+    // updates EMAs while advancing time
+    function skipWithActivity(uint256 timeToSkip) public {
+        while (timeToSkip > 12 hours) {
+            skip(12 hours);
+            _pool.updateInterest();
+            timeToSkip -= 12 hours;
+        }
+        skip(timeToSkip);
+    }
+
     function getNextNonce() public returns (uint256) {
         return _nonce == type(uint256).max ? 0 : ++_nonce;
     }
