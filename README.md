@@ -190,17 +190,32 @@ make deploy-contracts
 Upon completion, contract addresses will be printed to `stdout`:
 ```
 == Logs ==
-  Deploying to chain with AJNA token address 0x34A1D3fff3958843C43aD80F30b94c510645C...
+  Deploying to chain with AJNA token address 0xaadebCF61AA7Da0573b524DE57c67aDa797D46c5
   === Deployment addresses ===
-  ERC20  factory  0x50EEf481cae4250d252Ae577A09bF514f224C...
-  ERC721 factory  0x62c20Aa1e0272312BC100b4e23B4DC1Ed96dD...
-  PoolInfoUtils   0xDEb1E9a6Be7Baf84208BB6E10aC9F9bbE1D70...
-  PositionManager 0xD718d5A27a29FF1cD22403426084bA0d47986...
-  RewardsManager  0x4f559F30f5eB88D635FDe1548C4267DB8FaB0...
-
+  ERC20PoolFactory       0x14F2474fB5ea9DF82059053c4F85A8C803Ab10C9
+  ERC721PoolFactory      0xb0d1c875B240EE9f6C2c3284a31b10f1EC6De7d2
+  PoolInfoUtils          0x08F304cBeA7FAF48C93C27ae1305E220913a571d
+  PoolInfoUtilsMulticall 0x12874db433dBF1D0f3c73B39F96B009093A56E0E
+  PositionManager        0xC4114D90F51960854ab574297Cf7CC131d445F29
 ```
 
 Record these addresses.  If Etherscan verification fails on the first try, copy the deployment command from the `Makefile`, and tack a `--resume` switch onto the end.
+Failing that, manual verification is possible.  Following steps show how to do this on Goerli (chainId 5), using addresses from the example output above.
+* Open `broadcast/5/run-latest.json` and find the _"libraries"_ section towards the end of the file.
+* Copy/paste the _libraries_ config into the _[profile.default]_ section of `foundry.toml`, replacing the `:` with an `=`.
+* Run the following commands, adjusting addresses as appropriate:
+    ```
+    forge verify-contract --chain-id 5 --watch 0x14F2474fB5ea9DF82059053c4F85A8C803Ab10C9 ERC20PoolFactory --constructor-args $(cast abi-encode "constructor(address)" ${AJNA_TOKEN})
+    forge verify-contract --chain-id 5 --watch 0xb0d1c875B240EE9f6C2c3284a31b10f1EC6De7d2 ERC721PoolFactory --constructor-args $(cast abi-encode "constructor(address)" ${AJNA_TOKEN})
+    forge verify-contract --chain-id 5 --watch 0x08F304cBeA7FAF48C93C27ae1305E220913a571d PoolInfoUtils
+    forge verify-contract --chain-id 5 --watch 0x12874db433dBF1D0f3c73B39F96B009093A56E0E PoolInfoUtilsMulticall --constructor-args $(cast abi-encode "constructor(address)" 0x08F304cBeA7FAF48C93C27ae1305E220913a571d)
+    forge verify-contract --chain-id 5 --watch 0xC4114D90F51960854ab574297Cf7CC131d445F29 PositionManager --constructor-args $(cast abi-encode "constructor(address,address)" 0x14F2474fB5ea9DF82059053c4F85A8C803Ab10C9 0xb0d1c875B240EE9f6C2c3284a31b10f1EC6De7d2)
+    ```
+* To verify pool contracts, return to the `run-latest.json` file and search for the factory contracts.  After the factory bytecode, under the `additionalContracts` section should be a _CREATE_ action.  Copy the address for the "seed" pool from each factory deployment, and verify this seed pool.
+    ```
+    forge verify-contract --chain-id 5 --watch 0x5a4fB4f6a83282D62c3fc87c4DFE9A2849D987E9 ERC20Pool
+    forge verify-contract --chain-id 5 --watch 0x7c79C719081d987678b1cFAb5f95B48f3CEC55b2 ERC721Pool
+    ```
 
 ### Validation
 
