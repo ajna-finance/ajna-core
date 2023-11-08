@@ -50,8 +50,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         // Pool's reserves are already seeded with 50 quote token in setUp()
 
         // assert attacker's balances
-        assertEq(200_000.0 * 1e18, _quote.balanceOf(address(_attacker)));
-        assertEq(10 * 1e18, _collateral.balanceOf(address(_attacker)));
+        assertEq(2_000_000.0 * 1e18, _quote.balanceOf(address(_attacker)));
+        assertEq(11_000.0 * 1e18, _collateral.balanceOf(address(_attacker)));
 
         // Deposit 100 qt at a price of 1
         _removeLiquidity({
@@ -175,7 +175,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         });
 
         // Now wait until auction price drops to about $50
-
         skip(8 hours);
 
         _assertAuction(
@@ -287,8 +286,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         // assert attacker's balances
         // attacker does not profit in QT
-        assertEq(199_998.432344951413181389 * 1e18, _quote.balanceOf(address(_attacker)));
-        assertEq(10 * 1e18, _collateral.balanceOf(address(_attacker)));
+        assertEq(1_999_998.432344951413181389 * 1e18, _quote.balanceOf(address(_attacker)));
+        assertEq(11_000.0 * 1e18, _collateral.balanceOf(address(_attacker)));
 
     }
 
