@@ -29,10 +29,10 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         _mintCollateralAndApproveTokens(_borrower,  1_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower2,  1_000 * 1e18);
-        _mintCollateralAndApproveTokens(_attacker,  10 * 1e18);
+        _mintCollateralAndApproveTokens(_attacker,  11_000 * 1e18);
 
         _mintQuoteAndApproveTokens(_lender,   200_000 * 1e18);
-        _mintQuoteAndApproveTokens(_attacker, 200_000 * 1e18);
+        _mintQuoteAndApproveTokens(_attacker, 2_000_000 * 1e18);
 
         // fund reserves
         deal(address(_quote), address(_pool), 50 * 1e18);
@@ -379,7 +379,185 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         // attacker does not profit in QT
         assertEq(199_998.784298142880496597 * 1e18, _quote.balanceOf(address(_attacker)));
         assertEq(10 * 1e18, _collateral.balanceOf(address(_attacker)));
-
     }
+
+    // Griefing attempt where someone spends orig fee to cause bad debt to get pushed to book.  This will work in branch with reserves not used for bad debt, but fail if reserves are used, as well as fail in settle-half-originationfee-reserves
+
+    function testSpendOrigFeePushBadDebtToBorrowers() external {
+        // Starts like the other test:  For background, set up a nice normal looking pool with some reserves.
+        // Pool's reserves are already seeded with 50 quote token in setUp()
+
+        // assert attacker's balances
+
+        assertEq(2_000_000.0 * 1e18, _quote.balanceOf(address(_attacker)));
+        assertEq(11_000.0 * 1e18, _collateral.balanceOf(address(_attacker)));
+
+        // 1a. Deposit 100 qt at a price of 1
+        _removeLiquidity({
+            from:     _lender,
+            amount:   900.0 * 1e18,
+            index:    4156,
+            newLup:   1004968987.606512354182109771 * 1e18,
+            lpRedeem: 900.0 * 1e18
+        });
+
+        // 1b. Legit borrower posts 75 collateral and borrows 50 quote token
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   75.0 * 1e18
+        });
+
+        _borrow({
+            from:       _borrower,
+            amount:     50.0 * 1e18,
+            indexLimit: 7388,
+            newLup:     1.0 * 1e18
+        });
+
+        // Like other attack, but bigger: Attacker does the following in quick succession (ideally same block):
+        // 2a. deposits 100 quote token at price 100
+
+        // deposits 100 quote token at price 100
+        _addLiquidity({
+            from:    _attacker,
+            amount:  100.0 * 1e18,
+            index:   3232,
+            lpAward: 100 * 1e18,
+            newLup:  100.332368143282009890 * 1e18
+        });
+
+        // 2aa. deposits 1,000,000 quote token at price 100.5
+        _addLiquidity({
+            from:    _attacker,
+            amount:  1_000_000.0 * 1e18,
+            index:   3231,
+            lpAward: 1_000_000 * 1e18,
+            newLup:  100.834029983998419124 * 1e18
+        });
+
+        // 2b. posts 10,400 collateral and borrows ~999,000 quote token
+        _pledgeCollateral({
+            from:     _attacker,
+            borrower: _attacker,
+            amount:   10_400.0 * 1e18
+        });
+
+        _borrow({
+            from:       _attacker,
+            amount:     999_000.0 * 1e18,
+            indexLimit: 7388,
+            newLup:     100.332368143282009890 * 1e18
+        });
+
+        // 2c. lenderKicks the loan in 2b using deposit in 2a
+        _lenderKick({
+            from:       _attacker,
+            index:      3232,
+            borrower:   _attacker,
+            debt:       999960.576923076923538000 * 1e18,
+            collateral: 10_400.000000000000000000 * 1e18,
+            bond:       11179.899124099536988936 * 1e18
+        });
+
+        // 2d. withdraws 100 of the deposit from 2a
+        _removeLiquidity({
+            from:     _attacker,
+            amount:   100.0 * 1e18,
+            index:    3232,
+            newLup:   1.000000000000000000 * 1e18,
+            lpRedeem: 100.0 * 1e18
+        });
+
+        // There now is a loan for about 1,000,000 quote token in auction
+        // Now wait until auction price drops to about $50
+        skip(8 hours);
+
+        // In a single block finish the attack:
+        // 2a. Call arbtake using 100.5 price bucket --> FIXME: 100.5 price bucket?
+        _arbTake({
+            from:             _attacker,
+            borrower:         _attacker,
+            kicker:           _attacker,
+            index:            3231,
+            collateralArbed:  10_400.000000000000000000 * 1e18,
+            quoteTokenAmount: 555_879.784082036148716800 * 1e18,
+            bondChange:       6_214.924922626691540182 * 1e18,
+            isReward:         true,
+            lpAwardTaker:     492_775.003053688325546576 * 1e18,
+            lpAwardKicker:    6_214.683729490108436591 * 1e18
+        });
+
+        _assertBucket({
+            index:        3231,
+            lpBalance:    1_498_989.686783178433983167 * 1e18,
+            collateral:   10_400.000000000000000000 * 1e18,
+            deposit:      450_373.951043503779827200 * 1e18,
+            exchangeRate: 1.000038810202913238 * 1e18
+        });
+
+        _assertReserveAuction({
+            reserves:                   1_017.474544223564365776 * 1e18,
+            claimableReserves :         1_017.474093749609441252 * 1e18,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });
+
+        // 2b. Call settle
+        _settle({
+            from:        _attacker,
+            borrower:    _attacker,
+            maxDepth:    10,
+            settledDebt: 450_320.816042659448546281 * 1e18
+        });
+
+        _assertBucket({
+            index:        3232,
+            lpBalance:    0 * 1e18,
+            collateral:   0,
+            deposit:      0 * 1e18,
+            exchangeRate: 1 * 1e18
+        });
+
+        _assertBucket({
+            index:        3231,
+            lpBalance:    1_498_989.686783178433983167 * 1e18,
+            collateral:   10_400.000000000000000000 * 1e18,
+            deposit:      32.571937031713956323 * 1e18,
+            exchangeRate: 0.699608871907005698 * 1e18
+        });
+
+        // 2c. Withdraw the deposit remaing (should be about 500,000) and the collateral moved (should be 10,400) from the 100 price bucket (all go to the attacker)
+        _removeAllLiquidity({
+            from:     _attacker,
+            amount:   32.571937031713956323 * 1e18, // FIXME: ... this should be 500K per Matts example? 
+            index:    3231,
+            newLup:   1.0 * 1e18,
+            lpRedeem: 46.557352743296149701 * 1e18
+        });
+
+        _removeAllCollateral({
+            from: _attacker,
+            amount: 10_400.000000000000000000 * 1e18,
+            index: 3231,
+            lpRedeem: 1_498_943.129430435137833466 * 1e18
+        });
+
+        _assertReserveAuction({
+            reserves:                   1_017.474544223564365775 * 1e18,
+            claimableReserves :         1_017.474544123560484755 * 1e18,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });
+
+        // assert attacker's balances
+        // attacker does not profit in QT
+        assertEq(1_987_852.672812932176967387 * 1e18, _quote.balanceOf(address(_attacker)));
+        assertEq(11_000.000000000000000000 * 1e18, _collateral.balanceOf(address(_attacker)));
+        // End result: attack is out the origination fee (should be about 1000), but pushed a small amount of bad debt (should be small amount with these paramters, but could be made a bit larger by waiting longer and making bigger loan) that get pushed to the legit borrower at price of 1.  This can be measured by looking at the exchange rate of that bucket
+    }
+
 
 }
