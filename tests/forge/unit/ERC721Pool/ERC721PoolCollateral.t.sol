@@ -968,7 +968,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             })
         );
 
-        console.log(">>>> Just before settle <<<<<");
 
         _settle({
             from:        _lender,
