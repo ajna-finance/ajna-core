@@ -679,7 +679,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState_,
         uint256 lup_
     ) internal {
-
         PoolCommons.updateInterestState(interestState, emaState, deposits, poolState_, lup_);
 
         // update pool inflator
@@ -690,6 +689,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         // slither-disable-next-line incorrect-equality
         } else if (poolState_.debt == 0) {
             inflatorState.inflator       = uint208(Maths.WAD);
+            inflatorState.inflatorUpdate = uint48(block.timestamp);
+        // if the first loan has just been drawn, update the inflator timestamp
+        // slither-disable-next-line incorrect-equality
+        } else if (inflatorState.inflator == Maths.WAD && inflatorState.inflatorUpdate != block.timestamp){
             inflatorState.inflatorUpdate = uint48(block.timestamp);
         }
     }

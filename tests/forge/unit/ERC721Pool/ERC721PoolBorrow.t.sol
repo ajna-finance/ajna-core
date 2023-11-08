@@ -8,7 +8,6 @@ import 'src/ERC721Pool.sol';
 import 'src/libraries/internal/Maths.sol';
 
 import { MAX_FENWICK_INDEX, MAX_PRICE, _priceAt } from 'src/libraries/helpers/PoolHelper.sol';
-import "forge-std/console.sol";
 
 abstract contract ERC721PoolBorrowTest is ERC721HelperContract {
     address internal _borrower;
@@ -398,69 +397,56 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             amount: 300 * 1e18,
             index:  _i100_33
         });
+        // mint some quote token for borrower to repay
+        _mintAndApproveQuoteTokens(_borrower, 2 * 1e18);
         uint256 snapshot = vm.snapshot();
 
-        // calculate debt if borrower took a 90 day loan shortly after pool creation
-        uint loanTerm = 30 days;
+        uint loanTerm = 1 hours;
         uint loanPrincipal = 150 * 1e18;
-        skip(12 hours);
+        ERC721Pool pool = ERC721Pool(address(_pool));
+
+        // calculate debt if borrower took a 90 day loan shortly after pool creation
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
-        _pledgeCollateral({
-            from:     _borrower,
-            borrower: _borrower,
-            tokenIds: tokenIdsToAdd
-        });
-        _borrow({
-            from:       _borrower,
-            amount:     loanPrincipal,
-            indexLimit: _i100_33,
-            newLup:     _p100_33
-        });
+        changePrank(_borrower);
+        pool.drawDebt(_borrower, loanPrincipal, _i100_33, tokenIdsToAdd);
+        skip(loanTerm);
         (uint256 borrowRate1, ) = _pool.interestRateInfo();
-        assertEq(borrowRate1, 0.045 * 1e18);
-        skipWithActivity(loanTerm);
-        (uint256 debt1, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
-        assertGt(debt1, loanPrincipal);
-        (borrowRate1, ) = _pool.interestRateInfo();
-        assertEq(borrowRate1, 0.045 * 1e18);
+        assertEq(borrowRate1, 0.05 * 1e18);
         uint256 borrowFee1 = Maths.wmul(_poolUtils.borrowFeeRate(address(_pool)), loanPrincipal);
-        return;      
+        (borrowRate1, ) = _pool.interestRateInfo();
+        assertEq(borrowRate1, 0.05 * 1e18);
+        uint256 repaid1 = pool.repayDebt({
+            borrowerAddress_:            _borrower,
+            maxQuoteTokenAmountToRepay_: type(uint256).max,
+            noOfNFTsToPull_:             3,
+            collateralReceiver_:         _borrower,
+            limitIndex_:                 _i100_33
+        });
 
         vm.revertTo(snapshot);
 
         // calculate debt if borrower took a 90 day loan long after pool creation
-        skip(90 days);
-        // _pool.updateInterest();
-        // (uint256 borrowRate2, ) = _pool.interestRateInfo();
-        // assertEq(borrowRate2, 0.045 * 1e18);
-        _pledgeCollateral({
-            from:     _borrower,
-            borrower: _borrower,
-            tokenIds: tokenIdsToAdd
-        });
-        _borrow({
-            from:       _borrower,
-            amount:     loanPrincipal,
-            indexLimit: _i100_33,
-            newLup:     _p100_33
-        });
+        skip(10 hours);
+        changePrank(_borrower);
+        pool.drawDebt(_borrower, loanPrincipal, _i100_33, tokenIdsToAdd);
+        skip(loanTerm);
         (uint256 borrowRate2, ) = _pool.interestRateInfo();
-        assertEq(borrowRate2, 0.045 * 1e18);
-        skipWithActivity(loanTerm);
-        (, uint256 collateralization, uint256 mau, uint256 tu) = _poolUtils.poolUtilizationInfo(address(_pool));
-        console.log("CR %s MAU %s TU %s", collateralization, mau, tu);
-        (uint256 debt2, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
-        assertGt(debt2, loanPrincipal);
-        (borrowRate2, ) = _pool.interestRateInfo();
-        assertEq(borrowRate2, 0.045 * 1e18);
+        assertEq(borrowRate2, 0.05 * 1e18);
         uint256 borrowFee2 = Maths.wmul(_poolUtils.borrowFeeRate(address(_pool)), loanPrincipal);       
+        uint256 repaid2 = pool.repayDebt({
+            borrowerAddress_:            _borrower,
+            maxQuoteTokenAmountToRepay_: type(uint256).max,
+            noOfNFTsToPull_:             3,
+            collateralReceiver_:         _borrower,
+            limitIndex_:                 _i100_33
+        });
 
         // ensure both loans owe the same origination fee and interest
         assertEq(borrowFee1, borrowFee2);
-        // assertEq(debt1, debt2);
+        assertEq(repaid1, repaid2);
     }
 
     function testPoolRepayRequireChecks() external tearDown {
