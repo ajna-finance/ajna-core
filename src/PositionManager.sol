@@ -48,7 +48,7 @@ contract PositionManager is PermitERC721, IPositionManager, ReentrancyGuard {
     mapping(uint256 tokenId => TokenInfo) internal positionTokens;
 
     /// @dev Id of the next token that will be minted. Skips `0`.
-    uint176 private _nextId = 1;
+    uint256 private _nextId = 1;
 
     /******************/
     /*** Immutables ***/
@@ -307,7 +307,7 @@ contract PositionManager is PermitERC721, IPositionManager, ReentrancyGuard {
         // ensure bucketDeposit accounts for accrued interest
         IPool(pool_).updateInterest();
 
-        // retrieve info of bucket from which liquidity is moved  
+        // retrieve info of bucket from which liquidity is moved
         (
             vars.bucketLP,
             vars.bucketCollateral,
