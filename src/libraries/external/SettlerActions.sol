@@ -479,10 +479,12 @@ library SettlerActions {
 
             Bucket storage hpbBucket = buckets_[index];
             uint256 bucketLP = hpbBucket.lps;
+
+            uint256 scaledDeposit = Maths.wmul(depositRemaining, scale);
             // If the remaining deposit and resulting bucket collateral is so small that the exchange rate
             // rounds to 0, then bankrupt the bucket.  Note that lhs are WADs, so the
             // quantity is naturally 1e18 times larger than the actual product
-            if (depositRemaining * Maths.WAD + hpbBucket.collateral * _priceAt(index) <= bucketLP) {
+            if (scaledDeposit * Maths.WAD + hpbBucket.collateral * _priceAt(index) <= bucketLP) {
                 // existing LP for the bucket shall become unclaimable
                 hpbBucket.lps            = 0;
                 hpbBucket.bankruptcyTime = block.timestamp;
