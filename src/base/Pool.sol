@@ -360,7 +360,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
 
         // update pool interest rate state
-        _updateInterestState(poolState, result.lup);
+        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
 
         // transfer from kicker to pool the difference to cover bond
         if (result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
