@@ -40,7 +40,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         _addInitialLiquidity({
             from:   _lender,
             amount: 1_000 * 1e18,
-            index:  4156
+            index:  4156 // 1.000000000000000000 
         });
 
     }
@@ -194,17 +194,17 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
 
-        // _assertBucket({
-        //     index:        3231,
-        //     lpBalance:    100.0 * 1e18,
-        //     collateral:   0 * 1e18,
-        //     deposit:      100.000000000000000000 * 1e18,
-        //     exchangeRate: 1.0 * 1e18
-        // });
+        _assertBucket({
+            index:        3231,
+            lpBalance:    100.0 * 1e18,
+            collateral:   0 * 1e18,
+            deposit:      100.000000000000000000 * 1e18,
+            exchangeRate: 1.0 * 1e18
+        });
 
         // In a single block finish the attack:
 
-        // 2a. Call arbtake using 100.5 price bucket --> FIXME: 100.5 price bucket?
+        // 2a. Call arbtake using 100.5 price bucket
         _arbTake({
             from:             _attacker,
             borrower:         _attacker,
@@ -218,21 +218,21 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             lpAwardKicker:    0.874178433715669284 * 1e18
         });
 
-        // _assertBucket({
-        //     index:        3231,
-        //     lpBalance:    149.899452254309694969 * 1e18,
-        //     collateral:   1.040000000000000000 * 1e18,
-        //     deposit:      45.036425965937656883 * 1e18,
-        //     exchangeRate: 1.000029118818786027 * 1e18
-        // });
+        _assertBucket({
+            index:        3231,
+            lpBalance:    148.152293372162818904 * 1e18,
+            collateral:   1.040000000000000000 * 1e18,
+            deposit:      43.289216208587901186 * 1e18,
+            exchangeRate: 1.000029118818786027 * 1e18
+        });
 
-        // _assertReserveAuction({
-        //     reserves:                   50.145162338400592903 * 1e18,
-        //     claimableReserves :         50.145162193361255055 * 1e18,
-        //     claimableReservesRemaining: 0,
-        //     auctionPrice:               0,
-        //     timeRemaining:              0
-        // });
+        _assertReserveAuction({
+            reserves:                   50.145162338400592905 * 1e18,
+            claimableReserves :         49.678475742964129332 * 1e18,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });
 
         // 2b. Call settle
         _settle({
@@ -242,21 +242,21 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             settledDebt: 43.284951626362185652 * 1e18
         });
 
-        // _assertBucket({
-        //     index:        3232,
-        //     lpBalance:    0 * 1e18,
-        //     collateral:   0,
-        //     deposit:      0 * 1e18,
-        //     exchangeRate: 1 * 1e18
-        // });
+        _assertBucket({
+            index:        3232,
+            lpBalance:    0 * 1e18,
+            collateral:   0,
+            deposit:      0 * 1e18,
+            exchangeRate: 1 * 1e18
+        });
 
-        // _assertBucket({
-        //     index:        3231,
-        //     lpBalance:    149.899452254309694969 * 1e18,
-        //     collateral:   1.040000000000000000 * 1e18,
-        //     deposit:      0.002288055290450296 * 1e18,
-        //     exchangeRate: 0.699600149710578699 * 1e18
-        // });
+        _assertBucket({
+            index:        3231,
+            lpBalance:    148.152293372162818904 * 1e18,
+            collateral:   1.040000000000000000 * 1e18,
+            deposit:      0.050319094592365857 * 1e18,
+            exchangeRate: 0.708174729461625128 * 1e18
+        });
 
         // 2c. Withdraw the deposit remaing (should be about 50)
         //     the collateral moved (should be 1.04) from the 100 price bucket (all go to the attacker)
@@ -276,13 +276,13 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             lpRedeem: 148.081238740446971198 * 1e18
         });
 
-        // _assertReserveAuction({
-        //     reserves:                   50.145162338400592902 * 1e18,
-        //     claimableReserves :         50.145162238397681020 * 1e18,
-        //     claimableReservesRemaining: 0,
-        //     auctionPrice:               0,
-        //     timeRemaining:              0
-        // });
+        _assertReserveAuction({
+            reserves:                   50.097131299098677341 * 1e18,
+            claimableReserves :         49.846879387717917230 * 1e18,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });
 
         // assert attacker's balances
         // attacker does not profit in QT
