@@ -968,14 +968,12 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             })
         );
 
-
         _settle({
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    11,
             settledDebt: 106.339800629932799697 * 1e18
         });
-        // FIXME: still have 15.987308394039922868 debt, but was expecting full settlement
 
         _assertBorrower({
             borrower:                  _borrower,
