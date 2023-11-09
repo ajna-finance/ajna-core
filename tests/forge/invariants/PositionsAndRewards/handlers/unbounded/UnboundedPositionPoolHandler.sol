@@ -233,7 +233,6 @@ abstract contract UnboundedPositionPoolHandler is UnboundedBasePositionHandler, 
             bucketCollateral,
             bucketDeposit,
             lp,
-            bucketDeposit,
             _priceAt(index)
         );
     }

@@ -4,6 +4,7 @@ pragma solidity 0.8.18;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { Math }           from '@openzeppelin/contracts/utils/math/Math.sol';
+import { SafeCast }       from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import { PoolType } from '../../interfaces/pool/IPool.sol';
 
@@ -569,14 +570,14 @@ library TakerActions {
     ) internal {
         if (vars.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
-            liquidation_.bondSize                 += uint160(vars.bondChange);
+            liquidation_.bondSize                 += SafeCast.toUint160(vars.bondChange);
             auctions_.kickers[vars.kicker].locked += vars.bondChange;
             auctions_.totalBondEscrowed           += vars.bondChange;
         } else {
             // take is above neutralPrice, Kicker is penalized
             vars.bondChange = Maths.min(liquidation_.bondSize, vars.bondChange);
 
-            liquidation_.bondSize                 -= uint160(vars.bondChange);
+            liquidation_.bondSize                 -= SafeCast.toUint160(vars.bondChange);
             auctions_.kickers[vars.kicker].locked -= vars.bondChange;
             auctions_.totalBondEscrowed           -= vars.bondChange;
         }
@@ -653,7 +654,7 @@ library TakerActions {
             // take is above neutralPrice, Kicker is penalized
             vars.bondChange = Maths.min(liquidation_.bondSize, vars.bondChange);
 
-            liquidation_.bondSize -= uint160(vars.bondChange);
+            liquidation_.bondSize -= SafeCast.toUint160(vars.bondChange);
 
             auctions_.kickers[vars.kicker].locked -= vars.bondChange;
             auctions_.totalBondEscrowed           -= vars.bondChange;

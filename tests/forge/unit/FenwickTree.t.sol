@@ -152,6 +152,24 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(_tree.valueAt(3_700), 0);
     }
 
+    function testFenwickOutOfBoundsBehavior() external {
+        uint depositAmount = 3 * 1e18;
+
+        // set up a tree with 100 deposit in each bucket
+        for (uint256 i; i < MAX_FENWICK_INDEX; i++) {
+            _tree.add(i, depositAmount);
+        }
+
+        // try sum of bottom bucket
+        assertEq(_tree.prefixSum(0), depositAmount);
+        assertEq(_tree.prefixSum(1), 2 * depositAmount);
+
+        // try a prefixSum above SIZE
+        assertEq(_tree.prefixSum(MAX_INDEX + 1), depositAmount * MAX_FENWICK_INDEX);
+        // CAUTION: this will cause infinite loop
+        // assertEq(_tree.prefixSum(8192 + 1), depositAmount * MAX_FENWICK_INDEX);
+    }
+
     /**
      *  @notice Fuzz tests additions and scaling values, testing findSum.
      */

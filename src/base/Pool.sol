@@ -5,6 +5,7 @@ pragma solidity 0.8.18;
 import { Clone }           from '@clones/Clone.sol';
 import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import { Multicall }       from '@openzeppelin/contracts/utils/Multicall.sol';
+import { SafeCast }        from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { SafeERC20 }       from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 }          from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -684,13 +685,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // update pool inflator
         if (poolState_.isNewInterestAccrued) {
-            inflatorState.inflator       = uint208(poolState_.inflator);
-            inflatorState.inflatorUpdate = uint48(block.timestamp);
+            inflatorState.inflator       = SafeCast.toUint208(poolState_.inflator);
+            inflatorState.inflatorUpdate = SafeCast.toUint48(block.timestamp);
         // if the debt in the current pool state is 0, also update the inflator and inflatorUpdate fields in inflatorState
         // slither-disable-next-line incorrect-equality
         } else if (poolState_.debt == 0) {
-            inflatorState.inflator       = uint208(Maths.WAD);
-            inflatorState.inflatorUpdate = uint48(block.timestamp);
+            inflatorState.inflator       = SafeCast.toUint208(Maths.WAD);
+            inflatorState.inflatorUpdate = SafeCast.toUint48(block.timestamp);
         }
     }
 

@@ -226,7 +226,6 @@ import { Maths }   from '../internal/Maths.sol';
      *  @param  bucketCollateral_ Amount of collateral in bucket.
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
      *  @param  lenderLPBalance_  The amount of `LP` to calculate quote token amount for.
-     *  @param  maxQuoteToken_    The max quote token amount to calculate `LP` for.
      *  @param  bucketPrice_      Bucket's price.
      *  @return quoteTokenAmount_ Amount of quote tokens calculated for the given `LP` amount, capped at available bucket deposit.
      */
@@ -235,7 +234,6 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 bucketCollateral_,
         uint256 deposit_,
         uint256 lenderLPBalance_,
-        uint256 maxQuoteToken_,
         uint256 bucketPrice_
     ) pure returns (uint256 quoteTokenAmount_) {
         quoteTokenAmount_ = Buckets.lpToQuoteTokens(
@@ -247,8 +245,7 @@ import { Maths }   from '../internal/Maths.sol';
             Math.Rounding.Down
         );
 
-        if (quoteTokenAmount_ > deposit_)       quoteTokenAmount_ = deposit_;
-        if (quoteTokenAmount_ > maxQuoteToken_) quoteTokenAmount_ = maxQuoteToken_;
+        if (quoteTokenAmount_ > deposit_) quoteTokenAmount_ = deposit_;
     }
 
     /**
