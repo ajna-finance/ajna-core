@@ -504,12 +504,36 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             timeRemaining:              0
         });
 
+        _assertBucket({
+            index:        4156,
+            lpBalance:    100.000000000000000000 * 1e18,
+            collateral:   0 * 1e18,
+            deposit:      100.003881020291323700 * 1e18,
+            exchangeRate: 1.000038810202913237 * 1e18
+        });
+
         // 2b. Call settle
         _settle({
             from:        _attacker,
             borrower:    _attacker,
             maxDepth:    10,
             settledDebt: 450_320.816042659448546281 * 1e18
+        });
+
+        _assertBucket({
+            index:        4156,
+            lpBalance:    100.000000000000000000 * 1e18,
+            collateral:   0 * 1e18,
+            deposit:      100.003881020291323700 * 1e18,
+            exchangeRate: 1.000038810202913237 * 1e18
+        });
+
+        _assertBucket({
+            index:        3231,
+            lpBalance:    1_498_989.686783178433983167 * 1e18,
+            collateral:   10_400.000000000000000000 * 1e18,
+            deposit:      32.571937031713956323 * 1e18,
+            exchangeRate: 0.699608871907005698 * 1e18
         });
 
         _assertBucket({
