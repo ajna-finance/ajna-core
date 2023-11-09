@@ -27,7 +27,6 @@ import {
 import {
     MAX_INFLATED_PRICE,
     _bondParams,
-    _bpf,
     _claimableReserves,
     _isCollateralized,
     _priceAt,
