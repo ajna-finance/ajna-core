@@ -353,9 +353,11 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             buckets,
             deposits,
             loans,
+            reserveAuction,
             poolState,
             SettleParams({
                 borrower:    borrowerAddress_,
+                poolBalance: _getNormalizedPoolQuoteTokenBalance(),
                 bucketDepth: maxDepth_
             })
         );

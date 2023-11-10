@@ -25,7 +25,8 @@ import {
     _indexOf,
     _priceAt,
     MAX_FENWICK_INDEX,
-    MIN_PRICE
+    MIN_PRICE,
+    DEPOSIT_BUFFER   
 }  from '../helpers/PoolHelper.sol';
 
 import { Buckets }  from '../internal/Buckets.sol';
@@ -85,7 +86,8 @@ library SettlerActions {
      *  @notice See `IPoolSettlerActions` for descriptions.
      *  @notice Settles the debt of the given loan / borrower by performing following steps:
      *          1. settle debt with `HPB`s deposit, up to specified buckets depth.
-     *          2. forgive bad debt from next `HPB`, up to remaining buckets depth (and if there's still debt after step 1).
+     *          2. settle debt with pool reserves (if there's still debt and no collateral left after step 1).
+     *          3. forgive bad debt from next `HPB`, up to remaining buckets depth (and if there's still debt after step 2).
      *  @dev    === Write state ===
      *  @dev    update borrower state
      *  @dev    === Reverts on ===
@@ -100,6 +102,7 @@ library SettlerActions {
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
         LoansState storage loans_,
+        ReserveAuctionState storage reserveAuction_,
         PoolState calldata poolState_,
         SettleParams memory params_
     ) external returns (SettleResult memory result_) {
@@ -128,14 +131,30 @@ library SettlerActions {
         );
 
         if (borrower.t0Debt != 0 && borrower.collateral == 0) {
-            // 2. forgive bad debt from next HPB
-            borrower.t0Debt = _forgiveBadDebt(
-                buckets_,
-                deposits_,
-                params_,
-                borrower,
-                poolState_.inflator
-            );
+            // 2. settle debt with pool reserves
+            uint256 assets = Maths.floorWmul(poolState_.t0Debt - result_.t0DebtSettled + borrower.t0Debt, poolState_.inflator) + params_.poolBalance;
+
+            uint256 liabilities =
+                // require 1.0 + 1e-9 deposit buffer (extra margin) for deposits
+                Maths.wmul(DEPOSIT_BUFFER, Deposits.treeSum(deposits_)) +
+                auctions_.totalBondEscrowed +
+                reserveAuction_.unclaimed;
+
+            // settle debt from reserves (assets - liabilities) if reserves positive, round reserves down however
+            if (assets > liabilities) {
+                borrower.t0Debt -= Maths.min(borrower.t0Debt, Maths.floorWdiv(assets - liabilities, poolState_.inflator));
+            }
+
+            // 3. forgive bad debt from next HPB
+            if (borrower.t0Debt != 0) {
+                borrower.t0Debt = _forgiveBadDebt(
+                    buckets_,
+                    deposits_,
+                    params_,
+                    borrower,
+                    poolState_.inflator
+                );
+            }
         }
 
         // complete result struct with debt settled

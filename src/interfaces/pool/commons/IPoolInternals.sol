@@ -23,6 +23,7 @@ struct KickResult {
 struct SettleParams {
     address borrower;    // borrower address to settle
     uint256 bucketDepth; // number of buckets to use when settle debt
+    uint256 poolBalance; // current pool quote token balance
 }
 
 /// @dev Struct used to return result of `SettlerAction.settlePoolDebt` action.
