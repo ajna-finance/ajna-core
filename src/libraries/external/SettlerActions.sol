@@ -22,7 +22,7 @@ import {
 
 import {
     _auctionPrice,
-    _indexOf,
+   _indexOf,
     _priceAt,
     MAX_FENWICK_INDEX,
     MIN_PRICE,
@@ -141,8 +141,16 @@ library SettlerActions {
                 reserveAuction_.unclaimed;
 
             // settle debt from reserves (assets - liabilities) if reserves positive, round reserves down however
+            // capped at half of the origination fee rate, based on current book fees
             if (assets > liabilities) {
-                borrower.t0Debt -= Maths.min(borrower.t0Debt, Maths.floorWdiv(assets - liabilities, poolState_.inflator));
+                uint256 t0ReserveSettleAmount = Maths.min(Maths.floorWdiv(assets - liabilities, poolState_.inflator), borrower.t0Debt);
+
+                // if auction has not expired, settle up to the borrower reserve limit
+                if((block.timestamp - kickTime < 72 hours) && (Deposits.treeSum(deposits_) > 0)) {
+                    t0ReserveSettleAmount = Maths.min(t0ReserveSettleAmount, borrower.t0ReserveSettleAmount);
+                    borrower.t0ReserveSettleAmount -= t0ReserveSettleAmount;
+                }
+                borrower.t0Debt -= t0ReserveSettleAmount;
             }
 
             // 3. forgive bad debt from next HPB
