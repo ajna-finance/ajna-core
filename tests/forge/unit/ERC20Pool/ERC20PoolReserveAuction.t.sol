@@ -272,4 +272,45 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         assertEq(_availableQuoteToken(), initialAvailableAmount - claimableTokens);
     }
 
+    function testReserveAuctionUnsettledLiquidation() external {
+        // add reserves to the pool
+        changePrank(_actor2);
+        _quote.transfer(address(_pool), 1_000 * 1e18);
+        _assertReserveAuction({
+            reserves:                   1_000 * 1e18,
+            claimableReserves :         1_000 * 1e18,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });
+        skip(2 hours);
+
+        // create an unsettled liquidation
+        _addInitialLiquidity({
+            from:   _actor2,
+            amount: 12_000 * 1e18,
+            index:  _i100_33
+        });
+        _drawDebt({
+            from:               _actor3,
+            borrower:           _actor3,
+            amountToBorrow:     8_000 * 1e18,
+            limitIndex:         _i100_33,
+            collateralToPledge: 100 * 1e18,
+            newLup:             _p100_33
+        });
+        _lenderKick({
+            from:       _actor2,
+            index:      _i100_33,
+            borrower:   _actor3,
+            debt:       8_007.692307692307696000 * 1e18,
+            collateral: 100 * 1e18,
+            bond:       121.559490945280037502 * 1e18
+        });
+        skip(73 hours);
+
+        // confirm reserve auction may not be kicked
+        _assertReserveAuctionUnsettledLiquidation();
+    }
+
 }

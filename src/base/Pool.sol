@@ -406,10 +406,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @dev    update `reserveAuction.latestBurnEventEpoch` and burn event `timestamp` state
      *  @dev    === Reverts on ===
      *  @dev    2 weeks not passed `ReserveAuctionTooSoon()`
+     *  @dev    unsettled liquidation `AuctionNotCleared()`
      *  @dev    === Emit events ===
      *  @dev    - `KickReserveAuction`
      */
     function kickReserveAuction() external override nonReentrant {
+        _revertIfAuctionClearable(auctions, loans);
+
         // start a new claimable reserve auction, passing in relevant parameters such as the current pool size, debt, balance, and inflator value
         KickerActions.kickReserveAuction(
             auctions,
