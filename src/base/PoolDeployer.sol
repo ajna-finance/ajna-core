@@ -77,6 +77,7 @@ abstract contract PoolDeployer {
      * @notice Returns the list of all deployed pools.
      * @dev    This function is used by integrations to access deployed pools.
      * @dev    Each factory implementation maintains its own list of deployed pools.
+     * @dev    This method should only be used by off-chain integrations.
      * @return List of all deployed pools.
      */
     function getDeployedPoolsList() external view returns (address[] memory) {
