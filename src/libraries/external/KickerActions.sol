@@ -27,7 +27,6 @@ import {
 import {
     MAX_INFLATED_PRICE,
     _bondParams,
-    _bpf,
     _claimableReserves,
     _isCollateralized,
     _priceAt,
@@ -333,6 +332,9 @@ library KickerActions {
             vars.referencePrice,
             vars.neutralPrice
         );
+
+        // store borrower Threshold price
+        liquidation.thresholdPrice = Maths.wdiv(vars.borrowerDebt, vars.borrowerCollateral);
 
         // update escrowed bonds balances and get the difference needed to cover bond (after using any kick claimable funds if any)
         kickResult_.amountToCoverBond = _updateEscrowedBonds(auctions_, vars.bondSize);

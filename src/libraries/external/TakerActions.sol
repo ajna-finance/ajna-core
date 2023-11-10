@@ -345,7 +345,6 @@ library TakerActions {
         vars_ = _prepareTake(
             liquidation,
             borrower_.t0Debt,
-            borrower_.collateral,
             params_.inflator
         );
 
@@ -428,7 +427,6 @@ library TakerActions {
         vars_= _prepareTake(
             liquidation,
             borrower_.t0Debt,
-            borrower_.collateral,
             params_.inflator
         );
 
@@ -681,14 +679,12 @@ library TakerActions {
      *              - loan is not in auction NoAuction()
      *  @param  liquidation_ Liquidation struct holding auction details.
      *  @param  t0Debt_      Borrower t0 debt.
-     *  @param  collateral_  Borrower collateral.
      *  @param  inflator_    The pool's inflator, used to calculate borrower debt.
      *  @return vars         The prepared vars for take action.
      */
     function _prepareTake(
         Liquidation memory liquidation_,
         uint256 t0Debt_,
-        uint256 collateral_,
         uint256 inflator_
     ) internal view returns (TakeLocalVars memory vars) {
 
@@ -704,8 +700,7 @@ library TakerActions {
         vars.auctionPrice = _auctionPrice(liquidation_.referencePrice, kickTime);
         vars.bondFactor   = liquidation_.bondFactor;
         vars.bpf          = _bpf(
-            vars.borrowerDebt,
-            collateral_,
+            liquidation_.thresholdPrice,
             neutralPrice,
             liquidation_.bondFactor,
             vars.auctionPrice

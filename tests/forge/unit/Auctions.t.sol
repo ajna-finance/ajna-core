@@ -14,13 +14,14 @@ contract AuctionsTest is DSTestPlus {
         uint256 collateral = 1000 * 1e18;
         uint256 neutralPrice = 15 * 1e18;
         uint256 bondFactor = 0.1 *  1e18;
+        uint256 thresholdPrice = Maths.wdiv(debt, collateral);
 
-        assertEq(_bpf(debt, collateral, neutralPrice, bondFactor, price),             0.1 * 1e18);
-        assertEq(_bpf(9000 * 1e18, collateral, neutralPrice, bondFactor, price),      0.083333333333333333 * 1e18);
-        assertEq(_bpf(debt, collateral, neutralPrice, bondFactor, 9.5 * 1e18),        0.1 * 1e18);
-        assertEq(_bpf(9000 * 1e18, collateral, neutralPrice, bondFactor, 9.5 * 1e18), 0.091666666666666667 * 1e18);
-        assertEq(_bpf(9000 * 1e18, collateral, 10 * 1e18, bondFactor, 10.5 * 1e18),   -0.05 * 1e18);
-        assertEq(_bpf(debt, collateral, 5 * 1e18, bondFactor, 10.5 * 1e18),           -0.1 * 1e18);
+        assertEq(_bpf(Maths.wdiv(debt, collateral), neutralPrice, bondFactor, price),             0.1 * 1e18);
+        assertEq(_bpf(Maths.wdiv(9000 * 1e18, collateral), neutralPrice, bondFactor, price),      0.083333333333333333 * 1e18);
+        assertEq(_bpf(Maths.wdiv(debt, collateral), neutralPrice, bondFactor, 9.5 * 1e18),        0.1 * 1e18);
+        assertEq(_bpf(Maths.wdiv(9000 * 1e18, collateral), neutralPrice, bondFactor, 9.5 * 1e18), 0.091666666666666667 * 1e18);
+        assertEq(_bpf(Maths.wdiv(9000 * 1e18, collateral), 10 * 1e18, bondFactor, 10.5 * 1e18),   -0.05 * 1e18);
+        assertEq(_bpf(Maths.wdiv(debt, collateral), 5 * 1e18, bondFactor, 10.5 * 1e18),           -0.1 * 1e18);
     }
 
     /**
