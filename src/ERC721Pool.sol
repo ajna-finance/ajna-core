@@ -11,6 +11,7 @@ import {
     IPoolSettlerActions
 }                           from './interfaces/pool/IPool.sol';
 import {
+    AddCollateralParams,
     DrawDebtResult,
     RepayDebtResult,
     SettleParams,
@@ -294,8 +295,11 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         bucketLP_ = LenderActions.addCollateral(
             buckets,
             deposits,
-            Maths.wad(tokenIds_.length),
-            index_
+            AddCollateralParams({
+                amount: Maths.wad(tokenIds_.length),
+                index:  index_,
+                rate:   poolState.rate
+            })
         );
 
         emit AddCollateralNFT(msg.sender, index_, tokenIds_, bucketLP_);

@@ -5,6 +5,7 @@ pragma solidity 0.8.18;
 import { Math } from '@openzeppelin/contracts/utils/math/Math.sol';
 
 import {
+    AddCollateralParams,
     AddQuoteParams,
     MoveQuoteParams,
     RemoveQuoteParams
@@ -108,24 +109,25 @@ library LenderActions {
     function addCollateral(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
-        uint256 collateralAmountToAdd_,
-        uint256 index_
+        AddCollateralParams calldata params_
     ) external returns (uint256 bucketLP_) {
         // revert if no amount to be added
-        if (collateralAmountToAdd_ == 0) revert InvalidAmount();
+        if (params_.amount == 0) revert InvalidAmount();
         // revert if adding at invalid index
-        if (index_ == 0 || index_ > MAX_FENWICK_INDEX) revert InvalidIndex();
+        if (params_.index == 0 || params_.index > MAX_FENWICK_INDEX) revert InvalidIndex();
 
-        uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
-        uint256 bucketPrice   = _priceAt(index_);
+        uint256 bucketDeposit = Deposits.valueAt(deposits_, params_.index);
+        uint256 bucketPrice   = _priceAt(params_.index);
 
         bucketLP_ = Buckets.addCollateral(
-            buckets_[index_],
+            buckets_[params_.index],
             msg.sender,
             bucketDeposit,
-            collateralAmountToAdd_,
+            params_.amount,
             bucketPrice
         );
+        // charge a fee which impacts buckets with deposit
+        bucketLP_ = Maths.wmul(bucketLP_, Maths.WAD - _depositFeeRate(params_.rate));
 
         // revert if (due to rounding) the awarded LP is 0
         if (bucketLP_ == 0) revert InsufficientLP();

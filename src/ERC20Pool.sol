@@ -25,6 +25,7 @@ import {
 }                            from './interfaces/pool/IERC3156FlashLender.sol';
 
 import {
+    AddCollateralParams,
     DrawDebtResult,
     RepayDebtResult,
     SettleParams,
@@ -283,8 +284,11 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         bucketLP_ = LenderActions.addCollateral(
             buckets,
             deposits,
-            amountToAdd_,
-            index_
+            AddCollateralParams({
+                amount: amountToAdd_,
+                index:  index_,
+                rate:   poolState.rate
+            })
         );
 
         emit AddCollateral(msg.sender, index_, amountToAdd_, bucketLP_);

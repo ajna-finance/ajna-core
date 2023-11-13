@@ -73,6 +73,13 @@ struct AddQuoteParams {
     bool    revertIfBelowLup; // revert tx if index in which to deposit is below LUP
 }
 
+/// @dev Struct used to hold parameters for `LenderAction.addCollateral` action.
+struct AddCollateralParams {
+    uint256 amount;           // [WAD] amount to be added
+    uint256 index;            // identifies bucket in which collateral will be placed
+    uint256 rate;             // pool rate used for calculating amount of LP to award
+}
+
 /// @dev Struct used to hold parameters for `LenderAction.moveQuoteToken` action.
 struct MoveQuoteParams {
     uint256 fromIndex;        // the deposit index from where amount is moved
