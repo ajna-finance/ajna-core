@@ -123,11 +123,10 @@ library LenderActions {
             buckets_[params_.index],
             msg.sender,
             bucketDeposit,
-            params_.amount,
+            // charge a fee which impacts buckets with deposit
+            Maths.wmul(params_.amount, Maths.WAD - _depositFeeRate(params_.rate)),
             bucketPrice
         );
-        // charge a fee which impacts buckets with deposit
-        bucketLP_ = Maths.wmul(bucketLP_, Maths.WAD - _depositFeeRate(params_.rate));
 
         // revert if (due to rounding) the awarded LP is 0
         if (bucketLP_ == 0) revert InsufficientLP();
