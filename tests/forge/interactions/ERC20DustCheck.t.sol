@@ -64,22 +64,20 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         _ajnaPool.addQuoteToken(30_000 * 1e18, 3704, type(uint256).max, false);
         vm.stopPrank();
 
-    }
-
-    function testRemoveQuoteDust() external {
- 
         (
-            uint256 price_,
+            ,
             uint256 quoteTokens_,
-            uint256 collateral_,
+            ,
             uint256 bucketLP_,
-            uint256 scale_,
-            uint256 exchangeRate_
+            ,
         ) = _poolUtils.bucketInfo(address(_ajnaPool), 3696);
 
         assertEq(bucketLP_, 2_000 * 1e18);
         assertEq(quoteTokens_, 2_000 * 1e18);
 
+    }
+
+    function testRemoveQuoteDust() external {
         // call reverts as lender is attempting to leave dust amount in bucket -> 1
         vm.startPrank(_lender);
         vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
@@ -92,9 +90,9 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
 
         (
             ,
-            quoteTokens_,
+            uint256 quoteTokens_,
             ,
-            bucketLP_,
+            uint256 bucketLP_,
             ,
             
         ) = _poolUtils.bucketInfo(address(_ajnaPool), 3696);
@@ -104,19 +102,6 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
     }
 
     function testMoveQuoteDust() external {
- 
-        (
-            uint256 price_,
-            uint256 quoteTokens_,
-            uint256 collateral_,
-            uint256 bucketLP_,
-            uint256 scale_,
-            uint256 exchangeRate_
-        ) = _poolUtils.bucketInfo(address(_ajnaPool), 3696);
-
-        assertEq(bucketLP_, 2_000 * 1e18);
-        assertEq(quoteTokens_, 2_000 * 1e18);
-
         // call reverts as lender is attempting to leave dust amount in bucket -> 1
         vm.startPrank(_lender);
         vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
@@ -134,9 +119,9 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
 
         (
             ,
-            quoteTokens_,
+            uint256 quoteTokens_,
             ,
-            bucketLP_,
+            uint256 bucketLP_,
             ,
             
         ) = _poolUtils.bucketInfo(address(_ajnaPool), 3701);
