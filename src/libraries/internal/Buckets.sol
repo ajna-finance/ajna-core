@@ -58,14 +58,15 @@ library Buckets {
             bucketPrice_,
             Math.Rounding.Down
         );
-        // update bucket LP balance and collateral
 
-        // update bucket collateral
+        // update bucket LP balance and collateral
         bucket_.collateral += collateralAmountToAdd_;
-        // update bucket and lender LP balance and deposit timestamp
-        if (feeRate_ != 0) addedLP_ = Maths.wmul(addedLP_, Maths.WAD - feeRate_);
+        if (feeRate_ != 0) {
+            addedLP_ = Maths.wmul(addedLP_, Maths.WAD - feeRate_);
+        }
         bucket_.lps += addedLP_;
 
+        // update bucket and lender LP balance and deposit timestamp
         addLenderLP(bucket_, bankruptcyTime, lender_, addedLP_);
     }
 

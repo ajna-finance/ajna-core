@@ -255,7 +255,14 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         lendersDepositedIndex[from].add(index);
         bucketsUsed.add(index); 
 
-        return ERC20Pool(address(_pool)).addCollateral(amount, index, type(uint256).max);
+        uint256 lpAdded = ERC20Pool(address(_pool)).addCollateral(amount, index, type(uint256).max);
+        assertEq(lpAdded, lpAward);
+
+        (, , , uint256 lpAccumulator, , ) = _poolUtils.bucketInfo(address(_pool), index);
+        assertGe(lpAccumulator, lpAdded);
+        _validateBucketLp(index, lpAccumulator);
+
+        return lpAdded;
     }
 
     function _addCollateralWithoutCheckingLP(
