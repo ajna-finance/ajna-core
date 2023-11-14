@@ -674,7 +674,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint16  fromBucketId_,
         uint16  toBucketId_,
         uint256 amountToMove_
-    ) external tearDown {
+    ) external {
         // setup fuzzy bounds and initialize the pool
         uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1, 18);
@@ -702,7 +702,23 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             return;
         }
 
-        if (amountToMove != 0 && amountToMove < _quoteDust) {
+        if (amountToMove < _quoteDust) {
+
+            _assertMoveLiquidityDustRevert({
+                from:      _lender,
+                amount:    amountToMove,
+                fromIndex: fromBucketId,
+                toIndex:   toBucketId
+            });
+
+            return;
+        }
+
+        // if fromBucket deposit - amount to move < _quoteDust
+        (, uint256 deposit,, uint256 lps,,) = _poolUtils.bucketInfo(address(_pool), fromBucketId);
+
+
+        if (deposit > amountToMove && deposit - amountToMove < _quoteDust) {
             _assertMoveLiquidityDustRevert({
                 from:      _lender,
                 amount:    amountToMove,
@@ -724,7 +740,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         });
 
         // validate from and to buckets have appropriate amounts of deposit and LP
-        (, uint256 deposit,, uint256 lps,,) = _poolUtils.bucketInfo(address(_pool), fromBucketId);
+        (, deposit,, lps,,) = _poolUtils.bucketInfo(address(_pool), fromBucketId);
         uint256 remaining = _lenderDepositNormalized - amountToMove;
 
         assertEq(deposit, remaining);

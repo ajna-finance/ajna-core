@@ -28,8 +28,8 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
     }
 
     function testValidateMoveQuoteTokenInput() external tearDown {
-        // revert on zero amount
-        vm.expectRevert(IPoolErrors.InvalidAmount.selector);
+        // revert on innsufficientLiquidity amount if none in bucket
+        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
         _pool.moveQuoteToken(0, 1, 2, block.timestamp + 1, false);
         // revert on move to same index
         vm.expectRevert(IPoolErrors.MoveToSameIndex.selector);

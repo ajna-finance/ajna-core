@@ -22,9 +22,9 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         _pool.addQuoteToken(1000, MAX_FENWICK_INDEX + 1, block.timestamp + 1, false);
     }
 
-    function testValidateMoveQuoteTokenInput() external tearDown {
-        // revert on zero amount
-        vm.expectRevert(IPoolErrors.InvalidAmount.selector);
+    function testValidateMoveQuoteTokenInput() external {
+        // revert on innsufficientLiquidity amount if none in bucket
+        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
         _pool.moveQuoteToken(0, 1, 2, block.timestamp + 1, false);
         // revert on move to same index
         vm.expectRevert(IPoolErrors.MoveToSameIndex.selector);
