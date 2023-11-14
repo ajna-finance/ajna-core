@@ -124,7 +124,8 @@ library LenderActions {
             msg.sender,
             bucketDeposit,
             // charge a fee which impacts buckets with deposit
-            Maths.wmul(params_.amount, Maths.WAD - _depositFeeRate(params_.rate)),
+            params_.amount,
+            _depositFeeRate(params_.rate),
             bucketPrice
         );
 
@@ -637,6 +638,7 @@ library LenderActions {
                 msg.sender,
                 toBucketDeposit,
                 collateralToMerge_,
+                0,
                 toBucketPrice
             );
 

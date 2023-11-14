@@ -239,6 +239,7 @@ library SettlerActions {
                     borrowerAddress_,
                     Deposits.valueAt(deposits_, bucketIndex),
                     compensatedCollateral_,
+                    0,
                     _priceAt(bucketIndex)
                 );
             }
@@ -414,6 +415,7 @@ library SettlerActions {
                     params_.borrower,
                     0,  // zero deposit in bucket
                     remainingCollateral_,
+                    0,
                     vars.price
                 );
                 // entire collateral added into bucket, no borrower pledged collateral remaining

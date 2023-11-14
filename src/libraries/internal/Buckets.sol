@@ -33,6 +33,7 @@ library Buckets {
      *  @param  lender_                Address of the lender.
      *  @param  deposit_               Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
      *  @param  collateralAmountToAdd_ Additional collateral amount to add to bucket.
+     *  @param  feeRate_               Discounts the `LP` awarded.
      *  @param  bucketPrice_           Bucket price.
      *  @return addedLP_               Amount of bucket `LP` for the collateral amount added.
      */
@@ -41,6 +42,7 @@ library Buckets {
         address lender_,
         uint256 deposit_,
         uint256 collateralAmountToAdd_,
+        uint256 feeRate_,
         uint256 bucketPrice_
     ) internal returns (uint256 addedLP_) {
         // cannot deposit in the same block when bucket becomes insolvent
@@ -61,6 +63,7 @@ library Buckets {
         // update bucket collateral
         bucket_.collateral += collateralAmountToAdd_;
         // update bucket and lender LP balance and deposit timestamp
+        if (feeRate_ != 0) addedLP_ = Maths.wmul(addedLP_, Maths.WAD - feeRate_);
         bucket_.lps += addedLP_;
 
         addLenderLP(bucket_, bankruptcyTime, lender_, addedLP_);
