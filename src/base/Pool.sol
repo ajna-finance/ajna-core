@@ -562,19 +562,23 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
             // if new interest may have accrued, call accrueInterest function and update inflator and debt fields of poolState_ struct
             if (poolState_.isNewInterestAccrued) {
-                (uint256 newInflator, uint256 newInterest) = PoolCommons.accrueInterest(
+                try PoolCommons.accrueInterest(
                     emaState,
                     deposits,
                     poolState_,
                     Loans.getMax(loans).thresholdPrice,
                     elapsed
-                );
-                poolState_.inflator = newInflator;
-                // After debt owed to lenders has accrued, calculate current debt owed by borrowers
-                poolState_.debt = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
+                ) returns (uint256 newInflator, uint256 newInterest) {
+                    poolState_.inflator = newInflator;
+                    // After debt owed to lenders has accrued, calculate current debt owed by borrowers
+                    poolState_.debt = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
 
-                // update total interest earned accumulator with the newly accrued interest
-                reserveAuction.totalInterestEarned += newInterest;
+                    // update total interest earned accumulator with the newly accrued interest
+                    reserveAuction.totalInterestEarned += newInterest;
+                } catch {
+                    poolState_.isNewInterestAccrued = false;
+                    emit InterestUpdateFailure();
+                }
             }
         }
     }
@@ -680,8 +684,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState_,
         uint256 lup_
     ) internal {
-
-        PoolCommons.updateInterestState(interestState, emaState, deposits, poolState_, lup_);
+        try PoolCommons.updateInterestState(interestState, emaState, deposits, poolState_, lup_) {} catch {
+            emit InterestUpdateFailure();
+        }
 
         // update pool inflator
         if (poolState_.isNewInterestAccrued) {
