@@ -373,7 +373,7 @@ import { Maths }   from '../internal/Maths.sol';
      *  @param collateral_   Borrower collateral.
      *  @param neutralPrice_ `NP` of auction.
      *  @param bondFactor_   Factor used to determine bondSize.
-     *  @param auctionPrice_ Auction price at the time of call.
+     *  @param auctionPrice_ Auction price at the time of call or, for bucket takes, bucket price.
      *  @return bpf_         Factor used in determining bond `reward` (positive) or `penalty` (negative).
      */
     function _bpf(

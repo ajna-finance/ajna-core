@@ -345,6 +345,7 @@ library TakerActions {
 
         vars_ = _prepareTake(
             liquidation,
+            0,
             borrower_.t0Debt,
             borrower_.collateral,
             params_.inflator
@@ -428,6 +429,7 @@ library TakerActions {
 
         vars_= _prepareTake(
             liquidation,
+            _priceAt(params_.index),
             borrower_.t0Debt,
             borrower_.collateral,
             params_.inflator
@@ -437,8 +439,6 @@ library TakerActions {
 
         // revert if no quote tokens in arbed bucket
         if (vars_.unscaledDeposit == 0) revert InsufficientLiquidity();
-
-        vars_.bucketPrice  = _priceAt(params_.index);
 
         // cannot arb with a price lower than the auction price
         if (vars_.auctionPrice > vars_.bucketPrice) revert AuctionPriceGtBucketPrice();
@@ -681,6 +681,7 @@ library TakerActions {
      *  @dev    reverts on:
      *              - loan is not in auction NoAuction()
      *  @param  liquidation_ Liquidation struct holding auction details.
+     *  @param  bucketPrice_ Price of the bucket, or 0 for non-bucket takes.
      *  @param  t0Debt_      Borrower t0 debt.
      *  @param  collateral_  Borrower collateral.
      *  @param  inflator_    The pool's inflator, used to calculate borrower debt.
@@ -688,6 +689,7 @@ library TakerActions {
      */
     function _prepareTake(
         Liquidation memory liquidation_,
+        uint256 bucketPrice_,
         uint256 t0Debt_,
         uint256 collateral_,
         uint256 inflator_
@@ -703,13 +705,14 @@ library TakerActions {
         uint256 neutralPrice = liquidation_.neutralPrice;
 
         vars.auctionPrice = _auctionPrice(liquidation_.referencePrice, kickTime);
+        vars.bucketPrice = bucketPrice_;
         vars.bondFactor   = liquidation_.bondFactor;
         vars.bpf          = _bpf(
             vars.borrowerDebt,
             collateral_,
             neutralPrice,
             liquidation_.bondFactor,
-            vars.auctionPrice
+            bucketPrice_ == 0 ? vars.auctionPrice : bucketPrice_
         );
         vars.factor       = uint256(1e18 - Maths.maxInt(0, vars.bpf));
         vars.kicker       = liquidation_.kicker;
