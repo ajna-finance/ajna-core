@@ -344,7 +344,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             // Total collateral in buckets meets the requested removal amount, noOfNFTsToRemove_
             _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);
         }
-
     }
 
     /**
