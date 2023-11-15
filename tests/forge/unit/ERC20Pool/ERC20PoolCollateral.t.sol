@@ -351,21 +351,21 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:    _bidder,
             amount:  4 * 1e18,
             index:   2550,
-            lpAward: 12_043.56808879152623138 * 1e18
+            lpAward: 12_041.918284943746570417 * 1e18
         });
 
         // check bucket state and bidder's LP
         _assertBucket({
             index:        2550,
-            lpBalance:    12_043.56808879152623138 * 1e18,
+            lpBalance:    12_041.918284943746570417 * 1e18,
             collateral:   4 * 1e18,
             deposit:      0,
-            exchangeRate: 1 * 1e18
+            exchangeRate: 1.000137005069187560 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _bidder,
             index:       2550,
-            lpBalance:   12_043.56808879152623138 * 1e18,
+            lpBalance:   12_041.918284943746570417 * 1e18,
             depositTime: _startTime
         });
 
@@ -379,21 +379,21 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:     _bidder,
             amount:   1.53 * 1e18,
             index:    2550,
-            lpRedeem: 4_606.664793962758783503 * 1e18
+            lpRedeem: 4_606.033743990983063185 * 1e18
         });
 
         // check bucket state and bidder's LP
         _assertBucket({
             index:        2550,
-            lpBalance:    7_436.903294828767447877 * 1e18,
+            lpBalance:    7_435.884540952763507232 * 1e18,
             collateral:   2.47 * 1e18,
             deposit:      0,
-            exchangeRate: 1.000000000000000001 * 1e18
+            exchangeRate: 1.000137005069187560 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _bidder,
             index:       2550,
-            lpBalance:   7_436.903294828767447877 * 1e18,
+            lpBalance:   7_435.884540952763507232 * 1e18,
             depositTime: _startTime
         });
 
@@ -407,7 +407,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:     _bidder,
             amount:   2.47 * 1e18,
             index:    2550,
-            lpRedeem: 7_436.903294828767447877 * 1e18
+            lpRedeem: 7_435.884540952763507232 * 1e18
         });
 
         // check bucket state and bidder's LP
@@ -440,28 +440,28 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:    _bidder,
             amount:  1 * 1e18,
             index:   1530,
-            lpAward: 487616.252661175041981841 * 1e18
+            lpAward: 487_549.455914235154996468 * 1e18
         });
 
         _removeCollateral({
             from:     _bidder,
             amount:   0.5 * 1e18,
             index:    1530,
-            lpRedeem: 243_808.126330587520990921 * 1e18
+            lpRedeem: 243_774.727957117577498234 * 1e18
         });
 
         // check bucket state and bidder's LP
         _assertBucket({
             index:        1530,
-            lpBalance:    243_808.126330587520990920 * 1e18,
+            lpBalance:    243_774.727957117577498234 * 1e18,
             collateral:   0.5 * 1e18,
             deposit:      0,
-            exchangeRate: 1.000000000000000001 * 1e18
+            exchangeRate: 1.000137005069187560 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _bidder,
             index:       1530,
-            lpBalance:   243_808.126330587520990920 * 1e18,
+            lpBalance:   243_774.727957117577498234 * 1e18,
             depositTime: _startTime
         });
 
@@ -475,7 +475,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:     _bidder,
             amount:   0.5 * 1e18,
             index:    1530,
-            lpRedeem: 243_808.126330587520990920 * 1e18
+            lpRedeem: 243_774.727957117577498234 * 1e18
         });
 
         // check bucket state and bidder's LP
@@ -519,7 +519,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:    _bidder,
             amount:  0.65 * 1e18,
             index:   testIndex,
-            lpAward: 0.000011611972172012 * 1e18
+            lpAward: 0.000011610381490893 * 1e18
         });
 
         // should revert if actor has no LPB in the bucket
@@ -596,7 +596,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         assertEq(_collateral.balanceOf(_borrower2), 0);
     }
 
-    function testAddRemoveCollateralBucketExchangeRateInvariantDifferentActor1() external {
+    function testAddRemoveCollateralBucketExchangeRateInvariantDifferentActor1() external tearDown {
         _mintCollateralAndApproveTokens(_lender,  50000000000 * 1e18);
 
         _addInitialLiquidity({
@@ -631,16 +631,11 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             index:   2570,
             lpAward: 9_925_733_812_003.435761983990251763 * 1e18
         });
-        // FIXME: LP balance does not match the emitted event
-        (,,uint256 availableCollateral,uint256 lpAccumulator,,) = _poolUtils.bucketInfo(address(_pool), 2570);
-        assertEq(lpAccumulator,       9_925_733_812_003.435761983990251763 * 1e18);
-        assertEq(availableCollateral, 3_642_907_759.282013932739218713 * 1e18);
-        return;
 
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2570,
-            lpBalance:   9_925_733_812_003.435761983990251459 * 1e18,
+            lpBalance:   9_925_733_812_003.435761983990251763 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -649,21 +644,20 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:   6879,
             depositTime: _startTime
         });
-        // FIXME: shouldn't LP balance be the same number as above?
         _assertBucket({
             index:        2570,
-            lpBalance:    9_925_733_812_003.435761983990251459 * 1e18,
-            collateral:   3_642_408_730.821838314442170981 * 1e18,
+            lpBalance:    9_925_733_812_003.435761983990258642 * 1e18,
+            collateral:   3_642_907_759.282013932739218713 * 1e18,
             deposit:      6879,
-            exchangeRate: 1.000000000000000001 * 1e18 // exchange rate should not change
+            exchangeRate: 1.000137005069187560 * 1e18 // exchange rate should not change
         });
-        return;
 
+        // _lender lost 1 wei collateral because of penalty on existing 6879 wei of deposit
         _removeAllCollateral({
             from:     _lender,
-            amount:   3_642_907_759.282013932739218713 * 1e18,
+            amount:   3_642_907_759.282013932739218712 * 1e18,
             index:    2570,
-            lpRedeem: 9_927_093_687_851.086595628225711616 * 1e18
+            lpRedeem: 9_925_733_812_003.435761983990251763 * 1e18
         });
 
         _assertLenderLpBalance({
@@ -716,28 +710,28 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:    _lender,
             amount:  3642907759.282013932739218713 * 1e18,
             index:   2570,
-            lpAward: 9927093687851.086595628225711616 * 1e18
+            lpAward: 9_925_733_812_003.435761983990251763 * 1e18
         });
 
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2570,
-            lpBalance:   9_927_093_687_851.086595628225718495 * 1e18,
+            lpBalance:   9_925_733_812_003.435761983990258642 * 1e18,
             depositTime: _startTime
         });
         _assertBucket({
             index:        2570,
-            lpBalance:    9_927_093_687_851.086595628225718495 * 1e18,
+            lpBalance:    9_925_733_812_003.435761983990258642 * 1e18,
             collateral:   3642907759.282013932739218713 * 1e18,
             deposit:      6879,
-            exchangeRate: 1.000000000000000001 * 1e18 // exchange rate should not change
+            exchangeRate: 1.000137005069187560 * 1e18 // exchange rate should not change
         });
 
         _removeAllCollateral({
             from:     _lender,
             amount:   3642907759.282013932739218713 * 1e18,
             index:    2570,
-            lpRedeem: 9927093687851.086595628225711617 * 1e18
+            lpRedeem: 9_925_733_812_003.435761983990251764 * 1e18
         });
 
         _assertLenderLpBalance({
@@ -1009,9 +1003,9 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:    _bidder,
             amount:  15200,
             index:   2570,
-            lpAward: 41420710
+            lpAward: 41415036
         });
-        _addInitialLiquidity({
+        _addLiquidityNoEventCheck({
             from:   _lender,
             amount: 2,
             index:  2570
@@ -1020,29 +1014,29 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:    _lender,
             amount:  883_976_901_103_343_226.563974622543668416 * 1e18,
             index:   2570,
-            lpAward: 2_408_878_346_532_910_443_679.386064220627467464 * 1e18
+            lpAward: 2_408_218_370_995_772_340_796.891751636846667129 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2570,
-            lpBalance:   2_408_878_346_532_910_443_679.386064220627467466 * 1e18,
+            lpBalance:   2_408_218_370_995_772_340_796.89175163684666713 * 1e18,
             depositTime: _startTime
         });
 
+        // _lender lost 3 wei of collateral due to penalty
         _removeAllCollateral({
             from:     _lender,
-            amount:   883_976_901_103_343_226.563974622543668416 * 1e18,
+            amount:   883_976_901_103_343_226.563974622543668413 * 1e18,
             index:    2570,
-            lpRedeem: 2_408_878_346_532_910_443_679.386064220627467466 * 1e18
+            lpRedeem: 2_408_218_370_995_772_340_796.891751636846667130 * 1e18
         });
         _assertBucket({
             index:        2570,
-            lpBalance:    41420710,
-            collateral:   15200,
+            lpBalance:    41415036,
+            collateral:   15203,
             deposit:      2,
-            exchangeRate: 1.000000036365004509 * 1e18
+            exchangeRate: 1.000334435210884207 * 1e18
         });
-
     }
 
     function testPullBorrowerCollateralLessThanEncumberedCollateral() external {
@@ -1079,7 +1073,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         ERC20Pool(address(_pool)).repayDebt(actor, 120, 1, actor, 7388);
     }
 
-    function test_prototech_collateral_draining() external {
+    function test_prototech_collateral_draining() external tearDown {
         address victim   = makeAddr("victim");
         address attacker = makeAddr("attacker");
 
@@ -1089,25 +1083,25 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
 
         // victim will have collateral in a bucket
         _addCollateral({
-            from:    victim,                // victim address
-            amount:  1 * 1e30,              // amount to add, 1 * 1e30
-            index:   6502,                  // bucket index (with low price)
-            lpAward: 8287415.613413 * 1e18  // expected LP award, 8287415.613413 * 1e18
+            from:    victim,                              // victim address
+            amount:  1 * 1e30,                            // amount to add, 1 * 1e30
+            index:   6502,                                // bucket index (with low price)
+            lpAward: 8_286_280.351000203698743663 * 1e18  // expected LP award, 8287415.613413 * 1e18
         });
 
         // check bucket state and attacker's LP
         _assertBucket({
-            index:        6502,                     // bucket index
-            lpBalance:    8287415.613413 * 1e18,    // new bucket LP balance
-            collateral:   1 * 1e30,                 // new bucket collateral
-            deposit:      0,                        // no deposits
-            exchangeRate: 1 * 1e18                  // exchange rate is 1 WAD
+            index:        6502,                                // bucket index
+            lpBalance:    8_286_280.351000203698743663 * 1e18, // new bucket LP balance
+            collateral:   1 * 1e30,                            // new bucket collateral
+            deposit:      0,                                   // no deposits
+            exchangeRate: 1.000137005069187560 * 1e18          // exchange rate is 1 WAD
         });
         _assertLenderLpBalance({
-            lender:      victim,                    // victim address
-            index:       6502,                      // bucket index
-            lpBalance:   8287415.613413 * 1e18,     // new LP balance of victim
-            depositTime: _startTime                 // deposit time
+            lender:      victim,                              // victim address
+            index:       6502,                                // bucket index
+            lpBalance:   8_286_280.351000203698743663 * 1e18, // new LP balance of victim
+            depositTime: _startTime                           // deposit time
         });
 
         // attacker starts w/no collateral tokens
@@ -1117,17 +1111,17 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         assertEq(_collateral.balanceOf(address(_pool)), 1 * 1e30);
 
         // attacker just needs a non-zero LP balance--deposit a minimal amount of quote token
-        _addInitialLiquidity({
+        _addLiquidityNoEventCheck({
             from:   attacker,
-            amount: 1,
+            amount: 2,
             index:  6502
         });
         _assertBucket({
             index:        6502,
-            lpBalance:    8287415.613413 * 1e18 + 1,  // LP balance increased with 1 LP awarded to attacker
+            lpBalance:    8_286_280.351000203698743663 * 1e18 + 1, // LP balance increased with 1 LP awarded to attacker
             collateral:   (1 * 1e30),
-            deposit:      1,                          // deposit added by attacker
-            exchangeRate: 1 * 1e18                    // still 1 WAD
+            deposit:      2,                                       // deposit added by attacker
+            exchangeRate: 1.000137005069187560 * 1e18              // still 1 WAD
         });
         _assertLenderLpBalance({
             lender:      attacker,                  // attacker address
@@ -1142,10 +1136,10 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
 
         _assertBucket({
             index:        6502,
-            lpBalance:    8287415.613413 * 1e18,       // LP balance decreased with 1 LP redeemed by attacker
-            collateral:   (1 * 1e30) - 60332,          // collateral decreased with amount removed
-            deposit:      1,                           // deposit added by attacker remains in bucket
-            exchangeRate: 1.000000000000000001 * 1e18  // still 1 WAD
+            lpBalance:    8_286_280.351000203698743663 * 1e18, // LP balance decreased with 1 LP redeemed by attacker
+            collateral:   (1 * 1e30) - 60332,                  // collateral decreased with amount removed
+            deposit:      2,                                   // deposit added by attacker remains in bucket
+            exchangeRate: 1.000137005069187560 * 1e18          // still 1 WAD
         });
         _assertLenderLpBalance({
             lender:      attacker,                 // attacker address
@@ -1168,20 +1162,20 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         vm.expectRevert(IPoolErrors.NoClaim.selector);
         _pool.removeCollateral(60332, 6502);
 
-        // victim can remove liquidity added by attacker for 1 LP redeemed
+        // victim can remove liquidity added by attacker for 2 LP redeemed
         _removeLiquidity({
             from:     victim,
-            amount:   1,
+            amount:   2,
             index:    6502,
             newLup:   MAX_PRICE,
-            lpRedeem: 1
+            lpRedeem: 2
         });
 
         _removeCollateral({
-            from:     victim,                               // victim address
-            amount:   (1 * 1e30) - 60332,                   // remaining collateral
-            index:    6502,                                 // bucket index
-            lpRedeem: 8287415.613413 * 1e18 - 1             // expected LP redeem
+            from:     victim,                                 // victim address
+            amount:   (1 * 1e30) - 60332,                     // remaining collateral
+            index:    6502,                                   // bucket index
+            lpRedeem: 8_286_280.351000203698743663 * 1e18 - 2 // expected LP redeem
         });
 
         // Some LP shares leftover due to rounding
