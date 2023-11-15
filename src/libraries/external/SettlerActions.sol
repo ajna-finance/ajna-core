@@ -146,7 +146,7 @@ library SettlerActions {
                 uint256 t0ReserveSettleAmount = Maths.min(Maths.floorWdiv(assets - liabilities, poolState_.inflator), borrower.t0Debt);
 
                 // if auction has not expired, settle up to the borrower reserve limit
-                if((block.timestamp - kickTime < 72 hours) && (Deposits.treeSum(deposits_) > 0)) {
+                if((block.timestamp - kickTime < 144 hours) && (Deposits.treeSum(deposits_) > 0)) {
                     t0ReserveSettleAmount = Maths.min(t0ReserveSettleAmount, borrower.t0ReserveSettleAmount);
                     borrower.t0ReserveSettleAmount -= t0ReserveSettleAmount;
                 }
