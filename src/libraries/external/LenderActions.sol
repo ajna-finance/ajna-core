@@ -834,7 +834,8 @@ library LenderActions {
             unscaledRemovedAmount = unscaledDepositAvailable;
         }
 
-        if (scaledDepositAvailable - removedAmount_ != 0 && (scaledDepositAvailable - removedAmount_ < params_.dustLimit)) revert DustAmountNotExceeded();
+        scaledDepositAvailable -= removedAmount_;
+        if (scaledDepositAvailable != 0 && scaledDepositAvailable < params_.dustLimit) revert DustAmountNotExceeded();
 
         unscaledRemaining_ = unscaledDepositAvailable - unscaledRemovedAmount;
 
