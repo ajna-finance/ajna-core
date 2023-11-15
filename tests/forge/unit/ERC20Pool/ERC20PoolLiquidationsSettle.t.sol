@@ -840,16 +840,16 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       _i9_91,
-            lpBalance:   149.668739373743648296 * 1e18,
+            lpBalance:   149.664337773895328797 * 1e18,
             depositTime: _startTime + 100 days + 12.5 hours + 1 hours
         });
         // bucket is healthy again
         _assertBucket({
             index:        _i9_91,
-            lpBalance:    149.668739373743648296 * 1e18,
+            lpBalance:    149.664337773895328797 * 1e18,
             collateral:   4 * 1e18,
             deposit:      110 * 1e18,
-            exchangeRate: 1 * 1e18
+            exchangeRate: 1.000029409810739077 * 1e18
         });
 
         // when moving to a bucket that was marked insolvent, the deposit time should be the greater between from bucket deposit time and insolvency time + 1
@@ -866,7 +866,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       _i9_91,
-            lpBalance:   1_000 * 1e18,
+            lpBalance:   999.970591054172454193 * 1e18,
             depositTime: _startTime + 100 days + 12.5 hours + 1 // _i9_91 bucket insolvency time + 1 (since deposit in _i9_52 from bucket was done before _i9_91 target bucket become insolvent)
         });
 
@@ -876,7 +876,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       _i9_91,
-            lpBalance:   2_000 * 1e18,
+            lpBalance:   1_999.941182108344908386 * 1e18,
             depositTime: _startTime + 100 days + 12.5 hours + 1 hours // time of deposit in _i9_52 from bucket (since deposit in _i9_52 from bucket was done after _i9_91 target bucket become insolvent)
         });
 

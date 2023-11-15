@@ -518,7 +518,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         });
     }
 
-    function testAddRemoveCollateral() external tearDown {
+    function testAddRemoveCollateral1() external tearDown {
         // lender adds some liquidity
         _addInitialLiquidity({
             from:   _lender,
@@ -540,7 +540,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             from:     _borrower,
             tokenIds: tokenIds,
             index:    1530,
-            lpAward:  975_232.505322350083963682 * 1e18
+            lpAward:  975_098.911828470309992937 * 1e18
         });
 
         // should revert if the actor does not have any LP to remove a token
@@ -562,37 +562,57 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             from:     _borrower,
             amount:   1,
             index:    1530,
-            lpRedeem: 487_616.252661175041981841 * 1e18
+            lpRedeem: 487_550.133893763632209161 * 1e18
         });
 
         _assertBucket({
             index:        1530,
-            lpBalance:    497_616.252661175041981841 * 1e18,
+            lpBalance:    497_548.777934706677783776 * 1e18,
             collateral:   Maths.wad(1),
             deposit:      10_000 * 1e18,
-            exchangeRate: 1 * 1e18
+            exchangeRate: 1.000135614294438523 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _borrower,
             index:       1530,
-            lpBalance:   487_616.252661175041981841 * 1e18,
+            lpBalance:   487_548.777934706677783776 * 1e18,
             depositTime: _startTime
         });
 
-        // remove another token
+        // due to collateral deposit penalty, should revert if the actor tries to remove another token
+        _assertRemoveCollateralInsufficientLPRevert({
+            from:   _borrower,
+            amount: 1,
+            index:  1530
+        });
+        // add enough liquidity to gain enough LP to remove the other token
+        _mintAndApproveQuoteTokens(_borrower, 500_000 * 1e18);
+        _addLiquidityNoEventCheck({
+            from:   _borrower,
+            amount: _priceAt(1530),
+            index:  1530
+        });
         _removeCollateral({
             from:     _borrower,
             amount:   1,
             index:    1530,
-            lpRedeem: 487_616.252661175041981841 * 1e18
+            lpRedeem: 487_550.13389376363220916 * 1e18
+        });
+        // remove excess deposit
+        _removeAllLiquidity({
+            from:     _borrower,
+            amount:   487_614.896518230656760058 * 1e18,
+            index:    1530,
+            newLup:   MAX_PRICE,
+            lpRedeem: 487_548.777934706677783775 * 1e18
         });
 
         _assertBucket({
             index:        1530,
-            lpBalance:    10_000 * 1e18,
+            lpBalance:    10_000.000000000000000000 * 1e18,
             collateral:   0,
-            deposit:      10_000 * 1e18,
-            exchangeRate: 1 * 1e18
+            deposit:      10_001.356142944385221783 * 1e18,
+            exchangeRate: 1.000135614294438523 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _borrower,
@@ -601,12 +621,9 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             depositTime: _startTime
         });
 
-        // lender removes quote token
-        skip(1 days); // skip to avoid penalty
-
         _removeAllLiquidity({
             from:     _lender,
-            amount:   10_000 * 1e18,
+            amount:   10_001.356142944385221783 * 1e18,
             index:    1530,
             newLup:   MAX_PRICE,
             lpRedeem: 10_000 * 1e18

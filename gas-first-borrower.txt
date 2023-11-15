@@ -1,0 +1,1228 @@
+forge test --no-match-test "testLoad|invariant|test_regression" --nmc "RegressionTest|Panic|RealWorld|Trading" --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
+Compiling 2 files with 0.8.18
+Solc 0.8.18 finished in 10.37s
+Compiler run [32msuccessful![0m
+
+Running 4 tests for tests/forge/unit/Auctions.t.sol:AuctionsTest
+[32m[PASS][0m testAuctionPrice() (gas: 83549)
+[32m[PASS][0m testBpf() (gas: 11531)
+[32m[PASS][0m testClaimableReserves() (gas: 4673)
+[32m[PASS][0m testReserveAuctionPrice() (gas: 12656)
+Test result: [32mok[0m. [32m4[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 880.14µs
+
+Test result: [32mok[0m. [32m0[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 29.19ms
+
+Test result: [32mok[0m. [32m0[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 30.71ms
+
+Test result: [32mok[0m. [32m0[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 1.18s
+
+Test result: [32mok[0m. [32m0[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 51.26ms
+
+Test result: [32mok[0m. [32m0[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 52.26ms
+
+Running 1 test for tests/forge/unit/ERC20Pool/ERC20PoolLiquidationsTake.t.sol:ERC20PoolLiquidationTakeFuzzyTest
+[32m[PASS][0m testTakeCollateralFuzzy(uint256,uint256) (runs: 300, μ: 2002102, ~: 2056900)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 1.85s
+
+Running 1 test for tests/forge/unit/ERC20Pool/ERC20PoolLiquidationsTake.t.sol:ERC20PoolLiquidationsLowPriceCollateralTest
+[32m[PASS][0m testTakeRevertsOnZeroPrice() (gas: 2162016)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 10.48ms
+
+Running 1 test for tests/forge/unit/ERC20Pool/ERC20PoolLiquidationsTake.t.sol:ERC20PoolLiquidationsTakeAndRepayAllDebtInPoolTest
+[32m[PASS][0m testTakeAuctionRepaidAmountGreaterThanPoolDebt() (gas: 2247626)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 164.27ms
+
+Running 7 tests for tests/forge/unit/Positions/CodearenaReports.t.sol:PositionManagerCodeArenaTest
+[32m[PASS][0m testAdjustPositionBeforeTransfer_report_196() (gas: 1595834)
+[32m[PASS][0m testMemorializePositionsExploitation_report_217() (gas: 1853315)
+Logs:
+  Balance of Bob:  3000000000000000000000
+  Balance of Alice:  3000000000000000000000
+
+[32m[PASS][0m testMemorializePositionsWithMinApproval_report_256() (gas: 284744774)
+Logs:
+  
+ Pool lp balances before:
+  bucket 2550: 3000000000000000000000
+  bucket 2551: 3000000000000000000000
+  bucket 2552: 3000000000000000000000
+  
+ PositionManger lp balances before:
+  bucket 2550: 0
+  bucket 2551: 0
+  bucket 2552: 0
+  
+ <--- Repeatedly invoke memorializePositions with a min allowance set for each tx --->
+  
+ Pool lp balances after:
+  bucket 2550: 0
+  bucket 2551: 0
+  bucket 2552: 0
+  
+ PositionManger lp balances after:
+  bucket 2550: 3000000000000000000000
+  bucket 2551: 3000000000000000000000
+  bucket 2552: 3000000000000000000000 
+
+
+[32m[PASS][0m testMoveLiquidityInBankruptBucket_LP_report_179_494() (gas: 6100465)
+[32m[PASS][0m testMoveLiquidityWithDebtInPool() (gas: 5224126)
+[32m[PASS][0m testMoveLiquidity_from_LP_report_98() (gas: 1386497)
+[32m[PASS][0m testMoveLiquidity_revert_on_less_LP_moved_report_503() (gas: 2041710)
+Test result: [32mok[0m. [32m7[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 2.63s
+
+Running 9 tests for tests/forge/unit/ERC20Pool/ERC20PoolLiquidationsTake.t.sol:ERC20PoolLiquidationsTakeTest
+[32m[PASS][0m testReservesAfterTakeSettlesAuction() (gas: 3211036)
+[32m[PASS][0m testTakeAndSettle() (gas: 5352698)
+[32m[PASS][0m testTakeAuctionPriceLtNeutralPrice() (gas: 3281697)
+[32m[PASS][0m testTakeCallerColConstraintBpfNegResidual() (gas: 3601082)
+[32m[PASS][0m testTakeCallerColConstraintBpfPosNoResidual() (gas: 4256130)
+[32m[PASS][0m testTakeCallerColConstraintBpfPosResidual() (gas: 4255058)
+[32m[PASS][0m testTakeLoanColConstraintBpfPosNoResidual() (gas: 4270752)
+[32m[PASS][0m testTakeLoanDebtConstraintBpfPosResidual() (gas: 3991668)
+[32m[PASS][0m testTakeReverts() (gas: 10276468)
+Test result: [32mok[0m. [32m9[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 1.12s
+
+Running 4 tests for tests/forge/unit/Rewards/ClaimRewards.t.sol:ClaimRewardsOnExchangeRateUpdateTest
+[32m[PASS][0m testClaimOnStakeWithInsufficientFunds() (gas: 1850420)
+[32m[PASS][0m testClaimOnStakeWithNoBalance() (gas: 905594)
+[32m[PASS][0m testClaimOnUpdateRateWithInsufficientFunds() (gas: 958840)
+[32m[PASS][0m testClaimOnUpdateRateWithNoBalance() (gas: 460995)
+Test result: [32mok[0m. [32m4[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 3.73s
+
+Running 2 tests for tests/forge/unit/Rewards/ClaimRewards.t.sol:ClaimRewardsOnStakeTest
+[32m[PASS][0m testClaimOnStakeWithInsufficientFunds() (gas: 1850294)
+[32m[PASS][0m testClaimOnStakeWithNoBalance() (gas: 905531)
+Test result: [32mok[0m. [32m2[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 26.95ms
+
+Running 1 test for tests/forge/unit/ERC20Pool/ERC20PoolLoanHeap.t.sol:ERC20PoolLoanHeapTest
+[32m[PASS][0m testLoanHeapUpdateThresholdPrice() (gas: 2811544)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 686.12ms
+
+Running 2 tests for tests/forge/unit/ERC20Pool/ERC20PoolMulticall.t.sol:ERC20PoolMulticallTest
+[32m[PASS][0m testMulticallDepositQuoteToken() (gas: 1133151)
+[32m[PASS][0m testMulticallRevertString() (gas: 70013)
+Test result: [32mok[0m. [32m2[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 9.27ms
+
+Running 4 tests for tests/forge/unit/Rewards/ClaimRewards.t.sol:ClaimRewardsOnUnstakeTest
+[32m[PASS][0m testClaimOnStakeWithInsufficientFunds() (gas: 1850444)
+[32m[PASS][0m testClaimOnStakeWithNoBalance() (gas: 905617)
+[32m[PASS][0m testClaimOnUnstakeWithBalance() (gas: 85960880)
+[32m[PASS][0m testClaimOnUnstakeWithInsufficientFunds() (gas: 1234754)
+Test result: [32mok[0m. [32m4[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 180.86ms
+
+Test result: [32mok[0m. [32m0[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 91.20ms
+
+Running 5 tests for tests/forge/unit/Rewards/ClaimRewards.t.sol:ClaimRewardsTest
+[32m[PASS][0m testClaimOnClaimRewardsWithBalance() (gas: 1151520)
+[32m[PASS][0m testClaimOnClaimRewardsWithInsufficientFunds() (gas: 1685022)
+[32m[PASS][0m testClaimOnClaimRewardsWithNoBalance() (gas: 1644940)
+[32m[PASS][0m testClaimOnStakeWithInsufficientFunds() (gas: 1850442)
+[32m[PASS][0m testClaimOnStakeWithNoBalance() (gas: 905616)
+Test result: [32mok[0m. [32m5[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 39.83ms
+
+Running 15 tests for tests/forge/unit/ERC20Pool/ERC20PoolCollateral.t.sol:ERC20PoolCollateralTest
+[32m[PASS][0m testAddRemoveCollateralBucketExchangeRateInvariantDifferentActor() (gas: 1467864)
+[32m[PASS][0m testAddRemoveCollateralBucketExchangeRateInvariantDifferentActor2() (gas: 1571390)
+[32m[PASS][0m testAddRemoveCollateralBucketExchangeRateInvariantSameActor() (gas: 1242706)
+[32m[PASS][0m testAddRemoveCollateralSmallAmountsBucketExchangeRateInvariantDifferentActor() (gas: 1438776)
+[32m[PASS][0m testPledgeAndPullCollateral() (gas: 3469757)
+[32m[PASS][0m testPledgeAndPullCollateralToDifferentRecipient() (gas: 3104858)
+[32m[PASS][0m testPledgeCollateralFromDifferentActor() (gas: 917671)
+[32m[PASS][0m testPullBorrowerCollateralLessThanEncumberedCollateral() (gas: 1466784)
+[32m[PASS][0m testPullBorrowerWithDebtCollateralEncumberedCalculatedAsZero() (gas: 1221860)
+[32m[PASS][0m testPullCollateralRequireEnoughCollateral() (gas: 719993)
+[32m[PASS][0m testRemoveCollateral() (gas: 1021659)
+[32m[PASS][0m testRemoveCollateralReverts() (gas: 888414)
+[32m[PASS][0m testRemoveHalfCollateral() (gas: 926625)
+[32m[PASS][0m testSwapSmallAmountsBucketExchangeRateInvariantDifferentActor() (gas: 1942953)
+[32m[PASS][0m test_prototech_collateral_draining() (gas: 1540601)
+Test result: [32mok[0m. [32m15[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 298.54ms
+
+Running 14 tests for tests/forge/unit/ERC20Pool/ERC20PoolFactory.t.sol:ERC20PoolFactoryTest
+[32m[PASS][0m testDeployERC20CompDaiPool() (gas: 269599)
+[32m[PASS][0m testDeployERC20CompUsdcPool() (gas: 279182)
+[32m[PASS][0m testDeployERC20Pool() (gas: 280338)
+[32m[PASS][0m testDeployERC20PoolMultipleTimes() (gas: 489704)
+[32m[PASS][0m testDeployERC20PoolWithInvalidRate() (gas: 21110)
+[32m[PASS][0m testDeployERC20PoolWithMaxRate() (gas: 1346185)
+[32m[PASS][0m testDeployERC20PoolWithMinRate() (gas: 1346361)
+[32m[PASS][0m testDeployERC20PoolWithNoncompliantDecimals() (gas: 1110214)
+[32m[PASS][0m testDeployERC20PoolWithZeroAddress() (gas: 16156)
+[32m[PASS][0m testDeployERC20SameQuoteCollateral() (gas: 9947)
+[32m[PASS][0m testDeployERC20WbtcDaiPool() (gas: 272125)
+[32m[PASS][0m testDeployERC20WbtcUsdcPool() (gas: 281246)
+[32m[PASS][0m testInstantiateERC20FactoryWithZeroAddress() (gas: 42355)
+[32m[PASS][0m testPoolAlreadyInitialized() (gas: 262401)
+Test result: [32mok[0m. [32m14[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 1.07s
+
+Running 4 tests for tests/forge/unit/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:ERC721PoolLiquidationsSettleAuctionTest
+[32m[PASS][0m testDepositTakeAndSettleByBucketTakeSubsetPool() (gas: 275825353)
+[32m[PASS][0m testDepositTakeAndSettleByRegularTakeSubsetPool() (gas: 352960855)
+[32m[PASS][0m testDepositTakeAndSettleSubsetPool() (gas: 351670923)
+[32m[PASS][0m testSettlePartialDebtSubsetPool() (gas: 352498492)
+Test result: [32mok[0m. [32m4[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 5.36s
+
+Running 4 tests for tests/forge/unit/ERC721Pool/ERC721PoolLiquidationsTake.t.sol:ERC721PoolLiquidationsTakeTest
+[32m[PASS][0m testTakeCollateralAndSettleSubsetPool() (gas: 3664991)
+[32m[PASS][0m testTakeCollateralSubsetPool() (gas: 3906981)
+[32m[PASS][0m testTakeCollateralSubsetPoolAndSettleWithDebt() (gas: 3499553)
+[32m[PASS][0m testTakeCollateralWithAtomicSwapSubsetPool() (gas: 2773819)
+Test result: [32mok[0m. [32m4[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 124.23ms
+
+Test result: [32mok[0m. [32m0[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 65.09ms
+
+Running 2 tests for tests/forge/unit/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:ERC721PoolPurchaseQuoteTest
+[32m[PASS][0m testSubsetPurchaseQuote() (gas: 1705355)
+[32m[PASS][0m testSubsetPurchaseQuoteWithDebt() (gas: 4931393)
+Test result: [32mok[0m. [32m2[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 31.56ms
+
+Running 6 tests for tests/forge/unit/ERC721Pool/ERC721PoolReserveAuction.t.sol:ERC721PoolReserveAuctionTest
+[32m[PASS][0m testClaimableReserveAuction() (gas: 981764)
+[32m[PASS][0m testClaimableReserveNoAuction() (gas: 70169)
+[32m[PASS][0m testReserveAuctionPartiallyTaken() (gas: 1728728)
+[32m[PASS][0m testReserveAuctionPricing() (gas: 1006860)
+[32m[PASS][0m testReserveAuctionTiming() (gas: 821436)
+[32m[PASS][0m testUnclaimableReserves() (gas: 586949)
+Test result: [32mok[0m. [32m6[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 219.92ms
+
+Test result: [32mok[0m. [32m0[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 99.74ms
+
+Running 2 tests for tests/forge/interactions/ERC721TakeWithExternalLiquidity.sol:ERC721TakeWithExternalLiquidityTest
+[32m[PASS][0m testTakeNFTCalleeDiffersFromSender() (gas: 1501304)
+[32m[PASS][0m testTakeNFTFromContractWithAtomicSwap() (gas: 1487347)
+Test result: [32mok[0m. [32m2[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 77.99ms
+
+Test result: [32mok[0m. [32m0[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 339.47ms
+
+Running 2 tests for tests/forge/unit/ERC20Pool/ERC20PoolFlashloan.t.sol:ERC20PoolFlashloanPrecisionTest
+[32m[PASS][0m testUsdcFlashloan() (gas: 1399682)
+[32m[PASS][0m testWbtcFlashloan() (gas: 1351078)
+Test result: [32mok[0m. [32m2[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 1.39s
+
+Running 7 tests for tests/forge/unit/ERC20Pool/ERC20PoolFlashloan.t.sol:ERC20PoolFlashloanTest
+[32m[PASS][0m testCallbackFailure() (gas: 1420948)
+[32m[PASS][0m testCannotFlashloanMoreCollateralThanAvailable() (gas: 1145845)
+[32m[PASS][0m testCannotFlashloanNonToken() (gas: 1121132)
+[32m[PASS][0m testCollateralFlashloan() (gas: 1556615)
+[32m[PASS][0m testFlashloanFee() (gas: 934121)
+[32m[PASS][0m testIncorrectBalanceAfterFlashloanFailure() (gas: 1677397)
+[32m[PASS][0m testMaxFlashloan() (gas: 931696)
+Test result: [32mok[0m. [32m7[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 21.12ms
+
+Running 5 tests for tests/forge/unit/ERC20Pool/ERC20PoolLiquidationsDepositTake.t.sol:ERC20PoolLiquidationsDepositTakeTest
+[32m[PASS][0m testDepositTakeCollateralRestrict() (gas: 3025525)
+[32m[PASS][0m testDepositTakeDebtRestrict() (gas: 2839192)
+[32m[PASS][0m testDepositTakeDepositRestrict() (gas: 3072742)
+[32m[PASS][0m testDepositTakeGTNeutralPrice() (gas: 2869349)
+[32m[PASS][0m testDepositTakeReverts() (gas: 9538344)
+Test result: [32mok[0m. [32m5[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 81.86ms
+
+Running 14 tests for tests/forge/unit/ERC20Pool/ERC20PoolInfoUtils.t.sol:ERC20PoolInfoUtilsTest
+[32m[PASS][0m testBorrowFeeRate() (gas: 16645)
+[32m[PASS][0m testPoolInfoMulticallBorrowerInfo() (gas: 1647795)
+[32m[PASS][0m testPoolInfoUtilsBorrowerInfo() (gas: 36659)
+[32m[PASS][0m testPoolInfoUtilsBucketInfo() (gas: 106229)
+[32m[PASS][0m testPoolInfoUtilsInvariantsFuzzed(uint256,uint256) (runs: 300, μ: 62826, ~: 62895)
+[32m[PASS][0m testPoolInfoUtilsLPToCollateralAndQuote() (gas: 427011)
+[32m[PASS][0m testPoolInfoUtilsLenderInterestMargin() (gas: 33241)
+[32m[PASS][0m testPoolInfoUtilsLoansInfo() (gas: 40824)
+[32m[PASS][0m testPoolInfoUtilsMulticall() (gas: 1660103)
+[32m[PASS][0m testPoolInfoUtilsMulticallPoolAndBucketInfo() (gas: 1689223)
+[32m[PASS][0m testPoolInfoUtilsPricesInfo() (gas: 259895)
+[32m[PASS][0m testPoolInfoUtilsReservesInfo() (gas: 56716)
+[32m[PASS][0m testPoolInfoUtilsUtilizationInfo() (gas: 132184)
+[32m[PASS][0m testUnutilizedDepositFeeRate() (gas: 16315)
+Test result: [32mok[0m. [32m14[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 112.38ms
+
+Running 9 tests for tests/forge/unit/ERC20Pool/ERC20PoolInputValidation.t.sol:ERC20PoolBorrowTest
+[32m[PASS][0m testValidateAddCollateralInput() (gas: 163711)
+[32m[PASS][0m testValidateAddQuoteTokenInput() (gas: 219766)
+[32m[PASS][0m testValidateDrawDebtInput() (gas: 130669)
+[32m[PASS][0m testValidateMoveQuoteTokenInput() (gas: 279212)
+[32m[PASS][0m testValidateRemoveCollateralInput() (gas: 122173)
+[32m[PASS][0m testValidateRemoveQuoteTokenInput() (gas: 364275)
+[32m[PASS][0m testValidateRepayDebtInput() (gas: 118822)
+[32m[PASS][0m testValidateTakeInput() (gas: 119500)
+[32m[PASS][0m testValidateTakeReservesInput() (gas: 105205)
+Test result: [32mok[0m. [32m9[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 5.28ms
+
+Running 10 tests for tests/forge/unit/ERC20Pool/ERC20PoolBorrow.t.sol:ERC20PoolBorrowTest
+[32m[PASS][0m testMinBorrowAmountCheck() (gas: 8644552)
+[32m[PASS][0m testMinRepayAmountCheck() (gas: 8184665)
+[32m[PASS][0m testPoolBorrowAndRepay() (gas: 3219485)
+[32m[PASS][0m testPoolBorrowRepayAndRemove() (gas: 2557257)
+[32m[PASS][0m testPoolBorrowReverts() (gas: 3193218)
+[32m[PASS][0m testPoolBorrowerInterestAccumulation() (gas: 3699871)
+[32m[PASS][0m testPoolRepayReverts() (gas: 3157537)
+[32m[PASS][0m testRepayLoanFromDifferentActor() (gas: 2248487)
+[32m[PASS][0m testZeroThresholdPriceLoan() (gas: 2188329)
+[32m[PASS][0m testZeroThresholdPriceLoanAfterRepay() (gas: 1978782)
+Test result: [32mok[0m. [32m10[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 132.47ms
+
+Running 4 tests for tests/forge/unit/PoolCommonsTest.t.sol:PoolCommonsTest
+[32m[PASS][0m testLenderInterestMargin() (gas: 96284)
+[32m[PASS][0m testMeaningfulDeposit() (gas: 178299)
+[32m[PASS][0m testPendingInflator() (gas: 29266)
+[32m[PASS][0m testPendingInterestFactor() (gas: 24021)
+Test result: [32mok[0m. [32m4[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 1.52ms
+
+Running 9 tests for tests/forge/unit/PoolHelperTest.t.sol:PoolHelperTest
+[32m[PASS][0m testBorrowFeeRate() (gas: 1982)
+[32m[PASS][0m testCollateralization() (gas: 39141)
+[32m[PASS][0m testDepositFeeRate() (gas: 1933)
+[32m[PASS][0m testEncumberance() (gas: 1340)
+[32m[PASS][0m testIndexToPrice() (gas: 215853)
+[32m[PASS][0m testMinDebtAmount() (gas: 3194)
+[32m[PASS][0m testPoolTargetUtilization() (gas: 1362)
+[32m[PASS][0m testPriceToIndex() (gas: 3605)
+[32m[PASS][0m testRounding() (gas: 3318)
+Test result: [32mok[0m. [32m9[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 1.63ms
+
+Running 26 tests for tests/forge/unit/Positions/PositionManager.t.sol:PositionManagerERC20PoolTest
+[32m[PASS][0m test3rdPartyMinter() (gas: 1574454)
+[32m[PASS][0m test3rdPartyMinterAndRedeemer() (gas: 1188453)
+[32m[PASS][0m testBurnNFTWithPositions() (gas: 1116927)
+[32m[PASS][0m testBurnNFTWithoutPositions() (gas: 103509)
+[32m[PASS][0m testDeployWith0xAddressRevert() (gas: 129879)
+[32m[PASS][0m testMayInteractReverts() (gas: 133478)
+[32m[PASS][0m testMemorializeAndRedeemBucketBankruptcy() (gas: 5105402)
+[32m[PASS][0m testMemorializeMultiple() (gas: 3247680)
+[32m[PASS][0m testMemorializePositions() (gas: 2128796)
+[32m[PASS][0m testMemorializePositionsTwoAccountsSameBucket() (gas: 1814337)
+[32m[PASS][0m testMint() (gas: 5970524)
+[32m[PASS][0m testMintToContract() (gas: 854744)
+[32m[PASS][0m testMoveLiquidity() (gas: 3043372)
+[32m[PASS][0m testMoveLiquidityPermissions() (gas: 1064928)
+[32m[PASS][0m testMoveLiquidityToOverwriteBankruptBucket() (gas: 5980050)
+[32m[PASS][0m testMoveLiquidityWithInterest() (gas: 3674066)
+[32m[PASS][0m testNFTTransferByApprove() (gas: 1266496)
+[32m[PASS][0m testNFTTransferByPermit() (gas: 1470169)
+[32m[PASS][0m testPermitByContract() (gas: 1113475)
+[32m[PASS][0m testPermitDuringTransfers() (gas: 1315680)
+[32m[PASS][0m testPermitReverts() (gas: 369316)
+[32m[PASS][0m testRedeemEmptyPositions() (gas: 124025)
+[32m[PASS][0m testRedeemPositions() (gas: 1175877)
+[32m[PASS][0m testRedeemPositionsByNewNFTOwner() (gas: 1918021)
+[32m[PASS][0m testRememorializePositions() (gas: 2564164)
+[32m[PASS][0m testTokenURI() (gas: 3164947)
+Test result: [32mok[0m. [32m26[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 1.08s
+
+Running 1 test for tests/forge/unit/Positions/PositionManager.t.sol:PositionManagerERC721CollectionPoolTest
+[32m[PASS][0m testPositionFlowForERC721Pool() (gas: 2725821)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 208.79ms
+
+Running 1 test for tests/forge/unit/Positions/PositionManager.t.sol:PositionManagerERC721SubsetPoolTest
+[32m[PASS][0m testPositionFlowForERC721Pool() (gas: 2725821)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 12.05ms
+
+Running 1 test for tests/forge/unit/ERC20Pool/ERC20PoolLiquidationsKick.t.sol:ERC20PoolLiquidationKickFuzzyTest
+[32m[PASS][0m testBorrowAndKickFuzzy(uint256,uint256,uint256,uint256) (runs: 300, μ: 10126980, ~: 10423770)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 8.88s
+
+Running 1 test for tests/forge/unit/ERC20Pool/ERC20PoolLiquidationsKick.t.sol:ERC20PoolLiquidationKickHighThresholdPriceBorrower
+[32m[PASS][0m testKickHighThresholdPriceBorrower() (gas: 205967534)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 1.00s
+
+Running 4 tests for tests/forge/unit/ERC20Pool/ERC20PoolLiquidationsKick.t.sol:ERC20PoolLiquidationsKickTest
+[32m[PASS][0m testInterestsAccumulationWithAllLoansAuctioned() (gas: 3428017)
+[32m[PASS][0m testKick() (gas: 3252569)
+[32m[PASS][0m testKickActiveAuctionReverts() (gas: 2628470)
+[32m[PASS][0m testKickAuctionWithoutCollateralReverts() (gas: 2511529)
+Test result: [32mok[0m. [32m4[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 50.31ms
+
+Running 6 tests for tests/forge/unit/ERC20Pool/ERC20PoolLiquidationsLenderKick.t.sol:ERC20PoolLiquidationsLenderKickAuctionTest
+[32m[PASS][0m testLenderKickAuctionAllBorrowersAndSettle() (gas: 5869678)
+[32m[PASS][0m testLenderKickAuctionAmountHigherThanAuctionBond() (gas: 3502548)
+[32m[PASS][0m testLenderKickAuctionAmountHigherThanAvailableDeposit() (gas: 3560529)
+[32m[PASS][0m testLenderKickAuctionAmountLowerThanAuctionBond() (gas: 3852216)
+[32m[PASS][0m testLenderKickAuctionReverts() (gas: 4266356)
+[32m[PASS][0m testLenderKickAuctionUsingAllLpsWithinBucket() (gas: 3963948)
+Test result: [32mok[0m. [32m6[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 96.44ms
+
+Running 1 test for tests/forge/unit/ERC20Pool/ERC20PoolLiquidationsMisc.t.sol:ERC20PoolLiquidationsMiscTest
+[32m[PASS][0m testLenderForcedExit() (gas: 6449799)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 35.00ms
+
+Running 1 test for tests/forge/interactions/PurchaseQuoteWithExternalLiquidity.t.sol:PurchaseQuoteWithExternalLiquidityTest
+[32m[PASS][0m testPurchaseWithFlashLoan() (gas: 1362854)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 2.00s
+
+Running 1 test for tests/forge/unit/ERC20Pool/ERC20PoolLiquidationsSettle.t.sol:ERC20PoolLiquidationSettleFuzzyTest
+[32m[PASS][0m testSettleWithDepositFuzzy(uint256,uint256) (runs: 300, μ: 1059667, ~: 1049583)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 540.90ms
+
+Running 4 tests for tests/forge/unit/ERC20Pool/ERC20PoolLiquidationsSettle.t.sol:ERC20PoolLiquidationsSettleTest
+[32m[PASS][0m testSettleAuctionReverts() (gas: 3897944)
+[32m[PASS][0m testSettleOnAuctionKicked72HoursAgo() (gas: 3915441)
+[32m[PASS][0m testSettleOnAuctionKicked72HoursAgoAndPartiallyTaken() (gas: 4367916)
+[32m[PASS][0m testSettleZeroExchangeRateResidualBankruptcy() (gas: 3731124)
+Test result: [32mok[0m. [32m4[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 67.47ms
+
+Running 5 tests for tests/forge/unit/ERC20Pool/ERC20PoolLiquidationsArbTake.t.sol:ERC20PoolLiquidationsArbTakeTest
+[32m[PASS][0m testArbTakeCollateralRestrict() (gas: 3274297)
+[32m[PASS][0m testArbTakeDebtRestrict() (gas: 3038823)
+[32m[PASS][0m testArbTakeDepositRestrict() (gas: 3325810)
+[32m[PASS][0m testArbTakeGTNeutralPrice() (gas: 3123033)
+[32m[PASS][0m testArbTakeReverts() (gas: 9989083)
+Test result: [32mok[0m. [32m5[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 91.01ms
+
+Test result: [32mok[0m. [32m0[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 43.67ms
+
+Running 10 tests for tests/forge/unit/MathTest.t.sol:MathTest
+[32m[PASS][0m testExp() (gas: 6373)
+[32m[PASS][0m testFloorWdiv() (gas: 991)
+[32m[PASS][0m testFloorWmul() (gas: 793)
+[32m[PASS][0m testMaxMin() (gas: 1252)
+[32m[PASS][0m testMaxMinInt() (gas: 1250)
+[32m[PASS][0m testMultiplication() (gas: 343)
+[32m[PASS][0m testPow() (gas: 8634)
+[32m[PASS][0m testRayToWadRounded() (gas: 1523)
+[32m[PASS][0m testScaleConversions() (gas: 681)
+[32m[PASS][0m testZeroStaysZero() (gas: 794)
+Test result: [32mok[0m. [32m10[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 398.39µs
+
+Running 14 tests for tests/forge/unit/ERC20Pool/ERC20PoolInterestRateAndEMAs.t.sol:ERC20PoolInterestRateTestAndEMAs
+[32m[PASS][0m testAccrueInterestNewInterestLimit() (gas: 1380723310)
+[32m[PASS][0m testAccruePoolInterestHtpGtMaxPrice() (gas: 1869752)
+[32m[PASS][0m testAccruePoolInterestHtpLup() (gas: 5980007)
+[32m[PASS][0m testAccruePoolInterestRevertDueToExpLimit() (gas: 15527795)
+[32m[PASS][0m testMaxInterestRate() (gas: 23392987)
+[32m[PASS][0m testMinInterestRate() (gas: 12475249)
+[32m[PASS][0m testOverutilizedPoolInterestRateIncrease() (gas: 2104440)
+[32m[PASS][0m testPendingInflator() (gas: 2805709)
+[32m[PASS][0m testPoolEMAAndTargetUtilizationUpdate() (gas: 3353181)
+[32m[PASS][0m testPoolInterestRateDecrease() (gas: 2365799)
+[32m[PASS][0m testPoolInterestRateIncreaseDecrease() (gas: 4197785)
+[32m[PASS][0m testPoolLargeCollateralPostedTargetUtilization() (gas: 4321661)
+[32m[PASS][0m testUpdateInterestTuLimit() (gas: 581275315)
+[32m[PASS][0m testUpdateInterestZeroThresholdPrice() (gas: 29477598)
+Test result: [32mok[0m. [32m14[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 11.34s
+
+Running 2 tests for tests/forge/unit/ERC721Pool/ERC721PoolBorrow.t.sol:ERC721CollectionPoolBorrowTest
+[32m[PASS][0m testMinBorrowAmountCheck() (gas: 8779260)
+[32m[PASS][0m testMinRepayAmountCheck() (gas: 8449044)
+Test result: [32mok[0m. [32m2[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 143.44ms
+
+Running 6 tests for tests/forge/unit/SafeTokenNamer.t.sol:SafeTokenNamerTest
+[32m[PASS][0m testERC20Name() (gas: 34676)
+[32m[PASS][0m testERC20Symbol() (gas: 30894)
+[32m[PASS][0m testERC721Name() (gas: 10415)
+[32m[PASS][0m testERC721Symbol() (gas: 10547)
+[32m[PASS][0m testMoonCatsMetadata() (gas: 13945)
+[32m[PASS][0m testWETHMetadata() (gas: 13653)
+Test result: [32mok[0m. [32m6[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 1.00s
+
+Test result: [32mok[0m. [32m0[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 12.30s
+
+Test result: [32mok[0m. [32m0[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 366.77ms
+
+Running 3 tests for tests/forge/unit/ERC20Pool/ERC20PoolBorrow.t.sol:ERC20PoolBorrowFuzzyTest
+[32m[PASS][0m testDrawRepayDebtFuzzy(uint256,uint256) (runs: 300, μ: 9938109, ~: 9879268)
+[32m[PASS][0m testPOCOverCollateralized_MultipleBorrowers_LowDebt() (gas: 6613818)
+[32m[PASS][0m testPOCOverCollateralized_SingleBorrower() (gas: 2838678)
+Test result: [32mok[0m. [32m3[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 10.51s
+
+Running 2 tests for tests/forge/unit/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:ERC20PoolPurchaseQuoteTokenTest
+[32m[PASS][0m testPurchaseQuote() (gas: 1446542)
+[32m[PASS][0m testPurchaseQuoteWithDebt() (gas: 3814977)
+Test result: [32mok[0m. [32m2[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 50.40ms
+
+Running 14 tests for tests/forge/unit/ERC20Pool/ERC20PoolQuoteToken.t.sol:ERC20PoolQuoteTokenTest
+[32m[PASS][0m testAddRemoveQuoteTokenBucketExchangeRateInvariantDifferentActor() (gas: 1653665)
+[32m[PASS][0m testMoveQuoteTokenWithDebt() (gas: 3395109)
+[32m[PASS][0m testPoolAddQuoteTokenReverts() (gas: 714740)
+[32m[PASS][0m testPoolDepositQuoteToken() (gas: 2262581)
+[32m[PASS][0m testPoolMoveQuoteToken() (gas: 2604366)
+[32m[PASS][0m testPoolMoveQuoteTokenRevertOnHTPLUP() (gas: 4086302)
+[32m[PASS][0m testPoolMoveQuoteTokenReverts() (gas: 3882208)
+[32m[PASS][0m testPoolMoveQuoteTokenWithDifferentTime() (gas: 1308153)
+[32m[PASS][0m testPoolRemoveQuoteToken() (gas: 2346714)
+[32m[PASS][0m testPoolRemoveQuoteTokenNotAvailable() (gas: 1870056)
+[32m[PASS][0m testPoolRemoveQuoteTokenReverts() (gas: 3892617)
+[32m[PASS][0m testPoolRemoveQuoteTokenWithCollateral() (gas: 1231308)
+[32m[PASS][0m testPoolRemoveQuoteTokenWithDebt() (gas: 2640421)
+[32m[PASS][0m testRemoveQuoteTokenPoolBalanceLimit() (gas: 2324085)
+Test result: [32mok[0m. [32m14[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 130.05ms
+
+Running 1 test for tests/forge/unit/ERC20Pool/ERC20PoolReserveAuction.t.sol:ERC20PoolReserveAuctionNoFundsTest
+[32m[PASS][0m testReserveAuctionNoFunds() (gas: 2635199)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 707.41ms
+
+Running 2 tests for tests/forge/unit/ERC20Pool/ERC20PoolReserveAuction.t.sol:ERC20PoolReserveAuctionTest
+[32m[PASS][0m testStartAndTakeUsdcReserveAuction() (gas: 942170)
+[32m[PASS][0m testZeroBid() (gas: 567988)
+Test result: [32mok[0m. [32m2[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 405.85ms
+
+Test result: [32mok[0m. [32m0[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 114.30ms
+
+Running 12 tests for tests/forge/unit/ERC20Pool/ERC20PoolTransferLPs.t.sol:ERC20PoolTransferLPTest
+[32m[PASS][0m testIncreaseDecreaseLPWithInvalidInput() (gas: 142845)
+[32m[PASS][0m testTransferLPAllowances() (gas: 222778)
+[32m[PASS][0m testTransferLPApproveRevokeTransferors() (gas: 1913744)
+[32m[PASS][0m testTransferLPForAllIndexes() (gas: 1917755)
+[32m[PASS][0m testTransferLPForTwoIndexes() (gas: 1817216)
+[32m[PASS][0m testTransferLPGreaterThanBalance() (gas: 1406220)
+[32m[PASS][0m testTransferLPToInvalidIndex() (gas: 192956)
+[32m[PASS][0m testTransferLPToLenderWithLP() (gas: 2208316)
+[32m[PASS][0m testTransferLPToSameOwner() (gas: 793405)
+[32m[PASS][0m testTransferLPToUnallowedAddress() (gas: 197348)
+[32m[PASS][0m testTransferLPToZeroAddress() (gas: 195410)
+[32m[PASS][0m testTransferPartialLP() (gas: 1992584)
+Test result: [32mok[0m. [32m12[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 42.50ms
+
+Running 11 tests for tests/forge/unit/ERC721Pool/ERC721PoolCollateral.t.sol:ERC721SubsetPoolCollateralTest
+[32m[PASS][0m testAddRemoveCollateral() (gas: 1744524)
+[32m[PASS][0m testMergeOrRemoveERC721Collateral() (gas: 8143836)
+[32m[PASS][0m testPledgeCollateral() (gas: 824726)
+[32m[PASS][0m testPledgeCollateralFromDifferentActor() (gas: 817715)
+[32m[PASS][0m testPledgeCollateralNotInSubset() (gas: 306346)
+[32m[PASS][0m testPullCollateral() (gas: 1438393)
+[32m[PASS][0m testPullCollateralNotInPool() (gas: 831828)
+[32m[PASS][0m testPullCollateralOverlyEncumbered() (gas: 2682128)
+[32m[PASS][0m testPullCollateralPartiallyEncumbered() (gas: 2985146)
+[32m[PASS][0m testPullCollateralToDifferentRecipient() (gas: 1435070)
+[32m[PASS][0m testRemoveCollateralReverts() (gas: 95303)
+Test result: [32mok[0m. [32m11[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 74.74ms
+
+Running 2 tests for tests/forge/unit/ERC721Pool/ERC721PoolEMAs.t.sol:ERC721PoolEMAsTest
+[32m[PASS][0m testDepositShockResistance() (gas: 2603603)
+[32m[PASS][0m testEMAAdjustmentTime() (gas: 4584296)
+Test result: [32mok[0m. [32m2[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 35.64ms
+
+Running 2 tests for tests/forge/unit/ERC20Pool/ERC20SafeTransferTokens.sol:ERC20SafeTransferTokens
+[32m[PASS][0m testNonStandardERC20CollateralTokenTransfers() (gas: 1433210)
+[32m[PASS][0m testNonStandardERC20QuoteTokenTransfers() (gas: 1454785)
+Test result: [32mok[0m. [32m2[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 1.25s
+
+Running 18 tests for tests/forge/unit/ERC721Pool/ERC721PoolFactory.t.sol:ERC721PoolFactoryTest
+[32m[PASS][0m testDeployERC721CollectionPool() (gas: 38136)
+[32m[PASS][0m testDeployERC721CollectionPoolWithInvalidRate() (gas: 30780)
+[32m[PASS][0m testDeployERC721CollectionPoolWithNoSubset() (gas: 2156643)
+[32m[PASS][0m testDeployERC721CollectionPoolWithNonNFTAddress() (gas: 8937393460516729782)
+[32m[PASS][0m testDeployERC721CollectionPoolWithZeroAddress() (gas: 30299)
+[32m[PASS][0m testDeployERC721PoolMultipleTimes() (gas: 18990)
+[32m[PASS][0m testDeployERC721PoolWithMaxRate() (gas: 2156282)
+[32m[PASS][0m testDeployERC721PoolWithMinRate() (gas: 2156304)
+[32m[PASS][0m testDeployERC721PoolWithNoncompliantDecimals() (gas: 1091407)
+[32m[PASS][0m testDeployERC721SameQuoteCollateral() (gas: 1354294)
+[32m[PASS][0m testDeployERC721SubsetPool() (gas: 75470)
+[32m[PASS][0m testDeployERC721SubsetPoolMultipleTimes() (gas: 341703)
+[32m[PASS][0m testDeployERC721SubsetPoolWithInvalidRate() (gas: 31826)
+[32m[PASS][0m testDeployERC721SubsetPoolWithZeroAddress() (gas: 30646)
+[32m[PASS][0m testGetNFTSubsetHash() (gas: 41491)
+[32m[PASS][0m testGetNFTSubsetHashTokenOrdering() (gas: 18732)
+[32m[PASS][0m testInstantiateERC721FactoryWithZeroAddress() (gas: 42752)
+[32m[PASS][0m testPoolAlreadyInitialized() (gas: 32764)
+Test result: [32mok[0m. [32m18[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 665.57ms
+
+Running 5 tests for tests/forge/unit/ERC721Pool/ERC721PoolFlashloan.t.sol:ERC721PoolFlashloanTest
+[32m[PASS][0m testCallbackFailure() (gas: 507661)
+[32m[PASS][0m testCannotFlashloanMoreThanAvailable() (gas: 1082172)
+[32m[PASS][0m testCannotFlashloanWrongToken() (gas: 1069682)
+[32m[PASS][0m testFlashloanFee() (gas: 869555)
+[32m[PASS][0m testQuoteTokenFlashloan() (gas: 1491475)
+Test result: [32mok[0m. [32m5[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 15.96ms
+
+Running 9 tests for tests/forge/unit/ERC721Pool/ERC721PoolInputValidation.t.sol:ERC721PoolBorrowTest
+[32m[PASS][0m testValidateAddCollateralInput() (gas: 193429)
+[32m[PASS][0m testValidateAddQuoteTokenInput() (gas: 208712)
+[32m[PASS][0m testValidateDrawDebtInput() (gas: 119617)
+[32m[PASS][0m testValidateMoveQuoteTokenInput() (gas: 268308)
+[32m[PASS][0m testValidateRemoveCollateralInput() (gas: 110166)
+[32m[PASS][0m testValidateRemoveQuoteTokenInput() (gas: 353242)
+[32m[PASS][0m testValidateRepayDebtInput() (gas: 107341)
+[32m[PASS][0m testValidateTakeInput() (gas: 107898)
+[32m[PASS][0m testValidateTakeReservesInput() (gas: 93785)
+Test result: [32mok[0m. [32m9[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 5.92ms
+
+Running 3 tests for tests/forge/unit/ERC721Pool/ERC721PoolInterest.t.sol:ERC721PoolSubsetInterestTest
+[32m[PASS][0m testBorrowerInterestCalculation() (gas: 4306284)
+[32m[PASS][0m testBorrowerInterestCalculationAfterRepayingAllDebtOnce() (gas: 4822784)
+[32m[PASS][0m testMultipleBorrowerInterestAccumulation() (gas: 4640842)
+Test result: [32mok[0m. [32m3[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 53.99ms
+
+Running 1 test for tests/forge/unit/ERC721Pool/ERC721PoolLiquidationsDepositTake.t.sol:ERC721PoolLiquidationsDepositTakeTest
+[32m[PASS][0m testDepositTakeNFTAndSettleAuction() (gas: 2065264)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 21.50ms
+
+Running 2 tests for tests/forge/unit/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:ERC721PoolLiquidationsKickTest
+[32m[PASS][0m testKickSubsetPool() (gas: 2816353)
+[32m[PASS][0m testKickSubsetPoolRepayAndPledgeReverts() (gas: 2626172)
+Test result: [32mok[0m. [32m2[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 34.04ms
+
+Running 1 test for tests/forge/unit/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:ERC721PoolLiquidationsSettleTest
+[32m[PASS][0m testKickAndSettleSubsetPoolFractionalCollateral() (gas: 3124381)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 25.27ms
+
+Running 3 tests for tests/forge/interactions/ERC20TakeWithExternalLiquidity.t.sol:ERC20TakeWithExternalLiquidityTest
+[32m[PASS][0m testTakeCalleeDiffersFromSender() (gas: 543615)
+[32m[PASS][0m testTakeFromContractWithAtomicSwap() (gas: 989770)
+[32m[PASS][0m testTakeWithFlashLoan() (gas: 1631727)
+Test result: [32mok[0m. [32m3[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 1.27s
+
+Running 2 tests for tests/forge/unit/ERC721Pool/ERC721PoolBorrow.t.sol:ERC721ScaledQuoteTokenBorrowTest
+[32m[PASS][0m testMinDebtBelowDustLimitCheck() (gas: 8431270)
+[32m[PASS][0m testRepayLessThanQuoteTokenPrecision() (gas: 977915)
+Test result: [32mok[0m. [32m2[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 31.13ms
+
+Running 7 tests for tests/forge/unit/ERC721Pool/ERC721PoolBorrow.t.sol:ERC721SubsetPoolBorrowTest
+[32m[PASS][0m testBorrowAndRepay() (gas: 3790771)
+[32m[PASS][0m testBorrowBorrowerUnderCollateralized() (gas: 1350246)
+[32m[PASS][0m testBorrowLimitReached() (gas: 2133477)
+[32m[PASS][0m testBorrowPoolUnderCollateralized() (gas: 864989)
+[32m[PASS][0m testFirstInterestAccrual() (gas: 2551229)
+[32m[PASS][0m testPoolRepayRequireChecks() (gas: 3304535)
+[32m[PASS][0m testRepayLoanFromDifferentActor() (gas: 2868942)
+Test result: [32mok[0m. [32m7[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 57.11ms
+
+Running 9 tests for tests/forge/unit/ERC721Pool/ERC721PoolCollateral.t.sol:ERC721PoolCollateralTest
+[32m[PASS][0m testAddRemoveCollateral() (gas: 1741015)
+[32m[PASS][0m testMergeOrRemoveERC721Collateral() (gas: 8139494)
+[32m[PASS][0m testPledgeCollateral() (gas: 819096)
+[32m[PASS][0m testPledgeCollateralFromDifferentActor() (gas: 815978)
+[32m[PASS][0m testPullCollateral() (gas: 1431411)
+[32m[PASS][0m testPullCollateralNotInPool() (gas: 826617)
+[32m[PASS][0m testPullCollateralOverlyEncumbered() (gas: 2676900)
+[32m[PASS][0m testPullCollateralPartiallyEncumbered() (gas: 2979918)
+[32m[PASS][0m testPullCollateralToDifferentRecipient() (gas: 1428123)
+Test result: [32mok[0m. [32m9[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 83.46ms
+
+Running 1 test for tests/forge/unit/ERC721Pool/ERC721PoolBorrow.t.sol:ERC721ScaledQuoteTokenBorrowAndRepayTest
+[32m[PASS][0m testBorrowAndRepayWith4DecimalQuote() (gas: 3719200)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 20.56ms
+
+Running 7 tests for tests/forge/unit/Heap.t.sol:HeapTest
+[32m[PASS][0m testHeapBorrowRepayBorrow() (gas: 93258)
+[32m[PASS][0m testHeapInsertAndRandomlyRemoveTps() (gas: 244859)
+[32m[PASS][0m testHeapInsertAndRemoveHeadByMaxTp() (gas: 253381)
+[32m[PASS][0m testHeapInsertMultipleLoansWithSameTp() (gas: 318311)
+[32m[PASS][0m testHeapRemoveLastTp() (gas: 56594)
+[32m[PASS][0m testHeapRemoveMiddleAndHead() (gas: 310518)
+[32m[PASS][0m testHeapUpdateTp() (gas: 365384)
+Test result: [32mok[0m. [32m7[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 6.18ms
+
+Test result: [32mok[0m. [32m0[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 56.13ms
+
+Running 1 test for tests/forge/unit/ERC721Pool/ERC721PoolCollateral.t.sol:ERC721PoolCollateralFuzzyTest
+[32m[PASS][0m testAddRemoveCollateralFuzzy(uint256,uint256) (runs: 300, μ: 4345238, ~: 4708927)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 2.56s
+
+Running 3 tests for tests/forge/unit/ERC20Pool/ERC20PoolLiquidationsScaled.t.sol:ERC20PoolLiquidationsScaledTest
+[32m[PASS][0m testLiquidationLenderKickAuction(uint8,uint8,uint16) (runs: 300, μ: 14845527, ~: 14849892)
+[32m[PASS][0m testLiquidationSingleBorrower(uint8,uint8,uint16) (runs: 300, μ: 15082997, ~: 15082559)
+[32m[PASS][0m testSettleAuctionWithoutTakes(uint8,uint8,uint16) (runs: 300, μ: 13851788, ~: 13851288)
+Test result: [32mok[0m. [32m3[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 12.96s
+
+Test result: [32mok[0m. [32m0[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 13.72s
+
+Running 12 tests for tests/forge/unit/ERC20Pool/ERC20PoolPrecision.t.sol:ERC20PoolPrecisionTest
+[32m[PASS][0m testAddRemoveCollateralPrecision(uint8,uint8,uint16) (runs: 300, μ: 11490804, ~: 11502669)
+[32m[PASS][0m testAddRemoveQuotePrecision(uint8,uint8) (runs: 300, μ: 12030318, ~: 12030428)
+[32m[PASS][0m testBorrowRepayPrecision(uint8,uint8) (runs: 300, μ: 12862674, ~: 12858564)
+[32m[PASS][0m testCollateralDustPricePrecisionAdjustment() (gas: 30223540)
+[32m[PASS][0m testDepositTwoActorSameBucket(uint8,uint8,uint16,uint256,uint256) (runs: 300, μ: 11410189, ~: 11410729)
+[32m[PASS][0m testDepositTwoActorSameBucketSimplified() (gas: 11406535)
+[32m[PASS][0m testDepositTwoLendersSameBucket(uint8,uint8,uint16,uint256,uint256) (runs: 300, μ: 11475828, ~: 11479474)
+[32m[PASS][0m testDrawDebtPrecision(uint8,uint8,uint16) (runs: 300, μ: 11790289, ~: 11797401)
+[32m[PASS][0m testDrawMinDebtAmount(uint8,uint8,uint16) (runs: 300, μ: 18574004, ~: 18587659)
+[32m[PASS][0m testFlashLoanPrecision(uint8,uint8) (runs: 300, μ: 11359761, ~: 11359831)
+[32m[PASS][0m testMoveQuoteToken(uint8,uint8,uint16,uint16,uint256) (runs: 300, μ: 11214878, ~: 11334034)
+[32m[PASS][0m testRepayLessThanTokenPrecision(uint8,uint16) (runs: 300, μ: 12081593, ~: 12083861)
+Test result: [32mok[0m. [32m12[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 23.28s
+
+Running 4 tests for tests/forge/unit/FenwickTree.t.sol:FenwickTreeTest
+[32m[PASS][0m testFenwickFuzzyScalingPrefix(uint256,uint256,uint256,uint256,uint256) (runs: 300, μ: 71626278, ~: 78529600)
+[32m[PASS][0m testFenwickRemovePrecision() (gas: 704441)
+[32m[PASS][0m testFenwickScaled() (gas: 943324)
+[32m[PASS][0m testFenwickUnscaled() (gas: 563667)
+Test result: [32mok[0m. [32m4[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 23.10s
+
+Test result: [32mok[0m. [32m0[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 1.72s
+
+Running 27 tests for tests/forge/unit/Rewards/RewardsManager.t.sol:RewardsManagerTest
+[32m[PASS][0m testClaimAndWithdraw() (gas: 89930844)
+[32m[PASS][0m testClaimRewardsBankruptBucket() (gas: 180798919)
+[32m[PASS][0m testClaimRewardsCap() (gas: 89344145)
+[32m[PASS][0m testClaimRewardsCapMultiplePools() (gas: 181887836)
+[32m[PASS][0m testClaimRewardsFreezeUnclaimedYield() (gas: 3287484)
+[32m[PASS][0m testClaimRewardsFuzzy(uint256,uint256) (runs: 300, μ: 6003726, ~: 5869997)
+[32m[PASS][0m testClaimRewardsInsufficientFunds() (gas: 4850839)
+[32m[PASS][0m testClaimRewardsMultipleDepositsDifferentBucketsMultipleAuctions() (gas: 184178438)
+[32m[PASS][0m testClaimRewardsMultipleDepositsSameBucketsMultipleAuctions() (gas: 10316608)
+[32m[PASS][0m testDeployWith0xAddressRevert() (gas: 9513123)
+[32m[PASS][0m testEarlyAndLateStakerRewards() (gas: 181538981)
+[32m[PASS][0m testMultiPeriodRewardsSingleClaim() (gas: 13734580)
+[32m[PASS][0m testMultiplePools() (gas: 7376830)
+[32m[PASS][0m testMultipleUnstakeInSameEpoch() (gas: 126515887)
+[32m[PASS][0m testNoRewardsToClaimPostBankrupt() (gas: 92570258)
+[32m[PASS][0m testRoguePoolAttack_report_151() (gas: 275114)
+[32m[PASS][0m testStakeToken() (gas: 5771478)
+[32m[PASS][0m testStakingRewardsFuzzy(uint256,uint256) (runs: 300, μ: 45504892, ~: 38766499)
+[32m[PASS][0m testUnsafeCasting_report_227() (gas: 1308624)
+[32m[PASS][0m testUnstakeNoBurn() (gas: 3157751)
+[32m[PASS][0m testUnstakeToken() (gas: 88590730)
+[32m[PASS][0m testUnstakeTokenAfterBurnNoInterest() (gas: 2720105)
+[32m[PASS][0m testUpdateExchangeRatesAndClaimRewards() (gas: 4682508)
+[32m[PASS][0m testWithdrawAndClaimRewards() (gas: 89936311)
+[32m[PASS][0m testWithdrawAndClaimRewardsNoExchangeRateUpdate() (gas: 91120769)
+[32m[PASS][0m testWithdrawAndClaimRewardsNoReserveTake() (gas: 5486941)
+[32m[PASS][0m testWithdrawClaimAndRestake() (gas: 92991985)
+Test result: [32mok[0m. [32m27[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 55.99s
+
+Running 1 test for tests/forge/unit/ERC721Pool/ERC721PoolBorrow.t.sol:ERC721PoolBorrowFuzzyTest
+[32m[PASS][0m testDrawRepayDebtFuzzy(uint256,uint256) (runs: 300, μ: 196081602, ~: 227112359)
+Test result: [32mok[0m. [32m1[0m passed; [31m0[0m failed; [33m0[0m skipped; finished in 55.34s
+| AjnaToken contract |                 |       |        |       |         |
+|--------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost    | Deployment Size |       |        |       |         |
+| 0                  | 0               |       |        |       |         |
+| Function Name      | min             | avg   | median | max   | # calls |
+| approve            | 2647            | 13647 | 13647  | 24647 | 2       |
+| balanceOf          | 585             | 1251  | 585    | 2585  | 12      |
+| burn               | 25747           | 29247 | 29247  | 32747 | 2       |
+| transfer           | 22875           | 27675 | 27675  | 32475 | 2       |
+| transferFrom       | 30161           | 30161 | 30161  | 30161 | 1       |
+
+
+| Comp contract   |                 |     |        |     |         |
+|-----------------|-----------------|-----|--------|-----|---------|
+| Deployment Cost | Deployment Size |     |        |     |         |
+| 0               | 0               |     |        |     |         |
+| Function Name   | min             | avg | median | max | # calls |
+| decimals        | 350             | 350 | 350    | 350 | 1       |
+
+
+| Dai contract    |                 |     |        |     |         |
+|-----------------|-----------------|-----|--------|-----|---------|
+| Deployment Cost | Deployment Size |     |        |     |         |
+| 0               | 0               |     |        |     |         |
+| Function Name   | min             | avg | median | max | # calls |
+| decimals        | 240             | 240 | 240    | 240 | 1       |
+
+
+| FiatTokenProxy contract |                 |      |        |      |         |
+|-------------------------|-----------------|------|--------|------|---------|
+| Deployment Cost         | Deployment Size |      |        |      |         |
+| 0                       | 0               |      |        |      |         |
+| Function Name           | min             | avg  | median | max  | # calls |
+| decimals                | 9664            | 9664 | 9664   | 9664 | 1       |
+
+
+| FiatTokenV2_1 contract |                 |      |        |      |         |
+|------------------------|-----------------|------|--------|------|---------|
+| Deployment Cost        | Deployment Size |      |        |      |         |
+| 0                      | 0               |      |        |      |         |
+| Function Name          | min             | avg  | median | max  | # calls |
+| decimals               | 2381            | 2381 | 2381   | 2381 | 1       |
+
+
+| MoonCatsWrapped contract |                 |      |        |      |         |
+|--------------------------|-----------------|------|--------|------|---------|
+| Deployment Cost          | Deployment Size |      |        |      |         |
+| 0                        | 0               |      |        |      |         |
+| Function Name            | min             | avg  | median | max  | # calls |
+| name                     | 3356            | 3356 | 3356   | 3356 | 1       |
+| symbol                   | 3354            | 3354 | 3354   | 3354 | 1       |
+
+
+| ProtocolFeesCollector contract |                 |      |        |      |         |
+|--------------------------------|-----------------|------|--------|------|---------|
+| Deployment Cost                | Deployment Size |      |        |      |         |
+| 0                              | 0               |      |        |      |         |
+| Function Name                  | min             | avg  | median | max  | # calls |
+| getFlashLoanFeePercentage      | 350             | 1350 | 1350   | 2350 | 2       |
+
+
+| SwapRouter contract   |                 |       |        |       |         |
+|-----------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost       | Deployment Size |       |        |       |         |
+| 0                     | 0               |       |        |       |         |
+| Function Name         | min             | avg   | median | max   | # calls |
+| exactInputSingle      | 70189           | 70189 | 70189  | 70189 | 1       |
+| uniswapV3SwapCallback | 11879           | 11879 | 11879  | 11879 | 1       |
+
+
+| TetherToken contract |                 |       |        |       |         |
+|----------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost      | Deployment Size |       |        |       |         |
+| 0                    | 0               |       |        |       |         |
+| Function Name        | min             | avg   | median | max   | # calls |
+| approve              | 24953           | 24953 | 24953  | 24953 | 1       |
+| balanceOf            | 1031            | 1831  | 1031   | 5031  | 5       |
+| decimals             | 2484            | 2484  | 2484   | 2484  | 1       |
+| transferFrom         | 35224           | 35224 | 35224  | 35224 | 1       |
+
+
+| UniswapV3Pool contract |                 |       |        |       |         |
+|------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost        | Deployment Size |       |        |       |         |
+| 0                      | 0               |       |        |       |         |
+| Function Name          | min             | avg   | median | max   | # calls |
+| swap                   | 64244           | 64244 | 64244  | 64244 | 1       |
+
+
+| Vault contract  |                 |        |        |        |         |
+|-----------------|-----------------|--------|--------|--------|---------|
+| Deployment Cost | Deployment Size |        |        |        |         |
+| 0               | 0               |        |        |        |         |
+| Function Name   | min             | avg    | median | max    | # calls |
+| flashLoan       | 537112          | 537112 | 537112 | 537112 | 1       |
+
+
+| WBTC contract   |                 |      |        |      |         |
+|-----------------|-----------------|------|--------|------|---------|
+| Deployment Cost | Deployment Size |      |        |      |         |
+| 0               | 0               |      |        |      |         |
+| Function Name   | min             | avg  | median | max  | # calls |
+| decimals        | 2431            | 2431 | 2431   | 2431 | 1       |
+
+
+| WETH9 contract  |                 |       |        |       |         |
+|-----------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost | Deployment Size |       |        |       |         |
+| 0               | 0               |       |        |       |         |
+| Function Name   | min             | avg   | median | max   | # calls |
+| approve         | 24420           | 24420 | 24420  | 24420 | 1       |
+| balanceOf       | 534             | 1034  | 534    | 2534  | 8       |
+| decimals        | 2444            | 2444  | 2444   | 2444  | 1       |
+| transfer        | 2610            | 19266 | 23246  | 27962 | 4       |
+| transferFrom    | 20839           | 20839 | 20839  | 20839 | 1       |
+
+
+| src/ERC20Pool.sol:ERC20Pool contract |                 |        |        |        |         |
+|--------------------------------------|-----------------|--------|--------|--------|---------|
+| Deployment Cost                      | Deployment Size |        |        |        |         |
+| 4718604                              | 23493           |        |        |        |         |
+| Function Name                        | min             | avg    | median | max    | # calls |
+| addCollateral                        | 1553            | 162301 | 143839 | 400771 | 34      |
+| addQuoteToken                        | 1950            | 256731 | 171180 | 723088 | 915     |
+| approveLPTransferors                 | 4255            | 16647  | 5318   | 29718  | 115     |
+| approvedTransferors                  | 1798            | 2464   | 1798   | 3798   | 3       |
+| auctionInfo                          | 1374            | 3861   | 1374   | 11374  | 533     |
+| borrowerInfo                         | 1792            | 2102   | 1792   | 7792   | 1293    |
+| bucketCollateralDust                 | 1152            | 1834   | 1152   | 3099   | 17      |
+| bucketExchangeRate                   | 14696           | 17249  | 16006  | 33332  | 859     |
+| bucketInfo                           | 4571            | 7252   | 6173   | 36833  | 3153    |
+| bucketTake                           | 8165            | 112994 | 107028 | 398104 | 34      |
+| burnInfo                             | 885             | 1792   | 885    | 6885   | 456     |
+| collateralAddress                    | 735             | 735    | 735    | 735    | 407     |
+| collateralScale                      | 1542            | 1542   | 1542   | 1542   | 660     |
+| currentBurnEpoch                     | 666             | 954    | 666    | 2666   | 457     |
+| debtInfo                             | 5762            | 6157   | 5762   | 18262  | 1519    |
+| decreaseLPAllowance                  | 9060            | 18647  | 18647  | 28234  | 2       |
+| depositIndex                         | 12204           | 14249  | 12674  | 64700  | 1392    |
+| depositSize                          | 659             | 800    | 659    | 2659   | 411     |
+| depositUtilization                   | 1428            | 1885   | 1771   | 8271   | 156     |
+| drawDebt                             | 7442            | 243856 | 230373 | 595904 | 502     |
+| emasInfo                             | 1851            | 1922   | 1851   | 5851   | 168     |
+| flashFee                             | 1753            | 1855   | 1891   | 1922   | 3       |
+| flashLoan                            | 6688            | 35760  | 26939  | 67052  | 10      |
+| increaseLPAllowance                  | 7977            | 12988  | 10099  | 239028 | 3129    |
+| inflatorInfo                         | 422             | 452    | 422    | 2422   | 1520    |
+| initialize                           | 1664            | 92253  | 92537  | 92537  | 320     |
+| interestRateInfo                     | 345             | 390    | 345    | 2345   | 1794    |
+| kick                                 | 6878            | 471656 | 572805 | 713526 | 56      |
+| kickReserveAuction                   | 4090            | 49415  | 51755  | 100698 | 99      |
+| kickerInfo                           | 1304            | 2332   | 1304   | 5304   | 140     |
+| lenderInfo                           | 1609            | 1804   | 1717   | 7717   | 14373   |
+| lenderKick                           | 42928           | 276454 | 222031 | 545270 | 19      |
+| loanInfo                             | 1414            | 1988   | 1588   | 5763   | 30      |
+| loansInfo                            | 1689            | 2131   | 2038   | 8038   | 825     |
+| lpAllowance                          | 1138            | 1138   | 1138   | 3138   | 3367    |
+| maxFlashLoan                         | 1325            | 6048   | 6919   | 13893  | 9       |
+| moveQuoteToken                       | 1918            | 141643 | 107410 | 634633 | 41      |
+| multicall                            | 52807           | 458021 | 458021 | 863236 | 2       |
+| pledgedCollateral                    | 468             | 559    | 468    | 2468   | 568     |
+| poolType                             | 1205            | 1205   | 1205   | 1205   | 156     |
+| quoteTokenAddress                    | 1285            | 1285   | 1285   | 1285   | 597     |
+| quoteTokenScale                      | 970             | 970    | 970    | 970    | 2393    |
+| removeCollateral                     | 4412            | 57233  | 58408  | 157370 | 101     |
+| removeQuoteToken                     | 4698            | 70330  | 63688  | 621261 | 399     |
+| repayDebt                            | 9853            | 191286 | 120692 | 589911 | 292     |
+| reservesInfo                         | 1147            | 2593   | 1147   | 9147   | 213     |
+| revokeLPAllowance                    | 4739            | 4739   | 4739   | 4739   | 1       |
+| revokeLPTransferors                  | 6757            | 6757   | 6757   | 6757   | 1       |
+| settle                               | 11765           | 201800 | 170004 | 497361 | 60      |
+| stampLoan                            | 9756            | 147804 | 147929 | 285728 | 3       |
+| take                                 | 9159            | 185114 | 184787 | 570797 | 42      |
+| takeReserves                         | 6714            | 116173 | 140256 | 153184 | 57      |
+| transferLP                           | 3224            | 82374  | 41740  | 377570 | 129     |
+| updateInterest                       | 8056            | 120075 | 100382 | 413467 | 18352   |
+| withdrawBonds                        | 7788            | 8908   | 8908   | 10028  | 2       |
+
+
+| src/ERC20PoolFactory.sol:ERC20PoolFactory contract |                 |        |        |        |         |
+|----------------------------------------------------|-----------------|--------|--------|--------|---------|
+| Deployment Cost                                    | Deployment Size |        |        |        |         |
+| 5313835                                            | 26357           |        |        |        |         |
+| Function Name                                      | min             | avg    | median | max    | # calls |
+| deployPool                                         | 580             | 224904 | 234006 | 257521 | 329     |
+| deployedPools                                      | 855             | 1927   | 2855   | 2855   | 151     |
+| deployedPoolsList                                  | 704             | 704    | 704    | 704    | 3       |
+| getDeployedPoolsList                               | 973             | 1282   | 1110   | 2628   | 8       |
+| getNumberOfDeployedPools                           | 369             | 369    | 369    | 369    | 4       |
+
+
+| src/ERC721Pool.sol:ERC721Pool contract |                 |        |        |          |         |
+|----------------------------------------|-----------------|--------|--------|----------|---------|
+| Deployment Cost                        | Deployment Size |        |        |          |         |
+| 4860609                                | 24202           |        |        |          |         |
+| Function Name                          | min             | avg    | median | max      | # calls |
+| addCollateral                          | 23601           | 259312 | 303067 | 738259   | 9       |
+| addQuoteToken                          | 43467           | 281708 | 215624 | 682428   | 184     |
+| approveLPTransferors                   | 5406            | 20006  | 27306  | 27306    | 6       |
+| auctionInfo                            | 1374            | 3616   | 1374   | 11374    | 264     |
+| borrowerInfo                           | 1946            | 2312   | 1946   | 7946     | 480     |
+| borrowerTokenIds                       | 2102            | 2230   | 2102   | 6102     | 1216    |
+| bucketInfo                             | 4148            | 9476   | 7181   | 39239    | 111522  |
+| bucketTake                             | 98491           | 193606 | 136937 | 508779   | 13      |
+| bucketTokenIds                         | 1279            | 1279   | 1279   | 1279     | 25      |
+| collateralAddress                      | 779             | 779    | 779    | 779      | 12      |
+| debtInfo                               | 5806            | 6392   | 5806   | 18834    | 552     |
+| depositIndex                           | 12127           | 15914  | 12674  | 64674    | 416     |
+| depositSize                            | 659             | 817    | 659    | 2659     | 164     |
+| depositUtilization                     | 1771            | 1841   | 1771   | 5771     | 57      |
+| drawDebt                               | 12207           | 670371 | 302923 | 62757842 | 168     |
+| emasInfo                               | 1983            | 2034   | 1983   | 5983     | 77      |
+| flashFee                               | 1840            | 1850   | 1840   | 1871     | 3       |
+| flashLoan                              | 6527            | 23631  | 14327  | 63354    | 6       |
+| increaseLPAllowance                    | 52970           | 67110  | 69931  | 78431    | 6       |
+| inflatorInfo                           | 422             | 498    | 422    | 2422     | 472     |
+| initialize                             | 4038            | 162007 | 182445 | 294475   | 136     |
+| interestRateInfo                       | 345             | 463    | 345    | 2345     | 489     |
+| isSubset                               | 674             | 674    | 674    | 674      | 2       |
+| kick                                   | 6878            | 517649 | 565965 | 783665   | 13      |
+| kickReserveAuction                     | 6912            | 57451  | 64977  | 104077   | 8       |
+| kickerInfo                             | 1326            | 2468   | 1326   | 5326     | 42      |
+| lenderInfo                             | 1741            | 2511   | 1849   | 7849     | 658     |
+| lenderKick                             | 151533          | 354002 | 251896 | 607414   | 10      |
+| loansInfo                              | 1689            | 2235   | 2038   | 6038     | 267     |
+| lpAllowance                            | 1182            | 1182   | 1182   | 1182     | 12      |
+| maxFlashLoan                           | 6758            | 6758   | 6758   | 6758     | 1       |
+| mergeOrRemoveCollateral                | 4187            | 118713 | 131648 | 300047   | 14      |
+| moveQuoteToken                         | 45953           | 53109  | 46131  | 67228    | 6       |
+| pledgedCollateral                      | 468             | 654    | 468    | 2468     | 214     |
+| poolType                               | 1337            | 1337   | 1337   | 1337     | 42      |
+| quoteTokenAddress                      | 1417            | 1417   | 1417   | 1417     | 240     |
+| quoteTokenScale                        | 1014            | 1014   | 1014   | 1014     | 430     |
+| removeCollateral                       | 3779            | 71688  | 66876  | 167878   | 21      |
+| removeQuoteToken                       | 4830            | 62851  | 59734  | 182722   | 140     |
+| repayDebt                              | 8354            | 519675 | 118102 | 40434704 | 120     |
+| reservesInfo                           | 1169            | 2626   | 1169   | 9169     | 70      |
+| settle                                 | 109051          | 332673 | 268003 | 714682   | 15      |
+| take                                   | 12144           | 311726 | 382145 | 706382   | 13      |
+| takeReserves                           | 4449            | 82426  | 63969  | 164783   | 8       |
+| tokenIdsAllowed                        | 1207            | 1864   | 1378   | 3378     | 77      |
+| totalBorrowerTokens                    | 1191            | 1191   | 1191   | 1191     | 2       |
+| totalBucketTokens                      | 1018            | 1018   | 1018   | 1018     | 2       |
+| transferLP                             | 11556           | 67488  | 79305  | 111604   | 6       |
+| updateInterest                         | 30898           | 180711 | 145795 | 417918   | 16      |
+| withdrawBonds                          | 10133           | 20943  | 20943  | 31753    | 2       |
+
+
+| src/ERC721PoolFactory.sol:ERC721PoolFactory contract   |                 |                   |        |                     |         |
+|--------------------------------------------------------|-----------------|-------------------|--------|---------------------|---------|
+| Deployment Cost                                        | Deployment Size |                   |        |                     |         |
+| 5691745                                                | 28248           |                   |        |                     |         |
+| Function Name                                          | min             | avg               | median | max                 | # calls |
+| deployPool(address,address,uint256)(address)           | 225975          | 225975            | 225975 | 225975              | 1       |
+| deployPool(address,address,uint256[],uint256)(address) | 1049            | 59982506446700461 | 248708 | 8937393460516718779 | 149     |
+| deployedPools                                          | 892             | 1970              | 2892   | 2892                | 152     |
+| deployedPoolsList                                      | 748             | 748               | 748    | 748                 | 1       |
+| getDeployedPoolsList                                   | 1543            | 3445              | 1543   | 9543                | 27      |
+| getNFTSubsetHash                                       | 1556            | 2470              | 2278   | 4203                | 5       |
+| getNumberOfDeployedPools                               | 435             | 435               | 435    | 435                 | 26      |
+
+
+| src/PoolInfoUtils.sol:PoolInfoUtils contract |                 |       |        |        |         |
+|----------------------------------------------|-----------------|-------|--------|--------|---------|
+| Deployment Cost                              | Deployment Size |       |        |        |         |
+| 2654477                                      | 13290           |       |        |        |         |
+| Function Name                                | min             | avg   | median | max    | # calls |
+| auctionStatus                                | 3355            | 23985 | 3355   | 134982 | 245     |
+| availableQuoteTokenAmount                    | 7403            | 7903  | 7403   | 9403   | 4       |
+| borrowFeeRate                                | 1795            | 2431  | 1795   | 8795   | 11      |
+| borrowerInfo                                 | 8867            | 9994  | 9217   | 26563  | 1058    |
+| bucketInfo                                   | 16041           | 19109 | 18053  | 50020  | 2499    |
+| hpb                                          | 23739           | 42739 | 23739  | 80739  | 3       |
+| hpbIndex                                     | 13956           | 13956 | 13956  | 13956  | 1       |
+| htp                                          | 3268            | 4934  | 3268   | 9268   | 6       |
+| indexToPrice                                 | 10525           | 10618 | 10577  | 10940  | 270     |
+| lenderInterestMargin                         | 25862           | 25862 | 25862  | 25862  | 1       |
+| lpToCollateral                               | 17468           | 18943 | 18492  | 53578  | 127     |
+| lpToQuoteTokens                              | 18343           | 18343 | 18343  | 18343  | 3       |
+| lup                                          | 29893           | 34056 | 30438  | 99895  | 491     |
+| lupIndex                                     | 20171           | 20171 | 20171  | 20171  | 1       |
+| poolLoansInfo                                | 12781           | 14209 | 13130  | 30630  | 422     |
+| poolPricesInfo                               | 55931           | 71759 | 71161  | 175672 | 437     |
+| poolReservesInfo                             | 16739           | 19783 | 18433  | 49509  | 138     |
+| poolUtilizationInfo                          | 38457           | 41061 | 40850  | 124231 | 212     |
+| priceToIndex                                 | 14876           | 15158 | 15202  | 15202  | 13      |
+| unutilizedDepositFeeRate                     | 8905            | 8905  | 8905   | 8905   | 1       |
+
+
+| src/PoolInfoUtilsMulticall.sol:PoolInfoUtilsMulticall contract |                 |        |        |        |         |
+|----------------------------------------------------------------|-----------------|--------|--------|--------|---------|
+| Deployment Cost                                                | Deployment Size |        |        |        |         |
+| 1375573                                                        | 7095            |        |        |        |         |
+| Function Name                                                  | min             | avg    | median | max    | # calls |
+| multicall                                                      | 189045          | 190021 | 190021 | 190997 | 2       |
+| poolDetailsAndBucketInfo                                       | 271417          | 271417 | 271417 | 271417 | 1       |
+
+
+| src/PositionManager.sol:PositionManager contract |                 |        |        |         |         |
+|--------------------------------------------------|-----------------|--------|--------|---------|---------|
+| Deployment Cost                                  | Deployment Size |        |        |         |         |
+| 3671379                                          | 18933           |        |        |         |         |
+| Function Name                                    | min             | avg    | median | max     | # calls |
+| DOMAIN_SEPARATOR                                 | 732             | 732    | 732    | 732     | 9       |
+| PERMIT_TYPEHASH                                  | 426             | 426    | 426    | 426     | 8       |
+| approve(address,uint256)                         | 23302           | 25492  | 25302  | 27302   | 21      |
+| approve(address,uint256)(bool)                   | 2722            | 25140  | 25302  | 27302   | 53      |
+| burn                                             | 1838            | 5215   | 4528   | 11214   | 15      |
+| getLP                                            | 6558            | 10960  | 8160   | 36286   | 419     |
+| getPositionIndexes                               | 1680            | 4422   | 2620   | 14620   | 165     |
+| getPositionIndexesFiltered                       | 8687            | 43831  | 42029  | 79312   | 83      |
+| getPositionInfo                                  | 1053            | 2303   | 1053   | 5053    | 16      |
+| isAjnaPool                                       | 955             | 7478   | 6758   | 20758   | 43      |
+| isIndexInPosition                                | 1066            | 1582   | 1066   | 3066    | 89      |
+| isPositionBucketBankrupt                         | 6870            | 7886   | 8090   | 9658    | 18      |
+| memorializePositions                             | 4399            | 83457  | 73401  | 1152808 | 3107    |
+| mint                                             | 10440           | 89551  | 95162  | 100162  | 110     |
+| moveLiquidity                                    | 5365            | 189890 | 165330 | 669059  | 20      |
+| nonces                                           | 841             | 1817   | 1746   | 2841    | 8       |
+| ownerOf                                          | 836             | 862    | 836    | 2836    | 315     |
+| permit                                           | 1290            | 23250  | 17585  | 44417   | 9       |
+| poolKey                                          | 807             | 1159   | 807    | 2807    | 68      |
+| redeemPositions                                  | 2773            | 40471  | 42943  | 141840  | 31      |
+| safeTransferFrom                                 | 39663           | 41263  | 41663  | 41663   | 6       |
+| tokenURI                                         | 3135            | 959362 | 959362 | 1915590 | 2       |
+| transferFrom(address,address,uint256)            | 20212           | 29487  | 24700  | 41656   | 28      |
+| transferFrom(address,address,uint256)(bool)      | 4292            | 31927  | 34056  | 41656   | 84      |
+
+
+| src/RewardsManager.sol:RewardsManager contract |                 |        |        |         |         |
+|------------------------------------------------|-----------------|--------|--------|---------|---------|
+| Deployment Cost                                | Deployment Size |        |        |         |         |
+| 1741097                                        | 9111            |        |        |         |         |
+| Function Name                                  | min             | avg    | median | max     | # calls |
+| calculateRewards                               | 30303           | 74457  | 56881  | 168513  | 30      |
+| claimRewards                                   | 699             | 204715 | 125125 | 557941  | 38      |
+| emergencyUnstake                               | 9898            | 36943  | 27596  | 97196   | 20      |
+| getBucketStateStakeInfo                        | 882             | 4657   | 4882   | 4882    | 266005  |
+| getStakeInfo                                   | 748             | 748    | 748    | 748     | 112     |
+| isBucketUpdated                                | 726             | 726    | 726    | 726     | 254     |
+| stake                                          | 157112          | 606331 | 614601 | 1152550 | 66      |
+| unstake                                        | 542             | 187840 | 123464 | 587218  | 25      |
+| updateBucketExchangeRatesAndClaim              | 4408            | 273217 | 318942 | 557578  | 43      |
+
+
+| src/libraries/external/PoolCommons.sol:PoolCommons contract |                 |      |        |       |         |
+|-------------------------------------------------------------|-----------------|------|--------|-------|---------|
+| Deployment Cost                                             | Deployment Size |      |        |       |         |
+| 1819744                                                     | 9147            |      |        |       |         |
+| Function Name                                               | min             | avg  | median | max   | # calls |
+| lenderInterestMargin                                        | 646             | 8342 | 10880  | 11164 | 12      |
+| pendingInflator                                             | 3002            | 3180 | 3002   | 3730  | 3556    |
+| pendingInterestFactor                                       | 2524            | 2724 | 2524   | 3252  | 735     |
+
+
+| tests/forge/interactions/BalancerUniswapExample.sol:BalancerUniswapPurchaser contract |                 |        |        |        |         |
+|---------------------------------------------------------------------------------------|-----------------|--------|--------|--------|---------|
+| Deployment Cost                                                                       | Deployment Size |        |        |        |         |
+| 779053                                                                                | 3945            |        |        |        |         |
+| Function Name                                                                         | min             | avg    | median | max    | # calls |
+| purchase                                                                              | 541164          | 541164 | 541164 | 541164 | 1       |
+| receiveFlashLoan                                                                      | 469008          | 469008 | 469008 | 469008 | 1       |
+
+
+| tests/forge/interactions/BalancerUniswapExample.sol:BalancerUniswapTaker contract |                 |        |        |        |         |
+|-----------------------------------------------------------------------------------|-----------------|--------|--------|--------|---------|
+| Deployment Cost                                                                   | Deployment Size |        |        |        |         |
+| 881342                                                                            | 4449            |        |        |        |         |
+| Function Name                                                                     | min             | avg    | median | max    | # calls |
+| receiveFlashLoan                                                                  | 607376          | 607376 | 607376 | 607376 | 1       |
+| take                                                                              | 688435          | 688435 | 688435 | 688435 | 1       |
+
+
+| tests/forge/interactions/NFTTakeExample.sol:NFTMarketPlace contract |                 |       |        |       |         |
+|---------------------------------------------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost                                                     | Deployment Size |       |        |       |         |
+| 228481                                                              | 1111            |       |        |       |         |
+| Function Name                                                       | min             | avg   | median | max   | # calls |
+| onERC721Received                                                    | 827             | 827   | 827    | 827   | 4       |
+| sellNFT                                                             | 45654           | 54651 | 54651  | 63649 | 4       |
+
+
+| tests/forge/interactions/NFTTakeExample.sol:NFTNoopTakeExample contract |                 |        |        |        |         |
+|-------------------------------------------------------------------------|-----------------|--------|--------|--------|---------|
+| Deployment Cost                                                         | Deployment Size |        |        |        |         |
+| 230069                                                                  | 1181            |        |        |        |         |
+| Function Name                                                           | min             | avg    | median | max    | # calls |
+| atomicSwapCallback                                                      | 112186          | 112186 | 112186 | 112186 | 1       |
+| poolAddressReceived                                                     | 381             | 381    | 381    | 381    | 1       |
+| quoteAmountDueReceived                                                  | 262             | 262    | 262    | 262    | 1       |
+| tokenIdsReceived                                                        | 630             | 630    | 630    | 630    | 2       |
+
+
+| tests/forge/interactions/NFTTakeExample.sol:NFTTakeExample contract |                 |        |        |        |         |
+|---------------------------------------------------------------------|-----------------|--------|--------|--------|---------|
+| Deployment Cost                                                     | Deployment Size |        |        |        |         |
+| 308273                                                              | 1607            |        |        |        |         |
+| Function Name                                                       | min             | avg    | median | max    | # calls |
+| atomicSwapCallback                                                  | 116101          | 116101 | 116101 | 116101 | 2       |
+
+
+| tests/forge/interactions/UniswapTakeExample.sol:UniswapTakeExample contract |                 |       |        |       |         |
+|-----------------------------------------------------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost                                                             | Deployment Size |       |        |       |         |
+| 264927                                                                      | 1368            |       |        |       |         |
+| Function Name                                                               | min             | avg   | median | max   | # calls |
+| approveToken                                                                | 27646           | 27646 | 27646  | 27646 | 1       |
+| atomicSwapCallback                                                          | 76174           | 76174 | 76174  | 76174 | 1       |
+
+
+| tests/forge/unit/ERC721Pool/ERC721PoolBorrow.t.sol:ERC721SubsetPoolBorrowTest contract |                 |        |        |        |         |
+|----------------------------------------------------------------------------------------|-----------------|--------|--------|--------|---------|
+| Deployment Cost                                                                        | Deployment Size |        |        |        |         |
+| 18980503                                                                               | 93379           |        |        |        |         |
+| Function Name                                                                          | min             | avg    | median | max    | # calls |
+| createPool                                                                             | 419952          | 419952 | 419952 | 419952 | 7       |
+
+
+| tests/forge/unit/ERC721Pool/ERC721PoolInterest.t.sol:ERC721PoolSubsetInterestTest contract |                 |        |        |        |         |
+|--------------------------------------------------------------------------------------------|-----------------|--------|--------|--------|---------|
+| Deployment Cost                                                                            | Deployment Size |        |        |        |         |
+| 17551571                                                                                   | 86246           |        |        |        |         |
+| Function Name                                                                              | min             | avg    | median | max    | # calls |
+| createPool                                                                                 | 419908          | 419908 | 419908 | 419908 | 3       |
+
+
+| tests/forge/unit/Rewards/RoguePool.sol:RoguePool contract |                 |       |        |       |         |
+|-----------------------------------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost                                           | Deployment Size |       |        |       |         |
+| 159593                                                    | 1048            |       |        |       |         |
+| Function Name                                             | min             | avg   | median | max   | # calls |
+| collateralAddress                                         | 258             | 258   | 258    | 258   | 2       |
+| setBurnEpoch                                              | 20440           | 22490 | 22490  | 24540 | 2       |
+
+
+| tests/forge/utils/ContractERC20NoDecimals.sol:ERC20NoDecimals contract |                 |     |        |     |         |
+|------------------------------------------------------------------------|-----------------|-----|--------|-----|---------|
+| Deployment Cost                                                        | Deployment Size |     |        |     |         |
+| 464185                                                                 | 3036            |     |        |     |         |
+| Function Name                                                          | min             | avg | median | max | # calls |
+| decimals                                                               | 302             | 302 | 302    | 302 | 3       |
+
+
+| tests/forge/utils/ContractNFTRecipient.sol:ContractNFTRecipient contract |                 |       |        |       |         |
+|--------------------------------------------------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost                                                          | Deployment Size |       |        |       |         |
+| 318286                                                                   | 1657            |       |        |       |         |
+| Function Name                                                            | min             | avg   | median | max   | # calls |
+| isValidSignature                                                         | 4671            | 4671  | 4671   | 4672  | 2       |
+| transferNFT                                                              | 41632           | 41632 | 41632  | 41632 | 1       |
+
+
+| tests/forge/utils/ContractNFTSpender.sol:ContractNFTSpender contract |                 |       |        |       |         |
+|----------------------------------------------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost                                                      | Deployment Size |       |        |       |         |
+| 161932                                                               | 876             |       |        |       |         |
+| Function Name                                                        | min             | avg   | median | max   | # calls |
+| transferFromWithPermit                                               | 2920            | 33765 | 19215  | 77303 | 9       |
+
+
+| tests/forge/utils/FenwickTreeInstance.sol:FenwickTreeInstance contract |                 |          |          |          |         |
+|------------------------------------------------------------------------|-----------------|----------|----------|----------|---------|
+| Deployment Cost                                                        | Deployment Size |          |          |          |         |
+| 1916381                                                                | 7299            |          |          |          |         |
+| Function Name                                                          | min             | avg      | median   | max      | # calls |
+| add                                                                    | 14572           | 101883   | 57504    | 302589   | 11      |
+| findIndexOfSum                                                         | 12720           | 17551    | 12981    | 60968    | 21      |
+| fuzzyFill                                                              | 67687221        | 67687221 | 67687221 | 67687221 | 1       |
+| get                                                                    | 7063            | 9150     | 8001     | 12720    | 14      |
+| mult                                                                   | 18540           | 95567    | 94356    | 196196   | 6       |
+| obliterate                                                             | 6325            | 7310     | 6366     | 9239     | 3       |
+| prefixSum                                                              | 1883            | 10127    | 9335     | 20858    | 21      |
+| remove                                                                 | 10737           | 12575    | 12575    | 14414    | 2       |
+| treeSum                                                                | 325             | 325      | 325      | 325      | 3       |
+| valueAt                                                                | 5407            | 5407     | 5407     | 5407     | 2       |
+
+
+| tests/forge/utils/FlashloanBorrower.sol:FlashloanBorrower contract |                 |       |        |       |         |
+|--------------------------------------------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost                                                    | Deployment Size |       |        |       |         |
+| 239790                                                             | 1615            |       |        |       |         |
+| Function Name                                                      | min             | avg   | median | max   | # calls |
+| callbackInvoked                                                    | 310             | 310   | 310    | 310   | 10      |
+| onFlashLoan                                                        | 1644            | 19801 | 26157  | 29369 | 7       |
+
+
+| tests/forge/utils/FlashloanBorrower.sol:SomeDefiStrategy contract |                 |       |        |       |         |
+|-------------------------------------------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost                                                   | Deployment Size |       |        |       |         |
+| 161732                                                            | 875             |       |        |       |         |
+| Function Name                                                     | min             | avg   | median | max   | # calls |
+| makeMoney                                                         | 24561           | 24924 | 24593  | 25950 | 4       |
+
+
+| tests/forge/utils/FlashloanBorrower.sol:SomeDefiStrategyWithRepayment contract |                 |       |        |       |         |
+|--------------------------------------------------------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost                                                                | Deployment Size |       |        |       |         |
+| 218032                                                                         | 1123            |       |        |       |         |
+| Function Name                                                                  | min             | avg   | median | max   | # calls |
+| makeMoney                                                                      | 27805           | 27805 | 27805  | 27805 | 1       |
+
+
+| tests/forge/utils/Tokens.sol:NFTCollateralToken contract |                 |        |        |          |         |
+|----------------------------------------------------------|-----------------|--------|--------|----------|---------|
+| Deployment Cost                                          | Deployment Size |        |        |          |         |
+| 1308167                                                  | 6728            |        |        |          |         |
+| Function Name                                            | min             | avg    | median | max      | # calls |
+| balanceOf                                                | 809             | 1339   | 809    | 2809     | 147     |
+| mint                                                     | 116067          | 530678 | 116067 | 11569115 | 1197    |
+| name                                                     | 3239            | 3239   | 3239   | 3239     | 1       |
+| ownerOf                                                  | 770             | 829    | 770    | 2770     | 5059    |
+| safeTransferFrom                                         | 40936           | 41974  | 41974  | 43012    | 4       |
+| setApprovalForAll                                        | 2947            | 5817   | 2947   | 24847    | 1199    |
+| supportsInterface                                        | 506             | 506    | 506    | 506      | 135     |
+| symbol                                                   | 3481            | 3481   | 3481   | 3481     | 1       |
+| totalSupply                                              | 530             | 530    | 530    | 530      | 1070    |
+| transferFrom(address,address,uint256)                    | 5496            | 38841  | 41343  | 73078    | 260     |
+| transferFrom(address,address,uint256)(bool)              | 5496            | 39341  | 40868  | 72764    | 2268    |
+
+
+| tests/forge/utils/Tokens.sol:Token contract |                 |       |        |       |         |
+|---------------------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost                             | Deployment Size |       |        |       |         |
+| 516045                                      | 3299            |       |        |       |         |
+| Function Name                               | min             | avg   | median | max   | # calls |
+| approve(address,uint256)                    | 2605            | 16604 | 24605  | 24605 | 218     |
+| approve(address,uint256)(bool)              | 2605            | 19769 | 24605  | 24605 | 2487    |
+| balanceOf                                   | 672             | 1161  | 672    | 2672  | 5970    |
+| decimals                                    | 243             | 243   | 243    | 243   | 579     |
+| name                                        | 3155            | 4014  | 3155   | 7452  | 5       |
+| symbol                                      | 1331            | 2759  | 3331   | 3331  | 7       |
+| transfer                                    | 970             | 12973 | 8081   | 29981 | 1026    |
+| transferFrom(address,address,uint256)       | 2887            | 7347  | 3608   | 25508 | 114     |
+| transferFrom(address,address,uint256)(bool) | 1299            | 9410  | 3608   | 32308 | 1384    |
+
+
+| tests/forge/utils/Tokens.sol:TokenWithNDecimals contract |                 |       |        |       |         |
+|----------------------------------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost                                          | Deployment Size |       |        |       |         |
+| 539453                                                   | 3386            |       |        |       |         |
+| Function Name                                            | min             | avg   | median | max   | # calls |
+| approve(address,uint256)                                 | 2084            | 20384 | 24605  | 24605 | 141     |
+| approve(address,uint256)(bool)                           | 2084            | 21386 | 24605  | 24605 | 235     |
+| balanceOf                                                | 672             | 1055  | 672    | 2672  | 1539    |
+| decimals                                                 | 355             | 1116  | 355    | 2355  | 189     |
+| transfer                                                 | 970             | 9895  | 3281   | 27981 | 323     |
+| transferFrom(address,address,uint256)                    | 3608            | 9887  | 4666   | 32308 | 167     |
+| transferFrom(address,address,uint256)(bool)              | 2887            | 10344 | 5832   | 32308 | 189     |
+
+
+
+ 
+Ran 87 test suites: [32m397[0m tests passed, [31m0[0m failed, [33m0[0m skipped (397 total tests)

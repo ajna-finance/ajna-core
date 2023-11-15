@@ -233,35 +233,35 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
                 address(_pool),
                 5 * 1e18,
                 high
-            ), 1668940620571263
+            ), 1669112046213499
         );
         assertEq(
             _poolUtils.lpToCollateral(
                 address(_pool),
                 20 * 1e18,
                 high
-            ), 6675762482285055
+            ), 6676448184853998
         );
         assertEq(
             _poolUtils.lpToQuoteTokens(
                 address(_pool),
                 100 * 1e18,
                 high
-            ), 100000000000000000000
+            ), 100010271524350401954
         );
         assertEq(
             _poolUtils.lpToQuoteTokens(
                 address(_pool),
                 5 * 1e18,
                 high
-            ), 5000000000000000000
+            ), 5000513576217520097
         );
         assertEq(
             _poolUtils.lpToQuoteTokens(
                 address(_pool),
                 20 * 1e18,
                 high
-            ), 20000000000000000000
+            ), 20002054304870080390
         );
     }
 
