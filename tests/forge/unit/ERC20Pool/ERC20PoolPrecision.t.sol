@@ -243,8 +243,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 // Bound Result 15
                 // Bound Result 3
                 // Bound Result 6431
-                // _assertRemoveCollateralDustRevert(_bidder, removalAmount, bucketId);
-                assert(true);
+                _assertRemoveCollateralDustRevert(_bidder, removalAmount, bucketId);
+                // assert(true);
         }
     }
 
