@@ -567,12 +567,10 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 /*********************************************************************************************************/
 /*********************************************************************************************************/
 
-    function testDepositTwoActorSameBucketSimplified(
-    ) external tearDown {
-        // setup fuzzy bounds and initialize the pool
+    function testDepositTwoActorSameBucketSimplified() external tearDown {
+        // setup precision and initialize the pool
         uint256 boundColPrecision   = 14;
         uint256 boundQuotePrecision = 7;
-
         init(boundColPrecision, boundQuotePrecision);
 
         uint256 bucketId = 2161;
@@ -587,6 +585,13 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 colScale      = ERC20Pool(address(_pool)).collateralScale();
         uint256 colDustAmount = ERC20Pool(address(_pool)).bucketCollateralDust(bucketId);
         if (collateralAmount < colDustAmount) collateralAmount = colDustAmount + colDustAmount / 2;
+
+        // TODO: Suspect the point of this test was to debug the fuzz test above.
+        // Unsure whether there is value keeping it around.
+        // Perhaps repurpose it for generally testing dust behavior on small amounts?  
+        // If so, consider setting bucketId to a high-priced bucket.
+        assertEq(collateralAmount, 15_000);
+        assertEq(quoteAmount,      100_000_000_000); // 0.0000001 * 1e18
 
         assertEq(ERC20Pool(address(_pool)).collateralScale(), 10 ** (18 - boundColPrecision));
         assertEq(_pool.quoteTokenScale(), 10 ** (18 - boundQuotePrecision));
@@ -623,6 +628,22 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         (uint256 bidderLpBalance, ) = _pool.lenderInfo(bucketId, _bidder);
         assertGt(bidderLpBalance, 0);
         assertEq(bucketLpBalance, lenderLpBalance + bidderLpBalance);
+
+        // FIXME: Due to the fee, bidder's LP entitles them to a portion of collateral, which leaves behind dust.
+        // _removeAllCollateral(_bidder, collateralAmount, bucketId, 209526837);
+        // Removing the above line just defers the problem to teardown.
+
+        // FIXME: Let's instead have the bidder reedem their LP for 209526891 deposit.
+        // _removeAllLiquidity(_bidder, 209526891, bucketId, MAX_PRICE, 209526837);
+        // This this does not work because bidder's LP is worth less than the smallest amount of deposit.
+        // Although there is no revert, 0 quote token is transferred instead of 1, **but** LP changes hand.
+        // This seems very bad and needs to be addressed.
+
+        // What if the lender instead tries to redeem their LP for collateral?
+        // FIXME: Commenting out this line breaks tearDown.
+        _removeAllCollateral(_lender, 10000, bucketId, 209552619);
+        // I fixed a bug in _removeAllCollateral, which was checking the transfer event improperly.
+        // It is inappropriate that _bidder cannot redeem all their LP first.
     }
 
 /*********************************************************************************************************/
