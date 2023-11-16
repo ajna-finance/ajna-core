@@ -204,11 +204,10 @@ library KickerActions {
         KickReserveAuctionParams calldata params_
     ) external {
         // retrieve timestamp of latest burn event and last burn timestamp
-        uint256 latestBurnEpoch   = reserveAuction_.latestBurnEventEpoch;
-        uint256 lastBurnTimestamp = reserveAuction_.burnEvents[latestBurnEpoch].timestamp;
+        uint256 latestBurnEpoch = reserveAuction_.latestBurnEventEpoch;
 
-        // check that at least two weeks have passed since the last reserve auction completed, and that the auction was not kicked within the past 72 hours
-        if (block.timestamp < lastBurnTimestamp + 2 weeks || block.timestamp - reserveAuction_.kicked <= 72 hours) {
+        // check that at least two weeks have passed since the last reserve auction completed
+        if (block.timestamp < reserveAuction_.kicked + 2 weeks + 72 hours) {
             revert ReserveAuctionTooSoon();
         }
 

@@ -8,7 +8,6 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionManagerOwnerActions.sol';
 import { 
     _depositFeeRate,
-    _lpToQuoteToken,
     _priceAt
     }                                   from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }                        from "src/libraries/internal/Maths.sol";
