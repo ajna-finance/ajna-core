@@ -32,7 +32,7 @@ import { PoolCommons } from './libraries/external/PoolCommons.sol';
  *  @notice Contract for providing information for any deployed pool.
  *  @dev    Pool info is calculated using same helper functions / logic as in `Pool` contracts.
  */
-contract PoolInfoUtils is Multicall {
+contract PoolInfoUtils {
 
     /**
      *  @notice Exposes status of a liquidation auction.
