@@ -513,6 +513,9 @@ contract PoolInfoUtils {
     ) pure returns (uint256) {
         // cannot be undercollateralized if there is no debt
         if (debt_ == 0) return 1e18;
+        
+        // borrower is undercollateralized when lup at MIN_PRICE
+        if (price_ == MIN_PRICE) return 0;
         return Maths.wdiv(Maths.wmul(collateral_, price_), debt_);
     }
 

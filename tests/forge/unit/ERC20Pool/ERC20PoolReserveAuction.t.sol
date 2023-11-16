@@ -218,11 +218,11 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         pool.drawDebt(_actor7, 99266, 7388, 999234524847);
 
         // actor 7 draws almost all available quote token
-        pool.drawDebt(_actor7, 98703, 7388, 999234524847);
+        pool.drawDebt(_actor7, 98000, 7388, 999234524847);
         // pool balance decreased by new debt
-        assertEq(_quote.balanceOf(address(pool)), 200);
+        assertEq(_quote.balanceOf(address(pool)), 903);
         // available quote token decreased with new debt
-        assertEq(_availableQuoteToken(), 200);
+        assertEq(_availableQuoteToken(), 903);
 
         vm.warp(block.timestamp + 86400);
 
@@ -231,7 +231,7 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         pool.updateInterest();
         vm.expectRevert(IPoolErrors.NoReserves.selector);
         pool.kickReserveAuction();
-        assertEq(_quote.balanceOf(address(pool)), 200);
+        assertEq(_quote.balanceOf(address(pool)), 903);
 
         vm.warp(block.timestamp + 86400);
 
@@ -245,8 +245,8 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         ERC20Pool(address(_pool)).repayDebt(_actor3, type(uint256).max, 0, _actor3, MAX_FENWICK_INDEX);
         ERC20Pool(address(_pool)).repayDebt(_actor7, type(uint256).max, 0, _actor7, MAX_FENWICK_INDEX);
 
-        uint256 initialPoolBalance     = 200784;
-        uint256 initialAvailableAmount = 200784;
+        uint256 initialPoolBalance     = 200788;
+        uint256 initialAvailableAmount = 200788;
 
         assertEq(_quote.balanceOf(address(pool)), initialPoolBalance);
         assertEq(_availableQuoteToken(), initialAvailableAmount);

@@ -20,25 +20,25 @@ contract ERC20PoolBorrowerTPLessThanMinPrice is ERC20HelperContract {
         _mintCollateralAndApproveTokens(_borrower,  100_000 * 1e18);
     }
 
-    function testTpLessThanMinPriceNoKickable() external tearDown {
+    function testTpLessThanMinPriceBorrowerKickable() external tearDown {
         _addInitialLiquidity({
             from:   _lender,
-            amount: 110 * 1e9,
-            index:  MAX_FENWICK_INDEX
+            amount: 1100 * 1e9,
+            index:  2550
         });
 
         // Borrower adds collateral token and borrows
         _pledgeCollateral({
             from:     _borrower,
             borrower: _borrower,
-            amount:   100_000 * 1e18
+            amount:   10 * 1e18
         });
 
         _borrow({
             from:       _borrower,
-            amount:     100 * 1e9,
-            indexLimit: MAX_FENWICK_INDEX,
-            newLup:     MIN_PRICE
+            amount:     990 * 1e9,
+            indexLimit: 2550,
+            newLup:     3_010.892022197881557845 * 1e18
         });
 
         (uint256 debt, uint256 collateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
@@ -47,9 +47,8 @@ contract ERC20PoolBorrowerTPLessThanMinPrice is ERC20HelperContract {
         // Ensure borrower tp is less than min price
         assertLt(thresholdPrice, MIN_PRICE);
 
-        // Lender cannot kick borrower with tp less than min price
+        // Lender can kick borrower with tp less than min price
         changePrank(_lender);
-        vm.expectRevert(IPoolErrors.BorrowerOk.selector);
-        _pool.lenderKick(MAX_FENWICK_INDEX, MAX_FENWICK_INDEX);
+        _pool.lenderKick(2550, MAX_FENWICK_INDEX);
     }
 }
