@@ -6,6 +6,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC20 }    from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { Pool }                  from './Pool.sol';
+import { PoolCommons }           from '../libraries/external/PoolCommons.sol';
 import { IERC3156FlashBorrower } from '../interfaces/pool/IERC3156FlashBorrower.sol';
 
 /**
@@ -32,30 +33,7 @@ abstract contract FlashloanablePool is Pool {
         bytes calldata data_
     ) external virtual override nonReentrant returns (bool success_) {
         if (!_isFlashloanSupported(token_)) revert FlashloanUnavailableForToken();
-
-        IERC20 tokenContract = IERC20(token_);
-
-        uint256 initialBalance = tokenContract.balanceOf(address(this));
-
-        tokenContract.safeTransfer(
-            address(receiver_),
-            amount_
-        );
-
-        if (receiver_.onFlashLoan(msg.sender, token_, amount_, 0, data_) != 
-            keccak256("ERC3156FlashBorrower.onFlashLoan")) revert FlashloanCallbackFailed();
-
-        tokenContract.safeTransferFrom(
-            address(receiver_),
-            address(this),
-            amount_
-        );
-
-        if (tokenContract.balanceOf(address(this)) != initialBalance) revert FlashloanIncorrectBalance();
-
-        success_ = true;
-
-        emit Flashloan(address(receiver_), token_, amount_);
+        success_ = PoolCommons.flashLoan(receiver_, token_, amount_, data_);
     }
 
     /**
