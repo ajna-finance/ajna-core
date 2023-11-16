@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" modified="2023-04-19T04:56:00.459Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/112.0" version="21.1.9" etag="qqc42GKUYHlkn5nOCzpD" type="device">
+<mxfile host="app.diagrams.net" modified="2023-10-12T20:03:03.163Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36" version="22.0.4" etag="l-ZvZCffyt0_a6_E5UsL" type="device">
   <diagram name="Page-1" id="13e1069c-82ec-6db2-03f1-153e76fe0fe0">
-    <mxGraphModel dx="2534" dy="790" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" background="none" math="0" shadow="0">
+    <mxGraphModel dx="2354" dy="1390" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" background="none" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -176,7 +176,7 @@
             <mxPoint x="-5" y="-4" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="OZIXumOx-P3Wxb6WJyRX-3" value="&lt;div&gt;revert:&lt;/div&gt;InsufficientCollateral()&lt;br&gt;NoAuction()&lt;br&gt;TakeNotPastCooldown()&lt;br&gt;AmountLTMinDebt()&lt;div&gt;&lt;br&gt;&lt;/div&gt;update liquidation.alreadyTaken&lt;br&gt;update liquidation bond size&lt;br&gt;update kicker&#39;s locked balance&lt;br&gt;&lt;div&gt;update auctions.totalBondEscrowed&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;settle auction&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
+        <mxCell id="OZIXumOx-P3Wxb6WJyRX-3" value="&lt;div&gt;revert:&lt;/div&gt;InsufficientCollateral()&lt;br&gt;NoAuction()&lt;br&gt;AmountLTMinDebt()&lt;div&gt;&lt;br&gt;&lt;/div&gt;update liquidation bond size&lt;br&gt;update kicker&#39;s locked balance&lt;br&gt;&lt;div&gt;update auctions.totalBondEscrowed&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;settle auction&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
           <mxGeometry x="335" y="290" width="294" height="150" as="geometry" />
         </mxCell>
         <mxCell id="OZIXumOx-P3Wxb6WJyRX-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.158;entryDx=0;entryDy=0;entryPerimeter=0;fontFamily=Tahoma;fontSize=12;fontColor=#666666;endArrow=classic;endFill=1;" parent="1" edge="1">

@@ -4,6 +4,10 @@ pragma solidity 0.8.18;
 
 import { RewardsManager }  from 'src/RewardsManager.sol';
 import { PositionManager } from 'src/PositionManager.sol';
+import { Pool }            from 'src/base/Pool.sol';
+import { ERC721Pool }      from 'src/ERC721Pool.sol';
+
+import { TokenWithNDecimals, NFTCollateralToken } from '../../../utils/Tokens.sol';
 
 import { RewardsPoolHandler }       from './RewardsPoolHandler.sol';
 import { ReserveERC721PoolHandler } from '../../ERC721Pool/handlers/ReserveERC721PoolHandler.sol';
@@ -13,14 +17,16 @@ contract ERC721PoolRewardsHandler is RewardsPoolHandler, ReserveERC721PoolHandle
     constructor(
         address rewards_,
         address positions_,
-        address pool_,
+        address[] memory pools_,
         address ajna_,
-        address quote_,
-        address collateral_,
         address poolInfo_,
         uint256 numOfActors_,
         address testContract_
-    ) ReserveERC721PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
+    ) ReserveERC721PoolHandler(pools_[0], ajna_, poolInfo_, numOfActors_, testContract_) {
+
+        for (uint256 i = 0; i < pools_.length; i++) {
+            _pools.push(pools_[i]);
+        }
 
         // Position manager
         _positionManager = PositionManager(positions_); 
@@ -35,8 +41,7 @@ contract ERC721PoolRewardsHandler is RewardsPoolHandler, ReserveERC721PoolHandle
     function _advanceEpochRewardStakers(
         uint256 amountToAdd_,
         uint256[] memory indexes_,
-        uint256 numberOfEpochs_,
-        uint256 bucketSubsetToUpdate_
+        uint256 numberOfEpochs_
     ) internal override {
         
         numberOfEpochs_ = constrictToRange(numberOfEpochs_, 1, vm.envOr("MAX_EPOCH_ADVANCE", uint256(2)));
@@ -51,7 +56,10 @@ contract ERC721PoolRewardsHandler is RewardsPoolHandler, ReserveERC721PoolHandle
                 _repayDebt(type(uint256).max);
             }
 
-            skip(20 days); // epochs are spaced a minimum of 14 days apart
+            // epochs are spaced a minimum of 14 days apart
+            uint256 timeToSkip = constrictToRange(randomSeed(), 15 days, 30 days);
+
+            skip(timeToSkip);
 
             (, claimableReserves, , ) = _pool.reservesInfo();
 
@@ -64,8 +72,22 @@ contract ERC721PoolRewardsHandler is RewardsPoolHandler, ReserveERC721PoolHandle
             _takeReserves(boundedTakeAmount);
 
             // exchange rates must be updated so that rewards can be claimed
-            indexes_ = _randomizeExchangeRateIndexes(indexes_, bucketSubsetToUpdate_);
-            if (indexes_.length != 0) { _updateExchangeRate(indexes_); }
+            if (indexes_.length != 0 && randomSeed() % 2 == 0) { _updateExchangeRate(indexes_); }
         }
+    }
+
+    modifier useRandomPool(uint256 poolIndex) override {
+        poolIndex   = bound(poolIndex, 0, _pools.length - 1);
+        updateTokenAndPoolAddress(_pools[poolIndex]);
+
+        _;
+    }
+
+    function updateTokenAndPoolAddress(address pool_) internal override {
+        _pool = Pool(pool_);
+        _erc721Pool = ERC721Pool(pool_);
+
+        _quote = TokenWithNDecimals(_pool.quoteTokenAddress());
+        _collateral = NFTCollateralToken(_pool.collateralAddress());
     }
 }

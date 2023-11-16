@@ -5,7 +5,7 @@ node_modules
 .env
 .env.prod
 .idea/
-.vscode/*.log
+.vscode/
 __pycache__/
 reports/
 .gas-snapshot

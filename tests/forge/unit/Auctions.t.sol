@@ -2,9 +2,9 @@
 pragma solidity 0.8.18;
 
 import '../utils/DSTestPlus.sol';
+import '../utils/AuctionQueueInstance.sol';
 
 contract AuctionsTest is DSTestPlus {
-
     /**
      *  @notice Tests bond penalty/reward factor calculation for varying parameters
      */
@@ -29,28 +29,44 @@ contract AuctionsTest is DSTestPlus {
     function testAuctionPrice() external {
         skip(6238);
 
-        uint256 momp         = 8_678.5 * 1e18;
-        uint256 neutralPrice = 8_600.0 * 1e18;
-        uint256 kickTime     = block.timestamp;
+        uint256 referencePrice = 8_678.5 * 1e18;
+        uint256 kickTime       = block.timestamp;
 
-        assertEq(_auctionPrice(momp, neutralPrice, kickTime), 277_712 * 1e18);
-        skip(1444); // price should not change in the first hour
-        assertEq(_auctionPrice(momp, neutralPrice, kickTime), 277_712 * 1e18);
-
-        skip(5756);     // 2 hours
-        assertEq(_auctionPrice(momp, neutralPrice, kickTime), 138_856 * 1e18);
-        skip(2394);     // 2 hours, 39 minutes, 54 seconds
-        assertEq(_auctionPrice(momp, neutralPrice, kickTime), 87_574.910740335995562528 * 1e18);
-        skip(2586);     // 3 hours, 23 minutes
-        assertEq(_auctionPrice(momp, neutralPrice, kickTime), 53_227.960156860514117568 * 1e18);
-        skip(3);        // 3 seconds later
-        assertEq(_auctionPrice(momp, neutralPrice, kickTime), 53_197.223359425583052544 * 1e18);
-        skip(20153);    // 8 hours, 35 minutes, 53 seconds
-        assertEq(_auctionPrice(momp, neutralPrice, kickTime), 1_098.26293050754894624 * 1e18);
-        skip(97264);    // 36 hours
-        assertEq(_auctionPrice(momp, neutralPrice, kickTime), 0.00000808248283696 * 1e18);
-        skip(129600);   // 72 hours
-        assertEq(_auctionPrice(momp, neutralPrice, kickTime), 0);
+        assertEq(_auctionPrice(referencePrice, kickTime), 2_221_696 * 1e18);
+        skip(44 minutes);      // 44 minutes
+        assertEq(_auctionPrice(referencePrice, kickTime), 483_524.676068186452113664 * 1e18);
+        skip(16 minutes);      // 1 hour
+        assertEq(_auctionPrice(referencePrice, kickTime), 277_712 * 1e18);
+        skip(99 minutes);      // 2 hours, 39 minutes
+        assertEq(_auctionPrice(referencePrice, kickTime), 27_712.130183984744559172 * 1e18);
+        skip(3);               // 3 seconds later
+        assertEq(_auctionPrice(referencePrice, kickTime), 27_704.127762591858494776 * 1e18);
+        skip(57 + 80 minutes); // 4 hours 
+        assertEq(_auctionPrice(referencePrice, kickTime), 17_357 * 1e18);
+        skip(1 hours);         // 5 hours
+        assertEq(_auctionPrice(referencePrice, kickTime), 12_273.252401054905374068 * 1e18);
+        skip(1 hours);         // 6 hours
+        assertEq(_auctionPrice(referencePrice, kickTime), 8_678.5 * 1e18);
+        skip(2 hours);         // 8 hours
+        assertEq(_auctionPrice(referencePrice, kickTime), 4_339.25 * 1e18);
+        skip(2 hours);         // 10 hours
+        assertEq(_auctionPrice(referencePrice, kickTime), 2_169.625 * 1e18);
+        skip(1 hours);         // 11 hours
+        assertEq(_auctionPrice(referencePrice, kickTime), 1_534.15655013186316308 * 1e18);
+        skip(1 hours);         // 12 hours
+        assertEq(_auctionPrice(referencePrice, kickTime), 1084.8125 * 1e18);
+        skip(1 hours);         // 13 hours
+        assertEq(_auctionPrice(referencePrice, kickTime), 767.07827506593158154 * 1e18);
+        skip(2 hours);         // 15 hours
+        assertEq(_auctionPrice(referencePrice, kickTime), 271.203125 * 1e18);
+        skip(3 hours);         // 18 hours
+        assertEq(_auctionPrice(referencePrice, kickTime), 33.900390625 * 1e18);
+        skip(6 hours);        // 24 hours
+        assertEq(_auctionPrice(referencePrice, kickTime), 0.529693603515625 * 1e18);
+        skip(12 hours);        // 36 hours
+        assertEq(_auctionPrice(referencePrice, kickTime), 0.000129319727420501 * 1e18);
+        skip(36 hours);        // 72 hours
+        assertEq(_auctionPrice(referencePrice, kickTime), 0.000000000000001627 * 1e18);
     }
 
     /**
@@ -87,5 +103,57 @@ contract AuctionsTest is DSTestPlus {
         assertEq(_claimableReserves(debt, 11_000 * 1e18, 11_000 * 1e18, reserveAuctionUnclaimed, 0),                       0);
         assertEq(_claimableReserves(debt, poolSize, 11_000 * 1e18, 10_895 * 1e18, quoteTokenBalance),                      0);
     }
+}
 
+contract AuctionQueueTest is DSTestPlus {
+    AuctionQueueInstance private _auctions;
+
+    function setUp() public {
+       _auctions = new AuctionQueueInstance();
+    }
+
+    function testAuctionsQueueAddRemove() external {
+        address b1 = makeAddr("b1");
+        address b2 = makeAddr("b2");
+        address b3 = makeAddr("b3");
+        assertEq(_auctions.count(), 0);
+
+        _auctions.add(b1);
+        assertEq(_auctions.count(), 1);
+        _auctions.add(b2);
+        assertEq(_auctions.count(), 2);
+        _auctions.add(b3);
+        assertEq(_auctions.count(), 3);
+
+        _auctions.remove(b2);
+        assertEq(_auctions.count(), 2);
+        _auctions.remove(b1);
+        assertEq(_auctions.count(), 1);
+        _auctions.remove(b3);
+        assertEq(_auctions.count(), 0);
+    }
+
+    function testAuctionsQueueRemoveOnlyAuction() external {
+        address b1 = makeAddr("b1");
+        address b2 = makeAddr("b2");
+        address b3 = makeAddr("b3");
+
+        // add and remove the only auction on the queue
+        _auctions.add(b1);
+        assertEq(_auctions.count(), 1);
+        _auctions.remove(b1);
+        assertEq(_auctions.count(), 0);
+
+        // add new auctions
+        _auctions.add(b2);
+        assertEq(_auctions.count(), 1);
+        _auctions.add(b3);
+        assertEq(_auctions.count(), 2);
+
+        // remove new auctions
+        _auctions.remove(b2);
+        assertEq(_auctions.count(), 1);
+        _auctions.remove(b3);
+        assertEq(_auctions.count(), 0);
+    }
 }

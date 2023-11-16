@@ -21,8 +21,6 @@ contract ReserveERC20PoolInvariants is ReserveInvariants, LiquidationERC20PoolIn
         _reserveERC20PoolHandler = new ReserveERC20PoolHandler(
             address(_erc20pool),
             address(_ajna),
-            address(_quote),
-            address(_collateral),
             address(_poolInfo),
             _numOfActors,
             address(this)

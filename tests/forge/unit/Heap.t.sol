@@ -231,6 +231,42 @@ contract HeapTest is DSTestPlus {
         assertEq(_loans.getTotalTps(),    7);
     }
 
+    function testHeapZeroInsertion() public {
+        address b1 = makeAddr("b1");
+        address b2 = makeAddr("b2");
+        address b3 = makeAddr("b3");
+
+        _loans.upsertTp(b1, 0);
+        assertEq(_loans.getMaxTp(),       0);
+        assertEq(_loans.getMaxBorrower(), b1);
+        assertEq(_loans.getTotalTps(),    2);
+
+        _loans.upsertTp(b2, 153 * 1e18);
+        assertEq(_loans.getMaxTp(),       153 * 1e18);
+        assertEq(_loans.getMaxBorrower(), b2);
+        assertEq(_loans.getTotalTps(),    3);
+
+        _loans.removeTp(b2);
+        assertEq(_loans.getMaxTp(),       0);
+        assertEq(_loans.getMaxBorrower(), b1);
+        assertEq(_loans.getTotalTps(),    2);
+
+        _loans.upsertTp(b3, 2_007 * 1e18);
+        assertEq(_loans.getMaxTp(),       2_007 * 1e18);
+        assertEq(_loans.getMaxBorrower(), b3);
+        assertEq(_loans.getTotalTps(),    3);
+
+        _loans.removeTp(b1);
+        assertEq(_loans.getMaxTp(),       2_007 * 1e18);
+        assertEq(_loans.getMaxBorrower(), b3);
+        assertEq(_loans.getTotalTps(),    2);
+
+        _loans.removeTp(b3);
+        assertEq(_loans.getMaxBorrower(), address(0));
+        assertEq(_loans.getMaxTp(),       0);
+        assertEq(_loans.getTotalTps(),    1);
+    }
+
     function testLoadHeapFuzzy(uint256 inserts_, uint256 seed_) public {
 
         // test adding different TPs

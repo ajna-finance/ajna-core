@@ -122,7 +122,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         // kick off a new auction
         _kickReserveAuction({
             from:              _bidder,
-            remainingReserves: 823.268887039816613726 * 1e18,
+            remainingReserves: 831.584734383653145178 * 1e18,
             price:             1_000_000_000 * 1e18,
             epoch:             1
         });
@@ -193,7 +193,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         // kick off a new auction
         _kickReserveAuction({
             from:              _bidder,
-            remainingReserves: 823.268887039816613726 * 1e18,
+            remainingReserves: 831.584734383653145178 * 1e18,
             price:             1_000_000_000 * 1e18,
             epoch:             1
         });
@@ -218,8 +218,25 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         // pass time to allow auction to complete
         skip(48 hours);
 
-        // check that you can't start a new auction unless two weeks have passed
+        // check that you can't start a new auction immediately after the last one finished
         _assertReserveAuctionTooSoon();
+
+        // check that you can't start a new auction two weeks after the last start...
+        skip(2 weeks - 72 hours);
+        _assertReserveAuctionTooSoon();
+
+        // ...or a day later...
+        skip(1 days);
+        _assertReserveAuctionTooSoon();
+
+        // ...but you can start another auction 2 weeks after the last one completed
+        skip(72 hours - 1 days);
+        _kickReserveAuction({
+            from:              _bidder,
+            remainingReserves: 415.792367191826572589 * 1e18,
+            price:             1_000_000_000 * 1e18,
+            epoch:             2
+        });
     }
 
     function testClaimableReserveAuction() external {
@@ -248,10 +265,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 
         // kick off a new auction
         uint256 expectedPrice = 1_000_000_000 * 1e18;
-
-        uint256 kickAward = Maths.wmul(claimableReserves, 0.01 * 1e18);
-        uint256 expectedQuoteBalance = _quote.balanceOf(_bidder) + kickAward;
-        expectedReserves -= kickAward;
+        uint256 expectedQuoteBalance = _quote.balanceOf(_bidder);
 
         _kickReserveAuction({
             from:              _bidder,
@@ -267,14 +281,14 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
             timeRemaining:              3 days
         });
         assertEq(_quote.balanceOf(_bidder), expectedQuoteBalance);
-
+        
         // bid once the price becomes attractive
         skip(24 hours);
         expectedPrice = 59.604644775390625 * 1e18;
         _assertReserveAuction({
             reserves:                   0.000203758789008448 * 1e18,
             claimableReserves :         0,
-            claimableReservesRemaining: 823.268887039816613726 * 1e18,
+            claimableReservesRemaining: 831.584734383653145178 * 1e18,
             auctionPrice:               expectedPrice,
             timeRemaining:              2 days
         });
@@ -282,7 +296,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         _takeReserves({
             from:              _bidder,
             amount:            300 * 1e18,
-            remainingReserves: 523.268887039816613726 * 1e18,
+            remainingReserves: 531.584734383653145178 * 1e18,
             price:             expectedPrice,
             epoch:             1
         });
@@ -319,7 +333,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         });
         expectedQuoteBalance += expectedReserves;
         assertEq(_quote.balanceOf(_bidder), expectedQuoteBalance);
-        assertEq(_ajnaToken.balanceOf(_bidder),  32_679.868870829247225792 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_bidder),  32_212.025177571105194476 * 1e18);
 
         expectedReserves = 0;
         _assertReserveAuction({
@@ -369,8 +383,6 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         // kick off a new auction
         uint256 expectedPrice     = 1_000_000_000 * 1e18;
         uint256 expectedReserves  = claimableReserves;
-        uint256 kickAward = Maths.wmul(expectedReserves, 0.01 * 1e18);
-        expectedReserves -= kickAward;
 
         _kickReserveAuction({
             from:              _bidder,
@@ -445,8 +457,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
             timeRemaining:              0
         });
         expectedPrice = 1_000_000_000 * 1e18;
-        kickAward = Maths.wmul(newClaimableReserves, 0.01 * 1e18);
-        expectedReserves += newClaimableReserves - kickAward;
+        expectedReserves += newClaimableReserves;
         _kickReserveAuction({
             from:              _bidder,
             remainingReserves: expectedReserves,
@@ -460,7 +471,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 
         // ensure entire reserves can still be taken
         skip(28 hours);
-        assertEq(expectedReserves, 751.769002239424117961 * 1e18);
+        assertEq(expectedReserves, 760.372729534771836324 * 1e18);
         expectedPrice = 3.725290298461914062 * 1e18;
         _assertReserveAuction({
             reserves:                   0.000204114705960104 * 1e18,

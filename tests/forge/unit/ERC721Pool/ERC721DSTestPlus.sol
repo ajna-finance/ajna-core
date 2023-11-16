@@ -41,6 +41,13 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         address borrower
     ) internal {
         changePrank(borrower);
+
+        // settle borrower if borrower is kicked
+        (uint256 kickTime, , , , , ) = _poolUtils.auctionStatus(address(_pool), borrower);
+        if (kickTime != 0) {
+            _pool.settle(borrower, bucketsUsed.length());
+        }
+
         uint256 borrowerT0debt;
         uint256 borrowerCollateral;
         (borrowerT0debt, borrowerCollateral, ) = _pool.borrowerInfo(borrower);
@@ -140,16 +147,33 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
             assertEq(collateral, 0);
         }
         ( , uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
-        (uint256 debt, , ,) = _pool.debtInfo();
+        (uint256 debt, , uint256 t0DebtInAuction,) = _pool.debtInfo();
         assertEq(debt, 0);
+        assertEq(t0DebtInAuction, 0);
         assertEq(loansCount, 0);
         assertEq(_pool.pledgedCollateral(), 0);
     }
 
     modifier tearDown {
         _;
+
+        // Skip time to make all auctioned borrowers settleable
+        skip(73 hours);
+        
         for (uint i = 0; i < borrowers.length(); i++) {
-            repayDebt(borrowers.at(i));
+            address borrower = borrowers.at(i);
+            (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower);
+            if (kickTime != 0) {
+                changePrank(borrower);
+                _pool.settle(borrower, bucketsUsed.length() + 1);
+
+                // Settle again if not settled, this can happen when less reserves calculated with DEPOSIT_BUFFER and borrower is not fully settled
+                (,,, kickTime,,,,,) = _pool.auctionInfo(borrower);
+                if (kickTime != 0) {
+                    _pool.settle(borrower, bucketsUsed.length() + 1);
+                }
+            }
+            repayDebt(borrower);
         }
 
         for (uint i = 0; i < lenders.length(); i++) {
@@ -637,6 +661,15 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         ERC721Pool(address(_pool)).repayDebt(from, 0, amount, from, indexLimit);
     }
 
+    function _assertRepayAuctionActiveRevert(
+        address from,
+        uint256 maxAmount
+    ) internal override {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AuctionActive.selector);
+        ERC721Pool(address(_pool)).repayDebt(from, maxAmount, 0, from, MAX_FENWICK_INDEX);
+    }
+
     function _assertRepayLimitIndexRevert(
         address from,
         uint256 amount,
@@ -685,6 +718,25 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InsufficientLP.selector);
         _pool.removeCollateral(amount, index);
+    }
+
+    function _assertRepayDebtAuctionActiveRevert(
+        address from,
+        address borrower,
+        uint256 amount
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AuctionActive.selector);
+        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower, MAX_FENWICK_INDEX);
+    }
+
+    function _assertPledgeCollateralAuctionActiveRevert(
+        address from,
+        uint256[] memory tokenIds
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AuctionActive.selector);
+        ERC721Pool(address(_pool)).drawDebt(from, 0, 0, tokenIds);
     }
 }
 

@@ -30,11 +30,9 @@ contract TradingERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBa
     constructor(
         address pool_,
         address ajna_,
-        address quote_,
-        address collateral_,
         address poolInfo_,
         address testContract_
-    ) BaseERC20PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, 0, testContract_) {
+    ) BaseERC20PoolHandler(pool_, ajna_, poolInfo_, 0, testContract_) {
         numberOfBuckets = buckets.length();
         setUp();
     }
@@ -173,9 +171,8 @@ contract TradingERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBa
     }
 
     function _resetSettledAuction(address borrower_, uint256 borrowerIndex_) internal {
-        (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(borrower_);
+        (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower_);
         if (kickTime == 0) {
-            alreadyTaken[borrower_] = false;
             if (borrowerIndex_ != 0) _activeBorrowers.remove(borrowerIndex_);
         }
     }

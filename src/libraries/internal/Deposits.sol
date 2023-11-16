@@ -71,7 +71,7 @@ library Deposits {
 
     /**
      *  @notice Finds index and sum of first bucket that EXCEEDS the given sum
-     *  @dev    Used in `LUP` and `MOMP` calculation
+     *  @dev    Used in `LUP` calculation
      *  @param  deposits_      Struct for deposits state.
      *  @param  targetSum_     The sum to find index for.
      *  @return sumIndex_      Smallest index where prefixsum greater than the sum.
@@ -134,7 +134,7 @@ library Deposits {
 
     /**
      *  @notice Finds index of passed sum. Helper function for `findIndexAndSumOfSum`.
-     *  @dev    Used in `LUP` and `MOMP` calculation
+     *  @dev    Used in `LUP` calculation
      *  @param  deposits_ Deposits state struct.
      *  @param  sum_      The sum to find index for.
      *  @return sumIndex_ Smallest index where prefixsum greater than the sum.

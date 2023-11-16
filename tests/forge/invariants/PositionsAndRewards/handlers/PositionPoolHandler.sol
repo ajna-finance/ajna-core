@@ -2,11 +2,12 @@
 
 pragma solidity 0.8.18;
 
-import { Maths } from 'src/libraries/internal/Maths.sol';
+import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
+import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
-import { UnboundedPositionPoolHandler } from './unbounded/UnboundedPositionPoolHandler.sol';
+import { BasePositionPoolHandler } from './BasePositionPoolHandler.sol';
 
-abstract contract PositionPoolHandler is UnboundedPositionPoolHandler { 
+abstract contract PositionPoolHandler is BasePositionPoolHandler { 
 
     /********************************/
     /*** Positions Test Functions ***/
@@ -14,13 +15,13 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
 
     function memorializePositions(
         uint256 actorIndex_,
-        uint256 bucketIndex_,
+        uint256 noOfBuckets_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) writeLogs writePositionLogs {
         numberOfCalls['BPositionHandler.memorialize']++;
         // Pre action //
-        (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositions(_lenderBucketIndex, amountToAdd_);
+        (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositions(noOfBuckets_, amountToAdd_);
 
         // Action phase // 
         _memorializePositions(tokenId, indexes);
@@ -28,13 +29,13 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
 
     function redeemPositions(
         uint256 actorIndex_,
-        uint256 bucketIndex_,
+        uint256 noOfBuckets_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) writeLogs writePositionLogs {
         numberOfCalls['BPositionHandler.redeem']++;
         // Pre action //
-        (uint256 tokenId, uint256[] memory indexes) = _preRedeemPositions(_lenderBucketIndex, amountToAdd_);
+        (uint256 tokenId, uint256[] memory indexes) = _preRedeemPositions(noOfBuckets_, amountToAdd_);
 
         // NFT doesn't have a position associated with it, return
         if (indexes.length == 0) return; 
@@ -46,7 +47,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
     function mint(
         uint256 actorIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) writeLogs writePositionLogs {
         numberOfCalls['BPositionHandler.mint']++;        
 
         // Action phase //
@@ -58,7 +59,7 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 bucketIndex_,
         uint256 skippedTime_,
         uint256 amountToAdd_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) writeLogs writePositionLogs {
         numberOfCalls['BPositionHandler.burn']++;        
         // Pre action //
         (uint256 tokenId_) = _preBurn(_lenderBucketIndex, amountToAdd_);
@@ -71,16 +72,15 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 actorIndex_,
         uint256 skippedTime_,
         uint256 amountToMove_,
-        uint256 fromIndex_,
         uint256 toIndex_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) writeLogs writePositionLogs {
         numberOfCalls['BPositionHandler.moveLiquidity']++;        
         // Pre action //
         (
             uint256 tokenId,
             uint256 fromIndex,
             uint256 toIndex
-        ) = _preMoveLiquidity(amountToMove_, fromIndex_, toIndex_);
+        ) = _preMoveLiquidity(amountToMove_, toIndex_);
 
         // retrieve info of bucket from pool
         (
@@ -101,92 +101,88 @@ abstract contract PositionPoolHandler is UnboundedPositionPoolHandler {
         _moveLiquidity(tokenId, fromIndex, toIndex);
     }
 
-    function _preMemorializePositions(
+    function transferPosition(
+        uint256 actorIndex_,
         uint256 bucketIndex_,
+        uint256 skippedTime_,
         uint256 amountToAdd_
-    ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs {
+        numberOfCalls['BPositionHandler.transferPosition']++;        
+        // Pre action //
+        (uint256 tokenId_, uint256[] memory indexes) = _getNFTPosition(_lenderBucketIndex, amountToAdd_);
 
-        // ensure actor has a position
-        (uint256 lpBalanceBefore,) = _pool.lenderInfo(bucketIndex_, _actor);
+        address receiver = actors[constrictToRange(actorIndex_, 0, actors.length - 1)];
 
-        // add quote token if they don't have a position
-        if (lpBalanceBefore == 0) {
-            // bound amount
-            uint256 boundedAmount = constrictToRange(amountToAdd_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
-            _ensureQuoteAmount(_actor, boundedAmount);
-            try _pool.addQuoteToken(boundedAmount, bucketIndex_, block.timestamp + 1 minutes, false) {
-            } catch (bytes memory err) {
-                _ensurePoolError(err);
+        // NFT doesn't have a position associated with it, return
+        if (indexes.length == 0) return;
+        
+        // Action phase //
+        _transferPosition(receiver, tokenId_);
+    }
+    
+    /********************************/
+    /*** Logging Helper Functions ***/
+    /********************************/
+
+    modifier writePositionLogs() {
+        // Verbosity of Log file for positionManager
+        logVerbosity = uint256(vm.envOr("LOGS_VERBOSITY_POSITION", uint256(0)));
+
+        if (logVerbosity != 0) logToFile = true;
+
+        _;
+
+        if (logVerbosity > 0) {
+            printInNextLine("== PositionManager Details ==");
+            writeActorLogs();
+            writeBucketLogs();
+            printInNextLine("=======================");
+        }
+    }
+
+    function writeActorLogs() internal {
+
+        for (uint256 i = 0; i < actors.length; i++) {
+
+            uint256[] memory tokenIds = getTokenIdsByActor(actors[i]);
+
+            if (tokenIds.length != 0) {
+                string memory actorStr = string(abi.encodePacked("Actor ", Strings.toString(i), " tokenIds: "));
+                string memory tokenIdStr;
+
+                for (uint256 k = 0; k < tokenIds.length; k++) {
+                    tokenIdStr = string(abi.encodePacked(tokenIdStr, " ", Strings.toString(tokenIds[k])));
+                }
+
+                printLine(string.concat(actorStr,tokenIdStr)); 
             }
         }
-
-        indexes_ = new uint256[](1);
-        indexes_[0] = bucketIndex_;
-
-        uint256[] memory lpBalances = new uint256[](1);
-
-        // mint position NFT
-        tokenId_ = _mint();
-
-        (lpBalances[0], ) = _pool.lenderInfo(bucketIndex_, _actor);
-        _pool.increaseLPAllowance(address(_positionManager), indexes_, lpBalances);
     }
 
-    function _preRedeemPositions(
-        uint256 bucketIndex_,
-        uint256 amountToAdd_
-    ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
- 
-        (tokenId_, indexes_) = _getNFTPosition(bucketIndex_, amountToAdd_);
+    function writeBucketLogs() internal {
+        // loop over pools
+        for (uint256 i = 0; i < _pools.length; i++) {
+            address pool = _pools[i];
+            printLine(string.concat("Pool: ", Strings.toHexString(uint160(pool), 20)));
+            uint256[] memory bucketIndexes = getBucketIndexesWithPosition(pool);
 
-        // approve positionManager to transfer LP tokens
-        address[] memory transferors = new address[](1);
-        transferors[0] = address(_positionManager);
+            // loop over bucket indexes with positions
+            for (uint256 j = 0; j < bucketIndexes.length; j++) {
+                uint256 bucketIndex = bucketIndexes[j];
 
-        _pool.approveLPTransferors(transferors);
-    }
+                printLine("");
+                printLog("Bucket: ", bucketIndex);
 
-    function _preBurn(
-        uint256 bucketIndex_,
-        uint256 amountToAdd_
-    ) internal returns (uint256 tokenId_) { 
-        uint256[] memory indexes;
-
-        // check and create the position
-        (tokenId_, indexes) = _preRedeemPositions(bucketIndex_, amountToAdd_);
-
-        _redeemPositions(tokenId_, indexes);
-    }
-
-    function _preMoveLiquidity(
-        uint256 amountToMove_,
-        uint256 fromIndex_,
-        uint256 toIndex_
-    ) internal returns (uint256 tokenId_, uint256 boundedFromIndex_, uint256 boundedToIndex_) {
-        boundedFromIndex_ = constrictToRange(fromIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
-        boundedToIndex_   = constrictToRange(toIndex_,   LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
-
-        uint256[] memory indexes;
-        (tokenId_, indexes) = _getNFTPosition(boundedFromIndex_, amountToMove_);
-        boundedFromIndex_   = indexes.length != 0 ? indexes[0]: 0;
-    }
-
-    function _getNFTPosition(
-        uint256 bucketIndex_,
-        uint256 amountToAdd_
-    ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
-
-        // Check for exisiting nft positions in PositionManager
-        uint256[] memory tokenIds = getTokenIdsByActor(address(_actor));
-
-        if (tokenIds.length != 0 ) {
-            // use existing position NFT
-            tokenId_ = tokenIds[0];
-            indexes_ = getBucketIndexesByTokenId(tokenId_);
-        } else {
-            // create a position for the actor
-            (tokenId_, indexes_) = _preMemorializePositions(bucketIndex_, amountToAdd_); 
-            _memorializePositions(tokenId_, indexes_);
+                // loop over tokenIds in bucket indexes
+                uint256[] memory tokenIds = getTokenIdsByBucketIndex(pool, bucketIndex);
+                for (uint256 k = 0; k < tokenIds.length; k++) {
+                    uint256 tokenId = tokenIds[k];
+                    
+                    uint256 posLp = _positionManager.getLP(tokenId, bucketIndex);
+                    string memory tokenIdStr = string.concat("tokenID ", Strings.toString(tokenId));
+                    printLog(string.concat(tokenIdStr, " LP in positionMan = "), posLp);
+                }
+            }
         }
     }
 }

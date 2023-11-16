@@ -248,7 +248,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             borrower:                  _borrower,
             borrowerDebt:              3_002.884615384615386000 * 1e18,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              1_051.009615384615385100 * 1e18,
+            borrowert0Np:              1_152.910902143138512881 * 1e18,
             borrowerCollateralization: 3.007999714779824033 * 1e18
         });
         // pass time to allow interest to accumulate
@@ -289,7 +289,6 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 interestRateUpdate:   _startTime + 10 days
             })
         );
-        assertEq(_poolUtils.momp(address(_pool)), 3_010.892022197881557845 * 1e18);
         // check bucket state after partial repay
         _assertBucket({
             index:        2550,
@@ -303,8 +302,8 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             borrower:                  _borrower,
             borrowerDebt:              1_507.000974734143274062 * 1e18,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              1_051.009615384615385100 * 1e18,
-            borrowerCollateralization: 5.993809040625961846 * 1e18
+            borrowert0Np:              577.797569043003579568 * 1e18,
+            borrowerCollateralization: 5.993809040625961852 * 1e18
         });
 
         // pass time to allow additional interest to accumulate
@@ -315,8 +314,8 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             borrower:                  _borrower,
             borrowerDebt:              1_508.860066921599065132 * 1e18,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              1_051.009615384615385100 * 1e18,
-            borrowerCollateralization: 5.986423966420065589 * 1e18
+            borrowert0Np:              577.797569043003579568 * 1e18,
+            borrowerCollateralization: 5.986423966420065585 * 1e18
         });
 
         // mint additional quote to allow borrower to repay their loan plus interest
@@ -826,7 +825,7 @@ contract ERC721ScaledQuoteTokenBorrowAndRepayTest is ERC721NDecimalsHelperContra
             borrower:                  _borrower,
             borrowerDebt:              3_002.884615384615386000 * 1e18,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              1_051.009615384615385100 * 1e18,
+            borrowert0Np:              1_152.910902143138512881 * 1e18,
             borrowerCollateralization: 3.007999714779824033 * 1e18
         });
         // pass time to allow interest to accumulate
@@ -868,7 +867,6 @@ contract ERC721ScaledQuoteTokenBorrowAndRepayTest is ERC721NDecimalsHelperContra
                 interestRateUpdate:   _startTime + 10 days
             })
         );
-        assertEq(_poolUtils.momp(address(_pool)), 3_010.892022197881557845 * 1e18);
         // check bucket state after partial repay
         _assertBucket({
             index:        2550,
@@ -882,8 +880,8 @@ contract ERC721ScaledQuoteTokenBorrowAndRepayTest is ERC721NDecimalsHelperContra
             borrower:                  _borrower,
             borrowerDebt:              1_507.000974734143274062 * 1e18,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              1_051.009615384615385100 * 1e18,
-            borrowerCollateralization: 5.993809040625961846 * 1e18
+            borrowert0Np:              577.797569043003579568 * 1e18,
+            borrowerCollateralization: 5.993809040625961852 * 1e18
         });
 
         // pass time to allow additional interest to accumulate
@@ -894,8 +892,8 @@ contract ERC721ScaledQuoteTokenBorrowAndRepayTest is ERC721NDecimalsHelperContra
             borrower:                  _borrower,
             borrowerDebt:              1_508.860066921599065132 * 1e18,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              1_051.009615384615385100 * 1e18,
-            borrowerCollateralization: 5.986423966420065589 * 1e18
+            borrowert0Np:              577.797569043003579568 * 1e18,
+            borrowerCollateralization: 5.986423966420065585 * 1e18
         });
 
         // mint additional quote to allow borrower to repay their loan plus interest

@@ -979,7 +979,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              89_085.576923076923118000 * 1e18,
             borrowerCollateral:        30.0 * 1e18,
-            borrowert0Np:              3_117.995192307692309130 * 1e18,
+            borrowert0Np:              3_420.302343024644254882 * 1e18,
             borrowerCollateralization: 1.008888047888587643 * 1e18
         });
 

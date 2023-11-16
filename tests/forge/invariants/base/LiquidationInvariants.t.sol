@@ -19,8 +19,8 @@ abstract contract LiquidationInvariants is BasicInvariants {
         _invariant_A2();
         _invariant_A3_A4();
         _invariant_A5();
-        _invariant_A6();
         _invariant_A7();
+        _invariant_A8();
     }
 
     /// @dev checks sum of all borrower's t0debt is equals to total pool t0debtInAuction
@@ -30,7 +30,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
 
         for (uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
-            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
+            (, , , uint256 kickTime, , , , ,) = _pool.auctionInfo(borrower);
 
             if (kickTime != 0) {
                 (uint256 t0debt, , ) = _pool.borrowerInfo(borrower);
@@ -62,7 +62,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
         uint256 lockedBonds;
         for (uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
-            (, , uint256 bond, , , , , , , ) = _pool.auctionInfo(borrower);
+            (, , uint256 bond, , , , , , ) = _pool.auctionInfo(borrower);
             lockedBonds += bond;
         }
         require(lockedBonds == kickerLockedBond, "A2: bonds in auctions != than kicker locked bonds");
@@ -94,7 +94,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
         for (uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
 
-            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
+            (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
 
             if (kickTime != 0) borrowersKicked += 1;
         }
@@ -108,25 +108,10 @@ abstract contract LiquidationInvariants is BasicInvariants {
 
         for (uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
-            (address kicker, , uint256 bondSize, , , , , , , ) = _pool.auctionInfo(borrower);
+            (address kicker, , uint256 bondSize, , , , , , ) = _pool.auctionInfo(borrower);
             (, uint256 lockedAmount) = _pool.kickerInfo(kicker);
 
             require(lockedAmount >= bondSize, "Auction Invariant A5");
-        }
-    }
-
-    /// @dev if a Liquidation is not taken then the take flag (Liquidation.alreadyTaken) should be False, if already taken then the take flag should be True
-    function _invariant_A6() internal view {
-        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
-
-        for (uint256 i = 0; i < actorCount; i++) {
-            address borrower = IBaseHandler(_handler).actors(i);
-            (, , , , , , , , , bool alreadyTaken) = _pool.auctionInfo(borrower);
-
-            require(
-                alreadyTaken == IBaseHandler(_handler).alreadyTaken(borrower),
-                "Auction Invariant A6"
-            );
         }
     }
 
@@ -143,6 +128,17 @@ abstract contract LiquidationInvariants is BasicInvariants {
             _pool.quoteTokenScale(),
             "Auction Invariant A7"
         );
+    }
+
+    /// @dev kicker reward should be less than or equals to kicker penalty on take.
+    function _invariant_A8() internal view {
+        uint256 borrowerPenalty = IBaseHandler(_handler).borrowerPenalty();
+        uint256 kickerReward    = IBaseHandler(_handler).kickerReward();
+
+        console.log("Borrower Penalty -->", borrowerPenalty);
+        console.log("Kicker Reward    -->", kickerReward);
+
+        require(kickerReward <= borrowerPenalty, "Auction Invariant A8");
     }
     
     function invariant_call_summary() public virtual override useCurrentTimestamp {

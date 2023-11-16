@@ -30,6 +30,7 @@ interface IERC721PoolBorrowerActions {
      *  @param  noOfNFTsToPull_             The integer number of `NFT` collateral to be puled from the pool.
      *  @param  recipient_                  The address to receive amount of pulled collateral.
      *  @param  limitIndex_                 Ensures `LUP` has not moved far from state when borrower pulls collateral.
+     *  @return amountRepaid_               The amount of quote token repaid (`WAD` precision).
      */
     function repayDebt(
         address borrowerAddress_,
@@ -37,5 +38,5 @@ interface IERC721PoolBorrowerActions {
         uint256 noOfNFTsToPull_,
         address recipient_,
         uint256 limitIndex_
-    ) external;
+    ) external returns (uint256 amountRepaid_);
 }

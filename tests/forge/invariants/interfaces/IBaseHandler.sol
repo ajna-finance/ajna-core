@@ -27,14 +27,14 @@ interface IBaseHandler {
     function previousReserves() external view returns(uint256);
     function increaseInReserves() external view returns(uint256);
     function decreaseInReserves() external view returns(uint256); 
+ 
+    function borrowerPenalty() external view returns(uint256);
+    function kickerReward() external view returns(uint256);
 
     function previousTotalBonds() external view returns(uint256);
     function increaseInBonds() external view returns(uint256);
     function decreaseInBonds() external view returns(uint256);
-
-    function firstTake() external view returns(bool);
-    function alreadyTaken(address) external view returns(bool);
-
+    
     function lenderDepositTime(address lender, uint256 bucketIndex) external view returns(uint256);
 
     function getBuckets() external view returns(uint256[] memory);

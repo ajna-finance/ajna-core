@@ -29,8 +29,6 @@ contract PanicExitERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationIn
         _panicExitERC20PoolHandler = new PanicExitERC20PoolHandler(
             address(_erc20pool),
             address(_ajna),
-            address(_quote),
-            address(_collateral),
             address(_poolInfo),
             address(this)
         );
@@ -74,7 +72,6 @@ contract PanicExitERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationIn
         _invariant_A2();
         _invariant_A3_A4();
         _invariant_A5();
-        _invariant_A6();
         _invariant_A7();
 
         invariant_call_summary();

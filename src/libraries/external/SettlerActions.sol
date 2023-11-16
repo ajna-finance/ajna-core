@@ -226,8 +226,7 @@ library SettlerActions {
                 compensatedCollateral_ = borrowerCollateral_ - remainingCollateral_;
 
                 uint256 auctionPrice = _auctionPrice(
-                    auctions_.liquidations[borrowerAddress_].kickMomp,
-                    auctions_.liquidations[borrowerAddress_].neutralPrice,
+                    auctions_.liquidations[borrowerAddress_].referencePrice,
                     auctions_.liquidations[borrowerAddress_].kickTime
                 );
 
@@ -480,10 +479,11 @@ library SettlerActions {
 
             Bucket storage hpbBucket = buckets_[index];
             uint256 bucketLP = hpbBucket.lps;
+
             // If the remaining deposit and resulting bucket collateral is so small that the exchange rate
             // rounds to 0, then bankrupt the bucket.  Note that lhs are WADs, so the
             // quantity is naturally 1e18 times larger than the actual product
-            if (depositRemaining * Maths.WAD + hpbBucket.collateral * _priceAt(index) <= bucketLP) {
+            if (depositRemaining * scale + hpbBucket.collateral * _priceAt(index) <= bucketLP) {
                 // existing LP for the bucket shall become unclaimable
                 hpbBucket.lps            = 0;
                 hpbBucket.bankruptcyTime = block.timestamp;
