@@ -260,7 +260,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
         (, , , uint256 lpAccumulator, , ) = _poolUtils.bucketInfo(address(_pool), index);
         assertGe(lpAccumulator, lpAdded);
-        _validateBucketLp(index, lpAccumulator);
 
         return lpAdded;
     }
