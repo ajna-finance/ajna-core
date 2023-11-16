@@ -61,6 +61,7 @@ library KickerActions {
         uint256 referencePrice;     // [WAD] used to calculate auction start price
         uint256 bondFactor;         // [WAD] bond factor of kicked auction
         uint256 bondSize;           // [WAD] bond size of kicked auction
+        uint256 thresholdPrice;     // [WAD] borrower threshold price at kick time
     }
 
     /// @dev Struct used for `lenderKick` function local vars.
@@ -322,6 +323,8 @@ library KickerActions {
             borrower.npTpRatio
         );
 
+        vars.thresholdPrice = Maths.wdiv(vars.borrowerDebt, vars.borrowerCollateral);
+
         // record liquidation info
         _recordAuction(
             auctions_,
@@ -330,11 +333,9 @@ library KickerActions {
             vars.bondSize,
             vars.bondFactor,
             vars.referencePrice,
-            vars.neutralPrice
+            vars.neutralPrice,
+            vars.thresholdPrice
         );
-
-        // store borrower Threshold price
-        liquidation.thresholdPrice = Maths.wdiv(vars.borrowerDebt, vars.borrowerCollateral);
 
         // update escrowed bonds balances and get the difference needed to cover bond (after using any kick claimable funds if any)
         kickResult_.amountToCoverBond = _updateEscrowedBonds(auctions_, vars.bondSize);
@@ -402,7 +403,8 @@ library KickerActions {
         uint256 bondSize_,
         uint256 bondFactor_,
         uint256 referencePrice_,
-        uint256 neutralPrice_
+        uint256 neutralPrice_,
+        uint256 thresholdPrice_
     ) internal {
         // record liquidation info
         liquidation_.kicker         = msg.sender;
@@ -411,6 +413,7 @@ library KickerActions {
         liquidation_.bondSize       = SafeCast.toUint160(bondSize_);
         liquidation_.bondFactor     = SafeCast.toUint96(bondFactor_);
         liquidation_.neutralPrice   = SafeCast.toUint96(neutralPrice_);
+        liquidation_.thresholdPrice = thresholdPrice_;
 
         // increment number of active auctions
         ++auctions_.noOfAuctions;
