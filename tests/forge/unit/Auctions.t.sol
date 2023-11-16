@@ -14,7 +14,6 @@ contract AuctionsTest is DSTestPlus {
         uint256 collateral = 1000 * 1e18;
         uint256 neutralPrice = 15 * 1e18;
         uint256 bondFactor = 0.1 *  1e18;
-        uint256 thresholdPrice = Maths.wdiv(debt, collateral);
 
         assertEq(_bpf(Maths.wdiv(debt, collateral), neutralPrice, bondFactor, price),             0.1 * 1e18);
         assertEq(_bpf(Maths.wdiv(9000 * 1e18, collateral), neutralPrice, bondFactor, price),      0.083333333333333333 * 1e18);
