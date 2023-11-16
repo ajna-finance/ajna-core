@@ -22,7 +22,7 @@ import {
 
 import {
     _auctionPrice,
-   _indexOf,
+    _indexOf,
     _priceAt,
     MAX_FENWICK_INDEX,
     MIN_PRICE,
