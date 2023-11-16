@@ -23,7 +23,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     }
 
     function testValidateMoveQuoteTokenInput() external {
-        // revert on innsufficientLiquidity amount if none in bucket
+        // revert on dust amount if amount is below quote token scale
         vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
         _pool.moveQuoteToken(0, 1, 2, block.timestamp + 1, false);
         // revert on move to same index

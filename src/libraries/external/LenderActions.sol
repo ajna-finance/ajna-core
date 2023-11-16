@@ -170,8 +170,6 @@ library LenderActions {
         uint256 bucketPrice           = _priceAt(params_.index);
         uint256 addedAmount           = params_.amount;
 
-        if (bucketDeposit + addedAmount < poolState_.quoteTokenScale) revert DustAmountNotExceeded();
-
         // charge unutilized deposit fee where appropriate
         uint256 lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
         bool depositBelowLup = lupIndex != 0 && params_.index > lupIndex;
@@ -310,9 +308,6 @@ library LenderActions {
 
         // revert if (due to rounding) the awarded LP in to bucket is 0
         if (toBucketLP_ == 0) revert InsufficientLP();
-
-        // revert if toBucket deposit is below dust limit
-        if (vars.toBucketDeposit + movedAmount_ < poolState_.quoteTokenScale) revert DustAmountNotExceeded();
 
         Deposits.unscaledAdd(deposits_, params_.toIndex, Maths.wdiv(movedAmount_, vars.toBucketScale));
 
