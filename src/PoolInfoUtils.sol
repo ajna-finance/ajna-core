@@ -3,7 +3,6 @@
 pragma solidity 0.8.18;
 
 import { Math } from '@openzeppelin/contracts/utils/math/Math.sol';
-import { Multicall } from '@openzeppelin/contracts/utils/Multicall.sol';
 
 import { IPool, IERC20Token } from './interfaces/pool/IPool.sol';
 
@@ -455,7 +454,6 @@ contract PoolInfoUtils is Multicall {
             bucketCollateral,
             bucketDeposit,
             lp_,
-            bucketDeposit,
             _priceAt(index_)
         );
     }
@@ -497,7 +495,7 @@ contract PoolInfoUtils is Multicall {
         uint256 debt_,
         uint256 price_
     ) pure returns (uint256 encumberance_) {
-        return price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+        return price_ != 0 ? Maths.wdiv(debt_, price_) : 0;
     }
 
     /**
@@ -512,8 +510,9 @@ contract PoolInfoUtils is Multicall {
         uint256 collateral_,
         uint256 price_
     ) pure returns (uint256) {
-        uint256 encumbered = _encumberance(debt_, price_);
-        return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
+        // cannot be undercollateralized if there is no debt
+        if (debt_ == 0) return 1e18;
+        return Maths.wdiv(Maths.wmul(collateral_, price_), debt_);
     }
 
     /**
