@@ -394,6 +394,7 @@ library KickerActions {
      *  @param  bondFactor_      Bond factor of the newly kicked auction.
      *  @param  referencePrice_  Used to calculate auction start price.
      *  @param  neutralPrice_    Current pool `Neutral Price`.
+     *  @param  thresholdPrice_  Borrower threshold price.
      */
     function _recordAuction(
         AuctionsState storage auctions_,
