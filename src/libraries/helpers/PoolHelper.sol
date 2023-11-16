@@ -385,7 +385,7 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 auctionPrice_
     ) pure returns (int256) {
         int256 sign;
-        if (int256(thresholdPrice_) < int256(neutralPrice_)) {
+        if (thresholdPrice_ < neutralPrice_) {
             // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
             sign = Maths.minInt(
                 1e18,
