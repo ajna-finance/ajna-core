@@ -4,8 +4,10 @@ pragma solidity 0.8.18;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { Math }           from '@openzeppelin/contracts/utils/math/Math.sol';
+import { SafeCast }       from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-import { PoolType } from '../../interfaces/pool/IPool.sol';
+import { PoolType }                 from '../../interfaces/pool/IPool.sol';
+import { InflatorState, PoolState } from '../../interfaces/pool/commons/IPoolState.sol';
 
 import { Buckets } from '../internal/Buckets.sol';
 import { Maths }   from '../internal/Maths.sol';
@@ -131,6 +133,35 @@ import { Maths }   from '../internal/Maths.sol';
     ) pure returns (uint256) {
         // current annualized rate divided by 365 (24 hours of interest), capped at 10%
         return Maths.min(Maths.wdiv(interestRate_, 365 * 1e18), 0.1 * 1e18);
+    }
+
+    /**
+     * @notice Determines how the inflator state should be updated
+     * @param  poolState_     State of the pool after updateInterestState was called.
+     * @param  inflatorState_ Old inflator state.
+     * @return newInflator_     New inflator value.
+     * @return updateTimestamp_ `True` if timestamp of last update should be updated.
+     */
+    function _determineInflatorState(
+        PoolState memory poolState_,
+        InflatorState memory inflatorState_
+    ) view returns (uint208 newInflator_, bool updateTimestamp_) {
+        newInflator_ = inflatorState_.inflator;
+
+        // update pool inflator
+        if (poolState_.isNewInterestAccrued) {
+            newInflator_     = SafeCast.toUint208(poolState_.inflator);
+            updateTimestamp_ = true;
+        // if the debt in the current pool state is 0, also update the inflator and inflatorUpdate fields in inflatorState
+        // slither-disable-next-line incorrect-equality
+        } else if (poolState_.debt == 0) {
+            newInflator_     = SafeCast.toUint208(Maths.WAD);
+            updateTimestamp_ = true;
+        // if the first loan has just been drawn, update the inflator timestamp
+        // slither-disable-next-line incorrect-equality
+        } else if (inflatorState_.inflator == Maths.WAD && inflatorState_.inflatorUpdate != block.timestamp){
+            updateTimestamp_ = true;
+        }
     }
 
     /**
