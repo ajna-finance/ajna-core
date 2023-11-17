@@ -907,7 +907,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             borrowerDebt:              418.511241535551682100 * 1e18,
             borrowerCollateral:        1.256401842870359357 * 1e18,
             borrowert0Np:              97.486777718699640528 * 1e18,
-            borrowerCollateralization: 0.000000000299715939 * 1e18,
+            borrowerCollateralization: 0,
             tokenIds:                  borrowerTokenIds
         });
 
@@ -933,7 +933,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             borrowerDebt:              418.511161648248153847 * 1e18,
             borrowerCollateral:        0.256401842870359357 * 1e18,
             borrowert0Np:              477.697595423190347016 * 1e18,
-            borrowerCollateralization: 0.000000000061164932 * 1e18,
+            borrowerCollateralization: 0,
             tokenIds:                  borrowerTokenIds
         });
 

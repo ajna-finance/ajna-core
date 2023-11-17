@@ -245,11 +245,9 @@ library LenderActions {
         PoolState calldata poolState_,
         MoveQuoteParams calldata params_
     ) external returns (uint256 fromBucketRedeemedLP_, uint256 toBucketLP_, uint256 movedAmount_, uint256 lup_) {
-        if (params_.maxAmountToMove == 0)
-            revert InvalidAmount();
         if (params_.fromIndex == params_.toIndex)
             revert MoveToSameIndex();
-        if (params_.maxAmountToMove != 0 && params_.maxAmountToMove < poolState_.quoteTokenScale)
+        if (params_.maxAmountToMove < poolState_.quoteTokenScale)
             revert DustAmountNotExceeded();
         if (params_.toIndex == 0 || params_.toIndex > MAX_FENWICK_INDEX) 
             revert InvalidIndex();
@@ -830,6 +828,9 @@ library LenderActions {
             removedAmount_ = scaledDepositAvailable;
             unscaledRemovedAmount = unscaledDepositAvailable;
         }
+
+        scaledDepositAvailable -= removedAmount_;
+        if (scaledDepositAvailable != 0 && scaledDepositAvailable < params_.dustLimit) revert DustAmountNotExceeded();
 
         unscaledRemaining_ = unscaledDepositAvailable - unscaledRemovedAmount;
 

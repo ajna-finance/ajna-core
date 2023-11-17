@@ -192,12 +192,17 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 price_,
         uint8 type_
     ) pure returns (bool) {
-        if (type_ == uint8(PoolType.ERC20)) return Maths.wmul(collateral_, price_) >= debt_;
-        else {
+        // `False` if LUP = MIN_PRICE
+        if (price_ == MIN_PRICE) return false;
+
+        // Use collateral floor for NFT pools
+        if (type_ == uint8(PoolType.ERC721)) {
             //slither-disable-next-line divide-before-multiply
             collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
             return Maths.wmul(collateral_, price_) >= Maths.wmul(1.04 * 1e18, debt_);
         }
+        
+        return Maths.wmul(collateral_, price_) >= debt_;
     }
 
     /**
@@ -400,24 +405,20 @@ import { Maths }   from '../internal/Maths.sol';
     /**
      *  @notice Calculates bond penalty factor.
      *  @dev    Called in kick and take.
-     *  @param debt_         Borrower debt.
-     *  @param collateral_   Borrower collateral.
-     *  @param neutralPrice_ `NP` of auction.
-     *  @param bondFactor_   Factor used to determine bondSize.
-     *  @param auctionPrice_ Auction price at the time of call or, for bucket takes, bucket price.
-     *  @return bpf_         Factor used in determining bond `reward` (positive) or `penalty` (negative).
+     *  @param thresholdPrice_ Borrower tp at time of kick.
+     *  @param neutralPrice_   `NP` of auction.
+     *  @param bondFactor_     Factor used to determine bondSize.
+     *  @param auctionPrice_   Auction price at the time of call or, for bucket takes, bucket price.
+     *  @return bpf_           Factor used in determining bond `reward` (positive) or `penalty` (negative).
      */
     function _bpf(
-        uint256 debt_,
-        uint256 collateral_,
+        uint256 thresholdPrice_,
         uint256 neutralPrice_,
         uint256 bondFactor_,
         uint256 auctionPrice_
     ) pure returns (int256) {
-        int256 thresholdPrice = int256(Maths.wdiv(debt_, collateral_));
-
         int256 sign;
-        if (thresholdPrice < int256(neutralPrice_)) {
+        if (thresholdPrice_ < neutralPrice_) {
             // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
             sign = Maths.minInt(
                 1e18,
@@ -425,7 +426,7 @@ import { Maths }   from '../internal/Maths.sol';
                     -1 * 1e18,
                     PRBMathSD59x18.div(
                         int256(neutralPrice_) - int256(auctionPrice_),
-                        int256(neutralPrice_) - thresholdPrice
+                        int256(neutralPrice_) - int256(thresholdPrice_)
                     )
                 )
             );

@@ -1099,8 +1099,8 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         changePrank(actor1);
         _pool.kick(actor6, 7388);
         skip(100 hours);
-        ERC20Pool(address(_pool)).drawDebt(actor1, 1_000_000 * 1e18, 7388, 10_066_231_386_838.450530455239517417 * 1e18);
-        skip(100 days);
+        ERC20Pool(address(_pool)).drawDebt(actor1, 990_000 * 1e18, 7388, 10_066_231_386_838.450530455239517417 * 1e18);
+        skip(200 days);
 
         // another actor kicks borrower 1
         changePrank(actor2);
