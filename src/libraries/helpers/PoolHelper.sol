@@ -131,8 +131,8 @@ import { Maths }   from '../internal/Maths.sol';
     function _depositFeeRate(
         uint256 interestRate_
     ) pure returns (uint256) {
-        // current annualized rate divided by 365 (24 hours of interest), capped at 10%
-        return Maths.min(Maths.wdiv(interestRate_, 365 * 1e18), 0.1 * 1e18);
+        // current annualized rate divided by 365 * 3 (8 hours of interest), capped at 10%
+        return Maths.min(Maths.wdiv(interestRate_, 365 * 3e18), 0.1 * 1e18);
     }
 
     /**
