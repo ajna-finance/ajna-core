@@ -4,8 +4,10 @@ pragma solidity 0.8.18;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { Math }           from '@openzeppelin/contracts/utils/math/Math.sol';
+import { SafeCast }       from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-import { PoolType } from '../../interfaces/pool/IPool.sol';
+import { PoolType }                 from '../../interfaces/pool/IPool.sol';
+import { InflatorState, PoolState } from '../../interfaces/pool/commons/IPoolState.sol';
 
 import { Buckets } from '../internal/Buckets.sol';
 import { Maths }   from '../internal/Maths.sol';
@@ -134,6 +136,35 @@ import { Maths }   from '../internal/Maths.sol';
     }
 
     /**
+     * @notice Determines how the inflator state should be updated
+     * @param  poolState_     State of the pool after updateInterestState was called.
+     * @param  inflatorState_ Old inflator state.
+     * @return newInflator_     New inflator value.
+     * @return updateTimestamp_ `True` if timestamp of last update should be updated.
+     */
+    function _determineInflatorState(
+        PoolState memory poolState_,
+        InflatorState memory inflatorState_
+    ) view returns (uint208 newInflator_, bool updateTimestamp_) {
+        newInflator_ = inflatorState_.inflator;
+
+        // update pool inflator
+        if (poolState_.isNewInterestAccrued) {
+            newInflator_     = SafeCast.toUint208(poolState_.inflator);
+            updateTimestamp_ = true;
+        // if the debt in the current pool state is 0, also update the inflator and inflatorUpdate fields in inflatorState
+        // slither-disable-next-line incorrect-equality
+        } else if (poolState_.debt == 0) {
+            newInflator_     = SafeCast.toUint208(Maths.WAD);
+            updateTimestamp_ = true;
+        // if the first loan has just been drawn, update the inflator timestamp
+        // slither-disable-next-line incorrect-equality
+        } else if (inflatorState_.inflator == Maths.WAD && inflatorState_.inflatorUpdate != block.timestamp){
+            updateTimestamp_ = true;
+        }
+    }
+
+    /**
      *  @notice Calculates debt-weighted average threshold price.
      *  @param  t0Debt_              Pool debt owed by borrowers in `t0` terms.
      *  @param  inflator_            Pool's borrower inflator.
@@ -226,7 +257,6 @@ import { Maths }   from '../internal/Maths.sol';
      *  @param  bucketCollateral_ Amount of collateral in bucket.
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
      *  @param  lenderLPBalance_  The amount of `LP` to calculate quote token amount for.
-     *  @param  maxQuoteToken_    The max quote token amount to calculate `LP` for.
      *  @param  bucketPrice_      Bucket's price.
      *  @return quoteTokenAmount_ Amount of quote tokens calculated for the given `LP` amount, capped at available bucket deposit.
      */
@@ -235,7 +265,6 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 bucketCollateral_,
         uint256 deposit_,
         uint256 lenderLPBalance_,
-        uint256 maxQuoteToken_,
         uint256 bucketPrice_
     ) pure returns (uint256 quoteTokenAmount_) {
         quoteTokenAmount_ = Buckets.lpToQuoteTokens(
@@ -247,8 +276,7 @@ import { Maths }   from '../internal/Maths.sol';
             Math.Rounding.Down
         );
 
-        if (quoteTokenAmount_ > deposit_)       quoteTokenAmount_ = deposit_;
-        if (quoteTokenAmount_ > maxQuoteToken_) quoteTokenAmount_ = maxQuoteToken_;
+        if (quoteTokenAmount_ > deposit_) quoteTokenAmount_ = deposit_;
     }
 
     /**
@@ -376,7 +404,7 @@ import { Maths }   from '../internal/Maths.sol';
      *  @param collateral_   Borrower collateral.
      *  @param neutralPrice_ `NP` of auction.
      *  @param bondFactor_   Factor used to determine bondSize.
-     *  @param auctionPrice_ Auction price at the time of call.
+     *  @param auctionPrice_ Auction price at the time of call or, for bucket takes, bucket price.
      *  @return bpf_         Factor used in determining bond `reward` (positive) or `penalty` (negative).
      */
     function _bpf(

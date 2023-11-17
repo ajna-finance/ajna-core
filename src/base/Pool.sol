@@ -50,6 +50,7 @@ import {
 }                                   from '../interfaces/pool/commons/IPoolInternals.sol';
 
 import {
+    _determineInflatorState,
     _priceAt,
     _roundToScale
 }                               from '../libraries/helpers/PoolHelper.sol';
@@ -360,7 +361,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
 
         // update pool interest rate state
-        _updateInterestState(poolState, result.lup);
+        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
 
         // transfer from kicker to pool the difference to cover bond
         if (result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
@@ -405,10 +406,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @dev    update `reserveAuction.latestBurnEventEpoch` and burn event `timestamp` state
      *  @dev    === Reverts on ===
      *  @dev    2 weeks not passed `ReserveAuctionTooSoon()`
+     *  @dev    unsettled liquidation `AuctionNotCleared()`
      *  @dev    === Emit events ===
      *  @dev    - `KickReserveAuction`
      */
     function kickReserveAuction() external override nonReentrant {
+        _revertIfAuctionClearable(auctions, loans);
+
         // start a new claimable reserve auction, passing in relevant parameters such as the current pool size, debt, balance, and inflator value
         KickerActions.kickReserveAuction(
             auctions,
@@ -561,19 +565,23 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
             // if new interest may have accrued, call accrueInterest function and update inflator and debt fields of poolState_ struct
             if (poolState_.isNewInterestAccrued) {
-                (uint256 newInflator, uint256 newInterest) = PoolCommons.accrueInterest(
+                try PoolCommons.accrueInterest(
                     emaState,
                     deposits,
                     poolState_,
                     Loans.getMax(loans).thresholdPrice,
                     elapsed
-                );
-                poolState_.inflator = newInflator;
-                // After debt owed to lenders has accrued, calculate current debt owed by borrowers
-                poolState_.debt = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
+                ) returns (uint256 newInflator, uint256 newInterest) {
+                    poolState_.inflator = newInflator;
+                    // After debt owed to lenders has accrued, calculate current debt owed by borrowers
+                    poolState_.debt = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
 
-                // update total interest earned accumulator with the newly accrued interest
-                reserveAuction.totalInterestEarned += newInterest;
+                    // update total interest earned accumulator with the newly accrued interest
+                    reserveAuction.totalInterestEarned += newInterest;
+                } catch {
+                    poolState_.isNewInterestAccrued = false;
+                    emit InterestUpdateFailure();
+                }
             }
         }
     }
@@ -679,19 +687,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState_,
         uint256 lup_
     ) internal {
-
-        PoolCommons.updateInterestState(interestState, emaState, deposits, poolState_, lup_);
-
-        // update pool inflator
-        if (poolState_.isNewInterestAccrued) {
-            inflatorState.inflator       = uint208(poolState_.inflator);
-            inflatorState.inflatorUpdate = uint48(block.timestamp);
-        // if the debt in the current pool state is 0, also update the inflator and inflatorUpdate fields in inflatorState
-        // slither-disable-next-line incorrect-equality
-        } else if (poolState_.debt == 0) {
-            inflatorState.inflator       = uint208(Maths.WAD);
-            inflatorState.inflatorUpdate = uint48(block.timestamp);
+        try PoolCommons.updateInterestState(interestState, emaState, deposits, poolState_, lup_) {} catch {
+            emit InterestUpdateFailure();
         }
+
+        (uint208 newInflator, bool updateTimestamp) = _determineInflatorState(poolState_, inflatorState);
+        inflatorState.inflator = newInflator;
+        if (updateTimestamp) inflatorState.inflatorUpdate = uint48(block.timestamp);
     }
 
     /**

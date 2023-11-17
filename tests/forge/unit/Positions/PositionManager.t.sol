@@ -1950,7 +1950,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _assertLenderLpBalance({
             lender:      address(_positionManager),
             index:       moveIndex,
-            lpBalance:   1_999.865897356084855977 * 1e18,
+            lpBalance:   1_999.862011303232353901 * 1e18,
             depositTime: _startTime
         });
         skip(1 weeks);
@@ -1969,7 +1969,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             from:             borrower,
             borrower:         borrower,
             amountToRepay:    type(uint256).max,
-            amountRepaid:     1_002.608307827389905518 * 1e18,
+            amountRepaid:     1_002.596862592399049586 * 1e18,
             collateralToPull: 250 * 1e18,
             newLup:           MAX_PRICE
         });

@@ -737,7 +737,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             amount:        withdrawal1,
             index:         1606,
             newLup:        _priceAt(1663),
-            lpRedeem:      1_699.989134088091859893 * 1e18
+            lpRedeem:      1_699.992715594878010449 * 1e18
         });
 
         // lender removes all quote token, including interest, from the bucket
@@ -745,13 +745,13 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         assertGt(_priceAt(1606), _htp());
 
-        uint256 expectedWithdrawal2 = 1_700.138879728085771159 * 1e18;
+        uint256 expectedWithdrawal2 = 1_700.131715815996933416 * 1e18;
         _removeAllLiquidity({
             from:     _lender,
             amount:   expectedWithdrawal2,
             index:    1606,
             newLup:   _priceAt(1663),
-            lpRedeem: 1_700.010865911908140107 * 1e18
+            lpRedeem: 1_700.007284405121989551 * 1e18
         });
 
         assertEq(_quote.balanceOf(_lender), lenderBalanceBefore + withdrawal1 + expectedWithdrawal2);
@@ -773,8 +773,8 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             index:        1663,
             lpBalance:    3_400 * 1e18,
             collateral:   0,
-            deposit:      3_400.256025995910604600 * 1e18,
-            exchangeRate: 1.000075301763503119 * 1e18
+            deposit:      3_400.248861755391155000 * 1e18,
+            exchangeRate: 1.000073194633938575 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
