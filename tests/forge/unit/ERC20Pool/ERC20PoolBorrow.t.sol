@@ -354,7 +354,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              484.222578900118175410 * 1e18,
+            borrowert0Np:              467.406425053964329248 * 1e18,
             borrowerCollateralization: 7.090818626082626625 * 1e18
         });
 
@@ -389,7 +389,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        60 * 1e18,
-            borrowert0Np:              403.518815750098479508 * 1e18,
+            borrowert0Np:              389.505354211636941040 * 1e18,
             borrowerCollateralization: 8.498498289218581680 * 1e18
         });
         _assertLenderInterest(liquidityAdded, 22.041594239314650000 * 1e18);
@@ -427,7 +427,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              483.986975517230275430 * 1e18,
+            borrowert0Np:              467.170821671076429268 * 1e18,
             borrowerCollateralization: 7.072483950112624325 * 1e18
         });
         _assertLenderInterest(liquidityAdded, 47.030954189176600000 * 1e18);
@@ -462,7 +462,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              486.269617724627962428 * 1e18,
+            borrowert0Np:              469.453463878474116266 * 1e18,
             borrowerCollateralization: 7.061941219869076860 * 1e18
         });
         _assertLenderInterest(liquidityAdded, 74.559175998268400000 * 1e18);
@@ -494,7 +494,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              486.269617724627962428 * 1e18,
+            borrowert0Np:              469.453463878474116266 * 1e18,
             borrowerCollateralization: 7.050362367352844516 * 1e18
         });
         _assertLenderInterest(liquidityAdded, 104.888588646515350000 * 1e18);
@@ -524,7 +524,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              486.269617724627962428 * 1e18,
+            borrowert0Np:              469.453463878474116266 * 1e18,
             borrowerCollateralization: 7.037647555876562588 * 1e18
         });
     }
@@ -932,7 +932,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              500.480769230769231 * 1e18,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              11.529109021431385128 * 1e18,
+            borrowert0Np:              11.128724406046769744 * 1e18,
             borrowerCollateralization: 300.799971477982403335 * 1e18
         });
 
