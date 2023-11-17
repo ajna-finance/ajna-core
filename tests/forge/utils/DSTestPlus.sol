@@ -12,7 +12,7 @@ import 'src/interfaces/pool/commons/IPoolEvents.sol';
 import 'src/interfaces/pool/IERC3156FlashBorrower.sol';
 import 'src/PoolInfoUtils.sol';
 
-import { _auctionPrice, _bpf, MAX_PRICE } from 'src/libraries/helpers/PoolHelper.sol';
+import { _auctionPrice, _bpf, _depositFeeRate, MAX_PRICE } from 'src/libraries/helpers/PoolHelper.sol';
 
 abstract contract DSTestPlus is Test, IPoolEvents {
 
@@ -1539,6 +1539,11 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
         // calculate the fee rate based upon the interest rate
         feeRate_ = _borrowFeeRate(newInterestRate) + Maths.WAD;
+    }
+
+    function _depositFee() internal view returns (uint256 _depositFeeRate_) {
+        (uint256 interestRate, ) = _pool.interestRateInfo();
+        _depositFeeRate_ = Maths.WAD - _depositFeeRate(interestRate);
     }
 }
 

@@ -1292,7 +1292,7 @@ contract ERC721PoolCollateralFuzzyTest is ERC721FuzzyHelperContract {
         }
 
         uint256 bucketPrice = _poolUtils.indexToPrice(bucketIndex);
-        uint256 lps = Maths.wmul(nftAmount * 1e18, bucketPrice);
+        uint256 lps = Maths.wmul(Maths.wmul(nftAmount * 1e18, bucketPrice), _depositFee());
 
         // add some collateral
         _addCollateral({
@@ -1302,16 +1302,15 @@ contract ERC721PoolCollateralFuzzyTest is ERC721FuzzyHelperContract {
             lpAward:  lps
         });
 
-        _assertBucket({
-            index:        bucketIndex,
-            lpBalance:    lps,
-            collateral:   nftAmount * 1e18,
-            deposit:      0,
-            exchangeRate: 1e18
-        });
+        (, uint256 deposit, uint256 collateral, uint256 lpBalance, ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
+        assertEq(lpBalance,  lps);
+        assertEq(collateral, nftAmount * 1e18);
+        assertEq(deposit,    0);
+        _validateBucketLp(bucketIndex, lpBalance);
+        _validateBucketQuantities(bucketIndex);
 
         uint256 nftToRemove = bound(nftAmount, 1, nftAmount);
-        uint256 lpsRedeemed = Maths.wmul(nftToRemove * 1e18, bucketPrice);
+        uint256 lpsRedeemed = Maths.wmul(Maths.wmul(nftToRemove * 1e18, bucketPrice), _depositFee());
 
         // remove some collateral
         _removeCollateral({
@@ -1324,13 +1323,12 @@ contract ERC721PoolCollateralFuzzyTest is ERC721FuzzyHelperContract {
         uint256 lpsRemaining = lps - lpsRedeemed;
         uint256 collateralRemaining = nftAmount - nftToRemove;
 
-        _assertBucket({
-            index:        bucketIndex,
-            lpBalance:    lpsRemaining,
-            collateral:   collateralRemaining,
-            deposit:      0,
-            exchangeRate: 1e18
-        });
+        (, deposit, collateral, lpBalance, ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
+        assertEq(lpBalance,  lpsRemaining);
+        assertEq(collateral, collateralRemaining);
+        assertEq(deposit,    0);
+        _validateBucketLp(bucketIndex, lpBalance);
+        _validateBucketQuantities(bucketIndex);
 
         if (collateralRemaining > 0) {
             // remove all remaining collateral

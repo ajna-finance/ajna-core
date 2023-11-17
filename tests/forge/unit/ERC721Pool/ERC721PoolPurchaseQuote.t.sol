@@ -93,16 +93,16 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             from:     _bidder,
             tokenIds: tokenIdsToAdd,
             index:    testIndex,
-            lpAward:  9_032.676066593644673535 * 1e18
+            lpAward:  9_031.438713707809927813 * 1e18
         });
 
         // check bucket state
         _assertBucket({
             index:        testIndex,
-            lpBalance:    19_032.676066593644673535 * 1e18,
+            lpBalance:    19_031.438713707809927813 * 1e18,
             collateral:   Maths.wad(3),
             deposit:      10_000 * 1e18,
-            exchangeRate: 1 * 1e18
+            exchangeRate: 1.000065016255704490 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _bidder,
@@ -121,14 +121,14 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         // bidder removes quote token from bucket
         skip(1 days); // skip to avoid penalty
 
-        uint256 qtToRemove = Maths.wmul(_priceAtTestIndex, 3 * 1e18);
+        uint256 qtToRemove = 9032.025904036599779579 * 1e18;
 
         _removeAllLiquidity({
             from:     _bidder,
             amount:   qtToRemove,
             index:    testIndex,
             newLup:   _lup(),
-            lpRedeem: 9_032.676066593644673535 * 1e18
+            lpRedeem: 9_031.438713707809927813 * 1e18
         });
 
         assertEq(_quote.balanceOf(_bidder), qtToRemove);
@@ -137,8 +137,8 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             index:        testIndex,
             lpBalance:    10_000 * 1e18,
             collateral:   Maths.wad(3),
-            deposit:      967.323933406355326465 * 1e18,
-            exchangeRate: 1 * 1e18
+            deposit:      967.974095963400220421 * 1e18,
+            exchangeRate: 1.000065016255704490 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _bidder,
@@ -152,24 +152,24 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             from:     _lender,
             amount:   3,
             index:    testIndex,
-            lpRedeem: 9_032.676066593644673535 * 1e18
+            lpRedeem: 9_032.088833996467895706 * 1e18
         });
 
         _assertBucket({
             index:        testIndex,
-            lpBalance:    967.323933406355326465 * 1e18,
+            lpBalance:    967.911166003532104294 * 1e18,
             collateral:   0,
-            deposit:      967.323933406355326465 * 1e18,
-            exchangeRate: 1 * 1e18
+            deposit:      967.974095963400220421 * 1e18,
+            exchangeRate: 1.000065016255704490 * 1e18
         });
 
         // lender removes remaining quote token to empty the bucket
         _removeAllLiquidity({
             from:     _lender,
-            amount:   967.323933406355326465 * 1e18,
+            amount:   967.974095963400220421 * 1e18,
             index:    testIndex,
             newLup:   _lup(),
-            lpRedeem: 967.323933406355326465 * 1e18
+            lpRedeem: 967.911166003532104294 * 1e18
         });
 
         _assertBucket({
@@ -265,7 +265,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             from:     _bidder,
             tokenIds: tokenIdsToAdd,
             index:    2350,
-            lpAward:  32_654.476857047354370624 * 1e18
+            lpAward:  32_650.003641039539664993 * 1e18
         });
 
         skip(25 hours); // remove liquidity after one day to avoid early withdraw penalty
@@ -275,7 +275,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             amount:   amountWithInterest,
             index:    2350,
             newLup:   _priceAt(2352),
-            lpRedeem: 24_000.762569742914919828 * 1e18
+            lpRedeem: 23_998.867563358906994145 * 1e18
         });
 
         assertEq(_quote.balanceOf(_bidder), amountWithInterest);
@@ -283,10 +283,10 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         // check bucket state
         _assertBucket({
             index:        2350,
-            lpBalance:    32_653.714287304439450796 * 1e18,
+            lpBalance:    32_651.136077680632670848 * 1e18,
             collateral:   Maths.wad(4),
             deposit:      0,
-            exchangeRate: 1.000080444343832502 * 1e18
+            exchangeRate: 1.000159413021064862 * 1e18
         });
 
         // bidder withdraws unused collateral
@@ -294,13 +294,13 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             from:     _bidder,
             amount:   1,
             index:    2350,
-            lpRedeem: 8_163.428571826109862699 * 1e18
+            lpRedeem: 8_162.784019420158167712 * 1e18
         });
 
         _assertLenderLpBalance({
             lender:      _bidder,
             index:       2350,
-            lpBalance:   490.285715478329588097 * 1e18,
+            lpBalance:   488.352058260474503136 * 1e18,
             depositTime: _startTime + 25 hours
         });
 
@@ -312,13 +312,13 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             from:     _lender,
             amount:   1,
             index:    2350,
-            lpRedeem: 8_163.428571826109862699 * 1e18
+            lpRedeem: 8_162.784019420158167712 * 1e18
         });
 
         _assertLenderLpBalance({
             lender:      _bidder,
             index:       2350,
-            lpBalance:   490.285715478329588097 * 1e18,
+            lpBalance:   488.352058260474503136 * 1e18,
             depositTime: _startTime + 25 hours
         });
 
@@ -327,10 +327,10 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         // check bucket state
         _assertBucket({
             index:        2350,
-            lpBalance:    16_326.857143652219725398 * 1e18,
+            lpBalance:    16_325.568038840316335424 * 1e18,
             collateral:   Maths.wad(2),
             deposit:      0,
-            exchangeRate: 1.000080444343832502 * 1e18
+            exchangeRate: 1.000159413021064862 * 1e18
         });
 
         // should revert if lender2 attempts to remove more collateral than lp is available for
