@@ -702,7 +702,23 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             return;
         }
 
-        if (amountToMove != 0 && amountToMove < _quoteDust) {
+        if (amountToMove < _quoteDust) {
+
+            _assertMoveLiquidityDustRevert({
+                from:      _lender,
+                amount:    amountToMove,
+                fromIndex: fromBucketId,
+                toIndex:   toBucketId
+            });
+
+            return;
+        }
+
+        // if fromBucket deposit - amount to move < _quoteDust
+        (, uint256 deposit,, uint256 lps,,) = _poolUtils.bucketInfo(address(_pool), fromBucketId);
+
+
+        if (deposit > amountToMove && deposit - amountToMove < _quoteDust) {
             _assertMoveLiquidityDustRevert({
                 from:      _lender,
                 amount:    amountToMove,
@@ -724,7 +740,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         });
 
         // validate from and to buckets have appropriate amounts of deposit and LP
-        (, uint256 deposit,, uint256 lps,,) = _poolUtils.bucketInfo(address(_pool), fromBucketId);
+        (, deposit,, lps,,) = _poolUtils.bucketInfo(address(_pool), fromBucketId);
         uint256 remaining = _lenderDepositNormalized - amountToMove;
 
         assertEq(deposit, remaining);
@@ -912,6 +928,103 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
     }
 
 
+/*********************************************************************************************************/
+/*********************************************************************************************************/
+/*********************************************************************************************************/
+
+    function testRemoveQuoteDust() external {
+
+        init(18, 6);
+
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 2_000 * 1e18,
+            index:  3696
+        });
+
+        // check balances
+        assertEq(_quote.balanceOf(address(_pool)), 2_000.000000 * 1e6);
+        assertEq(_quote.balanceOf(_lender),        198_000.000000 * 1e6);
+
+        _assertRemoveQuoteDustRevert({
+            from:     _lender,
+            amount:   1_999.999999999999999999 * 1e18,
+            index:    3696
+        });
+
+        _removeLiquidity({
+            from:     _lender,
+            amount:   1_999.999999 * 1e18,
+            index:    3696,
+            newLup:   MAX_PRICE,
+            lpRedeem: 1_999.999999 * 1e18
+        });
+
+        _assertBucket({
+            index:        3696,
+            lpBalance:    0.000001000000000000 * 1e18,
+            collateral:   0,
+            deposit:      0.000001000000000000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });
+    }
+
+    function testMoveQuoteDust() external {
+
+        init(18, 6);
+
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 2_000 * 1e18,
+            index:  3696
+        });
+
+        // check balances
+        assertEq(_quote.balanceOf(address(_pool)), 2_000.000000 * 1e6);
+        assertEq(_quote.balanceOf(_lender),        198_000.000000 * 1e6);
+
+        _assertMoveQuoteDustRevert({
+            from:      _lender,
+            amount:    1_999.999999999999999999 * 1e18,
+            fromIndex: 3696,
+            toIndex:   3698
+        });
+
+        _assertMoveQuoteDustRevert({
+            from:      _lender,
+            amount:    1,
+            fromIndex: 3696,
+            toIndex:   3698
+        });
+
+        _moveLiquidity({
+            from:         _lender,
+            amount:       0.000001 * 1e18,
+            fromIndex:    3696,
+            toIndex:      3701,
+            lpRedeemFrom: 0.000001 * 1e18,
+            lpAwardTo:    0.000001 * 1e18,
+            newLup:       1004968987.606512354182109771 * 1e18 
+        });
+
+        _assertBucket({
+            index:        3696,
+            lpBalance:    1999.999999 * 1e18,
+            collateral:   0,
+            deposit:      1999.999999 * 1e18,
+            exchangeRate: 1 * 1e18
+        });
+
+        _assertBucket({
+            index:        3701,
+            lpBalance:    0.000001000000000000 * 1e18,
+            collateral:   0,
+            deposit:      0.000001000000000000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });
+
+    }
+
     /**********************/
     /*** Helper Methods ***/
     /**********************/
@@ -972,5 +1085,4 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             newLup:           MAX_PRICE
         });
     }
-
 }
