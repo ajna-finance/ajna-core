@@ -347,7 +347,6 @@ library TakerActions {
             liquidation,
             0,
             borrower_.t0Debt,
-            borrower_.collateral,
             params_.inflator
         );
 
@@ -431,7 +430,6 @@ library TakerActions {
             liquidation,
             _priceAt(params_.index),
             borrower_.t0Debt,
-            borrower_.collateral,
             params_.inflator
         );
 
@@ -683,7 +681,6 @@ library TakerActions {
      *  @param  liquidation_ Liquidation struct holding auction details.
      *  @param  bucketPrice_ Price of the bucket, or 0 for non-bucket takes.
      *  @param  t0Debt_      Borrower t0 debt.
-     *  @param  collateral_  Borrower collateral.
      *  @param  inflator_    The pool's inflator, used to calculate borrower debt.
      *  @return vars         The prepared vars for take action.
      */
@@ -691,7 +688,6 @@ library TakerActions {
         Liquidation memory liquidation_,
         uint256 bucketPrice_,
         uint256 t0Debt_,
-        uint256 collateral_,
         uint256 inflator_
     ) internal view returns (TakeLocalVars memory vars) {
 
@@ -708,8 +704,7 @@ library TakerActions {
         vars.bucketPrice = bucketPrice_;
         vars.bondFactor   = liquidation_.bondFactor;
         vars.bpf          = _bpf(
-            vars.borrowerDebt,
-            collateral_,
+            liquidation_.thresholdPrice,
             neutralPrice,
             liquidation_.bondFactor,
             bucketPrice_ == 0 ? vars.auctionPrice : bucketPrice_

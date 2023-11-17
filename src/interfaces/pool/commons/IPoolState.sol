@@ -413,6 +413,7 @@ struct Liquidation {
     address next;           // next liquidated borrower in auctions queue
     uint160 bondSize;       // [WAD] liquidation bond size
     uint96  neutralPrice;   // [WAD] Neutral Price when liquidation was started
+    uint256 thresholdPrice; // [WAD] Threshold Price when liquidation was started
 }
 
 /// @dev Struct holding kicker state.
