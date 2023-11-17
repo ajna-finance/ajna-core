@@ -12,7 +12,7 @@ import 'src/interfaces/pool/commons/IPoolEvents.sol';
 import 'src/interfaces/pool/IERC3156FlashBorrower.sol';
 import 'src/PoolInfoUtils.sol';
 
-import { _auctionPrice, _bpf, MAX_PRICE } from 'src/libraries/helpers/PoolHelper.sol';
+import { _auctionPrice, _bpf, _depositFeeRate, MAX_PRICE } from 'src/libraries/helpers/PoolHelper.sol';
 
 abstract contract DSTestPlus is Test, IPoolEvents {
 
@@ -119,11 +119,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 index
     ) internal {
         uint256 quoteTokenScale = IPool(address(_pool)).quoteTokenScale();
-        uint256 lpAmount        = (amount / quoteTokenScale) * quoteTokenScale;
-        _addLiquidity(from, amount, index, lpAmount, MAX_PRICE);
+        uint256 amountAdded     = Maths.wmul(amount, _depositFee());
+        uint256 lpAmount        = (amountAdded / quoteTokenScale) * quoteTokenScale;
+        _addLiquidityWithPenalty(from, amount, amountAdded, index, lpAmount, MAX_PRICE);
     }
 
-    // Adds liquidity with interest rate update
+    // Adds liquidity without checking LP awarded or LUP
     function _addLiquidityNoEventCheck(
         address from,
         uint256 amount,
@@ -145,13 +146,15 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 lpAward,
         uint256 newLup
     ) internal {
-        _addLiquidityWithPenalty(from, amount, amount, index, lpAward, newLup);
+        uint256 amountAdded = Maths.wmul(amount, _depositFee());
+        _addLiquidityWithPenalty(from, amount, amountAdded, index, lpAward, newLup);
     }
 
+    // Adds liquidity validating the lender deposit fee
     function _addLiquidityWithPenalty(
         address from,
         uint256 amount,
-        uint256 amountAdded,    // amount less penalty, where applicable
+        uint256 amountAdded,    // amount less fee
         uint256 index,
         uint256 lpAward,
         uint256 newLup
@@ -1523,6 +1526,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
         // calculate the fee rate based upon the interest rate
         feeRate_ = _borrowFeeRate(newInterestRate) + Maths.WAD;
+    }
+
+    // calculate the fee that will be charged a lender
+    function _depositFee() internal view returns (uint256 feeRate_) {
+        (uint256 interestRate, ) = _pool.interestRateInfo();
+        feeRate_ = Maths.WAD - _depositFeeRate(interestRate);
     }
 }
 
