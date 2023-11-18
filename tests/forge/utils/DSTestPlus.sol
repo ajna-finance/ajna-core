@@ -284,7 +284,8 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 lpAwardTo,
         uint256 newLup
     ) internal {
-        _moveLiquidityWithPenalty(from, amount, amount, fromIndex, toIndex, lpRedeemFrom, lpAwardTo, newLup);
+        uint256 amountMoved = Maths.wmul(amount, _depositFee());
+        _moveLiquidityWithPenalty(from, amount, amountMoved, fromIndex, toIndex, lpRedeemFrom, lpAwardTo, newLup);
     }
 
     function _moveLiquidityWithPenalty(

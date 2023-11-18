@@ -89,7 +89,6 @@ library LenderActions {
     error InsufficientLiquidity();
     error InsufficientCollateral();
     error MoveToSameIndex();
-    error PriceBelowLUP();
 
     /***************************/
     /***  External Functions ***/

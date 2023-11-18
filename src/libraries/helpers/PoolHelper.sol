@@ -126,13 +126,13 @@ import { Maths }   from '../internal/Maths.sol';
     /**
      * @notice Calculates the unutilized deposit fee, charged to lenders who deposit below the `LUP`.
      * @param  interestRate_ The current interest rate.
-     * @return Fee rate based upon the given interest rate, capped at 10%.
+     * @return Fee rate based upon the given interest rate
      */
     function _depositFeeRate(
         uint256 interestRate_
     ) pure returns (uint256) {
-        // current annualized rate divided by 365 * 3 (8 hours of interest), capped at 10%
-        return Maths.min(Maths.wdiv(interestRate_, 365 * 3e18), 0.1 * 1e18);
+        // current annualized rate divided by 365 * 3 (8 hours of interest)
+        return Maths.wdiv(interestRate_, 365 * 3e18);
     }
 
     /**
