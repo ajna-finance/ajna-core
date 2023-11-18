@@ -601,7 +601,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         });
     }
 
-    function testPoolRemoveQuoteTokenWithCollateral() external {
+    function testPoolRemoveQuoteTokenWithCollateral() external tearDown {
         // add 10 collateral into the 100 bucket, for LP worth 1000 quote tokens
         _mintCollateralAndApproveTokens(_lender, 10 * 1e18);
 
@@ -619,12 +619,9 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from:    _lender1,
             amount:  900 * 1e18,
             index:   i100, 
-            lpAward: 900 * 1e18,
+            lpAward: 899.958904109589041100 * 1e18,
             newLup:  MAX_PRICE
         });
-
-        // should be able to remove a small amount of deposit
-        skip(1 days);
 
         _removeLiquidity({
             from:     _lender,
@@ -637,10 +634,10 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         // should be able to remove the rest
         _removeAllLiquidity({
             from:     _lender,
-            amount:   800 * 1e18,
+            amount:   799.958904109589041100 * 1e18,
             index:    i100,
             newLup:   MAX_PRICE,
-            lpRedeem: 800 * 1e18
+            lpRedeem: 799.958904109589041100 * 1e18
         });
 
         _assertBucket({
@@ -658,45 +655,46 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         // lender adds initial quote token
         skip(1 minutes);  // prevent deposit from having a zero timestamp
 
+        uint256 liquidityAdded = 3_399.844748858447488600 * 1e18;
         _addLiquidity({
             from:    _lender,
             amount:  3_400 * 1e18,
             index:   1606,
-            lpAward: 3_400 * 1e18,
+            lpAward: liquidityAdded,
             newLup:  MAX_PRICE
         });
         _addLiquidity({
             from:    _lender,
             amount:  3_400 * 1e18,
             index:   1663,
-            lpAward: 3_400 * 1e18,
+            lpAward: liquidityAdded,
             newLup:  MAX_PRICE
         });
 
         _assertBucket({
             index:        1606,
-            lpBalance:    3_400 * 1e18,
+            lpBalance:    liquidityAdded,
             collateral:   0,
-            deposit:      3_400 * 1e18,
+            deposit:      liquidityAdded,
             exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       1606,
-            lpBalance:   3_400 * 1e18,
+            lpBalance:   liquidityAdded,
             depositTime: _startTime + 1 minutes
         });
         _assertBucket({
             index:        1663,
-            lpBalance:    3_400 * 1e18,
+            lpBalance:    liquidityAdded,
             collateral:   0,
-            deposit:      3_400 * 1e18,
+            deposit:      liquidityAdded,
             exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       1663,
-            lpBalance:   3_400 * 1e18,
+            lpBalance:   liquidityAdded,
             depositTime: _startTime + 1 minutes
         });
 
@@ -719,13 +717,13 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       1663,
-            lpBalance:   3_400 * 1e18,
+            lpBalance:   liquidityAdded,
             depositTime: _startTime + 1 minutes
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       1663,
-            lpBalance:   3_400 * 1e18,
+            lpBalance:   liquidityAdded,
             depositTime: _startTime + 1 minutes
         });
 
@@ -736,7 +734,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             amount:        withdrawal1,
             index:         1606,
             newLup:        _priceAt(1663),
-            lpRedeem:      1_699.992715594878010449 * 1e18
+            lpRedeem:      1_699.992715262243008677 * 1e18
         });
 
         // lender removes all quote token, including interest, from the bucket
@@ -744,13 +742,13 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         assertGt(_priceAt(1606), _htp());
 
-        uint256 expectedWithdrawal2 = 1_700.131715815996933416 * 1e18;
+        uint256 expectedWithdrawal2 = 1_699.976461135759488146 * 1e18;
         _removeAllLiquidity({
             from:     _lender,
             amount:   expectedWithdrawal2,
             index:    1606,
             newLup:   _priceAt(1663),
-            lpRedeem: 1_700.007284405121989551 * 1e18
+            lpRedeem: 1_699.852033596204479923 * 1e18
         });
 
         assertEq(_quote.balanceOf(_lender), lenderBalanceBefore + withdrawal1 + expectedWithdrawal2);
@@ -770,46 +768,46 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         });
         _assertBucket({
             index:        1663,
-            lpBalance:    3_400 * 1e18,
+            lpBalance:    3_399.844748858447488600 * 1e18,
             collateral:   0,
-            deposit:      3_400.248861755391155000 * 1e18,
-            exchangeRate: 1.000073194633938575 * 1e18
+            deposit:      3_400.093614235320616015 * 1e18,
+            exchangeRate: 1.000073199041502318 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       1663,
-            lpBalance:   3_400 * 1e18,
+            lpBalance:   3_399.844748858447488600 * 1e18,
             depositTime: _startTime + 1 minutes
         });
     }
 
-    function testPoolMoveQuoteToken() external tearDown {
+    function testPoolMoveQuoteTokenBasic() external tearDown {
         _addLiquidity({
             from:    _lender,
             amount:  40_000 * 1e18,
             index:   2549,
-            lpAward: 40_000 * 1e18,
+            lpAward: 39_998.173515981735160000 * 1e18,
             newLup:  MAX_PRICE
         });
         _addLiquidity({
             from:    _lender,
             amount:  10_000 * 1e18,
             index:   2550,
-            lpAward: 10_000 * 1e18,
+            lpAward: 9_999.543378995433790000 * 1e18,
             newLup:  MAX_PRICE
         });   
         _addLiquidity(   {   
             from:    _lender,
             amount:  20_000 * 1e18,
             index:   2551,
-            lpAward: 20_000 * 1e18,
+            lpAward: 19_999.086757990867580000 * 1e18,
             newLup:  MAX_PRICE
         });
 
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2549,
-            lpBalance:   40_000 * 1e18,
+            lpBalance:   39_998.173515981735160000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -825,20 +823,20 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             fromIndex:    2549,
             toIndex:      2552,
             lpRedeemFrom: 5_000 * 1e18,
-            lpAwardTo:    5_000 * 1e18,
+            lpAwardTo:    4_999.771689497716895000 * 1e18,
             newLup:       MAX_PRICE
         });
 
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2549,
-            lpBalance:   35_000 * 1e18,
+            lpBalance:   34_998.173515981735160000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2552,
-            lpBalance:   5_000 * 1e18,
+            lpBalance:   4_999.771689497716895000 * 1e18,
             depositTime: _startTime
         });
 
@@ -848,26 +846,26 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             fromIndex:    2549,
             toIndex:      2540,
             lpRedeemFrom: 5_000 * 1e18,
-            lpAwardTo:    5_000 * 1e18,
+            lpAwardTo:    4_999.771689497716895000 * 1e18,
             newLup:       MAX_PRICE
         });
 
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2540,
-            lpBalance:   5_000 * 1e18,
+            lpBalance:   4_999.771689497716895000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2549,
-            lpBalance:   30_000 * 1e18,
+            lpBalance:   29_998.173515981735160000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2552,
-            lpBalance:   5_000 * 1e18,
+            lpBalance:   4_999.771689497716895000 * 1e18,
             depositTime: _startTime
         });
 
@@ -877,83 +875,81 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             fromIndex:    2551,
             toIndex:      2777,
             lpRedeemFrom: 15_000 * 1e18,
-            lpAwardTo:    15_000 * 1e18,
+            lpAwardTo:    14_999.315068493150685000 * 1e18,
             newLup:       MAX_PRICE
         });
 
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2540,
-            lpBalance:   5_000 * 1e18,
+            lpBalance:   4_999.771689497716895000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2549,
-            lpBalance:   30_000 * 1e18,
+            lpBalance:   29_998.173515981735160000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2551,
-            lpBalance:   5_000 * 1e18,
+            lpBalance:   4_999.086757990867580000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2552,
-            lpBalance:   5_000 * 1e18,
+            lpBalance:   4_999.771689497716895000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2777,
-            lpBalance:   15_000 * 1e18,
+            lpBalance:   14_999.315068493150685000 * 1e18,
             depositTime: _startTime
         });
     }
 
-    function testPoolMoveQuoteTokenRevertOnHTPLUP() external {
-
+    function testPoolMoveQuoteTokenRevertOnHTPLUP() external tearDown {
         _addLiquidity({
             from:    _lender,
             amount:  40_000 * 1e18,
             index:   2549,
-            lpAward: 40_000 * 1e18,
+            lpAward: 39_998.173515981735160000 * 1e18,
             newLup:  MAX_PRICE
         });
         _addLiquidity({
             from:    _lender,
             amount:  10_000 * 1e18,
             index:   2550,
-            lpAward: 10_000 * 1e18,
+            lpAward: 9_999.543378995433790000 * 1e18,
             newLup:  MAX_PRICE
         });   
         _addLiquidity({   
             from:    _lender,
             amount:  20_000 * 1e18,
             index:   2551,
-            lpAward: 20_000 * 1e18,
+            lpAward: 19_999.086757990867580000 * 1e18,
             newLup:  MAX_PRICE
         });
-
         _addLiquidity({   
             from:    _lender,
             amount:  20_000 * 1e18,
             index:   2540,
-            lpAward: 20_000 * 1e18,
+            lpAward: 19_999.086757990867580000 * 1e18,
             newLup:  MAX_PRICE
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2549,
-            lpBalance:   40_000 * 1e18,
+            lpBalance:   39_998.173515981735160000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2540,
-            lpBalance:   20_000 * 1e18,
+            lpBalance:   19_999.086757990867580000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -995,7 +991,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             PoolParams({
                 htp:                  2_969.519230769230770600 * 1e18,
                 lup:                  2_995.912459898389633881 * 1e18,
-                poolSize:             90_000.000000000000000000 * 1e18,
+                poolSize:             89_995.890410958904110000 * 1e18,
                 pledgedCollateral:    5_030.0 * 1e18,
                 encumberedCollateral: 30.036405773600046352 * 1e18,
                 poolDebt:             89_986.442307692307733800 * 1e18,
@@ -1022,7 +1018,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         _drawDebt({
             from:               _borrower,
             borrower:           _borrower,
-            amountToBorrow:     89_913 * 1e18,
+            amountToBorrow:     89_900 * 1e18,
             limitIndex:         7_388,
             collateralToPledge: 5_000 * 1e18,
             newLup:             2_995.912459898389633881 * 1e18
@@ -1030,15 +1026,15 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  17.999890961538461547 * 1e18,
+                htp:                  17.997288461538461547 * 1e18,
                 lup:                  2_995.912459898389633881 * 1e18,
-                poolSize:             90_000.000000000000000000 * 1e18,
+                poolSize:             89_995.890410958904110000 * 1e18,
                 pledgedCollateral:    5000.0 * 1e18,
-                encumberedCollateral: 30.040749191565083066 * 1e18,
-                poolDebt:             89_999.454807692307733806 * 1e18,
+                encumberedCollateral: 30.036405773600046352 * 1e18,
+                poolDebt:             89_986.442307692307733800 * 1e18,
                 actualUtilization:    0 * 1e18,
                 targetUtilization:    1.0 * 1e18,
-                minDebtAmount:        8_999.945480769230773381 * 1e18,
+                minDebtAmount:        8_998.644230769230773380 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
                 interestRate:         0.050000000000000000 * 1e18,
