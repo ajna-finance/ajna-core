@@ -2338,33 +2338,31 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:          _borrower2,
                 active:            true,
                 kicker:            address(_lender),
-                bondSize:          149115738086847591203,
-                bondFactor:        15180339887498948,
+                bondSize:          149.115738086847591203 * 1e18,
+                bondFactor:        0.015180339887498948 * 1e18,
                 kickTime:          block.timestamp - 6.7 hours,
-                referencePrice:    11314108592233961587,
-                totalBondEscrowed: 149115738086847591203,
-                auctionPrice:      8876869683343759128,
-                debtInAuction:     1081173517220988691630,
+                referencePrice:    11.314108592233961587 * 1e18,
+                totalBondEscrowed: 149.115738086847591203 * 1e18,
+                auctionPrice:      8.876869683343759128 * 1e18,
+                debtInAuction:     1081.173517220988691630 * 1e18,
                 thresholdPrice:    0,
-                neutralPrice:      11314108592233961587
+                neutralPrice:      11.314108592233961587 * 1e18
             })
         );
 
         // Borrower has 2_000 collateral (944... are still in auction), 41_648.094494787122165865 quote
-        assertEq(_quote.balanceOf(address(_borrower2)), 36700000000000000000000);
-        assertEq(_collateral.balanceOf(address(_borrower2)), 1000000000000000000000);
+        assertEq(_quote.balanceOf(address(_borrower2)), 36_700.000000000000000000 * 1e18);
+        assertEq(_collateral.balanceOf(address(_borrower2)), 1000.000000000000000000 * 1e18);
 
         _assertKicker({
             kicker:    _lender,
             claimable: 0,
-            locked:    149115738086847591203
+            locked:    149.115738086847591203 * 1e18
         });
 
         // kicker (also lender balance)
         assertEq(_quote.balanceOf(address(_lender)), 46_850.884261913152408797 * 1e18);
         assertEq(_collateral.balanceOf(address(_lender)), 0.0 * 1e18);
-        return;
-
     }
 }
 
