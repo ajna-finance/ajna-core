@@ -273,8 +273,10 @@ library LenderActions {
             })
         );
 
-        // apply deposit fee
-        movedAmount_ = Maths.wmul(movedAmount_, Maths.WAD - _depositFeeRate(poolState_.rate));
+        // apply deposit fee if moving to a lower-priced bucket
+        if (params_.fromIndex < params_.toIndex) {
+            movedAmount_ = Maths.wmul(movedAmount_, Maths.WAD - _depositFeeRate(poolState_.rate));
+        }
 
         vars.toBucketUnscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.toIndex);
         vars.toBucketScale           = Deposits.scale(deposits_, params_.toIndex);
