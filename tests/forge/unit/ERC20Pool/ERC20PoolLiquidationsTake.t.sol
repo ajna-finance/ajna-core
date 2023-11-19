@@ -2352,14 +2352,43 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             })
         );
 
-        // Borrower has 1_000 collateral, 36_700 quote
-        assertEq(_quote.balanceOf(address(_borrower2)), 36_700.000000000000000000 * 1e18);
-        assertEq(_collateral.balanceOf(address(_borrower2)), 1_000.000000000000000000 * 1e18);
+        _settle({
+            from:     _borrower2,
+            borrower: _borrower2,
+            maxDepth: 10,
+            settledDebt: 1_132.885180324813882598 * 1e18  // why this number?
+        });
+
+        _removeCollateral({
+            from:     _borrower2,
+            amount:   1_000 * 1e18,
+            index:    _i100_33,
+            lpRedeem: 101_075.047613668571627541 * 1e18
+        });
+
+        _removeLiquidity({
+            from:     _borrower2,
+            amount:   5_340.916357003624975250 * 1e18,
+            index:    _i100_33,
+            newLup:   9.917184843435912074 * 1e18,
+            lpRedeem: 5_380.450846269679134459 * 1e18
+        });
+
+        // Borrower has 2_000 collateral, 42_040 quote
+        assertEq(_quote.balanceOf(address(_borrower2)), 42_040.916357003624975250 * 1e18);
+        assertEq(_collateral.balanceOf(address(_borrower2)), 2_000.000000000000000000 * 1e18);
+
+        _assertLenderLpBalance({
+            lender:      _borrower2,
+            index:       _i100_33,
+            lpBalance:   0 * 1e18,
+            depositTime: _startTime + 144402 minutes
+        });
 
         _assertKicker({
             kicker:    _lender,
-            claimable: 0,
-            locked:    14.361839156654168605 * 1e18
+            claimable: 14.361839156654168605 * 1e18,
+            locked:    0
         });
 
         // kicker (also lender balance)
