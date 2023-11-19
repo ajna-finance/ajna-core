@@ -2164,7 +2164,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _mintQuoteAndApproveTokens(_borrower2, 50_000 * 1e18);
 
-        // borrower balance
+        // borrower balance 1_000 collateral (1_000 locked in system), 50_000 quote
         assertEq(_quote.balanceOf(address(_borrower2)), 50_000.0 * 1e18);
         assertEq(_collateral.balanceOf(address(_borrower2)), 1_000.0 * 1e18);
 
@@ -2302,7 +2302,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             borrowerCollateralization: 0.989617180816836626 * 1e18
         });
 
-        // if borrower were to walk away from pool now, they would have 1_000 collateral (1_000 locked in system), 41_876.710698365445603370 (51_700 - 9_823.289301634554396630 =  )quote
+        // if borrower were to walk away from pool now, they would have 1_000 collateral (1_000 locked in system), 41_876.710698365445603370 (51_700 - 9_823.289301634554396630) quote
         assertEq(_quote.balanceOf(address(_borrower2)), 51_700.0 * 1e18);
         assertEq(_collateral.balanceOf(address(_borrower2)), 1_000.0 * 1e18);
 
