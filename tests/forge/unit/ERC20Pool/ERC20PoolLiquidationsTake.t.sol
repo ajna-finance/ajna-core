@@ -1974,7 +1974,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _mintQuoteAndApproveTokens(_borrower2, 50_000 * 1e18);
 
-        // borrower balance
+        // borrower balance 1_000 collateral (1_000 locked in system), 50_000 quote
         assertEq(_quote.balanceOf(address(_borrower2)), 50_000.0 * 1e18);
         assertEq(_collateral.balanceOf(address(_borrower2)), 1_000.0 * 1e18);
 
@@ -2112,9 +2112,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
 
         changePrank(_borrower2);
-        // vm.expectEmit(true, true, false, true);
         emit Take(_borrower2, 1_810.257374757433853440 * 1e18, 55.527493744141143758 * 1e18, 27.480322232669404372 * 1e18, false);
-        // _assertQuoteTokenTransferEvent(from, address(_pool), givenAmount);
         _pool.take(_borrower2, 1000.0 * 1e18, _borrower2, new bytes(0));
 
         _assertBorrower({
@@ -2304,7 +2302,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             borrowerCollateralization: 0.989617180816836626 * 1e18
         });
 
-        // if borrower were to walk away from pool now, they would have 1_000 collateral, 36_700 quote
+        // if borrower were to walk away from pool now, they would have 1_000 collateral (1_000 locked in system), 41_876.710698365445603370 (51_700 - 9_823.289301634554396630 =  )quote
         assertEq(_quote.balanceOf(address(_borrower2)), 51_700.0 * 1e18);
         assertEq(_collateral.balanceOf(address(_borrower2)), 1_000.0 * 1e18);
 
@@ -2356,7 +2354,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         // Borrower has 1_000 collateral, 36_700 quote
         assertEq(_quote.balanceOf(address(_borrower2)), 36_700.000000000000000000 * 1e18);
-        assertEq(_collateral.balanceOf(address(_borrower2)), 1000.000000000000000000 * 1e18);
+        assertEq(_collateral.balanceOf(address(_borrower2)), 1_000.000000000000000000 * 1e18);
 
         _assertKicker({
             kicker:    _lender,
