@@ -2304,6 +2304,10 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             borrowerCollateralization: 0.989617180816836626 * 1e18
         });
 
+        // if borrower were to walk away from pool now, they would have 1_000 collateral, 36_700 quote
+        assertEq(_quote.balanceOf(address(_borrower2)), 51_700.0 * 1e18);
+        assertEq(_collateral.balanceOf(address(_borrower2)), 1_000.0 * 1e18);
+
         _addLiquidity({ 
             from:    _borrower2,
             amount:  15_000 * 1e18,
@@ -2350,7 +2354,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             })
         );
 
-        // Borrower has 2_000 collateral (944... are still in auction), 41_648.094494787122165865 quote
+        // Borrower has 1_000 collateral, 36_700 quote
         assertEq(_quote.balanceOf(address(_borrower2)), 36_700.000000000000000000 * 1e18);
         assertEq(_collateral.balanceOf(address(_borrower2)), 1000.000000000000000000 * 1e18);
 
