@@ -911,7 +911,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         });
     }
 
-    function testPoolMoveQuoteTokenRevertOnHTPLUP() external {
+    function testPoolMoveQuoteTokenRevertOnHTPLUP() external tearDown {
         _addLiquidity({
             from:    _lender,
             amount:  40_000 * 1e18,
