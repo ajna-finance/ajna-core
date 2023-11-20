@@ -390,7 +390,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(from, index, amount, lpRedeem);
         vm.expectEmit(true, true, true, true);
-        emit Transfer(address(_pool), from, amount);
+        emit Transfer(address(_pool), from, amount / ERC20Pool(address(_pool)).collateralScale());
         (uint256 collateralRemoved, uint256 lpAmount) = ERC20Pool(address(_pool)).removeCollateral(type(uint256).max, index);
         assertEq(collateralRemoved, amount);
         assertEq(lpAmount, lpRedeem);
@@ -807,7 +807,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LUPBelowHTP.selector);
-        ERC20Pool(address(_pool)).moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max, false);
+        ERC20Pool(address(_pool)).moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 
     function _assertMoveQuoteDustRevert(
@@ -818,7 +818,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
-        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max, false);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 
 }
