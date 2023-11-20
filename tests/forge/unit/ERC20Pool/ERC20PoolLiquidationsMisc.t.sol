@@ -106,19 +106,19 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              19.268509615384615394 * 1e18,
             borrowerCollateral:        2 * 1e18,
-            borrowert0Np:              11.096767433127708186 * 1e18,
+            borrowert0Np:              10.711397240820015878 * 1e18,
             borrowerCollateralization: 1.009034539679184678 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower2,
             borrowerDebt:              7_987.673076923076926760 * 1e18,
             borrowerCollateral:        1_000 * 1e18,
-            borrowert0Np:              9.200228999102245332 * 1e18,
+            borrowert0Np:              8.880722076025322255 * 1e18,
             borrowerCollateralization: 1.217037273735858713 * 1e18
         });
         _assertReserveAuction({
             reserves:                   7.691586538461542154 * 1e18,
-            claimableReserves :         0,
+            claimableReserves :         7.691513538461542154 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -198,7 +198,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              19.272843317722413899 * 1e18,
             borrowerCollateral:        2 * 1e18,
-            borrowert0Np:              11.096767433127708186 * 1e18,
+            borrowert0Np:              10.711397240820015878 * 1e18,
             borrowerCollateralization: 0.998794730435100101 * 1e18
         });
 
@@ -207,8 +207,8 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             borrower:       _borrower,
             debt:           19.272843317722413898 * 1e18,
             collateral:     2 * 1e18,
-            bond:           0.292568312161539120 * 1e18,
-            transferAmount: 0.292568312161539120 * 1e18
+            bond:           0.215476938890649465 * 1e18,
+            transferAmount: 0.215476938890649465 * 1e18
         });
 
         _assertBucket({
@@ -223,15 +223,15 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
                 borrower:          _borrower,
                 active:            true,
                 kicker:            _lender,
-                bondSize:          0.292568312161539120 * 1e18,
-                bondFactor:        0.015180339887498948 * 1e18,
+                bondSize:          0.215476938890649465 * 1e18,
+                bondFactor:        0.011180339887498948 * 1e18,
                 kickTime:          block.timestamp,
-                referencePrice:    11.099263219668902589 * 1e18,
-                totalBondEscrowed: 0.292568312161539120 * 1e18,
-                auctionPrice:      2_841.411384235239062784 * 1e18,
+                referencePrice:    10.713806353314454311 * 1e18,
+                totalBondEscrowed: 0.215476938890649465 * 1e18,
+                auctionPrice:      2_742.734426448500303616 * 1e18,
                 debtInAuction:     19.272843317722413899 * 1e18,
                 thresholdPrice:    9.636421658861206949 * 1e18,
-                neutralPrice:      11.099263219668902589 * 1e18
+                neutralPrice:      10.713806353314454311 * 1e18
             })
         );
 
@@ -275,22 +275,22 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
                 borrower:          _borrower,
                 active:            true,
                 kicker:            _lender,
-                bondSize:          0.292568312161539120 * 1e18,
-                bondFactor:        0.015180339887498948 * 1e18,
+                bondSize:          0.215476938890649465 * 1e18,
+                bondFactor:        0.011180339887498948 * 1e18,
                 kickTime:          block.timestamp - 3 hours,
-                referencePrice:    11.099263219668902589 * 1e18,
-                totalBondEscrowed: 0.292568312161539120 * 1e18,
-                auctionPrice:      31.393457155209254668 * 1e18,
+                referencePrice:    10.713806353314454311 * 1e18,
+                totalBondEscrowed: 0.215476938890649465 * 1e18,
+                auctionPrice:      30.303220498992666064 * 1e18,
                 debtInAuction:     19.272843317722413899 * 1e18,
                 thresholdPrice:    9.636555315636456019 * 1e18,
-                neutralPrice:      11.099263219668902589 * 1e18
+                neutralPrice:      10.713806353314454311 * 1e18
             })
         );
         _assertBorrower({
             borrower:                  _borrower,
             borrowerDebt:              19.273110631272912039 * 1e18,
             borrowerCollateral:        2 * 1e18,
-            borrowert0Np:              11.096767433127708186 * 1e18,
+            borrowert0Np:              10.711397240820015878 * 1e18,
             borrowerCollateralization: 0.998780877385080338 * 1e18
         });
 
@@ -298,9 +298,9 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             from:            _lender,
             borrower:        _borrower,
             maxCollateral:   2.0 * 1e18,
-            bondChange:      0.292568312161539120 * 1e18,
-            givenAmount:     19.722195067961733839 * 1e18,
-            collateralTaken: 0.628226288377708765 * 1e18,
+            bondChange:      0.215476938890649465 * 1e18,
+            givenAmount:     19.601843541089344268 * 1e18,
+            collateralTaken: 0.646856776880891094 * 1e18,
             isReward:        false
         });
         
@@ -324,7 +324,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
         _assertBorrower({
             borrower:                  _borrower,
             borrowerDebt:              0,
-            borrowerCollateral:        1.371773711622291235 * 1e18,
+            borrowerCollateral:        1.353143223119108906 * 1e18,
             borrowert0Np:              0,
             borrowerCollateralization: 1 * 1e18
         });
@@ -333,7 +333,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
                 htp:                  7.989580407145861718 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             63_008.829556315248414267 * 1e18,
-                pledgedCollateral:    1_001.371773711622291235 * 1e18,
+                pledgedCollateral:    1_001.353143223119108906 * 1e18,
                 encumberedCollateral: 821.863722498661263922 * 1e18,
                 poolDebt:             7_989.580407145861717463 * 1e18,
                 actualUtilization:    0.121389232097000537 * 1e18,
@@ -406,7 +406,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
                 htp:                  7.989580407145861718 * 1e18,
                 lup:                  9.529276179422528643 * 1e18,
                 poolSize:             8_000.423014969290972838 * 1e18,
-                pledgedCollateral:    1_001.371773711622291235 * 1e18,
+                pledgedCollateral:    1_001.353143223119108906 * 1e18,
                 encumberedCollateral: 838.521600516187410670 * 1e18,
                 poolDebt:             7_990.503913730158190391 * 1e18,
                 actualUtilization:    0.121389232097000537 * 1e18,
@@ -422,7 +422,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             borrower:                  _borrower2,
             borrowerDebt:              7_990.503913730158190391 * 1e18,
             borrowerCollateral:        1_000.00 * 1e18,
-            borrowert0Np:              9.200228999102245332 * 1e18,
+            borrowert0Np:              8.880722076025322255 * 1e18,
             borrowerCollateralization: 1.192575121957988603 * 1e18
         });
 
@@ -434,7 +434,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
                 htp:                  7.990503913730158191 * 1e18,
                 lup:                  9.529276179422528643 * 1e18,
                 poolSize:             8_001.213844211612533894 * 1e18,
-                pledgedCollateral:    1_001.371773711622291235 * 1e18,
+                pledgedCollateral:    1_001.353143223119108906 * 1e18,
                 encumberedCollateral: 838.521600516187410670 * 1e18,
                 poolDebt:             7_990.503913730158190391 * 1e18,
                 actualUtilization:    0.383637856267925676 * 1e18,
@@ -453,7 +453,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             borrower:                  _borrower2,
             borrowerDebt:              8_084.412285638162564830 * 1e18,
             borrowerCollateral:        1_000 * 1e18,
-            borrowert0Np:              9.200228999102245332 * 1e18,
+            borrowert0Np:              8.880722076025322255 * 1e18,
             borrowerCollateralization: 0
         });
 
@@ -466,7 +466,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
                 htp:                  0,
                 lup:                  0.000000099836282890 * 1e18,
                 poolSize:             8_083.134377459926771461 * 1e18,
-                pledgedCollateral:    1_001.371773711622291235 * 1e18,
+                pledgedCollateral:    1_001.353143223119108906 * 1e18,
                 encumberedCollateral: 80_976_695_562.129442225570824234 * 1e18,
                 poolDebt:             8_084.412285638162564830 * 1e18,
                 actualUtilization:    0.998661461786925952 * 1e18,
@@ -492,22 +492,22 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
                 borrower:          _borrower2,
                 active:            true,
                 kicker:            _lender,
-                bondSize:          122.724126286659537773 * 1e18,
-                bondFactor:        0.015180339887498948 * 1e18,
+                bondSize:          90.386477144106887514 * 1e18,
+                bondFactor:        0.011180339887498948 * 1e18,
                 kickTime:          block.timestamp - 10 hours,
-                referencePrice:    9.311653548504757974 * 1e18,
-                totalBondEscrowed: 122.724126286659537773 * 1e18,
-                auctionPrice:      2.327913387126189492 * 1e18,
+                referencePrice:    8.988277057079231472 * 1e18,
+                totalBondEscrowed: 90.386477144106887514 * 1e18,
+                auctionPrice:      2.247069264269807868 * 1e18,
                 debtInAuction:     8_084.412285638162564830 * 1e18,
                 thresholdPrice:    8.084782322086612071 * 1e18,
-                neutralPrice:      9.311653548504757974 * 1e18
+                neutralPrice:      8.988277057079231472 * 1e18
             })
         );
         _assertBorrower({
             borrower:                  _borrower2,
             borrowerDebt:              8_084.782322086612071679 * 1e18,
             borrowerCollateral:        1_000 * 1e18,
-            borrowert0Np:              9.200228999102245332 * 1e18,
+            borrowert0Np:              8.880722076025322255 * 1e18,
             borrowerCollateralization: 0
         });
 
@@ -515,8 +515,8 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             from:            _lender,
             borrower:        _borrower2,
             maxCollateral:   1_000.0 * 1e18,
-            bondChange:      35.338516445234474376 * 1e18,
-            givenAmount:     2_327.913387126189492000 * 1e18,
+            bondChange:      25.122998125288647552 * 1e18,
+            givenAmount:     2_247.069264269807868000 * 1e18,
             collateralTaken: 1_000 * 1e18,
             isReward:        true
         });
@@ -526,9 +526,9 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
                 htp:                  0,
                 lup:                  9.529276179422528643 * 1e18,
                 poolSize:             8_083.498296802166583218 * 1e18,
-                pledgedCollateral:    1.371773711622291235 * 1e18,
-                encumberedCollateral: 607.832887025912931068 * 1e18,
-                poolDebt:             5_792.207451405657054680 * 1e18,
+                pledgedCollateral:    1.353143223119108906 * 1e18,
+                encumberedCollateral: 615.244636166834132686 * 1e18,
+                poolDebt:             5_862.836055942092851679 * 1e18,
                 actualUtilization:    0.998661461786925952 * 1e18,
                 targetUtilization:    0.838521600515840801 * 1e18,
                 minDebtAmount:        0,
@@ -540,7 +540,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
         );
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              5_792.207451405657054680 * 1e18,
+            borrowerDebt:              5_862.836055942092851679 * 1e18,
             borrowerCollateral:        0,
             borrowert0Np:              0,
             borrowerCollateralization: 0
@@ -556,15 +556,15 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    10,
-            settledDebt: 5_722.635152359337569948 * 1e18
+            settledDebt: 5_792.415411176588073422 * 1e18
         });
 
         _assertPool(
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             2_312.355002439841726602 * 1e18,
-                pledgedCollateral:    1.371773711622291235 * 1e18,
+                poolSize:             2_224.545421610355485602 * 1e18,
+                pledgedCollateral:    1.353143223119108906 * 1e18,
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0.998661461786925952 * 1e18,
@@ -608,8 +608,8 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             index:        _i9_52,
             lpBalance:    8_000.033210373171973128 * 1e18,
             collateral:   0,          
-            deposit:      2_312.355002439841725846 * 1e18,
-            exchangeRate: 0.289043175401015481 * 1e18
+            deposit:      2_224.545421610355484874 * 1e18,
+            exchangeRate: 0.278067023362592850 * 1e18
         });
     }
  }

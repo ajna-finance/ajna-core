@@ -495,7 +495,7 @@ contract PoolInfoUtils {
         uint256 debt_,
         uint256 price_
     ) pure returns (uint256 encumberance_) {
-        return price_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+        return price_ != 0 ? Maths.wdiv(Maths.wmul(1.04 * 1e18 , debt_), price_) : 0;
     }
 
     /**
@@ -515,7 +515,7 @@ contract PoolInfoUtils {
         
         // borrower is undercollateralized when lup at MIN_PRICE
         if (price_ == MIN_PRICE) return 0;
-        return Maths.wdiv(Maths.wmul(collateral_, price_), debt_);
+        return Maths.wdiv(Maths.wmul(collateral_, price_), Maths.wmul(1.04 * 1e18, debt_));
     }
 
     /**

@@ -101,7 +101,7 @@ library Loans {
 
         // update Np to Tp ratio of borrower
         if (npTpRatioUpdate_) {
-            borrower_.npTpRatio = 1.04 * 1e18 + uint256(PRBMathSD59x18.sqrt(int256(poolRate_))) / 2;
+            borrower_.npTpRatio = 1e18 + uint256(PRBMathSD59x18.sqrt(int256(poolRate_))) / 2;
         }
 
         // save borrower state

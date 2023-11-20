@@ -1488,23 +1488,23 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
         _assertBucket({
             index:        _i9_81,
-            lpBalance:    5_000 * 1e18,
+            lpBalance:    0, // bucket is bankrupt
             collateral:   0,
-            deposit:      14.459712357801136539 * 1e18,
-            exchangeRate: 0.002891942471560228 * 1e18
+            deposit:      0,
+            exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       _i9_81,
-            lpBalance:   5_000 * 1e18,
+            lpBalance:   0, // bucket is bankrupt
             depositTime: _startTime
         });
         _assertBucket({
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   0,
-            deposit:      11_070.047664782003403 * 1e18,
-            exchangeRate: 1.006367969525636673 * 1e18
+            deposit:      11_059.678099006632579121 * 1e18,
+            exchangeRate: 1.005425281727875690 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
@@ -1549,15 +1549,16 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             auctionPrice:               0,
             timeRemaining:              0
         });
+
         // partial clears / debt settled - max buckets to use is 0, settle only from reserves
         _settle({
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    0,
-            settledDebt: 29.158481211449497738 * 1e18
+            settledDebt: 4.66826923076923301 * 1e18
         });
         _assertReserveAuction({
-            reserves:                   0.000073114623451463 * 1e18,
+            reserves:                   24.82935124779541188 * 1e18,
             claimableReserves :         0,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
@@ -1583,14 +1584,14 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 referencePrice:    11.349172978366918080 * 1e18,
                 totalBondEscrowed: 192.648949452176779976 * 1e18,
                 auctionPrice:      2.837293244591729520 * 1e18,
-                debtInAuction:     5_017.380135270382228461 * 1e18,
+                debtInAuction:     5_042.209413403554188879 * 1e18,
                 thresholdPrice:    0,
                 neutralPrice:      11.349172978366918080  * 1e18
             })
         );
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              5_017.380135270382228461 * 1e18,
+            borrowerDebt:              5_042.209413403554188879 * 1e18,
             borrowerCollateral:        0,
             borrowert0Np:              0,
             borrowerCollateralization: 0
@@ -1606,7 +1607,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    5,
-            settledDebt: 4_948.863291207100576814 * 1e18
+            settledDebt: 4_973.353503187780841542 * 1e18
         });
 
         _assertAuction(

@@ -885,8 +885,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   0 * 1e18,
-            deposit:      9_565.123570257669797761 * 1e18,
-            exchangeRate: 0.869556688205242709 * 1e18
+            deposit:      9_540.267352956814706357 * 1e18,
+            exchangeRate: 0.867297032086983156 * 1e18
         });
 
         _pool.moveQuoteToken(10000000000 * 1e18, _i9_72, _i9_91, type(uint256).max);

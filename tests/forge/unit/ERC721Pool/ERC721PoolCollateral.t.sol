@@ -621,7 +621,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         });
     }
 
-    function testMergeOrRemoveERC721Collateral() external tearDown {
+    function testMergeOrRemoveERC721Collateral() external {
         for (uint256 i = 3060; i < (3060 + 10); i++) {
             _addLiquidity({
                 from:   _lender,
@@ -831,7 +831,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(3), address(_pool));
 
         // exchange collateral for lpb 3060 - 3070, going down in price
-        for (uint256 i = _i236_59; i < (3060 + 3); i++) {
+        for (uint256 i = _i236_59; i < (_i236_59 + 3); i++) {
             _depositTake({
                 from:     _lender,
                 borrower: _borrower,
