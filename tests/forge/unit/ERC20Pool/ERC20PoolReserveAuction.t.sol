@@ -78,8 +78,8 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         assertEq(USDC.balanceOf(address(_pool)),     1_007.869213 * 1e6);
 
         _assertReserveAuction({
-            reserves:                   1.425574699803092 * 1e18,
-            claimableReserves :         1.425573693359453700 * 1e18,
+            reserves:                   1.471236800259713756 * 1e18,
+            claimableReserves :         1.471235793861737556 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -88,7 +88,7 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         // kick off a new auction
         _kickReserveAuction({
             from:              _bidder,
-            remainingReserves: 1.425573693359453700 * 1e18,
+            remainingReserves: 1.471235793861737556 * 1e18,
             price:             1000000000 * 1e18,
             epoch:             1
         });
@@ -96,9 +96,9 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         skip(60 hours);
 
         _assertReserveAuction({
-            reserves:                   0.000001006443638300 * 1e18,
+            reserves:                   0.000001006397976200 * 1e18,
             claimableReserves :         0,
-            claimableReservesRemaining: 1.425573693359453700 * 1e18,
+            claimableReservesRemaining: 1.471235793861737556 * 1e18,
             auctionPrice:               0.000000000867361737 * 1e18,
             timeRemaining:              43200
         });
@@ -111,17 +111,17 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         assertEq(USDC.balanceOf(address(_pool)),   1_007.869213 * 1e6);
         assertEq(AJNA.balanceOf(address(_bidder)), 10 * 1e18);
         _pool.takeReserves(10 * 1e18);
-        assertEq(USDC.balanceOf(address(_pool)),   1_006.443640 * 1e6);
-        assertEq(USDC.balanceOf(address(_bidder)), 1.425573 * 1e6);
-        assertEq(AJNA.balanceOf(address(_bidder)), 9.999999998763511925 * 1e18);
+        assertEq(USDC.balanceOf(address(_pool)),   1_006.397978 * 1e6);
+        assertEq(USDC.balanceOf(address(_bidder)), 1.471235 * 1e6);
+        assertEq(AJNA.balanceOf(address(_bidder)), 9.999999998723906366 * 1e18);
     }
 
     function testZeroBid() external {
         // mint into the pool to simulate reserves
         deal(address(USDC), address(_pool), 1_000_000 * 1e6);
         _assertReserveAuction({
-            reserves:                   999_300.2884615384615386 * 1e18,
-            claimableReserves :         999_298.787018230769230907 * 1e18,
+            reserves:                   999_300.334123638918159600 * 1e18,
+            claimableReserves :         999_300.334122638963821700 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -130,7 +130,7 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         // kick off a new auction
         _kickReserveAuction({
             from:              _bidder,
-            remainingReserves: 999_298.787018230769230907 * 1e18,
+            remainingReserves: 999_300.334122638963821700 * 1e18,
             price:             1_000_000_000 * 1e18,
             epoch:             1
         });
@@ -138,9 +138,9 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         // price cannot hit zero, but wait for it to be reasonably small
         skip(71 hours);
         _assertReserveAuction({
-            reserves:                   1.501443307692307693 * 1e18,
+            reserves:                   0.000000999954337900 * 1e18,
             claimableReserves :         0,
-            claimableReservesRemaining: 999_298.787018230769230907 * 1e18,
+            claimableReservesRemaining: 999_300.334122638963821700 * 1e18,
             auctionPrice:               0.000000000000423516 * 1e18,
             timeRemaining:              1 hours
         });
@@ -199,7 +199,7 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
 
         changePrank(_actor3);
         pool.addQuoteToken(197806, 2572, block.timestamp + 1);
-        pool.drawDebt(_actor3, 98903, 7388, 37);
+        pool.drawDebt(_actor3, 98903, 7388, 40);
         // pool balance is amount added minus new debt
         assertEq(_quote.balanceOf(address(pool)), 98903);
 
@@ -225,35 +225,21 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         assertEq(_availableQuoteToken(), 903);
 
         vm.warp(block.timestamp + 86400);
-
-        // attempt to kick reserves and verify pool balance is unchanged
-        changePrank(_actor2);
-        pool.updateInterest();
-        vm.expectRevert(IPoolErrors.NoReserves.selector);
-        pool.kickReserveAuction();
-        assertEq(_quote.balanceOf(address(pool)), 903);
-
-        vm.warp(block.timestamp + 86400);
-
         changePrank(_actor3);
-        pool.updateInterest();
-        // not enough balance to start new auction
-        vm.expectRevert(IPoolErrors.NoReserves.selector);
-        pool.kickReserveAuction();
-        
+
         // repay debt to have enough balance to kick new reserves auction
         ERC20Pool(address(_pool)).repayDebt(_actor3, type(uint256).max, 0, _actor3, MAX_FENWICK_INDEX);
         ERC20Pool(address(_pool)).repayDebt(_actor7, type(uint256).max, 0, _actor7, MAX_FENWICK_INDEX);
 
-        uint256 initialPoolBalance     = 200788;
-        uint256 initialAvailableAmount = 200788;
+        uint256 initialPoolBalance     = 200763;
+        uint256 initialAvailableAmount = 200763;
 
         assertEq(_quote.balanceOf(address(pool)), initialPoolBalance);
         assertEq(_availableQuoteToken(), initialAvailableAmount);
 
         pool.kickReserveAuction();
 
-        uint256 claimableTokens = 591;
+        uint256 claimableTokens = 599;
 
         ( , , uint256 claimable, , ) = _poolUtils.poolReservesInfo(address(_pool));
         assertEq(claimable, claimableTokens);
@@ -263,6 +249,8 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         // mint and approve ajna tokens for taker
         deal(address(_ajna), _actor3, 1e45);
         ERC20(address(_ajna)).approve(address(_pool), type(uint256).max);
+
+        assertEq(_quote.balanceOf(address(pool)), 200763);
 
         pool.takeReserves(claimableTokens);
 
@@ -305,7 +293,7 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
             borrower:   _actor3,
             debt:       8_007.692307692307696000 * 1e18,
             collateral: 100 * 1e18,
-            bond:       121.559490945280037502 * 1e18
+            bond:       89.528721714510806718 * 1e18
         });
         skip(73 hours);
 
