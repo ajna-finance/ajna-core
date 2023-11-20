@@ -2350,14 +2350,37 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             })
         );
 
-        // Borrower has 2_000 collateral (944... are still in auction), 41_648.094494787122165865 quote
-        assertEq(_quote.balanceOf(address(_borrower2)), 36_700.000000000000000000 * 1e18);
-        assertEq(_collateral.balanceOf(address(_borrower2)), 1000.000000000000000000 * 1e18);
+        _settle({
+            from:        _lender,
+            borrower:    _borrower2,
+            maxDepth:    10,
+            settledDebt: 1066.427197190003933729 * 1e18
+        });
+
+       _removeCollateral({ 
+            from:     _borrower2,
+            amount:   1_000 * 1e18,
+            index:    _i100_33,
+            lpRedeem: 101_332.208997342506423686 * 1e18
+        });
+
+       _removeLiquidity({ 
+            from:     _borrower2,
+            amount:   5_072.738170340631148548 * 1e18,
+            index:    _i100_33,
+            newLup:   100.332368143282009890 * 1e18,
+            lpRedeem: 5_123.289462595744338314 * 1e18
+        });
+
+
+        // Borrower has 2_000 collateral (944... are still in auction), 41_772.738170340631148548 quote
+        assertEq(_quote.balanceOf(address(_borrower2)), 41_772.738170340631148548 * 1e18);
+        assertEq(_collateral.balanceOf(address(_borrower2)), 2_000.000000000000000000 * 1e18);
 
         _assertKicker({
             kicker:    _lender,
-            claimable: 0,
-            locked:    149.115738086847591203 * 1e18
+            claimable: 149.115738086847591203 * 1e18,
+            locked:    0
         });
 
         // kicker (also lender balance)
