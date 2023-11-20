@@ -825,7 +825,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         skip(1 hours);
 
         // move quote token in a bankrupt bucket should set deposit time to time of bankruptcy + 1 to prevent losing deposit
-        _pool.moveQuoteToken(10 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes, false);
+        _pool.moveQuoteToken(10 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes);
         (, , uint256 bankruptcyTime, , ) = _pool.bucketInfo(_i9_91);
         _assertLenderLpBalance({
             lender:      _lender1,
@@ -834,7 +834,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             depositTime: bankruptcyTime + 1
         });
 
-        _pool.addQuoteToken(100 * 1e18, _i9_91, block.timestamp + 1 minutes, false);
+        _pool.addQuoteToken(100 * 1e18, _i9_91, block.timestamp + 1 minutes);
         ERC20Pool(address(_pool)).addCollateral(4 * 1e18, _i9_91, block.timestamp + 1 minutes);
 
         _assertLenderLpBalance({
@@ -861,7 +861,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             depositTime: _startTime
         });
 
-        _pool.moveQuoteToken(1_000 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes, false);
+        _pool.moveQuoteToken(1_000 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes);
 
         _assertLenderLpBalance({
             lender:      _lender,
@@ -870,8 +870,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             depositTime: _startTime + 100 days + 12.5 hours + 1 // _i9_91 bucket insolvency time + 1 (since deposit in _i9_52 from bucket was done before _i9_91 target bucket become insolvent)
         });
 
-        _pool.addQuoteToken(1_000 * 1e18, _i9_52, block.timestamp + 1 minutes, false);
-        _pool.moveQuoteToken(1_000 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes, false);
+        _pool.addQuoteToken(1_000 * 1e18, _i9_52, block.timestamp + 1 minutes);
+        _pool.moveQuoteToken(1_000 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes);
 
         _assertLenderLpBalance({
             lender:      _lender,
@@ -889,7 +889,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             exchangeRate: 0.867297032086983156 * 1e18
         });
 
-        _pool.moveQuoteToken(10000000000 * 1e18, _i9_72, _i9_91, type(uint256).max, false);
+        _pool.moveQuoteToken(10000000000 * 1e18, _i9_72, _i9_91, type(uint256).max);
 
         _assertBucket({
             index:        _i9_72,
@@ -1088,7 +1088,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
     function test_regression_bankruptcy_on_hpb_with_tiny_deposit() external {
         // add liquidity to bucket 2572
         changePrank(actor6);
-        _pool.addQuoteToken(2_000_000 * 1e18, 2572, block.timestamp + 100, false);
+        _pool.addQuoteToken(2_000_000 * 1e18, 2572, block.timestamp + 100);
         skip(100 days);
 
         // borrower 6 draws debt and becomes undercollateralized due to interest accrual
@@ -1110,7 +1110,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         // attempt to deposit tiny amount into bucket 2571, creating new HPB
         changePrank(actor3);
         vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
-        _pool.addQuoteToken(2, 2571, block.timestamp + 100, false);
+        _pool.addQuoteToken(2, 2571, block.timestamp + 100);
 
         // Previous test added quote token successfully, then settled auction 1, bankrupting bucket 2571.
         // This is not possible because we prevent depositing into bucket when an uncleared auction exists.

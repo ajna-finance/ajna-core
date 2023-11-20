@@ -151,8 +151,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function addQuoteToken(
         uint256 amount_,
         uint256 index_,
-        uint256 expiry_,
-        bool    revertIfBelowLup_
+        uint256 expiry_
     ) external override nonReentrant returns (uint256 bucketLP_) {
         _revertAfterExpiry(expiry_);
 
@@ -170,8 +169,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState,
             AddQuoteParams({
                 amount:           amount_,
-                index:            index_,
-                revertIfBelowLup: revertIfBelowLup_
+                index:            index_
             })
         );
 
@@ -187,8 +185,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 maxAmount_,
         uint256 fromIndex_,
         uint256 toIndex_,
-        uint256 expiry_,
-        bool    revertIfBelowLup_
+        uint256 expiry_
     ) external override nonReentrant returns (uint256 fromBucketLP_, uint256 toBucketLP_, uint256 movedAmount_) {
         _revertAfterExpiry(expiry_);
 
@@ -203,7 +200,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         moveParams.fromIndex        = fromIndex_;
         moveParams.toIndex          = toIndex_;
         moveParams.thresholdPrice   = Loans.getMax(loans).thresholdPrice;
-        moveParams.revertIfBelowLup = revertIfBelowLup_;
 
         uint256 newLup;
         (
