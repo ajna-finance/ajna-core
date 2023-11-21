@@ -2290,7 +2290,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         quote.approve(address(_pool), type(uint256).max);
 
         changePrank(_borrower);
-        uint256 collateralToPledge = _requiredCollateral(300 * 1e18, 2555);
+        uint256 collateralToPledge = _requiredCollateralRewards(ERC20Pool(address(_pool)), 300 * 1e18, 2555);
         deal(address(collateral), _borrower, collateralToPledge);
         ERC20Pool(address(_pool)).drawDebt(_borrower, 300 * 1e18, 2555, collateralToPledge);
 

@@ -96,7 +96,7 @@ contract ClaimRewardsOnStakeTest is RewardsHelperContract {
 
         _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 82.625038077222056449 * 1e18,
+            tokensToBurn: 112.186978951213014722 * 1e18,
             borrowAmount: 300 * 1e18,
             limitIndex:   2555,
             pool:         address(_pool)
@@ -114,7 +114,7 @@ contract ClaimRewardsOnStakeTest is RewardsHelperContract {
             tokenId: tokenIdTwo
         });
         uint256 minterTwoBalance = _ajnaToken.balanceOf(_minterTwo);
-        assertEq(minterTwoBalance, 4.131251903861097650 * 1e18);
+        assertEq(minterTwoBalance, 5.609348947560656105 * 1e18);
 
         vm.revertTo(stakeSnapshot);
 
