@@ -33,40 +33,38 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         bytes[] memory callsToExecute = new bytes[](3);
 
         callsToExecute[0] = abi.encodeWithSignature(
-            "addQuoteToken(uint256,uint256,uint256,bool)",
+            "addQuoteToken(uint256,uint256,uint256)",
             10_000 * 1e18,
             2550,
-            block.timestamp + 5 minutes,
-            false
+            block.timestamp + 5 minutes
         );
 
         callsToExecute[1] = abi.encodeWithSignature(
-            "addQuoteToken(uint256,uint256,uint256,bool)",
+            "addQuoteToken(uint256,uint256,uint256)",
             10_000 * 1e18,
             2551,
-            block.timestamp + 5 minutes,
-            false
+            block.timestamp + 5 minutes
         );
 
         callsToExecute[2] = abi.encodeWithSignature(
-            "addQuoteToken(uint256,uint256,uint256,bool)",
+            "addQuoteToken(uint256,uint256,uint256)",
             10_000 * 1e18,
             2552,
-            block.timestamp + 5 minutes,
-            false
+            block.timestamp + 5 minutes
         );
 
+        uint256 depositLessFee = 9_999.543378995433790000 * 1e18;
         changePrank(_lender);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(_lender, 2550, 10_000 * 1e18, 10_000 * 1e18, MAX_PRICE);
+        emit AddQuoteToken(_lender, 2550, depositLessFee, depositLessFee, MAX_PRICE);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_lender, address(_pool), 10_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(_lender, 2551, 10_000 * 1e18, 10_000 * 1e18, MAX_PRICE);
+        emit AddQuoteToken(_lender, 2551, depositLessFee, depositLessFee, MAX_PRICE);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_lender, address(_pool), 10_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(_lender, 2552, 10_000 * 1e18, 10_000 * 1e18, MAX_PRICE);
+        emit AddQuoteToken(_lender, 2552, depositLessFee, depositLessFee, MAX_PRICE);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_lender, address(_pool), 10_000 * 1e18);                
         ERC20Pool(address(_pool)).multicall(callsToExecute);
@@ -84,48 +82,48 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(address(_pool)), 30_000 * 1e18);
         assertEq(_quote.balanceOf(_lender),        170_000 * 1e18);
 
-        assertEq(_pool.depositSize(), 30_000 * 1e18);
+        assertEq(_pool.depositSize(), 29_998.630136986301370000 * 1e18);
 
         // check buckets
         _assertBucket({
             index:        2550,
-            lpBalance:    10_000 * 1e18,
+            lpBalance:    depositLessFee,
             collateral:   0,
-            deposit:      10_000 * 1e18,
+            deposit:      depositLessFee,
             exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2550,
-            lpBalance:   10_000 * 1e18,
+            lpBalance:   depositLessFee,
             depositTime: _startTime
         });
 
         _assertBucket({
             index:        2551,
-            lpBalance:    10_000 * 1e18,
+            lpBalance:    depositLessFee,
             collateral:   0,
-            deposit:      10_000 * 1e18,
+            deposit:      depositLessFee,
             exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2551,
-            lpBalance:   10_000 * 1e18,
+            lpBalance:   depositLessFee,
             depositTime: _startTime
         });
 
         _assertBucket({
             index:        2552,
-            lpBalance:    10_000 * 1e18,
+            lpBalance:    depositLessFee,
             collateral:   0,
-            deposit:      10_000 * 1e18,
+            deposit:      depositLessFee,
             exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2552,
-            lpBalance:   10_000 * 1e18,
+            lpBalance:   depositLessFee,
             depositTime: _startTime
         });
     }
