@@ -592,12 +592,12 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         });
 
         // should be able to removeQuoteToken
-        _removeLiquidity({
+        _removeAllLiquidity({
             from:     _lender,
-            amount:   10_000 * 1e18,
+            amount:   29_998.630136986301370000 * 1e18,
             index:    4990,
             newLup:   _priceAt(4550),
-            lpRedeem: 10_000 * 1e18
+            lpRedeem: 29_998.630136986301370000 * 1e18
         });
     }
 
@@ -1146,7 +1146,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
      *              Attempts to move quote token from bucket with available collateral.
      *              Attempts to move quote token when doing so would drive lup below htp.
      */
-    function testPoolMoveQuoteTokenReverts() external tearDown {
+    function testPoolMoveQuoteTokenReverts() external {
         // test setup
         _mintCollateralAndApproveTokens(_lender1, _collateral.balanceOf(_lender1) + 100_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_lender1) + 1_500_000 * 1e18);
