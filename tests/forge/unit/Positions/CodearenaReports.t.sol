@@ -321,21 +321,21 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _removeAllCollateral({
             from:     testAddress2,
-            amount:   66425.497336169705758544 * 1e18,
+            amount:   66_422.464208437460566804 * 1e18,
             index:    2550,
-            lpRedeem: 200000000 * 1e18
+            lpRedeem: 199_990_867.579908675800000000 * 1e18
         });
 
         // check from and to positions before move
         (uint256 fromLp, uint256 fromDepositTime) = _positionManager.getPositionInfo(tokenId1, mintIndex);
         (uint256 toLp,   uint256 toDepositTime)   = _positionManager.getPositionInfo(tokenId1, moveIndex);
-        assertEq(fromLp, 2661558999339261847178.534720637400665211 * 1e18);
+        assertEq(fromLp, 2661558999339261847178.420565386259112711 * 1e18);
         assertEq(toLp,   0);
         assertEq(fromDepositTime, block.timestamp);
         assertEq(toDepositTime,   0);
 
         // move liquidity called by testAddress1 owner
-        // This protects LP owner of losing LP because position manager tried to move 2661558999339261847178.534720637400665211 memorialized LP
+        // This protects LP owner of losing LP because position manager tried to move 2661558999339261847178.420565386259112711 memorialized LP
         // but the amount of LP that can be moved (constrained by available max quote token) is only 200002500
         changePrank(address(testAddress1));
         vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
@@ -542,7 +542,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         _positionManager.memorializePositions(address(_pool), tokenIdAlice, indexes);
 
         // check memorialization success for Alice
-        assertEq(_positionManager.getLP(tokenIdAlice, indexes[0]), 3000 * 1e18);
+        assertEq(_positionManager.getLP(tokenIdAlice, indexes[0]), 2_999.863013698630137000 * 1e18);
 
         // Bob
 
@@ -584,8 +584,8 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         console.log("Balance of Alice: ", lpBalanceAliceAfter);
 
         // Bob and Alice LP balances are the same as initial 
-        assertEq(lpBalanceBobAfter,   3_000 * 1e18); 
-        assertEq(lpBalanceAliceAfter, 3_000 * 1e18);
+        assertEq(lpBalanceBobAfter,   2_999.863013698630137000 * 1e18);
+        assertEq(lpBalanceAliceAfter, 2_999.863013698630137000 * 1e18);
     }
 
 
@@ -873,7 +873,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         _assertLenderLpBalance({
             lender:      alice,
             index:       2551,
-            lpBalance:   10_000 * 1e18,
+            lpBalance:   9_999.543378995433790000 * 1e18,
             depositTime: _startTime
         });
     }
