@@ -203,7 +203,7 @@ Record these addresses.  If Etherscan verification fails on the first try, copy 
 Failing that, manual verification is possible.  Following steps show how to do this on Goerli (chainId 5), using addresses from the example output above.
 * Open `broadcast/5/run-latest.json` and find the _"libraries"_ section towards the end of the file.
 * Copy/paste the _libraries_ config into the _[profile.default]_ section of `foundry.toml`, replacing the `:` with an `=`.
-* Run the following commands, adjusting addresses as appropriate:
+* Run the following commands, adjusting addresses as appropriate.  _PoolInfoUtilsMulticall_ constructor takes the address of _PoolInfoUtils_. _PositionManager_ constructor takes the factory addresses.
     ```
     forge verify-contract --chain-id 5 --watch 0x14F2474fB5ea9DF82059053c4F85A8C803Ab10C9 ERC20PoolFactory --constructor-args $(cast abi-encode "constructor(address)" ${AJNA_TOKEN})
     forge verify-contract --chain-id 5 --watch 0xb0d1c875B240EE9f6C2c3284a31b10f1EC6De7d2 ERC721PoolFactory --constructor-args $(cast abi-encode "constructor(address)" ${AJNA_TOKEN})
@@ -221,7 +221,7 @@ Failing that, manual verification is possible.  Following steps show how to do t
 
 Validate the deployment by creating a pool.  Set relevant environment variables, and run the following:
 ```
-cast send ${ERC20_POOLFACTORY} "deployPool(address,address,uint256)(address)" \
+cast send ${AJNA_ERC20_POOLFACTORY} "deployPool(address,address,uint256)(address)" \
 	${WBTC_TOKEN} ${DAI_TOKEN} 50000000000000000 \
 	--from ${DEPLOY_ADDRESS} --keystore ${DEPLOY_KEY}
 ```
@@ -229,7 +229,7 @@ cast send ${ERC20_POOLFACTORY} "deployPool(address,address,uint256)(address)" \
 Where did it deploy the pool?  Let's find out:
 ```
 export ERC20_NON_SUBSET_HASH=0x2263c4378b4920f0bef611a3ff22c506afa4745b3319c50b6d704a874990b8b2
-cast call ${ERC20_POOLFACTORY} "deployedPools(bytes32,address,address)(address)" \
+cast call ${AJNA_ERC20_POOLFACTORY} "deployedPools(bytes32,address,address)(address)" \
 	${ERC20_NON_SUBSET_HASH} ${WBTC_TOKEN} ${DAI_TOKEN}
 ```
 Record the pool address.
@@ -238,6 +238,6 @@ Run an approval to let the contract spend some of your quote token, and then add
 ```
 cast send ${DAI_TOKEN} "approve(address,uint256)" ${WBTC_DAI_POOL} 50000ether \
 	--from ${DEPLOY_ADDRESS} --keystore ${DEPLOY_KEY}
-cast send ${WBTC_DAI_POOL} "addQuoteToken(uint256,uint256)" 100ether 3232 \
+cast send ${WBTC_DAI_POOL} "addQuoteToken(uint256,uint256,uint256)" 100ether 3232 $(($(cast block -f timestamp) + 60)) \
 	--from ${DEPLOY_ADDRESS} --keystore ${DEPLOY_KEY}
 ```
