@@ -1218,19 +1218,17 @@ contract ERC20PoolLiquidationSettleFuzzyTest is ERC20FuzzyHelperContract {
 
         // lender deposits all liquidity in 3 buckets
         for(uint i = 0; i < 3; i++) {
-            _addLiquidity({
+            _addInitialLiquidity({
                 from:    _lender,
                 amount:  100_000 * 1e18,
-                index:   _buckets[i],
-                lpAward: 100_000 * 1e18,
-                newLup:  MAX_PRICE
+                index:   _buckets[i]
             });
 
             _assertBucket({
                 index:        _buckets[i],
-                lpBalance:    100_000 * 1e18,
+                lpBalance:    99_995.433789954337900000 * 1e18,
                 collateral:   0,
-                deposit:      100_000 * 1e18,
+                deposit:      99_995.433789954337900000 * 1e18,
                 exchangeRate: 1 * 1e18
             });
         }
@@ -1242,17 +1240,17 @@ contract ERC20PoolLiquidationSettleFuzzyTest is ERC20FuzzyHelperContract {
         });
         _borrow({
             from:       _borrower,
-            amount:     290_000 * 1e18,
+            amount:     280_000 * 1e18,
             indexLimit: 7_388,
             newLup:     2981.007422784467321543 * 1e18
         });
 
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              290_278.84615384615398 * 1e18,
+            borrowerDebt:              280_269.230769230769360000 * 1e18,
             borrowerCollateral:        100 * 1e18,
-            borrowert0Np:              3_343.441616215101687356 * 1e18,
-            borrowerCollateralization: 1.026946145846449373 * 1e18
+            borrowert0Np:              3_116.042833693095528324 * 1e18,
+            borrowerCollateralization: 1.022714224915763456 * 1e18
         });
 
         // skip to make borrower undercollateralized
@@ -1261,10 +1259,10 @@ contract ERC20PoolLiquidationSettleFuzzyTest is ERC20FuzzyHelperContract {
         _kick({
             from:           _kicker,
             borrower:       _borrower,
-            debt:           306_628.378237887861419289 * 1e18,
+            debt:           296_054.985884857245508279 * 1e18,
             collateral:     100 * 1e18,
-            bond:           4_654.723000803723493401 * 1e18,
-            transferAmount: 4_654.723000803723493401 * 1e18
+            bond:           3_309.995367581407494354 * 1e18,
+            transferAmount: 3_309.995367581407494354 * 1e18
         });
     }
 
