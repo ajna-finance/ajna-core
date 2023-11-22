@@ -2840,8 +2840,24 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             transferAmount: 105.285754181824258217 * 1e18
         });
 
+        _assertBucketAssets({
+            index:        _i9_72,
+            lpBalance:    10_999.497716894977169000 * 1e18,
+            collateral:   0,
+            deposit:      11_015.940722222090136114 * 1e18,
+            exchangeRate: 1.001494886925778155 * 1e18
+        });
+
         // skip ahead so take can be called on the loan
         skip(10 hours);
+
+        _assertBucketAssets({
+            index:        _i9_72,
+            lpBalance:    10_999.497716894977169000 * 1e18,
+            collateral:   0,
+            deposit:      11_015.940722222090136114 * 1e18,
+            exchangeRate: 1.001494886925778155 * 1e18
+        });
 
         // take entire collateral
         _take({
@@ -2852,6 +2868,14 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             givenAmount:     2_617.475419583478700000 * 1e18,
             collateralTaken: 1_000 * 1e18,
             isReward:        true
+        });
+
+        _assertBucketAssets({
+            index:        _i9_72,
+            lpBalance:    10_999.497716894977169000 * 1e18,
+            collateral:   0,
+            deposit:      11_016.003295386237284218 * 1e18,
+            exchangeRate: 1.001500575655005404 * 1e18
         });
 
         _settle({
@@ -2910,9 +2934,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         _assertBucketAssets({
             index:        _i9_91,
-            lpBalance:    10_000.000000000000000000 * 1e18,
+            lpBalance:    9_999.589041095890410000 * 1e18,
             collateral:   0,
-            deposit:      10_000.000000000000000000 * 1e18,
+            deposit:      9_999.589041095890410000 * 1e18,
             exchangeRate: 1.0 * 1e18
         });
 
@@ -2933,9 +2957,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         _assertBucketAssets({
             index:        _i9_91,
-            lpBalance:    18_963.990413854423428875 * 1e18,
+            lpBalance:    21_015.592667652690715170 * 1e18,
             collateral:   0,
-            deposit:      18_963.990413854423428875 * 1e18,
+            deposit:      21_015.592667652690715169 * 1e18,
             exchangeRate: 1.0 * 1e18
         });
 
@@ -2967,10 +2991,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // minter2 has remaining liquidity in _i9_91
         _assertBucketAssets({
             index:        _i9_91,
-            lpBalance:    10_000.000000000000000000 * 1e18,
+            lpBalance:    9_999.589041095890410000 * 1e18,
             collateral:   0,
-            deposit:      10_000.000000000000000000 * 1e18,
-            exchangeRate: 1.0 * 1e18
+            deposit:      9_999.589041095890410001 * 1e18,
+            exchangeRate: 1.000000000000000001 * 1e18
         });
     }
 }
