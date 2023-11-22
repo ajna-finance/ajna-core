@@ -567,7 +567,7 @@ contract ERC20PoolLiquidationKickFuzzyTest is ERC20FuzzyHelperContract {
             (uint256 poolDebt, , , ) = _pool.debtInfo();
             uint256 depositIndex     = _pool.depositIndex(amountToBorrow + poolDebt);
             uint256 price = _poolUtils.indexToPrice(depositIndex);
-            uint256 collateralToPledge = Maths.wdiv(Maths.wmul(amountToBorrow, 1.04 * 1e18), price) * 101 / 100 + 1;
+            uint256 collateralToPledge = Maths.wdiv(Maths.wmul(amountToBorrow, COLLATERALIZATION_FACTOR), price) * 101 / 100 + 1;
 
             _mintCollateralAndApproveTokens(_borrowers[i], collateralToPledge);
 

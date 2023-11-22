@@ -50,6 +50,7 @@ import {
 }                                   from '../interfaces/pool/commons/IPoolInternals.sol';
 
 import {
+    COLLATERALIZATION_FACTOR,
     _determineInflatorState,
     _priceAt,
     _roundToScale
@@ -940,7 +941,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         Loan memory maxLoan = Loans.getMax(loans);
         return (
             maxLoan.borrower,
-            Maths.wmul(Maths.wmul(maxLoan.thresholdPrice, inflatorState.inflator), 1.04 * 1e18),
+            Maths.wmul(Maths.wmul(maxLoan.thresholdPrice, inflatorState.inflator), COLLATERALIZATION_FACTOR),
             Loans.noOfLoans(loans)
         );
     }

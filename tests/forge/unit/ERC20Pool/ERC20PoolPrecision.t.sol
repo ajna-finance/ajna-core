@@ -8,7 +8,7 @@ import 'src/ERC20Pool.sol';
 import 'src/ERC20PoolFactory.sol';
 
 import 'src/PoolInfoUtils.sol';
-import { MAX_PRICE } from 'src/libraries/helpers/PoolHelper.sol';
+import { MAX_PRICE, COLLATERALIZATION_FACTOR } from 'src/libraries/helpers/PoolHelper.sol';
 
 import 'src/interfaces/pool/IPool.sol';
 import 'src/libraries/internal/Maths.sol';
@@ -986,7 +986,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
     }
 
     function _encumberedCollateral(uint256 debt_, uint256 price_) internal view returns (uint256 encumberance_) {
-        uint256 unscaledEncumberance =  price_ != 0 && debt_ != 0 ? Maths.ceilWdiv(Maths.wmul(debt_, 1.04 * 1e18), price_) : 0;
+        uint256 unscaledEncumberance =  price_ != 0 && debt_ != 0 ? Maths.ceilWdiv(Maths.wmul(debt_, COLLATERALIZATION_FACTOR), price_) : 0;
         encumberance_ = _roundUpToScale(unscaledEncumberance, ERC20Pool(address(_pool)).quoteTokenScale());
     }
 

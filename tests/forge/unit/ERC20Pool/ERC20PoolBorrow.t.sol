@@ -1318,7 +1318,7 @@ contract ERC20PoolBorrowFuzzyTest is ERC20FuzzyHelperContract {
                 lup:                  _poolUtils.lup(address(_pool)),
                 poolSize:             (49_997.716894977168950000 * 1e18) + (indexes.length * liqAmount_),
                 pledgedCollateral:    requiredCollateral,
-                encumberedCollateral: Maths.wdiv(Maths.wmul(debt, 1.04 * 1e18), _poolUtils.lup(address(_pool))),
+                encumberedCollateral: Maths.wdiv(Maths.wmul(debt, COLLATERALIZATION_FACTOR), _poolUtils.lup(address(_pool))),
                 poolDebt:             debt,
                 actualUtilization:    poolActualUtilization,
                 targetUtilization:    poolTargetUtilization,
