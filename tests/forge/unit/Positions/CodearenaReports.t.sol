@@ -646,7 +646,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         });
         _borrow({
             from:       testBorrower,
-            amount:     19.25 * 1e18,
+            amount:     15 * 1e18,
             indexLimit: _i9_91,
             newLup:     9.917184843435912074 * 1e18
         });
@@ -666,7 +666,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _borrow({
             from:       testBorrowerTwo,
-            amount:     1_730 * 1e18,
+            amount:     1_300 * 1e18,
             indexLimit: _i9_72,
             newLup:     9.721295865031779605 * 1e18
         });
@@ -707,15 +707,15 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _assertPool(
             PoolParams({
-                htp:                  9.719336538461538466 * 1e18,
+                htp:                  9.288923076923076927 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             83_000.0* 1e18,
+                poolSize:             82_996.210045662100457000 * 1e18,
                 pledgedCollateral:    1_002.0 * 1e18,
-                encumberedCollateral: 1_001.780542767698891702 * 1e18,
-                poolDebt:             9_738.605048076923081414 * 1e18,
+                encumberedCollateral: 995.350325135729028065 * 1e18,
+                poolDebt:             9_303.937500000000004290 * 1e18,
                 actualUtilization:    0,
                 targetUtilization:    1e18,
-                minDebtAmount:        486.930252403846154071 * 1e18,
+                minDebtAmount:        465.196875000000000215 * 1e18,
                 loans:                2,
                 maxBorrower:          address(testBorrowerTwo),
                 interestRate:         0.05 * 1e18,
@@ -725,9 +725,9 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _assertBucketAssets({
             index: _i9_81,
-            lpBalance: 5_000.0 * 1e18,
+            lpBalance: 4_999.771689497716895000 * 1e18,
             collateral: 0,
-            deposit: 5_000.0 * 1e18,
+            deposit: 4_999.771689497716895000 * 1e18,
             exchangeRate: 1e18
         });
 
@@ -750,17 +750,17 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _assertBucketAssets({
             index: _i9_81,
-            lpBalance: 5_000.0 * 1e18,
+            lpBalance: 4_999.771689497716895000 * 1e18,
             collateral: 0,
-            deposit: 5_000.0 * 1e18,
+            deposit: 4_999.771689497716895000 * 1e18,
             exchangeRate: 1e18
         });
 
         _assertBucketAssets({
             index: _i9_52,
-            lpBalance: 40_000.0 * 1e18,
+            lpBalance: 39_998.173515981735160000 * 1e18,
             collateral: 0,
-            deposit: 40_000.0 * 1e18,
+            deposit: 39_998.173515981735160000 * 1e18,
             exchangeRate: 1e18
         });
 
@@ -776,23 +776,23 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _assertBucketAssets({
             index: _i9_52,
-            lpBalance: 44_999.315068493150685000 * 1e18,
+            lpBalance: 44_997.716905402306040553 * 1e18,
             collateral: 0,
-            deposit: 44_999.315068493150685000 * 1e18,
+            deposit: 44_997.716905402306040553 * 1e18,
             exchangeRate: 1e18
         });
 
         _assertPool(
             PoolParams({
-                htp:                  9.719336538461538466 * 1e18,
+                htp:                  9.288923076923076927 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             82_999.315068493150685000 * 1e18,
-                pledgedCollateral:    1_002.0 * 1e18,
-                encumberedCollateral: 1_001.780542767698891702 * 1e18,
-                poolDebt:             9_738.605048076923081414 * 1e18,
+                poolSize:             82_995.981745584954442553 * 1e18,
+                pledgedCollateral:    1_002 * 1e18,
+                encumberedCollateral: 995.350325135729028065 * 1e18,
+                poolDebt:             9_303.937500000000004290 * 1e18,
                 actualUtilization:    0,
                 targetUtilization:    1e18,
-                minDebtAmount:        486.930252403846154071 * 1e18,
+                minDebtAmount:        465.196875000000000215 * 1e18,
                 loans:                2,
                 maxBorrower:          address(testBorrowerTwo),
                 interestRate:         0.05 * 1e18,
