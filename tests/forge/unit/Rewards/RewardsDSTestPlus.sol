@@ -533,7 +533,6 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         (uint256 interestRate, ) = pool_.interestRateInfo();
         uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
         uint256 expectedDebt = Maths.wmul(borrowAmount, _borrowFeeRate(newInterestRate) + Maths.WAD);
-        // requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice)) + Maths.WAD;
         requiredCollateral_ = Maths.wdiv(Maths.wmul(expectedDebt, 1.04 * 1e18), _poolUtils.indexToPrice(indexPrice));
     }
     

@@ -821,7 +821,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         });
         _borrow({
             from:       testBorrower,
-            amount:     19.25 * 1e18,
+            amount:     18.65 * 1e18,
             indexLimit: _i9_91,
             newLup:     9.917184843435912074 * 1e18
         });
@@ -841,7 +841,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         _borrow({
             from:       testBorrowerTwo,
-            amount:     1_730 * 1e18,
+            amount:     1_300 * 1e18,
             indexLimit: _i9_72,
             newLup:     9.721295865031779605 * 1e18
         });
@@ -858,7 +858,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _assertLenderLpBalance({
             lender:      testMinter,
             index:       testIndex,
-            lpBalance:   2_000 * 1e18,
+            lpBalance:   1_999.908675799086758000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -896,13 +896,13 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _assertLenderLpBalance({
             lender:      address(_positionManager),
             index:       testIndex,
-            lpBalance:   2_000 * 1e18,
+            lpBalance:   1_999.908675799086758000 * 1e18,
             depositTime: _startTime
         });
 
         // check position state
         (uint256 lps, uint256 depositTime) = _positionManager.getPositionInfo(tokenId, testIndex);
-        assertEq(lps, 2_000 * 1e18);
+        assertEq(lps, 1_999.908675799086758000 * 1e18);
         assertEq(depositTime, _startTime);
 
         // check position is not bankrupt
@@ -919,22 +919,22 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _kick({
             from:           testMinter,
             borrower:       testBorrowerTwo,
-            debt:           9_853.394241979221645666 * 1e18,
+            debt:           9_417.044136515672180410 * 1e18,
             collateral:     1_000 * 1e18,
-            bond:           149.577873638769639523 * 1e18,
-            transferAmount: 149.577873638769639523 * 1e18
+            bond:           105.285754181824258217 * 1e18,
+            transferAmount: 105.285754181824258217 * 1e18
         });
 
         // skip ahead so take can be called on the loan
-        skip(9 hours);
+        skip(10 hours);
 
         // take entire collateral
         _take({
             from:            testMinter,
             borrower:        testBorrowerTwo,
             maxCollateral:   1_000 * 1e18,
-            bondChange:      60.911699561320164197 * 1e18,
-            givenAmount:     4012.538586931187076000 * 1e18,
+            bondChange:      29.264264838117211961 * 1e18,
+            givenAmount:     2_617.475419583478700000 * 1e18,
             collateralTaken: 1_000 * 1e18,
             isReward:        true
         });
@@ -943,7 +943,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             from:        testMinter,
             borrower:    testBorrowerTwo,
             maxDepth:    10,
-            settledDebt: 5_821.652652511646951630 * 1e18
+            settledDebt: 6_736.056276265205281160 * 1e18
         });
 
         // bucket is insolvent, balances are reset
@@ -1003,7 +1003,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _assertLenderLpBalance({
             lender:      address(_positionManager),
             index:       testIndex,
-            lpBalance:   30_000 * 1e18,
+            lpBalance:   29_998.767123287671230000 * 1e18,
             depositTime: block.timestamp
         });
 
@@ -2753,7 +2753,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         });
         _borrow({
             from:       testBorrower,
-            amount:     19.25 * 1e18,
+            amount:     18.65 * 1e18,
             indexLimit: _i9_91,
             newLup:     9.917184843435912074 * 1e18
         });
@@ -2773,9 +2773,34 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         _borrow({
             from:       testBorrowerTwo,
-            amount:     1_730 * 1e18,
+            amount:     1_300 * 1e18,
             indexLimit: _i9_72,
             newLup:     9.721295865031779605 * 1e18
+        });
+
+        // check bucket status after setup
+        _assertBucket({
+            index:        _i9_91,
+            lpBalance:    1_999.908675799086758000 * 1e18,
+            collateral:   0,
+            deposit:      1_999.908675799086758000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });
+
+        _assertBucket({
+            index:        _i9_81,
+            lpBalance:    4_999.771689497716895000 * 1e18,
+            collateral:   0,
+            deposit:      4_999.771689497716895000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });
+
+        _assertBucketAssets({
+            index:        _i9_72,
+            lpBalance:    10_999.497716894977169000 * 1e18,
+            collateral:   0,
+            deposit:      10_999.497716894977169000 * 1e18,
+            exchangeRate: 1 * 1e18
         });
 
         /****************************/
@@ -2809,22 +2834,22 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _kick({
             from:           testMinter,
             borrower:       testBorrowerTwo,
-            debt:           9_853.394241979221645666 * 1e18,
+            debt:           9_417.044136515672180410 * 1e18,
             collateral:     1_000 * 1e18,
-            bond:           149.577873638769639523 * 1e18,
-            transferAmount: 149.577873638769639523 * 1e18
+            bond:           105.285754181824258217 * 1e18,
+            transferAmount: 105.285754181824258217 * 1e18
         });
 
         // skip ahead so take can be called on the loan
-        skip(14 hours);
+        skip(10 hours);
 
         // take entire collateral
         _take({
             from:            testMinter,
             borrower:        testBorrowerTwo,
             maxCollateral:   1_000 * 1e18,
-            bondChange:      10.767768953351785113 * 1e18,
-            givenAmount:     709.323311147932380000 * 1e18,
+            bondChange:      29.264264838117211961 * 1e18,
+            givenAmount:     2_617.475419583478700000 * 1e18,
             collateralTaken: 1_000 * 1e18,
             isReward:        true
         });
@@ -2833,7 +2858,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             from:        testMinter,
             borrower:    testBorrowerTwo,
             maxDepth:    10,
-            settledDebt: 9_030.334558988288428680 * 1e18
+            settledDebt: 6_736.056276265205281160 * 1e18
         });
 
         // bucket is insolvent, balances are reset
@@ -2847,22 +2872,22 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         _assertBucket({
             index:        _i9_81,
-            lpBalance:    0, // bucket is bankrupt
+            lpBalance:    4_999.771689497716895000 * 1e18,
             collateral:   0,
-            deposit:      0,
-            exchangeRate: 1 * 1e18
+            deposit:      185.390477092731631242 * 1e18,
+            exchangeRate: 0.037079788559576444 * 1e18
         });
 
         _assertBucketAssets({
             index:        _i9_72,
-            lpBalance:    11_000 * 1e18,
+            lpBalance:    10_999.497716894977169000 * 1e18,
             collateral:   0,
-            deposit:      8_963.988496785787027338 * 1e18,
-            exchangeRate: 0.814908045162344276 * 1e18
+            deposit:      11_016.003295386237284218 * 1e18,
+            exchangeRate: 1.001500575655005404 * 1e18
         });
 
         assertTrue(_positionManager.isPositionBucketBankrupt(tokenId, testIndex));
-        assertTrue(_positionManager.isPositionBucketBankrupt(tokenId, _i9_81));
+        assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, _i9_81));
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, _i9_72));
 
         // check buckets that are not bankrupt in NFT
@@ -2879,7 +2904,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             from:    testMinter2,
             amount:  10_000 * 1e18,
             index:   _i9_91,
-            lpAward: 10000.0 * 1e18,
+            lpAward: 9_999.589041095890410000 * 1e18,
             newLup:  9.917184843435912074 * 1e18
         });
 
@@ -2933,10 +2958,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // minter one should only be able to withdraw what they moved
         _removeAllLiquidity({
             from:     testMinter,
-            amount:   8_963.990413854423428875 * 1e18,
+            amount:   11_016.003626556800305169 * 1e18,
             index:    _i9_91,
             newLup:   _p9_91,
-            lpRedeem: 8_963.990413854423428875 * 1e18
+            lpRedeem: 11_016.003626556800305170 * 1e18
         });
 
         // minter2 has remaining liquidity in _i9_91

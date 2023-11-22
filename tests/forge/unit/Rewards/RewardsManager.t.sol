@@ -2851,6 +2851,7 @@ contract RewardsManagerTest is RewardsHelperContract {
                 limitIndex:   limitIndex,
                 pool:         address(_pool)
             });
+            assertGt(tokensBurned, 0);
 
             // call update exchange rate to enable claiming rewards
             assertEq(_ajnaToken.balanceOf(_updater), updaterBalance);
