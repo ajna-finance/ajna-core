@@ -314,7 +314,7 @@ library KickerActions {
         // which will make it harder for kicker to earn a reward and more likely that the kicker is penalized
         _revertIfPriceDroppedBelowLimit(vars.neutralPrice, limitIndex_);
 
-        vars.htp            = Maths.wmul(Loans.getMax(loans_).thresholdPrice, poolState_.inflator);
+        vars.htp            = Maths.wmul(Maths.wmul(Loans.getMax(loans_).thresholdPrice, poolState_.inflator), 1.04 * 1e18);
         vars.referencePrice = Maths.min(Maths.max(vars.htp, vars.neutralPrice), MAX_INFLATED_PRICE);
 
         (vars.bondFactor, vars.bondSize) = _bondParams(

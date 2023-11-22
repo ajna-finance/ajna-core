@@ -246,7 +246,7 @@ library PoolCommons {
 
         // calculate the highest threshold price
         newInflator_ = Maths.wmul(poolState_.inflator, pendingFactor);
-        uint256 htp = Maths.wmul(thresholdPrice_, poolState_.inflator);
+        uint256 htp = Maths.wmul(Maths.wmul(thresholdPrice_, poolState_.inflator), 1.04 * 1e18);
 
         uint256 accrualIndex;
         if (htp > MAX_PRICE)      accrualIndex = 1;                 // if HTP is over the highest price bucket then no buckets earn interest

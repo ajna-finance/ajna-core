@@ -940,7 +940,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         Loan memory maxLoan = Loans.getMax(loans);
         return (
             maxLoan.borrower,
-            Maths.wmul(maxLoan.thresholdPrice, inflatorState.inflator),
+            Maths.wmul(Maths.wmul(maxLoan.thresholdPrice, inflatorState.inflator), 1.04 * 1e18),
             Loans.noOfLoans(loans)
         );
     }

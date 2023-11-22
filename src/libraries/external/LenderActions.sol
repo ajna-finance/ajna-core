@@ -298,7 +298,7 @@ library LenderActions {
 
         // recalculate LUP and HTP
         lup_ = Deposits.getLup(deposits_, poolState_.debt);
-        vars.htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
+        vars.htp = Maths.wmul(Maths.wmul(params_.thresholdPrice, poolState_.inflator), 1.04 * 1e18);
 
         // check loan book's htp against new lup, revert if move drives LUP below HTP
         if (
@@ -415,7 +415,7 @@ library LenderActions {
 
         lup_ = Deposits.getLup(deposits_, poolState_.debt);
 
-        uint256 htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
+        uint256 htp = Maths.wmul(Maths.wmul(params_.thresholdPrice, poolState_.inflator), 1.04 * 1e18);
 
         if (
             // check loan book's htp doesn't exceed new lup
