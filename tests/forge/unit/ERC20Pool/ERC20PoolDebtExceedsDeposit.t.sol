@@ -34,12 +34,25 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
         // fund reserves
         deal(address(_quote), address(_pool), 50 * 1e18);
 
-        // lender deposits 1_000 quote in price of 1.0
-        // FIXME: why setup for 1k when both tests want 100 in the bucket?
+        // lender deposits 100 quote in price of 1.0
         _addInitialLiquidity({
             from:   _lender,
-            amount: 1_000 * 1e18,
+            amount: 100 * 1e18,
             index:  4156 // 1.000000000000000000 
+        });
+
+        // 1b. Legit borrower posts 75 collateral and borrows 50 quote token
+        // first borrower adds collateral token and borrows
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   75.0 * 1e18
+        });
+        _borrow({
+            from:       _borrower,
+            amount:     50.0 * 1e18,
+            indexLimit: 7388,
+            newLup:     1.0 * 1e18
         });
 
         // assert prices used in the attacks
@@ -54,35 +67,11 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
         assertEq(2_000_000.0 * 1e18, _quote.balanceOf(address(_attacker)));
         assertEq(11_000.0 * 1e18, _collateral.balanceOf(address(_attacker)));
 
-        // Deposit 100 qt at a price of 1
-        _removeLiquidity({
-            from:     _lender,
-            amount:   900.0 * 1e18,
-            index:    4156,
-            newLup:   MAX_PRICE,
-            lpRedeem: 900.0 * 1e18
-        });
-
-        // 1b. Legit borrower posts 75 collateral and borrows 50 quote token
-        // first borrower adds collateral token and borrows
-        _pledgeCollateral({
-            from:     _borrower,
-            borrower: _borrower,
-            amount:   75.0 * 1e18
-        });
-
-        _borrow({
-            from:       _borrower,
-            amount:     50.0 * 1e18,
-            indexLimit: 7388,
-            newLup:     1.0 * 1e18
-        });
-
         _assertPool(
             PoolParams({
                 htp:                  667307692307692308,
                 lup:                  1 * 1e18,
-                poolSize:             99.954337899543379000 * 1e18,
+                poolSize:             99.995433789954337900 * 1e18,
                 pledgedCollateral:    75.000000000000000000 * 1e18,
                 encumberedCollateral: 52.050000000000000024   * 1e18,
                 poolDebt:             50.048076923076923100 * 1e18,
@@ -97,8 +86,8 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
         );
 
         _assertReserveAuction({
-            reserves:                   50.093739023533544100 * 1e18,
-            claimableReserves :         50.093738923579206200 * 1e18,
+            reserves:                   50.052643133122585200 * 1e18,
+            claimableReserves :         50.052643033127151410 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -108,7 +97,7 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             PoolParams({
                 htp:                  667307692307692308,
                 lup:                  1 * 1e18,
-                poolSize:             99.954337899543379000 * 1e18,
+                poolSize:             99.995433789954337900 * 1e18,
                 pledgedCollateral:    75.000000000000000000 * 1e18,
                 encumberedCollateral: 52.050000000000000024 * 1e18,
                 poolDebt:             50.048076923076923100 * 1e18,
@@ -214,21 +203,21 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             quoteTokenAmount: 54.920254943840808687 * 1e18,
             bondChange:       0.276456513923769287 * 1e18,
             isReward:         true,
-            lpAwardTaker:     49.945693160150546849 * 1e18,
-            lpAwardKicker:    0.276448526505047158 * 1e18
+            lpAwardTaker:     49.945693456678679159 * 1e18,
+            lpAwardKicker:    0.276448528146325115 * 1e18
         });
 
         _assertBucket({
             index:        3231,
-            lpBalance:    150.217575476609931907 * 1e18,
+            lpBalance:    150.217575774779342174 * 1e18,
             collateral:   1.040000000000000000 * 1e18,
-            deposit:      45.354524525011620344 * 1e18,
-            exchangeRate: 1.000028892969056875 * 1e18
+            deposit:      45.354523931320475267 * 1e18,
+            exchangeRate: 1.000028887031874320 * 1e18
         });
 
         _assertReserveAuction({
-            reserves:                   50.620758039346299905 * 1e18,
-            claimableReserves :         50.620757894034549503 * 1e18,
+            reserves:                   50.579662148935341151 * 1e18,
+            claimableReserves :         50.579662003582494858 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -250,13 +239,13 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             exchangeRate: 1 * 1e18
         });
 
-        uint256 depositRemaining = 0.824398659014468690 * 1e18;
+        uint256 depositRemaining = 0.824398065323323611 * 1e18;
         _assertBucket({
             index:        3231,
-            lpBalance:    150.217575476609931907 * 1e18,
+            lpBalance:    150.217575774779342174 * 1e18,
             collateral:   1.040000000000000000 * 1e18,
             deposit:      depositRemaining,
-            exchangeRate: 0.703591370763601991 * 1e18
+            exchangeRate: 0.703591365414823294 * 1e18
         });
 
         // 2c. Withdraw the deposit remaing (should be about 50)
@@ -266,19 +255,19 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             amount:   depositRemaining,
             index:    3231,
             newLup:   1.0 * 1e18,
-            lpRedeem: 1.1717009236764168 * 1e18
+            lpRedeem: 1.171700088782748380 * 1e18
         });
 
         _removeAllCollateral({
             from: _attacker,
             amount: 1.040000000000000000 * 1e18,
             index: 3231,
-            lpRedeem: 149.045874552933515107 * 1e18
+            lpRedeem: 149.045875685996593794 * 1e18
         });
 
         _assertReserveAuction({
-            reserves:                   50.573303949465428373 * 1e18,
-            claimableReserves :         50.573303849508202496 * 1e18,
+            reserves:                   50.532208059054469621 * 1e18,
+            claimableReserves :         50.532207959056147260 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -286,7 +275,7 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
 
         // assert attacker's balances
         // attacker does not profit in QT
-        assertEq(_quote.balanceOf(address(_attacker)),      1_999_998.415271844816029512 * 1e18);
+        assertEq(_quote.balanceOf(address(_attacker)),      1_999_998.415271251124884433 * 1e18);
         assertEq(_collateral.balanceOf(address(_attacker)), 11_000.0 * 1e18);
     }
 
@@ -297,30 +286,6 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
         // assert attacker's balances
         assertEq(2_000_000.0 * 1e18, _quote.balanceOf(address(_attacker)));
         assertEq(11_000.0 * 1e18, _collateral.balanceOf(address(_attacker)));
-
-
-        // 1a. Deposit 100 qt at a price of 1
-        _removeLiquidity({
-            from:     _lender,
-            amount:   900.0 * 1e18,
-            index:    4156,
-            newLup:   1004968987.606512354182109771 * 1e18,
-            lpRedeem: 900.0 * 1e18
-        });
-
-        // 1b. Legit borrower posts 75 collateral and borrows 50 quote token
-        _pledgeCollateral({
-            from:     _borrower,
-            borrower: _borrower,
-            amount:   75.0 * 1e18
-        });
-
-        _borrow({
-            from:       _borrower,
-            amount:     50.0 * 1e18,
-            indexLimit: 7388,
-            newLup:     1.0 * 1e18
-        });
 
         // Like other attack, but bigger: Attacker does the following in quick succession (ideally same block):
 
@@ -411,11 +376,11 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             kicker:           _attacker,
             index:            3231,
             collateralArbed:  10_400.000000000000000000 * 1e18,
-            quoteTokenAmount: 524_670.1450169802734176 * 1e18,
+            quoteTokenAmount: 524_670.145016980273417600 * 1e18,
             bondChange:       3_308.944954975446157085 * 1e18,
             isReward:         true,
-            lpAwardTaker:     523_983.006722389833716555 * 1e18,
-            lpAwardKicker:    3_308.813860480782994789 * 1e18
+            lpAwardTaker:     523_983.006723242908178800 * 1e18,
+            lpAwardKicker:    3_308.813860486169934000 * 1e18
         });
 
         // borrower now has bad debt
@@ -429,14 +394,14 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
 
         _assertBucket({
             index:        3231,
-            lpBalance:    1_527_246.158482413995711344 * 1e18,
+            lpBalance:    1_527_246.158483272457112800 * 1e18,
             collateral:   10_400.000000000000000000 * 1e18,
-            deposit:      478_632.755813689718496414 * 1e18,
-            exchangeRate: 1.000039619785273782 * 1e18
+            deposit:      478_632.755812061670839884 * 1e18,
+            exchangeRate: 1.000039619783645660 * 1e18
         });
 
         _assertReserveAuction({
-            reserves:                   4_259.617198329601319628 * 1e18,
+            reserves:                   4_259.576102439190468307 * 1e18,
             claimableReserves :         1_120.0045662100456621 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
@@ -448,7 +413,7 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             from:        _attacker,
             borrower:    _attacker,
             maxDepth:    10,
-            settledDebt: 479_190.678121274641677665 * 1e18
+            settledDebt: 479_190.719215249478234659 * 1e18
         });
 
         _assertBucket({
@@ -462,10 +427,10 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
         // 2c. There is no deposit remaing to withdraw
         _assertBucket({
             index:        3231,
-            lpBalance:    1_527_246.158482413995711344 * 1e18,
+            lpBalance:    1_527_246.158483272457112800 * 1e18,
             collateral:   10_400.000000000000000000 * 1e18,
             deposit:      0,
-            exchangeRate: 0.686643672998741989 * 1e18
+            exchangeRate: 0.686643672998356028 * 1e18
         });
 
         // wait for auction to end and settle again
@@ -474,14 +439,14 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             from:        _attacker,
             borrower:    _attacker,
             maxDepth:    10,
-            settledDebt: 2_609.139364452160954201 * 1e18
+            settledDebt: 2_609.098270477324397207 * 1e18
         });
 
         _removeAllCollateral({
             from: _attacker,
             amount: 10_400.000000000000000000 * 1e18,
             index: 3231,
-            lpRedeem: 1_527_246.158482413995711344 * 1e18
+            lpRedeem: 1_527_246.158483272457112800 * 1e18
         });
 
         _assertReserveAuction({
@@ -498,5 +463,4 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
         assertEq(_collateral.balanceOf(address(_attacker)), 11_000.000000000000000000 * 1e18);
         // End result: attack is out the origination fee (should be about 1000), but pushed a small amount of bad debt (should be small amount with these paramters, but could be made a bit larger by waiting longer and making bigger loan) that get pushed to the legit borrower at price of 1.  This can be measured by looking at the exchange rate of that bucket
     }
-
 }
