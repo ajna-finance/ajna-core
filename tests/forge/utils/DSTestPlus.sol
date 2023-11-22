@@ -359,7 +359,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, amount, lpRedeem, newLup);
-        _assertQuoteTokenTransferEvent(address(_pool), from, amount);
+        _assertQuoteTokenTransferEventRoundingDown(address(_pool), from, amount);
         (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(amount, index);
         assertEq(removedAmount, amount);
         assertEq(lpRedeemed,    lpRedeem);
@@ -411,6 +411,14 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     }
 
     function _assertQuoteTokenTransferEvent(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {
+        // to be overidden by ERC20 helper 
+    }
+
+    function _assertQuoteTokenTransferEventRoundingDown(
         address from,
         address to,
         uint256 amount
@@ -1545,5 +1553,3 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     function greaterThanWithinDiff(uint256 x, uint256 y, uint256 expectedDiff, string memory err) pure {
         require(x > y || getDiff(x, y) <= expectedDiff, err);
     }
-
-
