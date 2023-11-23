@@ -117,7 +117,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  20.019230769230769240 * 1e18,
+                htp:                  20.820000000000000010 * 1e18,
                 lup:                  3_844.432207828138682757 * 1e18,
                 poolSize:             110_994.931506849315069 * 1e18,
                 pledgedCollateral:    5_000 * 1e18,
@@ -188,7 +188,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  20.019230769230769240 * 1e18,
+                htp:                  20.820000000000000010 * 1e18,
                 lup:                  3_844.432207828138682757 * 1e18,
                 poolSize:             110_994.931506849315069 * 1e18,
                 pledgedCollateral:    5_000 * 1e18,
@@ -318,7 +318,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  20.019230769230769240 * 1e18,
+                htp:                  20.820000000000000010 * 1e18,
                 lup:                  3_844.432207828138682757 * 1e18,
                 poolSize:             110_994.931506849315069 * 1e18,
                 pledgedCollateral:    5_000 * 1e18,
@@ -449,7 +449,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  20.019230769230769240 * 1e18,
+                htp:                  20.820000000000000010 * 1e18,
                 lup:                  3_844.432207828138682757 * 1e18,
                 poolSize:             120_994.474885844748859 * 1e18,
                 pledgedCollateral:    5_000 * 1e18,
@@ -567,7 +567,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  20.019230769230769240 * 1e18,
+                htp:                  20.820000000000000010 * 1e18,
                 lup:                  3_844.432207828138682757 * 1e18,
                 poolSize:             110_994.931506849315069 * 1e18,
                 pledgedCollateral:    5_000 * 1e18,
