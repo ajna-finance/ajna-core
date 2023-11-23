@@ -207,7 +207,7 @@ contract PoolInfoUtils {
 
         (, uint256 maxThresholdPrice,) = pool.loansInfo();
 
-        htp_      = Maths.wmul(maxThresholdPrice, COLLATERALIZATION_FACTOR);
+        htp_      = maxThresholdPrice;
         htpIndex_ = htp_ >= MIN_PRICE ? _indexOf(htp_) : MAX_FENWICK_INDEX;
         lupIndex_ = pool.depositIndex(debt);
         lup_      = _priceAt(lupIndex_);
