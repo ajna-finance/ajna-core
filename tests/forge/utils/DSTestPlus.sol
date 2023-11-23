@@ -1524,7 +1524,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         (uint256 interestRate, ) = _pool.interestRateInfo();
         uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
         uint256 expectedDebt = Maths.wmul(borrowAmount, _borrowFeeRate(newInterestRate) + Maths.WAD);
-        requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice));
+        requiredCollateral_ = Maths.wdiv(Maths.wmul(expectedDebt, COLLATERALIZATION_FACTOR), _poolUtils.indexToPrice(indexPrice));
     }
 
     // calculate the fee that will be charged a borrower

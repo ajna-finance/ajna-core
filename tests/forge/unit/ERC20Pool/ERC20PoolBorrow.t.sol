@@ -1281,7 +1281,7 @@ contract ERC20PoolBorrowFuzzyTest is ERC20FuzzyHelperContract {
         changePrank(_borrower);
         uint256 limitIndex = _findLowestIndexPrice(indexes);
         uint256 borrowAmount = Maths.wdiv(mintAmount_, Maths.wad(3));
-        uint256 requiredCollateral = _requiredCollateral(Maths.wdiv(mintAmount_, Maths.wad(3)), limitIndex);
+        uint256 requiredCollateral = _requiredCollateral(borrowAmount, limitIndex);
 
         deal(address(_collateral), _borrower, requiredCollateral);
 
@@ -1314,7 +1314,7 @@ contract ERC20PoolBorrowFuzzyTest is ERC20FuzzyHelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  Maths.wdiv(debt, requiredCollateral),
+                htp:                  Maths.wdiv(Maths.wmul(debt, COLLATERALIZATION_FACTOR), requiredCollateral),
                 lup:                  _poolUtils.lup(address(_pool)),
                 poolSize:             (49_997.716894977168950000 * 1e18) + (indexes.length * liqAmount_),
                 pledgedCollateral:    requiredCollateral,
@@ -1356,7 +1356,7 @@ contract ERC20PoolBorrowFuzzyTest is ERC20FuzzyHelperContract {
             (, uint256 deposit, , uint256 lpAccumulator, , uint256 exchangeRate) = _poolUtils.bucketInfo(address(_pool), indexes[i]);
 
             // check that only deposits above the htp earned interest
-            if (indexes[i] <= _poolUtils.priceToIndex(Maths.wdiv(debt, requiredCollateral))) {
+            if (indexes[i] <= _poolUtils.priceToIndex(Maths.wdiv(Maths.wmul(debt, COLLATERALIZATION_FACTOR), requiredCollateral))) {
                 assertGt(deposit, liqAmount_);
                 assertGt(exchangeRate, 1e18);
             } else {
