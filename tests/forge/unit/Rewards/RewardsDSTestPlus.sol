@@ -413,6 +413,29 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         _registerLender(address(_positionManager), indexes);
     }
 
+    function _mintAndMemorializeExistingLiquidityPositionNFT(
+        address minter,
+        address pool,
+        uint256[] memory indexes
+    ) internal returns (uint256 tokenId_) {
+        changePrank(minter);
+
+        tokenId_ = _positionManager.mint(address(pool), minter, keccak256("ERC20_NON_SUBSET_HASH"));
+
+        uint256[] memory lpBalances = new uint256[](indexes.length);
+
+        for (uint256 i = 0; i < indexes.length; i++) {
+            (lpBalances[i], ) = ERC20Pool(address(pool)).lenderInfo(indexes[i], minter);
+        }
+
+        ERC20Pool(address(pool)).increaseLPAllowance(address(_positionManager), indexes, lpBalances);
+
+        _positionManager.memorializePositions(pool, tokenId_, indexes);
+
+        // register position manager as lender at memorialized indexes (for LP test assertions)
+        _registerLender(address(_positionManager), indexes);
+    }
+
     function _triggerReserveAuctions(
         address borrower,
         address pool,

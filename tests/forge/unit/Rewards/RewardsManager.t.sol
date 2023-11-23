@@ -612,7 +612,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         });
         _borrow({
             from:       _borrower,
-            amount:     19.25 * 1e18,
+            amount:     18.65 * 1e18,
             indexLimit: _i9_91,
             newLup:     9.917184843435912074 * 1e18
         });
@@ -625,7 +625,14 @@ contract RewardsManagerTest is RewardsHelperContract {
         });
         _borrow({
             from:       _borrower2,
-            amount:     9_710 * 1e18,
+            amount:     7_980 * 1e18,
+            indexLimit: _i9_72,
+            newLup:     9.721295865031779605 * 1e18
+        });
+
+        _borrow({
+            from:       _borrower2,
+            amount:     1_300 * 1e18,
             indexLimit: _i9_72,
             newLup:     9.721295865031779605 * 1e18
         });
@@ -640,13 +647,10 @@ contract RewardsManagerTest is RewardsHelperContract {
         depositIndexes[0] = _i9_91;
         depositIndexes2[0] = _i9_81;
 
-        // ERC20Pool pool = ERC20Pool(address(_pool));
-
         // stake NFT position one
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT({
+        uint256 tokenIdOne = _mintAndMemorializeExistingLiquidityPositionNFT({
             indexes:    depositIndexes,
             minter:     _minterOne,
-            mintAmount: 2_000 * 1e18,
             pool:       address(_pool)
         });
 
@@ -656,12 +660,11 @@ contract RewardsManagerTest is RewardsHelperContract {
             tokenId: tokenIdOne
         });
 
-
         // stake NFT position two
         uint256 tokenIdTwo = _mintAndMemorializePositionNFT({
             indexes:    depositIndexes2,
             minter:     _minterTwo,
-            mintAmount: 5_000 * 1e18,
+            mintAmount: 1_000 * 1e18,
             pool:       address(_pool)
         });
         _stakeToken({
@@ -683,10 +686,10 @@ contract RewardsManagerTest is RewardsHelperContract {
         _kick({
             from:           _minterTwo,
             borrower:       _borrower2,
-            debt:           9_853.394241979221645666 * 1e18,
+            debt:           9_417.044136515672180410 * 1e18,
             collateral:     1_000 * 1e18,
-            bond:           149.577873638769639523 * 1e18,
-            transferAmount: 149.577873638769639523 * 1e18
+            bond:           105.285754181824258217 * 1e18,
+            transferAmount: 105.285754181824258217 * 1e18
         });
 
         // skip ahead so take can be called on the loan
@@ -697,8 +700,8 @@ contract RewardsManagerTest is RewardsHelperContract {
             from:            _minterTwo,
             borrower:        _borrower2,
             maxCollateral:   1_000 * 1e18,
-            bondChange:      60.911699561320164197 * 1e18,
-            givenAmount:     4012.538586931187076000 * 1e18,
+            bondChange:      41.385920226943447750 * 1e18,
+            givenAmount:     3_701.669237553163064000 * 1e18,
             collateralTaken: 1_000 * 1e18,
             isReward:        true
         });
@@ -707,7 +710,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             from:        _minterTwo,
             borrower:    _borrower2,
             maxDepth:    10,
-            settledDebt: 5_821.652652511646951630 * 1e18
+            settledDebt: 5_678.605678397318135315 * 1e18
         });
 
         // bucket is insolvent, balances are reset
@@ -722,10 +725,10 @@ contract RewardsManagerTest is RewardsHelperContract {
         // lower priced bucket isn't bankrupt, but exchange rate has decreased
         _assertBucket({
             index:        _i9_81,
-            lpBalance:    10_000 * 1e18,
+            lpBalance:    5999.726027397260274000 * 1e18,
             collateral:   0,
-            deposit:      8_166.846315021758694664 * 1e18,
-            exchangeRate: 0.816684631502175870 * 1e18
+            deposit:      2_258.799128242959972962 * 1e18,
+            exchangeRate: 0.376483712410923052 * 1e18
         });
 
         /***********************/
@@ -761,7 +764,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         /*********************/
         /*** Claim Rewards ***/
         /*********************/
-        // _minterOne withdraws and claims rewards, rewards should be 0
+        // _minterOne withdraws and claims rewards, rewards should be 0 as bucket is bankrupt
         _unstakeToken({
             owner:                     _minterOne,
             pool:                      address(_pool),
@@ -878,9 +881,9 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater:        _updater,
             pool:           address(_pool),
             indexes:        depositIndex1,
-            reward:         0.007146561992635801 * 1e18
+            reward:         1.367983628063691166 * 1e18
         });
-        assertEq(_ajnaToken.balanceOf(_updater), 0.007146561992635801 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater), 1.367983628063691166 * 1e18);
 
         _assertBurn({
             pool:      address(_pool),
@@ -895,7 +898,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:             address(_pool),
             epoch:            1,
             timestamp:        block.timestamp - 24 hours,
-            burned:           0.285862479721117855 * 1e18,
+            burned:           54.719345109368236185 * 1e18,
             interest:         0.000048562908902619 * 1e18,
             tokensToBurn:     tokensBurned
         });
@@ -919,28 +922,28 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater:        _updater2,
             pool:           address(_pool),
             indexes:        depositIndex2,
-            reward:         0.021439685979475985 * 1e18
+            reward:         4.103950882873132453 * 1e18
         });
-        assertEq(_ajnaToken.balanceOf(_updater2), 0.021439685979475985 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater2), 4.103950882873132453 * 1e18);
 
         // assert minterOne has rewards to be claimed
         uint256 rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        assertEq(rewardsEarned, 0.228689983776894284 * 1e18);
+        assertEq(rewardsEarned, 43.775476087494588948 * 1e18);
 
         _assertBucket({
             index:        2770,
-            lpBalance:    10000000000000000000000,
+            lpBalance:    9_999.543378995433790000 * 1e18,
             collateral:   0,
-            deposit:      10_001.283047927145090000 * 1e18,
-            exchangeRate: 1000128304792714509
+            deposit:      10_000.826426922748550026 * 1e18,
+            exchangeRate: 1.000128310651665342 * 1e18
         });
 
         _assertBucket({
             index:        2771,
-            lpBalance:    10000000000000000000000,
+            lpBalance:    9_999.543378995433790000 * 1e18,
             collateral:   0,
-            deposit:      10_001.283047927145090000 * 1e18,
-            exchangeRate: 1000128304792714509
+            deposit:      10_000.826426922748550026 * 1e18,
+            exchangeRate: 1.000128310651665342 * 1e18
         });
 
         /***************************************************************/
@@ -1009,17 +1012,17 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater:        _updater,
             pool:           address(_pool),
             indexes:        depositIndex1,
-            reward:         3.547459596875587275 * 1e18
+            reward:         3.547550807973482132 * 1e18
         });
 
-        assertEq(_ajnaToken.balanceOf(_updater), 3.554606158868223076 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater), 4.915534436037173298 * 1e18);
 
         _assertBurn({
             pool:             address(_pool),
             epoch:            2,
             timestamp:        block.timestamp - 24 hours,
-            burned:           142.184246354747130336 * 1e18,
-            interest:         2.566194585267388219 * 1e18,
+            burned:           196.621377428309925796 * 1e18,
+            interest:         2.566194585634380910 * 1e18,
             tokensToBurn:     tokensBurned
         });
 
@@ -1042,13 +1045,13 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater:        _updater2,
             pool:           address(_pool),
             indexes:        depositIndex2,
-            reward:         3.192497129782555259 * 1e18
+            reward:         3.192579213790830053 * 1e18
         });
-        assertEq(_ajnaToken.balanceOf(_updater2), 3.213936815762031244 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater2), 7.296530096663962506 * 1e18);
 
         // assert minterOne has more rewards to be claimed
         rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        assertEq(rewardsEarned, 67.628257250358319615 * 1e18);
+        assertEq(rewardsEarned, 111.176776305137710818 * 1e18);
 
         // QT is adeed to a bucket
         deal(address(_quote), _minterOne, 100 * 1e18 * depositIndexes.length + 6_000.0 * 1e18);
@@ -1087,18 +1090,18 @@ contract RewardsManagerTest is RewardsHelperContract {
         _assertBorrower({
             borrower:                  _borrower,
             borrowerDebt:              25656.385808102176964640 * 1e18,
-            borrowerCollateral:        25.921751033498703620  * 1e18,
-            borrowert0Np:              1_101.390902162019364514 * 1e18,
-            borrowerCollateralization: 0.990376081445383032 * 1e18
+            borrowerCollateral:        26.718621074838651764  * 1e18,
+            borrowert0Np:              1_031.248175364251467082 * 1e18,
+            borrowerCollateralization: 0.981559226203156422 * 1e18
         });
 
         _kick({
             from:           _minterTwo,
             borrower:       _borrower,
             debt:           25_656.385808102176964640 * 1e18,
-            collateral:     25.921751033498703620 * 1e18,
-            bond:           374.752609017118925592 * 1e18,
-            transferAmount: 374.752609017118925592 * 1e18
+            collateral:     26.718621074838651764 * 1e18,
+            bond:           272.127065784710217733 * 1e18,
+            transferAmount: 272.127065784710217733 * 1e18
         });
 
         // skip ahead so take can be called on the loan
@@ -1109,9 +1112,9 @@ contract RewardsManagerTest is RewardsHelperContract {
             from:            _minterTwo,
             borrower:        _borrower,
             maxCollateral:   100.0  * 1e18,
-            bondChange:      80,
-            givenAmount:     5495,
-            collateralTaken: 25.921751033498703620 * 1e18,
+            bondChange:      56,
+            givenAmount:     5317,
+            collateralTaken: 26.718621074838651764 * 1e18,
             isReward:        true
         });
 
@@ -1119,7 +1122,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             from:        _minterTwo,
             borrower:    _borrower,
             maxDepth:    10,
-            settledDebt: 24_911.288118205001229802 * 1e18
+            settledDebt: 24_911.288118205001229953 * 1e18
         });
 
         // bucket is insolvent, balances are reset
