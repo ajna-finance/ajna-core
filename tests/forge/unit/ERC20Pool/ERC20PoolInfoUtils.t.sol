@@ -161,8 +161,8 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
 
         assertEq(hpb,      3_010.892022197881557845 * 1e18);
         assertEq(hpbIndex, 2550);
-        assertEq(htp,      210.201923076923077020 * 1e18);
-        assertEq(htpIndex, 3083);
+        assertEq(htp,      218.610000000000000101 * 1e18);
+        assertEq(htpIndex, 3075);
         assertEq(lup,      2981.007422784467321543 * 1e18);
         assertEq(lupIndex, 2552);
 
