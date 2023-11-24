@@ -997,7 +997,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  2_836.057692307692309000 * 1e18,
+                htp:                  2_949.500000000000001360 * 1e18,
                 lup:                  2_995.912459898389633881 * 1e18,
                 poolSize:             89_995.890410958904110000 * 1e18,
                 pledgedCollateral:    5_030.0 * 1e18,
@@ -1034,7 +1034,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  17.997288461538461547 * 1e18,
+                htp:                  18.717180000000000009 * 1e18,
                 lup:                  2_995.912459898389633881 * 1e18,
                 poolSize:             89_995.890410958904110000 * 1e18,
                 pledgedCollateral:    5000.0 * 1e18,
@@ -1525,7 +1525,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  0.000000029905872487 * 1e18,
+                htp:                  0.000000031102107386 * 1e18,
                 lup:                  14_343_926.246295999585280544 * 1e18,
                 poolSize:             0.000000059751560420 * 1e18,
                 pledgedCollateral:    1 * 1e18,
@@ -1545,7 +1545,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  0.000000029905872487 * 1e18,
+                htp:                  0.000000031102107386 * 1e18,
                 lup:                  14_343_926.246295999585280544 * 1e18,
                 poolSize:             0.000000059751560420 * 1e18,
                 pledgedCollateral:    1 * 1e18,
