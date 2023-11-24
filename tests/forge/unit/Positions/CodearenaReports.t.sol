@@ -321,21 +321,21 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _removeAllCollateral({
             from:     testAddress2,
-            amount:   66425.497336169705758544 * 1e18,
+            amount:   66_422.464208437460566804 * 1e18,
             index:    2550,
-            lpRedeem: 200000000 * 1e18
+            lpRedeem: 199_990_867.579908675800000000 * 1e18
         });
 
         // check from and to positions before move
         (uint256 fromLp, uint256 fromDepositTime) = _positionManager.getPositionInfo(tokenId1, mintIndex);
         (uint256 toLp,   uint256 toDepositTime)   = _positionManager.getPositionInfo(tokenId1, moveIndex);
-        assertEq(fromLp, 2661558999339261847178.534720637400665211 * 1e18);
+        assertEq(fromLp, 2661558999339261847178.420565386259112711 * 1e18);
         assertEq(toLp,   0);
         assertEq(fromDepositTime, block.timestamp);
         assertEq(toDepositTime,   0);
 
         // move liquidity called by testAddress1 owner
-        // This protects LP owner of losing LP because position manager tried to move 2661558999339261847178.534720637400665211 memorialized LP
+        // This protects LP owner of losing LP because position manager tried to move 2661558999339261847178.420565386259112711 memorialized LP
         // but the amount of LP that can be moved (constrained by available max quote token) is only 200002500
         changePrank(address(testAddress1));
         vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
@@ -542,7 +542,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         _positionManager.memorializePositions(address(_pool), tokenIdAlice, indexes);
 
         // check memorialization success for Alice
-        assertEq(_positionManager.getLP(tokenIdAlice, indexes[0]), 3000 * 1e18);
+        assertEq(_positionManager.getLP(tokenIdAlice, indexes[0]), 2_999.863013698630137000 * 1e18);
 
         // Bob
 
@@ -584,8 +584,8 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         console.log("Balance of Alice: ", lpBalanceAliceAfter);
 
         // Bob and Alice LP balances are the same as initial 
-        assertEq(lpBalanceBobAfter,   3_000 * 1e18); 
-        assertEq(lpBalanceAliceAfter, 3_000 * 1e18);
+        assertEq(lpBalanceBobAfter,   2_999.863013698630137000 * 1e18);
+        assertEq(lpBalanceAliceAfter, 2_999.863013698630137000 * 1e18);
     }
 
 
@@ -646,7 +646,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         });
         _borrow({
             from:       testBorrower,
-            amount:     19.25 * 1e18,
+            amount:     15 * 1e18,
             indexLimit: _i9_91,
             newLup:     9.917184843435912074 * 1e18
         });
@@ -666,7 +666,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _borrow({
             from:       testBorrowerTwo,
-            amount:     1_730 * 1e18,
+            amount:     1_300 * 1e18,
             indexLimit: _i9_72,
             newLup:     9.721295865031779605 * 1e18
         });
@@ -707,15 +707,15 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _assertPool(
             PoolParams({
-                htp:                  9.719336538461538466 * 1e18,
+                htp:                  9.288923076923076927 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             83_000.0* 1e18,
+                poolSize:             82_996.210045662100457000 * 1e18,
                 pledgedCollateral:    1_002.0 * 1e18,
-                encumberedCollateral: 1_001.780542767698891702 * 1e18,
-                poolDebt:             9_738.605048076923081414 * 1e18,
+                encumberedCollateral: 995.350325135729028065 * 1e18,
+                poolDebt:             9_303.937500000000004290 * 1e18,
                 actualUtilization:    0,
                 targetUtilization:    1e18,
-                minDebtAmount:        486.930252403846154071 * 1e18,
+                minDebtAmount:        465.196875000000000215 * 1e18,
                 loans:                2,
                 maxBorrower:          address(testBorrowerTwo),
                 interestRate:         0.05 * 1e18,
@@ -725,9 +725,9 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _assertBucketAssets({
             index: _i9_81,
-            lpBalance: 5_000.0 * 1e18,
+            lpBalance: 4_999.771689497716895000 * 1e18,
             collateral: 0,
-            deposit: 5_000.0 * 1e18,
+            deposit: 4_999.771689497716895000 * 1e18,
             exchangeRate: 1e18
         });
 
@@ -750,17 +750,17 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _assertBucketAssets({
             index: _i9_81,
-            lpBalance: 5_000.0 * 1e18,
+            lpBalance: 4_999.771689497716895000 * 1e18,
             collateral: 0,
-            deposit: 5_000.0 * 1e18,
+            deposit: 4_999.771689497716895000 * 1e18,
             exchangeRate: 1e18
         });
 
         _assertBucketAssets({
             index: _i9_52,
-            lpBalance: 40_000.0 * 1e18,
+            lpBalance: 39_998.173515981735160000 * 1e18,
             collateral: 0,
-            deposit: 40_000.0 * 1e18,
+            deposit: 39_998.173515981735160000 * 1e18,
             exchangeRate: 1e18
         });
 
@@ -776,23 +776,23 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _assertBucketAssets({
             index: _i9_52,
-            lpBalance: 44_999.315068493150685000 * 1e18,
+            lpBalance: 44_997.716905402306040553 * 1e18,
             collateral: 0,
-            deposit: 44_999.315068493150685000 * 1e18,
+            deposit: 44_997.716905402306040553 * 1e18,
             exchangeRate: 1e18
         });
 
         _assertPool(
             PoolParams({
-                htp:                  9.719336538461538466 * 1e18,
+                htp:                  9.288923076923076927 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             82_999.315068493150685000 * 1e18,
-                pledgedCollateral:    1_002.0 * 1e18,
-                encumberedCollateral: 1_001.780542767698891702 * 1e18,
-                poolDebt:             9_738.605048076923081414 * 1e18,
+                poolSize:             82_995.981745584954442553 * 1e18,
+                pledgedCollateral:    1_002 * 1e18,
+                encumberedCollateral: 995.350325135729028065 * 1e18,
+                poolDebt:             9_303.937500000000004290 * 1e18,
                 actualUtilization:    0,
                 targetUtilization:    1e18,
-                minDebtAmount:        486.930252403846154071 * 1e18,
+                minDebtAmount:        465.196875000000000215 * 1e18,
                 loans:                2,
                 maxBorrower:          address(testBorrowerTwo),
                 interestRate:         0.05 * 1e18,
@@ -873,7 +873,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         _assertLenderLpBalance({
             lender:      alice,
             index:       2551,
-            lpBalance:   10_000 * 1e18,
+            lpBalance:   9_999.543378995433790000 * 1e18,
             depositTime: _startTime
         });
     }
