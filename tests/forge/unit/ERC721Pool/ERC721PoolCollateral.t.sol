@@ -567,9 +567,9 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBucket({
             index:        1530,
-            lpBalance:    497_616.252661175041981841 * 1e18,
+            lpBalance:    497_615.796040170475771841 * 1e18,
             collateral:   Maths.wad(1),
-            deposit:      10_000 * 1e18,
+            deposit:      9_999.543378995433790000 * 1e18,
             exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
@@ -589,9 +589,9 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBucket({
             index:        1530,
-            lpBalance:    10_000 * 1e18,
+            lpBalance:    9_999.543378995433790000 * 1e18,
             collateral:   0,
-            deposit:      10_000 * 1e18,
+            deposit:      9_999.543378995433790000 * 1e18,
             exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
@@ -606,10 +606,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _removeAllLiquidity({
             from:     _lender,
-            amount:   10_000 * 1e18,
+            amount:   9_999.543378995433790000 * 1e18,
             index:    1530,
             newLup:   MAX_PRICE,
-            lpRedeem: 10_000 * 1e18
+            lpRedeem: 9_999.543378995433790000 * 1e18
         });
 
         _assertBucket({
@@ -623,12 +623,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
     function testMergeOrRemoveERC721Collateral() external {
         for (uint256 i = 3060; i < (3060 + 10); i++) {
-            _addLiquidity({
+            _addInitialLiquidity({
                 from:   _lender,
                 amount: 20 * 1e18,
-                index:  i,
-                newLup: MAX_PRICE,
-                lpAward: 20 * 1e18
+                index:  i
             });
         }
 
@@ -695,8 +693,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             borrower:       _borrower,
             debt:           590.789267398535232526 * 1e18,
             collateral:     2.0 * 1e18,
-            bond:           8.968381880996266239 * 1e18,
-            transferAmount: 8.968381880996266239 * 1e18
+            bond:           6.605224811402125309 * 1e18,
+            transferAmount: 6.605224811402125309 * 1e18
         });
 
         skip(32 hours);
@@ -706,11 +704,11 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 borrower:          _borrower,
                 active:            true,
                 kicker:            address(_lender),
-                bondSize:          8.968381880996266239 * 1e18,
+                bondSize:          6.605224811402125309 * 1e18,
                 bondFactor:        0.015180339887498948 * 1e18,
                 kickTime:          block.timestamp - 32 hours,
                 referencePrice:    340.236543104248948639 * 1e18,
-                totalBondEscrowed: 8.968381880996266239 * 1e18,
+                totalBondEscrowed: 6.605224811402125309 * 1e18,
                 auctionPrice:      0.000081118713165342 * 1e18,
                 debtInAuction:     590.789267398535232527 * 1e18,
                 thresholdPrice:    295.453988355164748340 * 1e18,
@@ -919,8 +917,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             from:            _lender,
             borrower:        _borrower,
             maxCollateral:   2 * 1e18,
-            bondChange:      0.000001231409637086 * 1e18,
-            givenAmount:     0.000081118713165342 * 1e18,
+            bondChange:      0.000000875438618141 * 1e18,
+            givenAmount:     0.000078301610411710 * 1e18,
             collateralTaken: 1 * 1e18,
             isReward:        true
         });
@@ -972,7 +970,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    11,
-            settledDebt: 106.339800629932799697 * 1e18
+            settledDebt: 102.277919151483596286 * 1e18
         });
 
         _assertBorrower({
