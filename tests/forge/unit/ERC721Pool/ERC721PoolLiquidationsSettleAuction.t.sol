@@ -111,7 +111,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         });
     }
 
-    function testSettlePartialDebtSubsetPool() external {
+    function testSettlePartialDebtSubsetPool() external tearDown {
         _assertBucket({
             index:        2500,
             lpBalance:    7999.634703196347032000 * 1e18,
