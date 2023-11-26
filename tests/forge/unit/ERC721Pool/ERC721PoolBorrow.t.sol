@@ -1080,6 +1080,7 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
         // lender adds liquidity to random indexes
         changePrank(_lender);
         uint256[] memory indexes = new uint256[](numIndexes);
+        uint256 lpAfterFee = Maths.wmul(mintAmount_, _depositFee());
         for (uint256 i = 0; i < numIndexes; ++i) {
             deal(address(_quote), _lender, mintAmount_);
 
@@ -1089,15 +1090,15 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
                 from:    _lender,
                 amount:  mintAmount_,
                 index:   indexes[i],
-                lpAward: mintAmount_,
+                lpAward: lpAfterFee,
                 newLup:  _calculateLup(address(_pool), 0)
             });
 
             _assertBucket({
                 index:      indexes[i],
-                lpBalance:  mintAmount_,
+                lpBalance:  lpAfterFee,
                 collateral: 0,
-                deposit:    mintAmount_,
+                deposit:    lpAfterFee,
                 exchangeRate: 1e18
             });
         }
@@ -1121,9 +1122,9 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
         for (uint256 i = 0; i < numIndexes; ++i) {
             _assertBucket({
                 index:        indexes[i],
-                lpBalance:    mintAmount_,
+                lpBalance:    lpAfterFee,
                 collateral:   0,
-                deposit:      mintAmount_,
+                deposit:      lpAfterFee,
                 exchangeRate: 1e18
             });
         }
@@ -1136,11 +1137,11 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
         (uint256 minDebt, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = _poolUtils.poolUtilizationInfo(address(_pool));
         _assertPool(
             PoolParams({
-                htp:                  Maths.wdiv(debt, Maths.wad(tokenIdsToAdd.length)),
+                htp:                  Maths.wmul(Maths.wdiv(debt, Maths.wad(tokenIdsToAdd.length)), 1.04 * 1e18),
                 lup:                  _poolUtils.lup(address(_pool)),
-                poolSize:             (indexes.length * mintAmount_),
+                poolSize:             (indexes.length * lpAfterFee),
                 pledgedCollateral:    Maths.wad(tokenIdsToAdd.length),
-                encumberedCollateral: Maths.wdiv(debt, _poolUtils.lup(address(_pool))),
+                encumberedCollateral: Maths.wdiv(Maths.wmul(debt, 1.04 * 1e18), _poolUtils.lup(address(_pool))),
                 poolDebt:             debt,
                 actualUtilization:    poolActualUtilization,
                 targetUtilization:    poolTargetUtilization,
@@ -1176,19 +1177,19 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
             (, uint256 deposit, , uint256 lpAccumulator, , uint256 exchangeRate) = _poolUtils.bucketInfo(address(_pool), indexes[i]);
 
             // check that only deposits above the htp earned interest
-            if (indexes[i] <= _poolUtils.priceToIndex(Maths.wdiv(debt, Maths.wad(tokenIdsToAdd.length)))) {
-                assertGt(deposit, mintAmount_);
+            if (indexes[i] <= _poolUtils.priceToIndex(Maths.wmul(Maths.wdiv(debt, Maths.wad(tokenIdsToAdd.length)), 1.04 * 1e18))) {
+                assertGt(deposit, lpAfterFee);
                 assertGt(exchangeRate, 1e18);
             } else {
-                assertEq(deposit, mintAmount_);
+                assertEq(deposit, lpAfterFee);
                 assertEq(exchangeRate, 1e18);
             }
 
-            assertEq(lpAccumulator, mintAmount_);
+            assertEq(lpAccumulator, lpAfterFee);
 
             _assertBucket({
                 index:        indexes[i],
-                lpBalance:    mintAmount_,
+                lpBalance:    lpAfterFee,
                 collateral:   0,
                 deposit:      deposit,
                 exchangeRate: exchangeRate
