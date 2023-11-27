@@ -11,7 +11,6 @@ import { TokenWithNDecimals }  from '../../utils/Tokens.sol';
 import 'src/PoolInfoUtils.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/interfaces/pool/erc20/IERC20Pool.sol';
-import '@std/console.sol';
 
 contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
 
