@@ -1382,7 +1382,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.takeReserves(amount);
     }
 
-    function _assertTakeReservesNoReservesRevert() internal {
+    function _assertKickReservesNoReservesRevert() internal {
         vm.expectRevert(IPoolErrors.NoReserves.selector);
         _pool.kickReserveAuction();
     }
