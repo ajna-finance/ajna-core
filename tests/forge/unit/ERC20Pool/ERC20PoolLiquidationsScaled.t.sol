@@ -11,6 +11,7 @@ import { TokenWithNDecimals }  from '../../utils/Tokens.sol';
 import 'src/PoolInfoUtils.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/interfaces/pool/erc20/IERC20Pool.sol';
+import '@std/console.sol';
 
 contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
 
@@ -74,6 +75,8 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint256 lpBalance;
         for (uint i=0; i<4; ++i) {
 
+            uint256 depositFee = Maths.WAD - _poolUtils.unutilizedDepositFeeRate(address(_pool));
+
             _addInitialLiquidity({
                     from:   _lender,
                     amount: 50_000 * 1e18,
@@ -81,8 +84,8 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             });
 
             (lpBalance, ) = _pool.lenderInfo(startBucketId + i, _lender);
-            assertLt(lpBalance, 50_000.0 * 1e18);
-            assertGt(lpBalance, 49_990.0 * 1e18);
+
+            assertEq(lpBalance, Maths.wmul(50_000 * 1e18, depositFee));
         }
         assertEq(_pool.depositSize(), 199_991.552511415525100000 * 1e18);
     }
