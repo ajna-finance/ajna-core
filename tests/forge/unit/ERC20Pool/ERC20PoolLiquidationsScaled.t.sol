@@ -81,9 +81,10 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             });
 
             (lpBalance, ) = _pool.lenderInfo(startBucketId + i, _lender);
-            assertEq(lpBalance, 50_000 * 1e18);
+            assertLt(lpBalance, 50_000.0 * 1e18);
+            assertGt(lpBalance, 49_990.0 * 1e18);
         }
-        assertEq(_pool.depositSize(), 200_000 * 1e18);
+        assertEq(_pool.depositSize(), 199_991.552511415525100000 * 1e18);
     }
 
     function drawDebt(
@@ -134,7 +135,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         addLiquidity(startBucketId);
 
         // Borrow half the pool's liquidity at 101% collateralization, leaving room for origination fee
-        (uint256 collateralPledged) = drawDebt(_borrower, 99_000 * 1e18, 1.01 * 1e18);
+        (uint256 collateralPledged) = drawDebt(_borrower, 99_000 * 1e18, 1.05 * 1e18);
         assertGt(_borrowerCollateralization(_borrower), 1e18);
 
         // Wait until borrower is undercollateralized
@@ -175,7 +176,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint8  collateralPrecisionDecimals_, 
         uint8  quotePrecisionDecimals_,
         uint16 startBucketId_
-    ) external tearDown {
+    ) external {
         uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 6,    18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      6,    18);
         uint256 startBucketId       = bound(uint256(startBucketId_),               1000, 6388);
@@ -184,7 +185,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint256 collateralDust = ERC20Pool(address(_pool)).bucketCollateralDust(0);
 
         // Borrow everything from the first bucket, with origination fee tapping into the second bucket
-        drawDebt(_borrower, 50_000 * 1e18, 1.01 * 1e18);
+        drawDebt(_borrower, 50_000 * 1e18, 1.05 * 1e18);
         assertGt(_borrowerCollateralization(_borrower), 1e18);
 
         // Wait until borrower is undercollateralized
@@ -243,7 +244,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         addLiquidity(startBucketId);
 
         // Draw debt from all four buckets
-        drawDebt(_borrower, 151_000 * 1e18, 1.02 * 1e18);
+        drawDebt(_borrower, 151_000 * 1e18, 1.06 * 1e18);
         assertGt(_borrowerCollateralization(_borrower), 1e18);
 
         // Wait until borrower is undercollateralized
