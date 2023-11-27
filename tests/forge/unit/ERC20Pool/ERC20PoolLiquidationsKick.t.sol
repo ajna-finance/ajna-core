@@ -635,12 +635,12 @@ contract ERC20PoolLiquidationKickHighThresholdPriceBorrower is ERC20HelperContra
         _pledgeCollateral({
             from:     _borrower,
             borrower: _borrower,
-            amount:   0.00000105 * 1e18
+            amount:   0.0000011 * 1e18
         });
         
         _borrow({
             from:       _borrower,
-            amount:     999 * 1e18,
+            amount:     998 * 1e18,
             indexLimit: 7388,
             newLup:     _priceAt(1)
         });
@@ -662,10 +662,10 @@ contract ERC20PoolLiquidationKickHighThresholdPriceBorrower is ERC20HelperContra
         _kick({
             from:           _lender,
             borrower:       _borrower,
-            debt:           102_216_005.616368048436296920 * 1e18,
-            collateral:     0.00000105 * 1e18,
-            bond:           1_142_809.684733496183574954 * 1e18,
-            transferAmount: 1_142_809.684733496183574954 * 1e18
+            debt:           108_328_580.483857986778697590 * 1e18,
+            collateral:     0.0000011 * 1e18,
+            bond:           1_211_150.349339817537800651 * 1e18,
+            transferAmount: 1_211_150.349339817537800651 * 1e18
         });
     }
 }
