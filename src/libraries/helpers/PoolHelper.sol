@@ -35,6 +35,9 @@ import { Maths }   from '../internal/Maths.sol';
     /// @dev step amounts in basis points. This is a constant across pools at `0.005`, achieved by dividing `WAD` by `10,000`
     int256 constant FLOAT_STEP_INT = 1.005 * 1e18;
 
+    /// @dev collateralization factor used to calculate borrrower HTP/TP/collateralization.
+    uint256 constant COLLATERALIZATION_FACTOR = 1.04 * 1e18;
+
     /**
      *  @notice Calculates the price (`WAD` precision) for a given `Fenwick` index.
      *  @dev    Reverts with `BucketIndexOutOfBounds` if index exceeds maximum constant.
@@ -175,7 +178,13 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 inflator_,
         uint256 t0Debt2ToCollateral_
     ) pure returns (uint256) {
-        return t0Debt_ == 0 ? 0 : Maths.wdiv(Maths.wmul(inflator_, t0Debt2ToCollateral_), t0Debt_);
+        return t0Debt_ == 0 ? 0 : Maths.wdiv(
+            Maths.wmul(
+                Maths.wmul(inflator_, t0Debt2ToCollateral_),
+                COLLATERALIZATION_FACTOR
+            ),
+            t0Debt_
+        );
     }
 
     /**
@@ -201,7 +210,7 @@ import { Maths }   from '../internal/Maths.sol';
             collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
         }
         
-       return Maths.wmul(collateral_, price_) >= Maths.wmul(1.04 * 1e18, debt_);
+       return Maths.wmul(collateral_, price_) >= Maths.wmul(COLLATERALIZATION_FACTOR, debt_);
     }
 
     /**

@@ -12,8 +12,13 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { InterestState, EmaState, PoolState, DepositsState } from '../../interfaces/pool/commons/IPoolState.sol';
 import { IERC3156FlashBorrower }                             from '../../interfaces/pool/IERC3156FlashBorrower.sol';
 
-import { _dwatp, _indexOf, MAX_FENWICK_INDEX, MIN_PRICE, MAX_PRICE } from '../helpers/PoolHelper.sol';
-
+import { 
+    _dwatp,
+    _indexOf,
+    MAX_FENWICK_INDEX,
+    MIN_PRICE, MAX_PRICE,
+    COLLATERALIZATION_FACTOR 
+} from '../helpers/PoolHelper.sol';
 
 import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
@@ -246,7 +251,7 @@ library PoolCommons {
 
         // calculate the highest threshold price
         newInflator_ = Maths.wmul(poolState_.inflator, pendingFactor);
-        uint256 htp = Maths.wmul(thresholdPrice_, poolState_.inflator);
+        uint256 htp = Maths.wmul(Maths.wmul(thresholdPrice_, poolState_.inflator), COLLATERALIZATION_FACTOR);
 
         uint256 accrualIndex;
         if (htp > MAX_PRICE)      accrualIndex = 1;                 // if HTP is over the highest price bucket then no buckets earn interest

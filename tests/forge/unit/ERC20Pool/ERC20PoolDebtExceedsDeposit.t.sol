@@ -69,7 +69,7 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  667307692307692308,
+                htp:                  0.694000000000000000 * 1e18,
                 lup:                  1 * 1e18,
                 poolSize:             99.995433789954337900 * 1e18,
                 pledgedCollateral:    75.000000000000000000 * 1e18,
@@ -95,7 +95,7 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  667307692307692308,
+                htp:                  0.694000000000000000 * 1e18,
                 lup:                  1 * 1e18,
                 poolSize:             99.995433789954337900 * 1e18,
                 pledgedCollateral:    75.000000000000000000 * 1e18,

@@ -257,14 +257,14 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         // check from and to positions before move
         (uint256 fromLp, uint256 fromDepositTime) = _positionManager.getPositionInfo(tokenId1, mintIndex);
         (uint256 toLp,   uint256 toDepositTime)   = _positionManager.getPositionInfo(tokenId1, moveIndex);
-        assertEq(fromLp, 2_500 * 1e18);
+        assertEq(fromLp, 2_499.885844748858447500 * 1e18);
         assertEq(toLp,   0);
         assertEq(fromDepositTime, block.timestamp);
         assertEq(toDepositTime,   0);
 
         // move liquidity called by testAddress1 owner
         vm.expectEmit(true, true, true, true);
-        emit MoveLiquidity(testAddress1, tokenId1, mintIndex, moveIndex, 2_500 * 1e18, 2_500 * 1e18);
+        emit MoveLiquidity(testAddress1, tokenId1, mintIndex, moveIndex, 2_499.885844748858447500 * 1e18, 2_499.771694710285440276 * 1e18);
         changePrank(address(testAddress1));
         _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30);
 
@@ -273,7 +273,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         (fromLp, fromDepositTime) = _positionManager.getPositionInfo(tokenId1, mintIndex);
         (toLp,   toDepositTime)   = _positionManager.getPositionInfo(tokenId1, moveIndex);
         assertEq(fromLp, 0);
-        assertEq(toLp,   2_500 * 1e18);
+        assertEq(toLp,   2_499.771694710285440276 * 1e18);
         assertEq(fromDepositTime, 0);
         assertEq(toDepositTime,   block.timestamp);
     }
@@ -707,7 +707,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _assertPool(
             PoolParams({
-                htp:                  9.288923076923076927 * 1e18,
+                htp:                  9.660480000000000004 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             82_996.210045662100457000 * 1e18,
                 pledgedCollateral:    1_002.0 * 1e18,
@@ -784,7 +784,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _assertPool(
             PoolParams({
-                htp:                  9.288923076923076927 * 1e18,
+                htp:                  9.660480000000000004 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             82_995.981745584954442553 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,

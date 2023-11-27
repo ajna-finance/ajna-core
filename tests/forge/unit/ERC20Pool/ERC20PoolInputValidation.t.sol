@@ -8,7 +8,7 @@ import 'src/interfaces/pool/commons/IPoolErrors.sol';
 
 import 'src/ERC20Pool.sol';
 
-contract ERC20PoolBorrowTest is ERC20HelperContract {
+contract ERC20PooInputValidationTest is ERC20HelperContract {
 
     function testValidateAddQuoteTokenInput() external tearDown {
         // revert on zero amount

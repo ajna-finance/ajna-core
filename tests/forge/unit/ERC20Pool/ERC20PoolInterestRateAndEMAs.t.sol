@@ -95,7 +95,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  460.442307692307692520 * 1e18,
+                htp:                  478.860000000000000221 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             109_994.977168949771690000 * 1e18,
                 pledgedCollateral:    100 * 1e18,
@@ -125,7 +125,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  460.475422884660056974 * 1e18,
+                htp:                  478.894439800046459253 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             109_997.791960299722618973 * 1e18,
                 pledgedCollateral:    100 * 1e18,
@@ -210,7 +210,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  0.663971153846153846 * 1e18,
+                htp:                  0.690530000000000000 * 1e18,
                 lup:                  100.332368143282009890 * 1e18,
                 poolSize:             999.954337899543379 * 1e18,
                 pledgedCollateral:    1_500 * 1e18,
@@ -233,7 +233,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  0.664020422940018855 * 1e18,
+                htp:                  0.690581239857619609 * 1e18,
                 lup:                  100.332368143282009890 * 1e18,
                 poolSize:             1_000.017155994221264894 * 1e18,
                 pledgedCollateral:    1_500 * 1e18,
@@ -276,7 +276,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  500.480769230769231000 * 1e18,
+                htp:                  520.500000000000000240 * 1e18,
                 lup:                  601.252968524772188572 * 1e18,
                 poolSize:             9_999.54337899543379 * 1e18,
                 pledgedCollateral:    10 * 1e18,
@@ -305,7 +305,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  500.515049909493508659 * 1e18,
+                htp:                  520.535651905873249005 * 1e18,
                 lup:                  601.252968524772188572 * 1e18,
                 poolSize:             10_999.789102664133521092 * 1e18,
                 pledgedCollateral:    10 * 1e18,
@@ -342,7 +342,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         // confirm interest rate starts out at 5%
         _assertPool(
             PoolParams({
-                htp:                  1.0009615384615 * 1e18,
+                htp:                  1.040999999999960000 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             9_999.54337899543379 * 1e18,
                 pledgedCollateral:    0.00001 * 1e18,
@@ -371,7 +371,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         // show the rate bottoms out at 10 bps
         _assertPool(
             PoolParams({
-                htp:                  1.002309975983935259 * 1e18,
+                htp:                  1.042402375023292669 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             9_999.543379006895126627 * 1e18,
                 pledgedCollateral:    0.00001 * 1e18,
@@ -408,7 +408,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         // confirm interest rate starts out at 5%
         _assertPool(
             PoolParams({
-                htp:                  0.000000001000961538 * 1e18,
+                htp:                  0.000000001041000000 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             9_999.54337899543379 * 1e18,
                 pledgedCollateral:    10_000 * 1e18,
@@ -437,7 +437,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         // show the rate reset to 10%
         _assertPool(
             PoolParams({
-                htp:                  1028117286,
+                htp:                  1069241977,
                 lup:                  _p1505_26,
                 poolSize:             9_999.543379226256659662 * 1e18,
                 pledgedCollateral:    10_000.0 * 1e18,
@@ -489,7 +489,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  300.288461538461538600 * 1e18,
+                htp:                  312.300000000000000144 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             29_998.63013698630137 * 1e18,
                 pledgedCollateral:    50 * 1e18,
@@ -510,7 +510,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         // ensure pendingInflator increases as time passes
         _assertPool(
             PoolParams({
-                htp:                  300.288461538461538600 * 1e18,
+                htp:                  312.300000000000000144 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             29_998.63013698630137 * 1e18,
                 pledgedCollateral:    50 * 1e18,
@@ -580,7 +580,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  10.009615384615384620 * 1e18,
+                htp:                  10.410000000000000005 * 1e18,
                 lup:                  327.188250324085203338 * 1e18,
                 poolSize:             19_999.08675799086758 * 1e18,
                 pledgedCollateral:    50 * 1e18,
@@ -616,7 +616,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  10.009615384615384620 * 1e18,
+                htp:                  10.410000000000000005 * 1e18,
                 lup:                  327.188250324085203338 * 1e18,
                 poolSize:             19_999.08675799086758 * 1e18,
                 pledgedCollateral:    100 * 1e18,
@@ -650,7 +650,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  10.223528890139451939 * 1e18,
+                htp:                  10.632470045745030017 * 1e18,
                 lup:                  327.188250324085203338 * 1e18,
                 poolSize:             20_000.253059806567146479 * 1e18,
                 pledgedCollateral:    100 * 1e18,
@@ -726,7 +726,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  200.192307692307692400 * 1e18,
+                htp:                  208.200000000000000096 * 1e18,
                 lup:                  327.188250324085203338 * 1e18,
                 poolSize:             39_998.17351598173516 * 1e18,
                 pledgedCollateral:    50 * 1e18,
@@ -763,7 +763,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  200.192307692307692400 * 1e18,
+                htp:                  208.200000000000000096 * 1e18,
                 lup:                  327.188250324085203338 * 1e18,
                 poolSize:             39_998.17351598173516 * 1e18,
                 pledgedCollateral:    100 * 1e18,
@@ -797,7 +797,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  200.666923956635192629 * 1e18,
+                htp:                  208.693600914900600334 * 1e18,
                 lup:                  327.188250324085203338 * 1e18,
                 poolSize:             40_020.333250480026923092 * 1e18,
                 pledgedCollateral:    100 * 1e18,
@@ -835,7 +835,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         });
         _assertPool(
             PoolParams({
-                htp:                  200.941998518054562716 * 1e18,
+                htp:                  208.979678458776745225 * 1e18,
                 lup:                  327.188250324085203338 * 1e18,
                 poolSize:             40_043.293270139495569883 * 1e18,
                 pledgedCollateral:    50_100 * 1e18,
@@ -867,7 +867,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         });
         _assertPool(
             PoolParams({
-                htp:                  200.969526704670605713 * 1e18,
+                htp:                  209.008307772857429942 * 1e18,
                 lup:                  327.188250324085203338 * 1e18,
                 poolSize:             40_045.592577350080602020 * 1e18,
                 pledgedCollateral:    50_100 * 1e18,
@@ -913,7 +913,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  948_279_352.226720648210526316 * 1e18,
+                htp:                  986_210_526.315789474138947369 * 1e18,
                 lup:                  999969141.897027226245329498 * 1e18,
                 poolSize:             99_995_433_789_954_337.9 * 1e18,
                 pledgedCollateral:    95_000_000 * 1e18,
@@ -996,7 +996,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         // Assert that HTP < LUP, meaning on accual interest should accrue between HTP - LUP
         _assertPool(
             PoolParams({
-                htp:                  0.100096153846153846 * 1e18,
+                htp:                  0.104100000000000000 * 1e18,
                 lup:                  _p9_91,
                 poolSize:             103_995.251141552511416 * 1e18,
                 pledgedCollateral:    1_000 * 1e18,
@@ -1063,7 +1063,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         // Assert that HTP < LUP, meaning on accual interest should accrue between HTP - LUP
         _assertPool(
             PoolParams({
-                htp:                  9.008653846153846158 * 1e18,
+                htp:                  9.369000000000000004 * 1e18,
                 lup:                  0.014854015662334135 * 1e18,
                 poolSize:             103_995.251141552511416 * 1e18,
                 pledgedCollateral:    10_001_000.0 * 1e18,
@@ -1131,7 +1131,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  0.80076923076923077 * 1e18,
+                htp:                  0.832800000000000001 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             999_954_337.899543379 * 1e18,
                 pledgedCollateral:    1_000_000_000 * 1e18,
@@ -1161,7 +1161,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         // confirm we hit 400% max rate
         _assertPool(
             PoolParams({
-                htp:                  0.897414066911426240 * 1e18,
+                htp:                  0.933310629587883290 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             1_088_282_545.280982499467572293 * 1e18,
                 pledgedCollateral:    1_000_000_000 * 1e18,
@@ -1222,7 +1222,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  0.80076923076923077 * 1e18,
+                htp:                  0.832800000000000001 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             999_954_337.899543379000000000 * 1e18,
                 pledgedCollateral:    1_000_000_000 * 1e18,
@@ -1295,7 +1295,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  0.80076923076923077 * 1e18,
+                htp:                  0.832800000000000001 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             999_954_337.899543379 * 1e18,
                 pledgedCollateral:    1_000_000_000 * 1e18,
@@ -1362,7 +1362,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  0.80076923076923077 * 1e18,
+                htp:                  0.832800000000000001 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             999_954_337.899543379 * 1e18,
                 pledgedCollateral:    1_000_000_000 * 1e18,

@@ -96,7 +96,7 @@ contract ClaimRewardsOnStakeTest is RewardsHelperContract {
 
         _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 112.186978951213014722 * 1e18,
+            tokensToBurn: 112.186978951213014663 * 1e18,
             borrowAmount: 300 * 1e18,
             limitIndex:   2555,
             pool:         address(_pool)
@@ -224,11 +224,11 @@ contract ClaimRewardsTest is ClaimRewardsOnStakeTest {
             from:               _minterOne,
             tokenId:            tokenIdOne,
             minAmountToReceive: 19 * 1e18,
-            reward:             33.656093685363936645 * 1e18,
+            reward:             33.656093685363936630 * 1e18,
             epochsClaimed:      _epochsClaimedArray(1,0)
         });
         uint256 minterOneBalance = _ajnaToken.balanceOf(_minterOne);
-        assertEq(minterOneBalance, 33.656093685363936645 * 1e18);
+        assertEq(minterOneBalance, 33.656093685363936630 * 1e18);
 
         vm.revertTo(claimSnapshot);
 
@@ -253,7 +253,7 @@ contract ClaimRewardsTest is ClaimRewardsOnStakeTest {
             from:               _minterOne,
             tokenId:            tokenIdOne,
             minAmountToReceive: 5 * 1e18,
-            reward:             33.656093685363936645 * 1e18,
+            reward:             33.656093685363936630 * 1e18,
             epochsClaimed:      _epochsClaimedArray(1,0)
         });
         uint256 minterOneBalance = _ajnaToken.balanceOf(_minterOne);
@@ -297,7 +297,7 @@ contract ClaimRewardsTest is ClaimRewardsOnStakeTest {
             from:               _minterOne,
             tokenId:            tokenIdOne,
             minAmountToReceive: 0,
-            reward:             33.656093685363936645 * 1e18,
+            reward:             33.656093685363936630 * 1e18,
             epochsClaimed:      _epochsClaimedArray(1,0)
         });
         uint256 minterOneBalance = _ajnaToken.balanceOf(_minterOne);
@@ -319,12 +319,12 @@ contract ClaimRewardsOnUnstakeTest is ClaimRewardsOnStakeTest {
             pool:                      address(_pool),
             tokenId:                   tokenIdOne,
             claimedArray:              _epochsClaimedArray(1, 0),
-            reward:                    33.656093685363936645 * 1e18,
+            reward:                    33.656093685363936630 * 1e18,
             indexes:                   depositIndexes,
             updateExchangeRatesReward: 5.609348947560656105 * 1e18
         });
         uint256 minterOneBalance = _ajnaToken.balanceOf(_minterOne);
-        assertEq(minterOneBalance, 33.656093685363936645 * 1e18);
+        assertEq(minterOneBalance, 33.656093685363936630 * 1e18);
     }
 
     function testClaimOnUnstakeWithInsufficientFunds() external {
