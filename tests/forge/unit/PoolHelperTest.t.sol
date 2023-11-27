@@ -76,7 +76,7 @@ contract PoolHelperTest is DSTestPlus {
         uint256 debt  = 11_000.143012091382543917 * 1e18;
         uint256 price = 1_001.6501589292607751220 * 1e18;
 
-        assertEq(_encumberance(debt, price),   10.98202093218880245 * 1e18);
+        assertEq(_encumberance(debt, price),   11.421301769476354548 * 1e18);
         assertEq(_encumberance(0, price),      0);
         assertEq(_encumberance(debt, 0),       0);
         assertEq(_encumberance(0, 0),          0);
@@ -91,12 +91,12 @@ contract PoolHelperTest is DSTestPlus {
 
         uint256 debt       = 11_000.143012091382543917 * 1e18;
         uint256 price      = 1_001.6501589292607751220 * 1e18;
-        uint256 collateral = 10.98202093218880245 * 1e18;
+        uint256 collateral = Maths.wmul(10.98202093218880245 * 1e18, 1.04 * 1e18);
 
         assertEq(_collateralization(debt, collateral, price),        1 * 1e18);
         // due to rounding error, _collateralization and _isCollateralized do not agree at 100% CR
         assertEq(_isCollateralized(debt, collateral + 1, price, erc20),  true);
-        assertEq(_isCollateralized(debt, 11 * 1e18, price, erc721), true);
+        assertEq(_isCollateralized(debt, 12 * 1e18, price, erc721), true);
 
         assertEq(_collateralization(0, collateral, price),        Maths.WAD);
         assertEq(_isCollateralized(0, collateral, price, erc20),  true);
@@ -119,7 +119,7 @@ contract PoolHelperTest is DSTestPlus {
         debt       = 5_000_000_000 * 1e18;
         price      = _priceAt(1); // 999969141.897027226245329498
         collateral = 1 * 1e18;
-        assertEq(_collateralization(debt, collateral, price), 0.199993828379405445 * 1e18);
+        assertEq(_collateralization(debt, collateral, price), 0.192301758057120620 * 1e18);
         assertEq(_isCollateralized(debt, collateral, price, erc20),  false);
         assertEq(_isCollateralized(debt, collateral, price, erc721), false);
 
@@ -133,7 +133,7 @@ contract PoolHelperTest is DSTestPlus {
         // 130% CR at high price
         debt       = 900 * 1e18;
         collateral = 0.000001170036105095 * 1e18;
-        assertEq(_collateralization(debt, collateral, price), 1.300000000000430128 * 1e18);
+        assertEq(_collateralization(debt, collateral, price), 1.250000000000413585 * 1e18);
         assertEq(_isCollateralized(debt, collateral, price, erc20), true);
         assertEq(_isCollateralized(debt, 1e18, price, erc721),      true);
 
@@ -179,11 +179,9 @@ contract PoolHelperTest is DSTestPlus {
      */
     function testDepositFeeRate() external {
         uint256 interestRate = 0.07 * 1e18;
-        assertEq(_depositFeeRate(interestRate), 0.000191780821917808 * 1e18);
-        assertEq(_depositFeeRate(0.2 * 1e18),   0.000547945205479452 * 1e18);
-
-        // fee rate should be capped at 10%
-        assertEq(_depositFeeRate(1_000 * 1e18), 0.1 * 1e18);
+        assertEq(_depositFeeRate(interestRate), 0.000063926940639269 * 1e18);
+        assertEq(_depositFeeRate(0.2 * 1e18),   0.000182648401826484 * 1e18);
+        assertEq(_depositFeeRate(4 * 1e18),     0.003652968036529680 * 1e18);
     }
 
     /**
