@@ -30,7 +30,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
 
         (uint256 inflator, )     = _pool.inflatorInfo();
-        uint256 poolDebt         = Maths.wmul(_pool.totalT0Debt(), inflator);
         (uint256 interestRate, ) = _pool.interestRateInfo();
 
         // ensure actor always has amount of quote to add
@@ -40,10 +39,11 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
             // amount is rounded in pool to token scale
             amount_ = _roundToScale(amount_, _pool.quoteTokenScale());
-            amount_ = Maths.wmul(amount_, Maths.WAD - _depositFeeRate(interestRate));
             uint256 intialAmount = amount_;
+            // apply deposit fee
+            amount_ = Maths.wmul(amount_, Maths.WAD - _depositFeeRate(interestRate));
 
-            // **RE3**: Reserves increase only when depositing quote token into a bucket below LUP
+            // **RE3**: Reserves increase when depositing quote token
             increaseInReserves += intialAmount - amount_;
         
             // **B5**: when adding quote tokens: lender deposit time  = timestamp of block when deposit happened
@@ -113,7 +113,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             
             // **B5**: when moving quote tokens: lender deposit time = timestamp of block when move happened
             lenderDepositTime[_actor][toIndex_] = Maths.max(fromBucketDepositTime, toBucketDepositTime);
-            // **RE3**: Reserves increase only when moving quote tokens into a bucket below LUP.
+            // **RE3**: Reserves increase only when moving quote tokens into a lower-priced bucket
             // movedAmount_ can be greater than amount_ in case when bucket gets empty by moveQuoteToken
             if (amount_ > movedAmount_) increaseInReserves += amount_ - movedAmount_;
 
