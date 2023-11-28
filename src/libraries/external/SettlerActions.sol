@@ -141,8 +141,16 @@ library SettlerActions {
                 reserveAuction_.unclaimed;
 
             // settle debt from reserves (assets - liabilities) if reserves positive, round reserves down however
+            // capped at half of the origination fee rate, based on current book fees
             if (assets > liabilities) {
-                borrower.t0Debt -= Maths.min(borrower.t0Debt, Maths.floorWdiv(assets - liabilities, poolState_.inflator));
+                uint256 t0ReserveSettleAmount = Maths.min(Maths.floorWdiv(assets - liabilities, poolState_.inflator), borrower.t0Debt);
+
+                // if the settlement phase of 144 hours has not ended, settle up to the borrower reserve limit
+                if((block.timestamp - kickTime < 144 hours) && (Deposits.treeSum(deposits_) > 0)) {
+                    t0ReserveSettleAmount = Maths.min(t0ReserveSettleAmount, borrower.t0ReserveSettleAmount);
+                    borrower.t0ReserveSettleAmount -= t0ReserveSettleAmount;
+                }
+                borrower.t0Debt -= t0ReserveSettleAmount;
             }
 
             // 3. forgive bad debt from next HPB
@@ -479,10 +487,11 @@ library SettlerActions {
 
             Bucket storage hpbBucket = buckets_[index];
             uint256 bucketLP = hpbBucket.lps;
+
             // If the remaining deposit and resulting bucket collateral is so small that the exchange rate
             // rounds to 0, then bankrupt the bucket.  Note that lhs are WADs, so the
             // quantity is naturally 1e18 times larger than the actual product
-            if (depositRemaining * Maths.WAD + hpbBucket.collateral * _priceAt(index) <= bucketLP) {
+            if (depositRemaining * scale + hpbBucket.collateral * _priceAt(index) <= bucketLP) {
                 // existing LP for the bucket shall become unclaimable
                 hpbBucket.lps            = 0;
                 hpbBucket.bankruptcyTime = block.timestamp;

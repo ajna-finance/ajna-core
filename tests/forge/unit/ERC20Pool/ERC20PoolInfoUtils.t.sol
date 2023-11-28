@@ -44,35 +44,35 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             from:    _lender,
             amount:  10_000 * 1e18,
             index:   highest,
-            lpAward: 10_000 * 1e18,
+            lpAward: 9_999.54337899543379 * 1e18,
             newLup:  MAX_PRICE
         });
         _addLiquidity({
             from:    _lender,
             amount:  10_000 * 1e18,
             index:   high,
-            lpAward: 10_000 * 1e18,
+            lpAward: 9_999.54337899543379 * 1e18,
             newLup:  MAX_PRICE
         }); 
         _addLiquidity({
             from:    _lender,
             amount:  10_000 * 1e18,
             index:   med,
-            lpAward: 10_000 * 1e18,
+            lpAward: 9_999.54337899543379 * 1e18,
             newLup:  MAX_PRICE
         });
         _addLiquidity({
             from:    _lender,
             amount:  10_000 * 1e18,
             index:   low,
-            lpAward: 10_000 * 1e18,
+            lpAward: 9_999.54337899543379 * 1e18,
             newLup:  MAX_PRICE
         });
         _addLiquidity({
             from:    _lender,
             amount:  10_000 * 1e18,
             index:   lowest,
-            lpAward: 10_000 * 1e18,
+            lpAward: 9_999.54337899543379 * 1e18,
             newLup:  MAX_PRICE
         });
 
@@ -98,7 +98,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         (uint256 debt, uint256 collateral, uint256 npTpRatio) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,       21_020.192307692307702000 * 1e18);
         assertEq(collateral, 100 * 1e18);
-        assertEq(npTpRatio,  242.111289450059087705 * 1e18);
+        assertEq(npTpRatio,  233.703212526982164624 * 1e18);
     }
 
     function testPoolInfoUtilsBucketInfo() external {
@@ -127,9 +127,9 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             exchangeRate
         ) = _poolUtils.bucketInfo(address(_pool), high);
         assertEq(price,        2_995.912459898389633881 * 1e18);
-        assertEq(quoteTokens,  10_000 * 1e18);
+        assertEq(quoteTokens,  9_999.54337899543379 * 1e18);
         assertEq(collateral,   0);
-        assertEq(bucketLP,     10_000 * 1e18);
+        assertEq(bucketLP,     9_999.54337899543379 * 1e18);
         assertEq(scale,        1 * 1e18);
         assertEq(exchangeRate, 1 * 1e18);
     }
@@ -142,7 +142,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             uint256 pendingInflator,
             uint256 pendingInterestFactor
         ) = _poolUtils.poolLoansInfo(address(_pool));
-        assertEq(poolSize,              50_000 * 1e18);
+        assertEq(poolSize,              49_997.71689497716895 * 1e18);
         assertEq(loansCount,            1);
         assertEq(maxBorrower,           _borrower);
         assertEq(pendingInflator,       1 * 1e18);
@@ -161,8 +161,8 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
 
         assertEq(hpb,      3_010.892022197881557845 * 1e18);
         assertEq(hpbIndex, 2550);
-        assertEq(htp,      210.201923076923077020 * 1e18);
-        assertEq(htpIndex, 3083);
+        assertEq(htp,      218.610000000000000101 * 1e18);
+        assertEq(htpIndex, 3075);
         assertEq(lup,      2981.007422784467321543 * 1e18);
         assertEq(lupIndex, 2552);
 
@@ -182,8 +182,8 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             uint256 timeRemaining
         ) = _poolUtils.poolReservesInfo(address(_pool));
 
-        assertEq(reserves,                   20.192307692307702000 * 1e18);
-        assertEq(claimableReserves,          0);
+        assertEq(reserves,                   22.475412715138752000 * 1e18);
+        assertEq(claimableReserves,          22.475362717421857023 * 1e18);
         assertEq(claimableReservesRemaining, 0);
         assertEq(auctionPrice,               0);
         assertEq(timeRemaining,              0);
@@ -198,7 +198,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         ) = _poolUtils.poolUtilizationInfo(address(_pool));
 
         assertEq(poolMinDebtAmount,     2_102.019230769230770200 * 1e18);
-        assertEq(poolCollateralization, 14.181637252165253251 * 1e18);
+        assertEq(poolCollateralization, 13.636189665543512740 * 1e18);
         assertEq(poolActualUtilization, 0);
         assertEq(poolTargetUtilization, 1 * 1e18);
     }
@@ -213,7 +213,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
     }
 
     function testUnutilizedDepositFeeRate() external {
-        assertEq(_poolUtils.unutilizedDepositFeeRate(address(_pool)), 0.000136986301369863 * 1e18);
+        assertEq(_poolUtils.unutilizedDepositFeeRate(address(_pool)), 0.000045662100456621 * 1e18);
     }
 
     function testPoolInfoUtilsLPToCollateralAndQuote() external {
@@ -272,7 +272,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
 
         (,,, bucketInfo) = poolUtilsMulticall.poolDetailsAndBucketInfo(address(_pool), high);
 
-        assertEq(bucketInfo.bucketLP, 10_000 * 1e18);
+        assertEq(bucketInfo.bucketLP, 9_999.54337899543379 * 1e18);
     }
 
     function testPoolInfoUtilsMulticall() external {

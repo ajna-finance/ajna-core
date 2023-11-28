@@ -13,7 +13,8 @@ import {
     _indexOf,
     _roundToScale,
     MIN_PRICE,
-    MAX_PRICE 
+    MAX_PRICE,
+    COLLATERALIZATION_FACTOR
 }                           from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }            from "src/libraries/internal/Maths.sol";
 
@@ -174,7 +175,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         if (bucket > LENDER_MAX_BUCKET_INDEX) return;
 
         // calculates collateral required to borrow <amount_> quote tokens, added 1 for roundup such that 0.8 NFT will become 1
-        uint256 collateralToPledge = Maths.wdiv(amount_, price) / 1e18 + 1;
+        uint256 collateralToPledge = Maths.wdiv(Maths.wmul(COLLATERALIZATION_FACTOR, amount_), price) / 1e18 + 1;
 
         _ensureCollateralAmount(_actor, collateralToPledge);
         uint256[] memory tokenIds = new uint256[](collateralToPledge);

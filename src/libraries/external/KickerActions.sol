@@ -26,8 +26,8 @@ import {
 
 import {
     MAX_INFLATED_PRICE,
+    COLLATERALIZATION_FACTOR,
     _bondParams,
-    _bpf,
     _claimableReserves,
     _isCollateralized,
     _priceAt,
@@ -62,6 +62,7 @@ library KickerActions {
         uint256 referencePrice;     // [WAD] used to calculate auction start price
         uint256 bondFactor;         // [WAD] bond factor of kicked auction
         uint256 bondSize;           // [WAD] bond size of kicked auction
+        uint256 thresholdPrice;     // [WAD] borrower threshold price at kick time
     }
 
     /// @dev Struct used for `lenderKick` function local vars.
@@ -204,11 +205,10 @@ library KickerActions {
         KickReserveAuctionParams calldata params_
     ) external {
         // retrieve timestamp of latest burn event and last burn timestamp
-        uint256 latestBurnEpoch   = reserveAuction_.latestBurnEventEpoch;
-        uint256 lastBurnTimestamp = reserveAuction_.burnEvents[latestBurnEpoch].timestamp;
+        uint256 latestBurnEpoch = reserveAuction_.latestBurnEventEpoch;
 
-        // check that at least two weeks have passed since the last reserve auction completed, and that the auction was not kicked within the past 72 hours
-        if (block.timestamp < lastBurnTimestamp + 2 weeks || block.timestamp - reserveAuction_.kicked <= 72 hours) {
+        // check that at least two weeks have passed since the last reserve auction completed
+        if (block.timestamp < reserveAuction_.kicked + 2 weeks + 72 hours) {
             revert ReserveAuctionTooSoon();
         }
 
@@ -315,13 +315,15 @@ library KickerActions {
         // which will make it harder for kicker to earn a reward and more likely that the kicker is penalized
         _revertIfPriceDroppedBelowLimit(vars.neutralPrice, limitIndex_);
 
-        vars.htp            = Maths.wmul(Loans.getMax(loans_).thresholdPrice, poolState_.inflator);
+        vars.htp            = Maths.wmul(Maths.wmul(Loans.getMax(loans_).thresholdPrice, poolState_.inflator), COLLATERALIZATION_FACTOR);
         vars.referencePrice = Maths.min(Maths.max(vars.htp, vars.neutralPrice), MAX_INFLATED_PRICE);
 
         (vars.bondFactor, vars.bondSize) = _bondParams(
             vars.borrowerDebt,
             borrower.npTpRatio
         );
+
+        vars.thresholdPrice = Maths.wdiv(vars.borrowerDebt, vars.borrowerCollateral);
 
         // record liquidation info
         _recordAuction(
@@ -331,7 +333,8 @@ library KickerActions {
             vars.bondSize,
             vars.bondFactor,
             vars.referencePrice,
-            vars.neutralPrice
+            vars.neutralPrice,
+            vars.thresholdPrice
         );
 
         // update escrowed bonds balances and get the difference needed to cover bond (after using any kick claimable funds if any)
@@ -392,6 +395,7 @@ library KickerActions {
      *  @param  bondFactor_      Bond factor of the newly kicked auction.
      *  @param  referencePrice_  Used to calculate auction start price.
      *  @param  neutralPrice_    Current pool `Neutral Price`.
+     *  @param  thresholdPrice_  Borrower threshold price.
      */
     function _recordAuction(
         AuctionsState storage auctions_,
@@ -400,7 +404,8 @@ library KickerActions {
         uint256 bondSize_,
         uint256 bondFactor_,
         uint256 referencePrice_,
-        uint256 neutralPrice_
+        uint256 neutralPrice_,
+        uint256 thresholdPrice_
     ) internal {
         // record liquidation info
         liquidation_.kicker         = msg.sender;
@@ -409,6 +414,7 @@ library KickerActions {
         liquidation_.bondSize       = SafeCast.toUint160(bondSize_);
         liquidation_.bondFactor     = SafeCast.toUint96(bondFactor_);
         liquidation_.neutralPrice   = SafeCast.toUint96(neutralPrice_);
+        liquidation_.thresholdPrice = thresholdPrice_;
 
         // increment number of active auctions
         ++auctions_.noOfAuctions;

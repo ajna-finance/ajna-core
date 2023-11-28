@@ -332,8 +332,9 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
     function _createTestBorrower(address pool, address borrower, uint256 borrowAmount, uint256 limitIndex) internal returns (uint256 collateralToPledge_) {
 
         changePrank(borrower);
-        Token collateral = Token(ERC20Pool(address(pool)).collateralAddress());
-        Token quote = Token(ERC20Pool(address(pool)).quoteTokenAddress());
+        ERC20Pool poolContract = ERC20Pool(address(pool));
+        Token collateral = Token(poolContract.collateralAddress());
+        Token quote = Token(poolContract.quoteTokenAddress());
         // deal twice as much quote so the borrower has sufficient quote to repay the loan
         deal(address(quote), borrower, Maths.wmul(borrowAmount, Maths.wad(2)));
 
@@ -341,7 +342,7 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         collateral.approve(address(pool), type(uint256).max);
         quote.approve(address(pool), type(uint256).max);
 
-        collateralToPledge_ = _requiredCollateral(borrowAmount, limitIndex);
+        collateralToPledge_ = _requiredCollateralRewards(poolContract, borrowAmount, limitIndex);
         deal(address(collateral), borrower, collateralToPledge_);
     }
 
@@ -400,7 +401,30 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         uint256[] memory lpBalances = new uint256[](indexes.length);
 
         for (uint256 i = 0; i < indexes.length; i++) {
-            ERC20Pool(address(pool)).addQuoteToken(mintAmount, indexes[i], type(uint256).max, false);
+            ERC20Pool(address(pool)).addQuoteToken(mintAmount, indexes[i], type(uint256).max);
+            (lpBalances[i], ) = ERC20Pool(address(pool)).lenderInfo(indexes[i], minter);
+        }
+
+        ERC20Pool(address(pool)).increaseLPAllowance(address(_positionManager), indexes, lpBalances);
+
+        _positionManager.memorializePositions(pool, tokenId_, indexes);
+
+        // register position manager as lender at memorialized indexes (for LP test assertions)
+        _registerLender(address(_positionManager), indexes);
+    }
+
+    function _mintAndMemorializeExistingLiquidityPositionNFT(
+        address minter,
+        address pool,
+        uint256[] memory indexes
+    ) internal returns (uint256 tokenId_) {
+        changePrank(minter);
+
+        tokenId_ = _positionManager.mint(address(pool), minter, keccak256("ERC20_NON_SUBSET_HASH"));
+
+        uint256[] memory lpBalances = new uint256[](indexes.length);
+
+        for (uint256 i = 0; i < indexes.length; i++) {
             (lpBalances[i], ) = ERC20Pool(address(pool)).lenderInfo(indexes[i], minter);
         }
 
@@ -422,35 +446,36 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
 
         // fund borrower to write state required for reserve auctions
         changePrank(borrower);
-        Token collateral = Token(ERC20Pool(address(pool)).collateralAddress());
-        Token quote = Token(ERC20Pool(address(pool)).quoteTokenAddress());
+        ERC20Pool poolContract = ERC20Pool(address(pool));
+        Token collateral = Token(poolContract.collateralAddress());
+        Token quote = Token(poolContract.quoteTokenAddress());
         deal(address(quote), borrower, borrowAmount);
 
         // approve tokens
         collateral.approve(address(pool), type(uint256).max);
         quote.approve(address(pool), type(uint256).max);
 
-        uint256 collateralToPledge = _requiredCollateral(borrowAmount, limitIndex);
+        uint256 collateralToPledge = _requiredCollateralRewards(poolContract, borrowAmount, limitIndex);
         deal(address(_collateral), borrower, collateralToPledge);
 
         // borrower drawsDebt from the pool
-        ERC20Pool(address(pool)).drawDebt(borrower, borrowAmount, limitIndex, collateralToPledge);
+        poolContract.drawDebt(borrower, borrowAmount, limitIndex, collateralToPledge);
 
         // allow time to pass for interest to accumulate
         skip(26 weeks);
 
         // borrower repays some of their debt, providing reserves to be claimed
         // don't pull any collateral, as such functionality is unrelated to reserve auctions
-        ERC20Pool(address(pool)).repayDebt(borrower, borrowAmount, 0, borrower, MAX_FENWICK_INDEX);
+        poolContract.repayDebt(borrower, borrowAmount, 0, borrower, MAX_FENWICK_INDEX);
 
         // start reserve auction
         changePrank(_bidder);
         _ajnaToken.approve(address(pool), type(uint256).max);
-        ERC20Pool(address(pool)).kickReserveAuction();
+        poolContract.kickReserveAuction();
 
         // Can't trigger reserve auction if less than two weeks have passed since last auction
         vm.expectRevert(IPoolErrors.ReserveAuctionTooSoon.selector);
-        ERC20Pool(address(pool)).kickReserveAuction();
+        poolContract.kickReserveAuction();
 
         // allow time to pass for the reserve price to decrease
         skip(24 hours);
@@ -472,35 +497,36 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
 
         // fund borrower to write state required for reserve auctions
         changePrank(borrower);
-        Token collateral = Token(ERC20Pool(address(pool)).collateralAddress());
-        Token quote = Token(ERC20Pool(address(pool)).quoteTokenAddress());
+        ERC20Pool poolContract = ERC20Pool(address(pool));
+        Token collateral = Token(poolContract.collateralAddress());
+        Token quote = Token(poolContract.quoteTokenAddress());
         deal(address(quote), borrower, borrowAmount);
 
         // approve tokens
         collateral.approve(address(pool), type(uint256).max);
         quote.approve(address(pool), type(uint256).max);
 
-        uint256 collateralToPledge = _requiredCollateral(borrowAmount, limitIndex);
+        uint256 collateralToPledge = _requiredCollateralRewards(poolContract, borrowAmount, limitIndex);
         deal(address(_collateral), borrower, collateralToPledge);
 
         // borrower drawsDebt from the pool
-        ERC20Pool(address(pool)).drawDebt(borrower, borrowAmount, limitIndex, collateralToPledge);
+        poolContract.drawDebt(borrower, borrowAmount, limitIndex, collateralToPledge);
 
         // allow time to pass for interest to accumulate
         skip(26 weeks);
 
         // borrower repays some of their debt, providing reserves to be claimed
         // don't pull any collateral, as such functionality is unrelated to reserve auctions
-        ERC20Pool(address(pool)).repayDebt(borrower, borrowAmount, 0, borrower, MAX_FENWICK_INDEX);
+        poolContract.repayDebt(borrower, borrowAmount, 0, borrower, MAX_FENWICK_INDEX);
 
         // start reserve auction
         changePrank(_bidder);
         _ajnaToken.approve(address(pool), type(uint256).max);
-        ERC20Pool(address(pool)).kickReserveAuction();
+        poolContract.kickReserveAuction();
 
         // Can't trigger reserve auction if less than two weeks have passed since last auction
         vm.expectRevert(IPoolErrors.ReserveAuctionTooSoon.selector);
-        ERC20Pool(address(pool)).kickReserveAuction();
+        poolContract.kickReserveAuction();
 
         // allow time to pass for the reserve price to decrease
         skip(24 hours);
@@ -524,12 +550,13 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         ERC20Pool(pool).takeReserves(curClaimableReservesRemaining);
     }
 
-    function _requiredCollateral(ERC20Pool pool_, uint256 borrowAmount, uint256 indexPrice) internal view returns (uint256 requiredCollateral_) {
+    // calculate minimum required collateral to borrow a given amount at a given limitIndex
+    function _requiredCollateralRewards(ERC20Pool pool_, uint256 borrowAmount, uint256 indexPrice) internal view returns (uint256 requiredCollateral_) {
         // calculate the required collateral based upon the borrow amount and index price
         (uint256 interestRate, ) = pool_.interestRateInfo();
         uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
         uint256 expectedDebt = Maths.wmul(borrowAmount, _borrowFeeRate(newInterestRate) + Maths.WAD);
-        requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice)) + Maths.WAD;
+        requiredCollateral_ = Maths.wdiv(Maths.wmul(expectedDebt, 1.04 * 1e18), _poolUtils.indexToPrice(indexPrice));
     }
     
     // Helper function that returns a random subset from array

@@ -367,4 +367,9 @@ interface IPoolEvents {
         uint256 newRate
     );
 
+    /**
+     *  @notice Emitted when interest accural or update interest overflows.
+     */
+    event InterestUpdateFailure();
+
 }

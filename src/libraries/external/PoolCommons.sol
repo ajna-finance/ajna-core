@@ -5,9 +5,20 @@ pragma solidity 0.8.18;
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-import { InterestState, EmaState, PoolState, DepositsState } from '../../interfaces/pool/commons/IPoolState.sol';
+import { IERC20 }    from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { _dwatp, _indexOf, MAX_FENWICK_INDEX, MIN_PRICE, MAX_PRICE } from '../helpers/PoolHelper.sol';
+
+import { InterestState, EmaState, PoolState, DepositsState } from '../../interfaces/pool/commons/IPoolState.sol';
+import { IERC3156FlashBorrower }                             from '../../interfaces/pool/IERC3156FlashBorrower.sol';
+
+import { 
+    _dwatp,
+    _indexOf,
+    MAX_FENWICK_INDEX,
+    MIN_PRICE, MAX_PRICE,
+    COLLATERALIZATION_FACTOR 
+} from '../helpers/PoolHelper.sol';
 
 import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
@@ -21,6 +32,8 @@ import { Maths }    from '../internal/Maths.sol';
             - pool utilization
  */
 library PoolCommons {
+    using SafeERC20 for IERC20;
+
 
     /*****************/
     /*** Constants ***/
@@ -40,8 +53,17 @@ library PoolCommons {
     /**************/
 
     // See `IPoolEvents` for descriptions
+    event Flashloan(address indexed receiver, address indexed token, uint256 amount);
     event ResetInterestRate(uint256 oldRate, uint256 newRate);
     event UpdateInterestRate(uint256 oldRate, uint256 newRate);
+
+    /**************/
+    /*** Errors ***/
+    /**************/
+
+    // See `IPoolErrors` for descriptions
+    error FlashloanCallbackFailed();
+    error FlashloanIncorrectBalance();
 
     /*************************/
     /*** Local Var Structs ***/
@@ -229,7 +251,7 @@ library PoolCommons {
 
         // calculate the highest threshold price
         newInflator_ = Maths.wmul(poolState_.inflator, pendingFactor);
-        uint256 htp = Maths.wmul(thresholdPrice_, poolState_.inflator);
+        uint256 htp = Maths.wmul(Maths.wmul(thresholdPrice_, poolState_.inflator), COLLATERALIZATION_FACTOR);
 
         uint256 accrualIndex;
         if (htp > MAX_PRICE)      accrualIndex = 1;                 // if HTP is over the highest price bucket then no buckets earn interest
@@ -257,6 +279,36 @@ library PoolCommons {
             // Scale the fenwick tree to update amount of debt owed to lenders
             Deposits.mult(deposits_, accrualIndex, lenderFactor);
         }
+    }
+
+    function flashLoan(
+        IERC3156FlashBorrower receiver_,
+        address token_, 
+        uint256 amount_,
+        bytes calldata data_
+    ) external returns (bool success_) {
+        IERC20 tokenContract = IERC20(token_);
+
+        uint256 initialBalance = tokenContract.balanceOf(address(this));
+
+        tokenContract.safeTransfer(
+            address(receiver_),
+            amount_
+        );
+
+        if (receiver_.onFlashLoan(msg.sender, token_, amount_, 0, data_) != 
+            keccak256("ERC3156FlashBorrower.onFlashLoan")) revert FlashloanCallbackFailed();
+
+        tokenContract.safeTransferFrom(
+            address(receiver_),
+            address(this),
+            amount_
+        );
+
+        if (tokenContract.balanceOf(address(this)) != initialBalance) revert FlashloanIncorrectBalance();
+
+        success_ = true;
+        emit Flashloan(address(receiver_), token_, amount_);
     }
 
     /**************************/

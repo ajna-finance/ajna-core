@@ -4,6 +4,7 @@ pragma solidity 0.8.18;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { Math }           from '@openzeppelin/contracts/utils/math/Math.sol';
+import { SafeCast }       from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import { PoolType } from '../../interfaces/pool/IPool.sol';
 
@@ -344,8 +345,8 @@ library TakerActions {
 
         vars_ = _prepareTake(
             liquidation,
+            0,
             borrower_.t0Debt,
-            borrower_.collateral,
             params_.inflator
         );
 
@@ -427,8 +428,8 @@ library TakerActions {
 
         vars_= _prepareTake(
             liquidation,
+            _priceAt(params_.index),
             borrower_.t0Debt,
-            borrower_.collateral,
             params_.inflator
         );
 
@@ -436,8 +437,6 @@ library TakerActions {
 
         // revert if no quote tokens in arbed bucket
         if (vars_.unscaledDeposit == 0) revert InsufficientLiquidity();
-
-        vars_.bucketPrice  = _priceAt(params_.index);
 
         // cannot arb with a price lower than the auction price
         if (vars_.auctionPrice > vars_.bucketPrice) revert AuctionPriceGtBucketPrice();
@@ -569,14 +568,14 @@ library TakerActions {
     ) internal {
         if (vars.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
-            liquidation_.bondSize                 += uint160(vars.bondChange);
+            liquidation_.bondSize                 += SafeCast.toUint160(vars.bondChange);
             auctions_.kickers[vars.kicker].locked += vars.bondChange;
             auctions_.totalBondEscrowed           += vars.bondChange;
         } else {
             // take is above neutralPrice, Kicker is penalized
             vars.bondChange = Maths.min(liquidation_.bondSize, vars.bondChange);
 
-            liquidation_.bondSize                 -= uint160(vars.bondChange);
+            liquidation_.bondSize                 -= SafeCast.toUint160(vars.bondChange);
             auctions_.kickers[vars.kicker].locked -= vars.bondChange;
             auctions_.totalBondEscrowed           -= vars.bondChange;
         }
@@ -653,7 +652,7 @@ library TakerActions {
             // take is above neutralPrice, Kicker is penalized
             vars.bondChange = Maths.min(liquidation_.bondSize, vars.bondChange);
 
-            liquidation_.bondSize -= uint160(vars.bondChange);
+            liquidation_.bondSize -= SafeCast.toUint160(vars.bondChange);
 
             auctions_.kickers[vars.kicker].locked -= vars.bondChange;
             auctions_.totalBondEscrowed           -= vars.bondChange;
@@ -680,15 +679,15 @@ library TakerActions {
      *  @dev    reverts on:
      *              - loan is not in auction NoAuction()
      *  @param  liquidation_ Liquidation struct holding auction details.
+     *  @param  bucketPrice_ Price of the bucket, or 0 for non-bucket takes.
      *  @param  t0Debt_      Borrower t0 debt.
-     *  @param  collateral_  Borrower collateral.
      *  @param  inflator_    The pool's inflator, used to calculate borrower debt.
      *  @return vars         The prepared vars for take action.
      */
     function _prepareTake(
         Liquidation memory liquidation_,
+        uint256 bucketPrice_,
         uint256 t0Debt_,
-        uint256 collateral_,
         uint256 inflator_
     ) internal view returns (TakeLocalVars memory vars) {
 
@@ -702,13 +701,13 @@ library TakerActions {
         uint256 neutralPrice = liquidation_.neutralPrice;
 
         vars.auctionPrice = _auctionPrice(liquidation_.referencePrice, kickTime);
+        vars.bucketPrice = bucketPrice_;
         vars.bondFactor   = liquidation_.bondFactor;
         vars.bpf          = _bpf(
-            vars.borrowerDebt,
-            collateral_,
+            liquidation_.thresholdPrice,
             neutralPrice,
             liquidation_.bondFactor,
-            vars.auctionPrice
+            bucketPrice_ == 0 ? vars.auctionPrice : bucketPrice_
         );
         vars.factor       = uint256(1e18 - Maths.maxInt(0, vars.bpf));
         vars.kicker       = liquidation_.kicker;

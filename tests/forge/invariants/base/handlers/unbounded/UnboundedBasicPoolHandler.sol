@@ -31,32 +31,25 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         (uint256 inflator, )     = _pool.inflatorInfo();
         uint256 poolDebt         = Maths.wmul(_pool.totalT0Debt(), inflator);
-        uint256 lupIndex         = _pool.depositIndex(poolDebt);
         (uint256 interestRate, ) = _pool.interestRateInfo();
 
         // ensure actor always has amount of quote to add
         _ensureQuoteAmount(_actor, amount_);
 
-        try _pool.addQuoteToken(amount_, bucketIndex_, block.timestamp + 1 minutes, false) {
+        try _pool.addQuoteToken(amount_, bucketIndex_, block.timestamp + 1 minutes) {
 
             // amount is rounded in pool to token scale
             amount_ = _roundToScale(amount_, _pool.quoteTokenScale());
+            amount_ = Maths.wmul(amount_, Maths.WAD - _depositFeeRate(interestRate));
+            uint256 intialAmount = amount_;
+
+            // **RE3**: Reserves increase only when depositing quote token into a bucket below LUP
+            increaseInReserves += intialAmount - amount_;
         
             // **B5**: when adding quote tokens: lender deposit time  = timestamp of block when deposit happened
             lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
             // **R3**: Exchange rates are unchanged by depositing quote token into a bucket
             exchangeRateShouldNotChange[bucketIndex_] = true;
-
-            bool depositBelowLup = lupIndex != 0 && bucketIndex_ > lupIndex;
-            if (depositBelowLup) {
-                uint256 intialAmount = amount_;
-                amount_ = Maths.wmul(
-                    amount_,
-                    Maths.WAD - _depositFeeRate(interestRate)
-                );
-                // **RE3**: Reserves increase only when depositing quote token into a bucket below LUP
-                increaseInReserves += intialAmount - amount_;
-            }
 
             _fenwickAdd(amount_, bucketIndex_);
 
@@ -112,8 +105,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             amount_,
             fromIndex_,
             toIndex_,
-            block.timestamp + 1 minutes,
-            false
+            block.timestamp + 1 minutes
         ) returns (uint256, uint256, uint256 movedAmount_) {
 
             (, uint256 fromBucketDepositTime) = _pool.lenderInfo(fromIndex_, _actor);

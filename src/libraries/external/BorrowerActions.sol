@@ -161,6 +161,7 @@ library BorrowerActions {
             vars.t0DebtChange = Maths.wmul(vars.t0BorrowAmount, _borrowFeeRate(poolState_.rate) + Maths.WAD);
 
             borrower.t0Debt += vars.t0DebtChange;
+            borrower.t0ReserveSettleAmount += Maths.wmul(vars.t0BorrowAmount, _borrowFeeRate(poolState_.rate)) / 2;
 
             vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
 
@@ -291,17 +292,17 @@ library BorrowerActions {
             // calculate LUP only if it wasn't calculated in repay action
             if (!vars.repay) result_.newLup = Deposits.getLup(deposits_, result_.poolDebt);
 
-            uint256 encumberedCollateral = Maths.wdiv(vars.borrowerDebt, result_.newLup);
-            if (
-                borrower.t0Debt != 0 && encumberedCollateral == 0 || // case when small amount of debt at a high LUP results in encumbered collateral calculated as 0
-                borrower.collateral < encumberedCollateral ||
-                borrower.collateral - encumberedCollateral < collateralAmountToPull_
-            ) revert InsufficientCollateral();
+            // prevent underflow
+            if (collateralAmountToPull_ > borrower.collateral) 
+                revert InsufficientCollateral();
+
+            // check collateralization
+            borrower.collateral -= collateralAmountToPull_;
+            if (!_isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)) 
+                revert InsufficientCollateral();
 
             // stamp borrower Np to Tp ratio when pull collateral action
             vars.stampNpTpRatio = true;
-
-            borrower.collateral -= collateralAmountToPull_;
 
             result_.poolCollateral -= collateralAmountToPull_;
         }

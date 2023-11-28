@@ -384,9 +384,10 @@ struct Loan {
 
 /// @dev Struct holding borrower state.
 struct Borrower {
-    uint256 t0Debt;     // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
-    uint256 collateral; // [WAD] Collateral deposited by borrower.
-    uint256 npTpRatio;  // [WAD] Np to Tp ratio at the time of last borrow or pull collateral.
+    uint256 t0Debt;                    // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
+    uint256 collateral;                // [WAD] Collateral deposited by borrower.
+    uint256 npTpRatio;                 // [WAD] Np to Tp ratio at the time of last borrow or pull collateral.
+    uint256 t0ReserveSettleAmount;     // [WAD] Amount of t0Debt that could be settled via reserves in an auction
 }
 
 /**********************/
@@ -413,6 +414,7 @@ struct Liquidation {
     address next;           // next liquidated borrower in auctions queue
     uint160 bondSize;       // [WAD] liquidation bond size
     uint96  neutralPrice;   // [WAD] Neutral Price when liquidation was started
+    uint256 thresholdPrice; // [WAD] Threshold Price when liquidation was started
 }
 
 /// @dev Struct holding kicker state.

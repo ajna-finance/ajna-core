@@ -69,6 +69,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         uint256 kickerBondBefore = _getKickerBond(_actor);
 
+        if (borrowerDebt == 0) return;
+
         // ensure actor always has the amount to add for kick
         _ensureQuoteAmount(_actor, borrowerDebt);
 
