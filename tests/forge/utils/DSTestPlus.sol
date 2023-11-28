@@ -163,7 +163,9 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(from, index, amountAdded, lpAward, newLup);
         _assertQuoteTokenTransferEvent(from, address(_pool), amount);
-        _pool.addQuoteToken(amount, index, type(uint256).max);
+        (uint256 returnLpAward, uint256 returnedAmountAdded) = _pool.addQuoteToken(amount, index, type(uint256).max);
+        assertEq(returnLpAward, lpAward);
+        assertEq(returnedAmountAdded, amountAdded);
 
         // Add for tearDown
         lenders.add(from);
