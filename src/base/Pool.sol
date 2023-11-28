@@ -153,7 +153,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 amount_,
         uint256 index_,
         uint256 expiry_
-    ) external override nonReentrant returns (uint256 bucketLP_) {
+    ) external override nonReentrant returns (uint256 bucketLP_, uint256 addedAmount_) {
         _revertAfterExpiry(expiry_);
 
         _revertIfAuctionClearable(auctions, loans);
@@ -164,7 +164,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         amount_ = _roundToScale(amount_, poolState.quoteTokenScale);
 
         uint256 newLup;
-        (bucketLP_, newLup) = LenderActions.addQuoteToken(
+        (bucketLP_, addedAmount_, newLup) = LenderActions.addQuoteToken(
             buckets,
             deposits,
             poolState,
