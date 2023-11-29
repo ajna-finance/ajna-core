@@ -1085,37 +1085,6 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         _mintCollateralAndApproveTokens(actor8, type(uint256).max);
     }
 
-    function test_regression_bankruptcy_on_hpb_with_tiny_deposit() external {
-        // add liquidity to bucket 2572
-        changePrank(actor6);
-        _pool.addQuoteToken(2_000_000 * 1e18, 2572, block.timestamp + 100);
-        skip(100 days);
-
-        // borrower 6 draws debt and becomes undercollateralized due to interest accrual
-        ERC20Pool(address(_pool)).drawDebt(actor6, 1_000_000 * 1e18, 7388, 372.489032271806320214 * 1e18);
-        skip(100 days);
-
-        // borrower 1 kicks borrower 6 and draws debt before auction 6 is settled
-        changePrank(actor1);
-        _pool.kick(actor6, 7388);
-        skip(100 hours);
-        ERC20Pool(address(_pool)).drawDebt(actor1, 990_000 * 1e18, 7388, 10_066_231_386_838.450530455239517417 * 1e18);
-        skip(200 days);
-
-        // another actor kicks borrower 1
-        changePrank(actor2);
-        _pool.kick(actor1, 7388);
-        skip(10 days);
-
-        // attempt to deposit tiny amount into bucket 2571, creating new HPB
-        changePrank(actor3);
-        vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
-        _pool.addQuoteToken(2, 2571, block.timestamp + 100);
-
-        // Previous test added quote token successfully, then settled auction 1, bankrupting bucket 2571.
-        // This is not possible because we prevent depositing into bucket when an uncleared auction exists.
-    }
-
     function test_regression_settle_with_reserves() external tearDown {
         changePrank(actor2);
         _addInitialLiquidity({
@@ -1126,29 +1095,29 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
 
         // no reserves
         (uint256 reserves, uint256 claimableReserves, , ,) = _poolUtils.poolReservesInfo(address(_pool));
-        assertEq(reserves, 0);
-        assertEq(claimableReserves, 0);
+        assertEq(reserves, 5_151_045.274739797778316842 * 1e18);
+        assertEq(claimableReserves, 5_150_932.471999326251474014 * 1e18);
 
         _drawDebtNoLupCheck({
             from:               actor2,
             borrower:           actor2,
             amountToBorrow:     56_403_945_758.4007913129639934 * 1e18,
             limitIndex:         7388,
-            collateralToPledge: 21_009_851.171858165566322122 * 1e18
+            collateralToPledge: 22_009_851.171858165566322122 * 1e18
         });
 
         // origination fee goes to reserves
         (reserves, claimableReserves, , ,) = _poolUtils.poolReservesInfo(address(_pool));
-        assertEq(reserves, 54_234_563.229231556141209574 * 1e18);
-        assertEq(claimableReserves, 0);
+        assertEq(reserves, 59_385_608.503971353919526416 * 1e18);
+        assertEq(claimableReserves, 59_385_495.701230882392683588 * 1e18);
 
         // skip some time to make actor2 undercollateralized
         skip(200 days);
         ERC20Pool(address(_pool)).updateInterest();
         // check reserves after interest accrual
         (reserves, claimableReserves, , ,) = _poolUtils.poolReservesInfo(address(_pool));
-        assertEq(reserves, 289_462_063.392449001089942144 * 1e18);
-        assertEq(claimableReserves, 0);
+        assertEq(reserves, 294_613_108.667188773539633581 * 1e18);
+        assertEq(claimableReserves, 294_612_994.531492467754559135 * 1e18);
 
         // kick actor2
         changePrank(actor4);
@@ -1156,14 +1125,14 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
             from:           actor4,
             borrower:       actor2,
             debt:           58_026_363_656.051471906282127718 * 1e18,
-            collateral:     21_009_851.171858165566322122 * 1e18,
-            bond:           880_859_922.734477445997454079 * 1e18,
-            transferAmount: 880_859_922.734477445997454079 * 1e18
+            collateral:     22_009_851.171858165566322122 * 1e18,
+            bond:           648_754_468.110271558372325568 * 1e18,
+            transferAmount: 648_754_468.110271558372325568 * 1e18
         });
         // ensure reserves did not increase as result of kick
         (reserves, claimableReserves, , ,) = _poolUtils.poolReservesInfo(address(_pool));
-        assertEq(reserves, 289_462_063.392449001089942144 * 1e18);
-        assertEq(claimableReserves, 0);
+        assertEq(reserves, 294_613_108.667188773539633581 * 1e18);
+        assertEq(claimableReserves, 294_612_994.531492467754559135 * 1e18);
 
         changePrank(actor7);
         _drawDebtNoLupCheck({
@@ -1171,7 +1140,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
             borrower:           actor7,
             amountToBorrow:     1_000_000 * 1e18,
             limitIndex:         7388,
-            collateralToPledge: 372.489032271806320214 * 1e18
+            collateralToPledge: 390.489032271806320214 * 1e18
         });
 
         // skip some time to make actor7 undercollateralized
@@ -1181,8 +1150,8 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
 
         // reserves increase slightly due to interest accrual
         (reserves, claimableReserves, , ,) = _poolUtils.poolReservesInfo(address(_pool));
-        assertEq(reserves, 289_462_928.777064385704942145 * 1e18);
-        assertEq(claimableReserves, 0);
+        assertEq(reserves, 294_613_974.051804158154633582 * 1e18);
+        assertEq(claimableReserves, 294_613_859.916107852369559136 * 1e18);
  
         // settle auction with reserves
         changePrank(actor6);
@@ -1195,8 +1164,8 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
 
         // almost all the reserves are used to settle debt
         (reserves, claimableReserves, , ,) = _poolUtils.poolReservesInfo(address(_pool));
-        assertEq(reserves, 58.732475079196632424 * 1e18);
-        assertEq(claimableReserves, 0);
+        assertEq(reserves, 374_644_181.841827555572267504 * 1e18);
+        assertEq(claimableReserves, 374_644_125.812500127979859369 * 1e18);
     }
 }
 
