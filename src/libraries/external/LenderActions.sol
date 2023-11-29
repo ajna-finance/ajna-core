@@ -154,7 +154,7 @@ library LenderActions {
         DepositsState storage deposits_,
         PoolState calldata poolState_,
         AddQuoteParams calldata params_
-    ) external returns (uint256 bucketLP_, uint256 lup_) {
+    ) external returns (uint256 bucketLP_, uint256 addedAmount_, uint256 lup_) {
         // revert if no amount to be added
         if (params_.amount == 0) revert InvalidAmount();
         // revert if adding to an invalid index
@@ -171,16 +171,16 @@ library LenderActions {
         uint256 bucketScale           = Deposits.scale(deposits_, params_.index);
         uint256 bucketDeposit         = Maths.wmul(bucketScale, unscaledBucketDeposit);
         uint256 bucketPrice           = _priceAt(params_.index);
-        uint256 addedAmount           = params_.amount;
+        addedAmount_                  = params_.amount;
 
         // charge deposit fee
-        addedAmount = Maths.wmul(addedAmount, Maths.WAD - _depositFeeRate(poolState_.rate));
+        addedAmount_ = Maths.wmul(addedAmount_, Maths.WAD - _depositFeeRate(poolState_.rate));
 
         bucketLP_ = Buckets.quoteTokensToLP(
             bucket.collateral,
             bucket.lps,
             bucketDeposit,
-            addedAmount,
+            addedAmount_,
             bucketPrice,
             Math.Rounding.Down
         );
@@ -188,7 +188,7 @@ library LenderActions {
         // revert if (due to rounding) the awarded LP is 0
         if (bucketLP_ == 0) revert InsufficientLP();
 
-        uint256 unscaledAmount = Maths.wdiv(addedAmount, bucketScale);
+        uint256 unscaledAmount = Maths.wdiv(addedAmount_, bucketScale);
         // revert if unscaled amount is 0
         if (unscaledAmount == 0) revert InvalidAmount();
 
@@ -207,7 +207,7 @@ library LenderActions {
         emit AddQuoteToken(
             msg.sender,
             params_.index,
-            addedAmount,
+            addedAmount_,
             bucketLP_,
             lup_
         );

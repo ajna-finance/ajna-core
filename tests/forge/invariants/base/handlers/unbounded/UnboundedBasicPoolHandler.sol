@@ -29,29 +29,24 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
 
-        (uint256 inflator, )     = _pool.inflatorInfo();
-        (uint256 interestRate, ) = _pool.interestRateInfo();
-
         // ensure actor always has amount of quote to add
         _ensureQuoteAmount(_actor, amount_);
 
-        try _pool.addQuoteToken(amount_, bucketIndex_, block.timestamp + 1 minutes) {
+        try _pool.addQuoteToken(amount_, bucketIndex_, block.timestamp + 1 minutes
+        ) returns (uint256, uint256 addedAmount_) {
 
             // amount is rounded in pool to token scale
             amount_ = _roundToScale(amount_, _pool.quoteTokenScale());
-            uint256 intialAmount = amount_;
-            // apply deposit fee
-            amount_ = Maths.wmul(amount_, Maths.WAD - _depositFeeRate(interestRate));
 
             // **RE3**: Reserves increase when depositing quote token
-            increaseInReserves += intialAmount - amount_;
+            increaseInReserves += amount_ - addedAmount_;
         
             // **B5**: when adding quote tokens: lender deposit time  = timestamp of block when deposit happened
             lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
             // **R3**: Exchange rates are unchanged by depositing quote token into a bucket
             exchangeRateShouldNotChange[bucketIndex_] = true;
 
-            _fenwickAdd(amount_, bucketIndex_);
+            _fenwickAdd(addedAmount_, bucketIndex_);
 
             // Post action condition
             (uint256 lpBalanceAfterAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
@@ -109,7 +104,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         ) returns (uint256, uint256, uint256 movedAmount_) {
 
             (, uint256 fromBucketDepositTime) = _pool.lenderInfo(fromIndex_, _actor);
-            (, uint256 toBucketDepositTime)   = _pool.lenderInfo(toIndex_,    _actor);
+            (, uint256 toBucketDepositTime)   = _pool.lenderInfo(toIndex_,   _actor);
             
             // **B5**: when moving quote tokens: lender deposit time = timestamp of block when move happened
             lenderDepositTime[_actor][toIndex_] = Maths.max(fromBucketDepositTime, toBucketDepositTime);
