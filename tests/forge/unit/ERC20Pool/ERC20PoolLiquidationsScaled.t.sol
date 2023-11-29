@@ -83,6 +83,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             });
 
             (lpBalance, ) = _pool.lenderInfo(startBucketId + i, _lender);
+
             assertEq(lpBalance, Maths.wmul(50_000 * 1e18, depositFee));
         }
         assertEq(_pool.depositSize(), 199_991.552511415525100000 * 1e18);
