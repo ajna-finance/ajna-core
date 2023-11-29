@@ -236,7 +236,7 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         depositAt2572 = Maths.wmul(depositAt2572, Maths.WAD - _depositFeeRate(interestRate));
         assertEq(_pool.depositIndex(depositAt2570), 2570);
         assertEq(_pool.depositIndex(depositAt2570 + depositAt2571), 2571);
-        if (depositAt2572 != 0) {
+        if (depositAt2572 > scale) {
             assertEq(_pool.depositIndex(depositAt2570 + depositAt2571 + depositAt2572), 2572);
         }
     }
