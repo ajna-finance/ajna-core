@@ -1792,6 +1792,10 @@ contract RegressionTestReserveEvmRevertERC721Pool is ReserveERC721PoolInvariants
         _liquidationERC721PoolHandler.lenderKickAuction(115792089237316195423570985008687907853269984665640564039457584007913129639934, 101660650320013120840863364686996498168471542781622903660015386008, 26551745986563838800685120771903690269972431445);
     }
 
+    /*
+        Test failed because compensated collateral was unaccounted for.
+        Fixed by updating handler to consider compensated collateral in bucket for auction price.
+    */
     function test_take_after_kick_reserve_auction() external {
         _reserveERC721PoolHandler.mergeCollateral(3, 0);
         _reserveERC721PoolHandler.addCollateral(3278554184137405245391966474532112471766735411313029736086976919798487989, 1, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 1);
@@ -1814,6 +1818,10 @@ contract RegressionTestReserveEvmRevertERC721Pool is ReserveERC721PoolInvariants
         invariant_reserves();
     }
 
+    /*
+        Test failed because compensated collateral was unaccounted for.
+        Fixed by updating handler to consider compensated collateral in bucket for auction price.
+    */
     function test_take_after_settle_auction() external {
         _reserveERC721PoolHandler.mergeCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639932, 30366213271444225217120609420097055671182);
         _reserveERC721PoolHandler.pullCollateral(4768217050022891163821, 23162835199090917303377378586, 20058679922310275793972462975);
