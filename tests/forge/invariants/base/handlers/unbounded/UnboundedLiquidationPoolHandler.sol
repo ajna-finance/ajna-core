@@ -22,6 +22,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         uint256 deposit;
         uint256 kickerBond;
         uint256 borrowerLps;
+        uint256 borrowerDebt;
+        uint256 borrowerCollateral;
+        uint256 compensatedBucketCollateral;
     }
 
     /*******************************/
@@ -195,11 +198,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.bucketTake']++;
 
-        ( uint256 borrowerDebtBeforeTake, uint256 borrowerCollateralBeforeTake,) = _poolInfo.borrowerInfo(address(_pool), borrower_);
-
-        (address kicker, , , , , , , , ) = _pool.auctionInfo(borrower_);
-        ( , , , , uint256 auctionPrice, )  = _poolInfo.auctionStatus(address(_pool), borrower_);
-        uint256 auctionBucketIndex         = auctionPrice < MIN_PRICE ? 7388 : (auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionPrice));
+        (address kicker, , , , , , , , )  = _pool.auctionInfo(borrower_);
+        ( , , , , uint256 auctionPrice, ) = _poolInfo.auctionStatus(address(_pool), borrower_);
+        uint256 auctionBucketIndex        = auctionPrice < MIN_PRICE ? 7388 : (auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionPrice));
         
         LocalBucketTakeVars memory beforeBucketTakeVars = getBucketTakeInfo(bucketIndex_, kicker, _actor, auctionBucketIndex, borrower_);
 
@@ -211,7 +212,11 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // **B7**: when awarded bucket take LP : taker deposit time = timestamp of block when award happened
             if (afterBucketTakeVars.takerLps > beforeBucketTakeVars.takerLps) lenderDepositTime[taker_][bucketIndex_] = block.timestamp;
 
-            (uint256 borrowerDebtAfterTake, uint256 borrowerCollateralAfterTake, ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+            // for ERC-721 pools; adjust borrower collateral by compensated collateral awarded to the bucket at the auction price
+            if (_pool.poolType() == 1 && beforeBucketTakeVars.borrowerLps != afterBucketTakeVars.borrowerLps) {
+                if (bucketIndex_ == auctionBucketIndex) revert("Cannot distinguish bucketTake collateral from compensated bucket collateral");
+                afterBucketTakeVars.borrowerCollateral += afterBucketTakeVars.compensatedBucketCollateral - beforeBucketTakeVars.compensatedBucketCollateral;
+            }
 
             if (afterBucketTakeVars.kickerLps > beforeBucketTakeVars.kickerLps) {
                 // **B7**: when awarded bucket take LP : kicker deposit time = timestamp of block when award happened
@@ -220,7 +225,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 // when kicker and taker are same, kicker Reward = total Reward (lps) - taker Reward (Collateral Price * difference of bucket used and auction price)
                 if (!depositTake_ && kicker == _actor) {
                     uint256 totalReward = lpToQuoteToken(afterBucketTakeVars.kickerLps - beforeBucketTakeVars.kickerLps, bucketIndex_);
-                    uint256 takerReward = Maths.wmul(borrowerCollateralBeforeTake - borrowerCollateralAfterTake, _priceAt(bucketIndex_) - auctionPrice);
+                    uint256 takerReward = Maths.wmul(beforeBucketTakeVars.borrowerCollateral - afterBucketTakeVars.borrowerCollateral, _priceAt(bucketIndex_) - auctionPrice);
 
                     // **A8**: kicker reward <= Borrower penalty
                     kickerReward = totalReward - takerReward;
@@ -232,9 +237,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             // **A8**: kicker reward <= Borrower penalty
             if (depositTake_) {
-                borrowerPenalty = Maths.wmul(borrowerCollateralBeforeTake - borrowerCollateralAfterTake, _priceAt(bucketIndex_)) - (borrowerDebtBeforeTake - borrowerDebtAfterTake);
+                borrowerPenalty = Maths.wmul(beforeBucketTakeVars.borrowerCollateral - afterBucketTakeVars.borrowerCollateral, _priceAt(bucketIndex_)) - (beforeBucketTakeVars.borrowerDebt - afterBucketTakeVars.borrowerDebt);
             } else {
-                borrowerPenalty = Maths.wmul(borrowerCollateralBeforeTake - borrowerCollateralAfterTake, auctionPrice) - (borrowerDebtBeforeTake - borrowerDebtAfterTake);
+                borrowerPenalty = Maths.wmul(beforeBucketTakeVars.borrowerCollateral - afterBucketTakeVars.borrowerCollateral, auctionPrice) - (beforeBucketTakeVars.borrowerDebt - afterBucketTakeVars.borrowerDebt);
             }
                 
             // reserves are increased by take penalty of borrower (Deposit used from bucket - Borrower debt reduced)
@@ -249,6 +254,12 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
                 // **A7**: Total Bond decrease by bond penalty on take.
                 decreaseInBonds    += beforeBucketTakeVars.kickerBond - afterBucketTakeVars.kickerBond;
+            } else {
+                // **RE7**: Reserves decrease by bond reward on take.
+                decreaseInReserves += afterBucketTakeVars.kickerBond - beforeBucketTakeVars.kickerBond;
+
+                // **A7**: Total Bond increase by bond penalty on take.
+                increaseInBonds += afterBucketTakeVars.kickerBond - beforeBucketTakeVars.kickerBond;
             }
             // **R7**: Exchange rates are unchanged under depositTakes
             // **R8**: Exchange rates are unchanged under arbTakes
@@ -385,6 +396,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         ( , , , bucketTakeVars.deposit, ) = _pool.bucketInfo(bucketIndex_);
         bucketTakeVars.kickerBond         = _getKickerBond(kicker_);
         (bucketTakeVars.borrowerLps, )    = _pool.lenderInfo(auctionBucketIndex_, borrower_);
+        (bucketTakeVars.borrowerDebt, bucketTakeVars.borrowerCollateral, ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+        ( , bucketTakeVars.compensatedBucketCollateral, , , )              = _pool.bucketInfo(auctionBucketIndex_);
     }
 
     // Helper function to calculate quote tokens from lps in a bucket irrespective of deposit available.
