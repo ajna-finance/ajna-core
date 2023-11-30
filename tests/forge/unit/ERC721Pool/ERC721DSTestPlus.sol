@@ -43,7 +43,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         changePrank(borrower);
 
         // settle borrower if borrower is kicked
-        (uint256 kickTime, , , , , ) = _poolUtils.auctionStatus(address(_pool), borrower);
+        (uint256 kickTime, , , , , , , , , ) = _poolUtils.auctionStatus(address(_pool), borrower);
         if (kickTime != 0) {
             _pool.settle(borrower, bucketsUsed.length());
         }

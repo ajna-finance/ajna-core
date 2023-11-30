@@ -2222,7 +2222,7 @@ contract ERC20PoolLiquidationTakeFuzzyTest is ERC20FuzzyHelperContract {
 
         // skip some time to make auction takeable
         skip(skipTimeToTake);
-        (,,,, uint256 auctionPrice, ) = _poolUtils.auctionStatus(address(_pool), _borrower);
+        (,,,, uint256 auctionPrice, , , , , ) = _poolUtils.auctionStatus(address(_pool), _borrower);
 
         uint256 minCollateralTakeAmount = Maths.max(Maths.wdiv(1, auctionPrice), 1);
 
