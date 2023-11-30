@@ -163,13 +163,13 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         
         for (uint i = 0; i < borrowers.length(); i++) {
             address borrower = borrowers.at(i);
-            (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower);
+            (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(borrower);
             if (kickTime != 0) {
                 changePrank(borrower);
                 _pool.settle(borrower, bucketsUsed.length() + 1);
 
                 // Settle again if not settled, this can happen when less reserves calculated with DEPOSIT_BUFFER and borrower is not fully settled
-                (,,, kickTime,,,,,) = _pool.auctionInfo(borrower);
+                (,,, kickTime,,,,,,) = _pool.auctionInfo(borrower);
                 if (kickTime != 0) {
                     _pool.settle(borrower, bucketsUsed.length() + 1);
                 }

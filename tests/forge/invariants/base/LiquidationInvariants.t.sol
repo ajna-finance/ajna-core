@@ -30,7 +30,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
 
         for (uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
-            (, , , uint256 kickTime, , , , ,) = _pool.auctionInfo(borrower);
+            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
             if (kickTime != 0) {
                 (uint256 t0debt, , ) = _pool.borrowerInfo(borrower);
@@ -62,7 +62,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
         uint256 lockedBonds;
         for (uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
-            (, , uint256 bond, , , , , , ) = _pool.auctionInfo(borrower);
+            (, , uint256 bond, , , , , , , ) = _pool.auctionInfo(borrower);
             lockedBonds += bond;
         }
         require(lockedBonds == kickerLockedBond, "A2: bonds in auctions != than kicker locked bonds");
@@ -94,7 +94,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
         for (uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
 
-            (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
+            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
             if (kickTime != 0) borrowersKicked += 1;
         }
@@ -108,7 +108,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
 
         for (uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
-            (address kicker, , uint256 bondSize, , , , , , ) = _pool.auctionInfo(borrower);
+            (address kicker, , uint256 bondSize, , , , , , , ) = _pool.auctionInfo(borrower);
             (, uint256 lockedAmount) = _pool.kickerInfo(kicker);
 
             require(lockedAmount >= bondSize, "Auction Invariant A5");

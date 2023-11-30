@@ -60,7 +60,7 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
         uint256 referencePrice;
-        ( , , , kickTime_, referencePrice, neutralPrice_, , , ) = pool.auctionInfo(borrower_);
+        ( , , , kickTime_, referencePrice, neutralPrice_, , , , ) = pool.auctionInfo(borrower_);
         if (kickTime_ != 0) {
             (debtToCover_, collateral_, ) = this.borrowerInfo(ajnaPool_, borrower_);
             

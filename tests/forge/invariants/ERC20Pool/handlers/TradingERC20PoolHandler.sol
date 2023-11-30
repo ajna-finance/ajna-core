@@ -171,7 +171,7 @@ contract TradingERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBa
     }
 
     function _resetSettledAuction(address borrower_, uint256 borrowerIndex_) internal {
-        (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower_);
+        (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(borrower_);
         if (kickTime == 0) {
             if (borrowerIndex_ != 0) _activeBorrowers.remove(borrowerIndex_);
         }

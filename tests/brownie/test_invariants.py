@@ -166,7 +166,7 @@ class _BasePoolStateMachine:
     def pool_debt_in_auction(self):
         auctioned_borrowers_debt = 0
         for borrower in self.borrowers:
-            (_, _, _, kick_time, _, _, _, _, _, _) = self.pool.auctionInfo(borrower)
+            (_, _, _, kick_time, _, _, _, _, _, _, _) = self.pool.auctionInfo(borrower)
             if kick_time != 0:
                 (borrower_debt, _, _) = self.pool.borrowerInfo(borrower)
                 auctioned_borrowers_debt += borrower_debt
@@ -185,7 +185,7 @@ class _BasePoolStateMachine:
 
         auction_bonds_locked = 0
         for borrower in self.borrowers:
-            (_, _, bond_size, _, _, _, _, _, _, _) = self.pool.auctionInfo(borrower)
+            (_, _, bond_size, _, _, _, _, _, _, _, _) = self.pool.auctionInfo(borrower)
             auction_bonds_locked += bond_size
 
         # Invariant 8: sum of bonds across all auctions = sum of locked balances across all kickers = total bond escrowed accumulator
@@ -202,7 +202,7 @@ class _BasePoolStateMachine:
             if borrower_debt != 0:
                 borrowers_with_debt += 1
 
-                (_, _, _, kick_time, _, _, _, _, _, _) = self.pool.auctionInfo(borrower)
+                (_, _, _, kick_time, _, _, _, _, _, _, _) = self.pool.auctionInfo(borrower)
                 if kick_time != 0:
                     number_of_auctions += 1
 
@@ -565,7 +565,7 @@ def test_stateful_auctions(
         def rule_kick_auction(self, st_borrow_amount, st_lender, st_borrower, st_kicker, st_sleep):
 
             # do not kick if already active
-            (_, _, _, kick_time, _, _, _, _, _, _) = self.pool.auctionInfo(borrowers[st_borrower])
+            (_, _, _, kick_time, _, _, _, _, _, _, _) = self.pool.auctionInfo(borrowers[st_borrower])
             if kick_time != 0:
                 return
 
@@ -605,7 +605,7 @@ def test_stateful_auctions(
             success = True
 
             # kick if auction not kicked already
-            (_, _, _, kick_time, _, _, _, _, _, _) = self.pool.auctionInfo(borrowers[st_borrower])
+            (_, _, _, kick_time, _, _, _, _, _, _, _) = self.pool.auctionInfo(borrowers[st_borrower])
             if kick_time == 0:
                 self.rule_kick_auction(st_borrow_amount, st_lender, st_borrower, st_kicker, st_sleep)
 
