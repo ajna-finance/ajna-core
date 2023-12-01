@@ -138,7 +138,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         uint256 totalBondBeforeTake    = _getKickerBond(kicker);
         uint256 totalBalanceBeforeTake = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
 
-        (uint256 kickTimeBefore, , , , uint256 auctionPrice, , , , , )    = _poolInfo.auctionStatus(address(_pool), borrower_);
+        (uint256 kickTimeBefore, , , , uint256 auctionPrice, , , , )    = _poolInfo.auctionStatus(address(_pool), borrower_);
 
         // ensure actor always has the amount to take collateral
         _ensureQuoteAmount(taker_, 1e45);
@@ -199,7 +199,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         numberOfCalls['UBLiquidationHandler.bucketTake']++;
 
         (address kicker, , , , , , , , , )  = _pool.auctionInfo(borrower_);
-        ( , , , , uint256 auctionPrice, , , , , ) = _poolInfo.auctionStatus(address(_pool), borrower_);
+        ( , , , , uint256 auctionPrice, , , , ) = _poolInfo.auctionStatus(address(_pool), borrower_);
         uint256 auctionBucketIndex        = auctionPrice < MIN_PRICE ? 7388 : (auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionPrice));
         
         LocalBucketTakeVars memory beforeBucketTakeVars = getBucketTakeInfo(bucketIndex_, kicker, _actor, auctionBucketIndex, borrower_);

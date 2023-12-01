@@ -100,7 +100,7 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
             uint256 kickTimeBefore,
             uint256 borrowerCollateralBefore, , ,
             uint256 auctionPrice,
-            , , , ,
+            , , ,
         ) = _poolInfo.auctionStatus(address(_erc721Pool), borrower_);
 
         try _erc721Pool.repayDebt(borrower_, amount_, 0, borrower_, 7388) {

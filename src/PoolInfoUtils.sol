@@ -35,6 +35,11 @@ import { PoolCommons } from './libraries/external/PoolCommons.sol';
  */
 contract PoolInfoUtils {
 
+    /**
+     * @notice Struct contianing local variables used in `auctionStatus` to get around stack size limitations.
+     * @param lup        The price value of the current `Lowest Utilized Price` (`LUP`) bucket, in `WAD` units.
+     * @param poolDebt   Current amount of debt owed by borrowers in pool. (`WAD`).
+     */
     struct AuctionStatusLocalVars {
         uint256 lup;
         uint256 poolDebt;
@@ -53,7 +58,6 @@ contract PoolInfoUtils {
      *  @return referencePrice_   Price used to determine auction start price.                  (`WAD`)
      *  @return thresholdPrice_   Threshold Price when liquidation was started.                 (`WAD`)
      *  @return bondFactor_       The factor used for calculating bond size.                    (`WAD`)
-     *  @return bondSize_         The bond amount in quote token terms.                         (`WAD`)
      */
     function auctionStatus(address ajnaPool_, address borrower_)
         external
@@ -67,15 +71,13 @@ contract PoolInfoUtils {
             uint256 neutralPrice_,
             uint256 referencePrice_,
             uint256 thresholdPrice_,
-            uint256 bondFactor_,
-            uint256 bondSize_
+            uint256 bondFactor_
         )
     {
-        // IPool pool = IPool(ajnaPool_);
         AuctionStatusLocalVars memory vars;
         (   ,
             bondFactor_,
-            bondSize_,
+            ,
             kickTime_,
             referencePrice_,
             neutralPrice_,
@@ -84,12 +86,43 @@ contract PoolInfoUtils {
         if (kickTime_ != 0) {
             (debtToCover_, collateral_, ) = this.borrowerInfo(ajnaPool_, borrower_);
 
-            (vars.poolDebt,,,)  = IPool(ajnaPool_).debtInfo();
+            (vars.poolDebt,,,) = IPool(ajnaPool_).debtInfo();
             vars.lup           = _priceAt(IPool(ajnaPool_).depositIndex(vars.poolDebt));
-            isCollateralized_      = _isCollateralized(debtToCover_, collateral_, vars.lup, IPool(ajnaPool_).poolType());
+            isCollateralized_  = _isCollateralized(debtToCover_, collateral_, vars.lup, IPool(ajnaPool_).poolType());
 
             price_ = _auctionPrice(referencePrice_, kickTime_);
         }
+    }
+
+    /**
+     *  @notice Returns details of an auction for a given borrower address.
+     *  @dev    Calls and returns all values from pool.auctionInfo().
+     *  @param  ajnaPool_       Address of `Ajna` pool.
+     *  @param  borrower_       Address of the borrower that is liquidated.
+     *  @return kicker_         Address of the kicker that is kicking the auction.
+     *  @return bondFactor_     The factor used for calculating bond size.
+     *  @return bondSize_       The bond amount in quote token terms.
+     *  @return kickTime_       Time the liquidation was initiated.
+     *  @return referencePrice_ Price used to determine auction start price.
+     *  @return neutralPrice_   `Neutral Price` of auction.
+     *  @return thresholdPrice_ Threshold Price when liquidation was started.
+     *  @return head_           Address of the head auction.
+     *  @return next_           Address of the next auction in queue.
+     *  @return prev_           Address of the prev auction in queue.
+     */
+    function auctionInfo(address ajnaPool_, address borrower_) external view returns (
+        address kicker_,
+        uint256 bondFactor_,
+        uint256 bondSize_,
+        uint256 kickTime_,
+        uint256 referencePrice_,
+        uint256 neutralPrice_,
+        uint256 thresholdPrice_,
+        address head_,
+        address next_,
+        address prev_
+    ) {
+        return IPool(ajnaPool_).auctionInfo(borrower_);
     }
 
     /**
