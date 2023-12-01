@@ -80,17 +80,17 @@ import { Maths }    from '../internal/Maths.sol';
      *  @notice  Check if provided price is above current auction price.
      *  @notice  Prevents manipulative deposir and arb takes.
      *  @dev     Reverts with `AddAboveAuctionPrice` if price is above head of auction queue.
-     *  @param price_    Price to be compared with current auction price.
+     *  @param index_    Identifies bucket price to be compared with current auction price.
      *  @param auctions_ Auctions data.
      */
     function _revertIfAuctionPriceBelow(
-        uint256 price_,
+        uint256 index_,
         AuctionsState storage auctions_
     ) view {
         address head = auctions_.head;
         if (head != address(0)) {
             uint256 auctionPrice = _auctionPrice(auctions_.liquidations[head].referencePrice, auctions_.liquidations[head].kickTime);
-            if (price_ >= auctionPrice) revert AddAboveAuctionPrice();
+            if (_priceAt(index_) >= auctionPrice) revert AddAboveAuctionPrice();
         }
     }
 
