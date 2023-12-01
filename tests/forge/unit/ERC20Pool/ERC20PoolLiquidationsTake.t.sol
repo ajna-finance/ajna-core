@@ -2307,6 +2307,8 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             borrowerCollateralization: 0.989618705912982223 * 1e18
         });
 
+        uint256 snapshot = vm.snapshot();
+
         // borrower deposits 9_700 quote at high bucket
         _addLiquidity({ 
             from:    _borrower2,
@@ -2382,6 +2384,29 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         // kicker (also lender balance)
         assertEq(_quote.balanceOf(address(_lender)), 46_850.884261913152408797 * 1e18);
         assertEq(_collateral.balanceOf(address(_lender)), 0.0 * 1e18);
+
+        vm.revertTo(snapshot);
+
+        _take({
+            from:            _borrower2,
+            borrower:        _borrower2,
+            maxCollateral:   998.266822291537581516 * 1e18,
+            bondChange:      146.633624806391652044 * 1e18,
+            givenAmount:     9832.432668069705407256 * 1e18,
+            collateralTaken: 998.266822291537581516 * 1e18,
+            isReward:        true
+        });
+
+
+        assertEq(_quote.balanceOf(address(_borrower2)), 41_867.567331930294592744 * 1e18);
+        assertEq(_collateral.balanceOf(address(_borrower2)), 1998.266822291537581516 * 1e18);
+
+        _assertKicker({
+            kicker:    _lender,
+            claimable: 0,
+            locked:    295.749362893239243247 * 1e18
+        });
+
     }
 }
 
