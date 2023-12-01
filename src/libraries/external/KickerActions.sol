@@ -410,7 +410,6 @@ library KickerActions {
         // record liquidation info
         liquidation_.kicker         = msg.sender;
         liquidation_.kickTime       = uint96(block.timestamp);
-        liquidation_.referencePrice = SafeCast.toUint96(referencePrice_);
         liquidation_.bondSize       = SafeCast.toUint160(bondSize_);
         liquidation_.bondFactor     = SafeCast.toUint96(bondFactor_);
         liquidation_.neutralPrice   = SafeCast.toUint96(neutralPrice_);
@@ -425,10 +424,11 @@ library KickerActions {
             address tail = auctions_.tail;
             auctions_.liquidations[tail].next = borrowerAddress_;
             liquidation_.prev = tail;
-            liquidation_.referencePrice = SafeCast.toUint96(Maths.max(liquidation_.referencePrice, auctions_.liquidations[tail].referencePrice));
+            liquidation_.referencePrice = SafeCast.toUint96(Maths.max(referencePrice_, auctions_.liquidations[tail].referencePrice));
         } else {
             // first auction in queue
             auctions_.head = borrowerAddress_;
+            liquidation_.referencePrice = SafeCast.toUint96(referencePrice_);
         }
         // update liquidation with the new ordering
         auctions_.tail = borrowerAddress_;
