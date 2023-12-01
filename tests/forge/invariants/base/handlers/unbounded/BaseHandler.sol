@@ -599,7 +599,6 @@ abstract contract BaseHandler is Test {
         uint256 bondFactor;
         uint256 bondSize;
         uint256 neutralPrice;
-        // TODO: is this the correct value for nextBorrower it's in the head slot
         (,,,,,,, nextBorrower,,) = _pool.auctionInfo(address(0));
         while (nextBorrower != address(0)) {
             data = string(abi.encodePacked("Borrower ", Strings.toHexString(uint160(nextBorrower), 20), " Auction Details :"));
