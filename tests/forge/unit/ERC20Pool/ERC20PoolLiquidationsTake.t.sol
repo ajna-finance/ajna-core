@@ -81,6 +81,8 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             newLup:     9.721295865031779605 * 1e18
         });
 
+        assertEq(_quote.balanceOf(address(_borrower2)), 7_980.0 * 1e18);
+
         /*****************************/
         /*** Assert pre-kick state ***/
         /*****************************/
@@ -1971,10 +1973,8 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(address(_lender)), 47_000.0 * 1e18);
         assertEq(_collateral.balanceOf(address(_lender)), 0.0 * 1e18);
 
-
-        _mintQuoteAndApproveTokens(_borrower2, 50_000 * 1e18);
-
         // borrower balance
+        // 42_020 is what borrower2 shows up with we mint them more
         assertEq(_quote.balanceOf(address(_borrower2)), 50_000.0 * 1e18);
         assertEq(_collateral.balanceOf(address(_borrower2)), 1_000.0 * 1e18);
 
@@ -1986,7 +1986,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             borrowerCollateralization: 1.217037273735858713 * 1e18
         });
 
-        // borrower has 2_000 collateral, 7_980.0 quote
+        // borrower bal: 2_000 collateral, 57_987.673076923076926760 quote
         _borrow({
             from:       _borrower2,
             amount:     1_700.0 * 1e18,
@@ -2172,19 +2172,22 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              7987.673076923076926760 * 1e18,
+            borrowerDebt:              7_987.673076923076926760 * 1e18,
             borrowerCollateral:        1_000 * 1e18,
             borrowert0Np:              9.200228999102245332 * 1e18,
             borrowerCollateralization: 1.217037273735858713 * 1e18
         });
 
-        // borrower has 2_000 collateral, 7_980.0 quote
+        // borrower bal: 2_000 collateral (1_000 in system)
+
         _borrow({
             from:       _borrower2,
             amount:     1_700.0 * 1e18,
             indexLimit: _i9_72,
             newLup:     _p9_72
         });
+
+        assertEq(_quote.balanceOf(address(_borrower2)), 51_700.0 * 1e18);
 
         _assertPool(
             PoolParams({
@@ -2298,12 +2301,13 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              9823.274163015446362938 * 1e18,
+            borrowerDebt:              9_823.274163015446362938 * 1e18,
             borrowerCollateral:        1_000.000000000000000 * 1e18,
             borrowert0Np:              11.160177532745580804 * 1e18,
             borrowerCollateralization: 0.989618705912982223 * 1e18
         });
 
+        // borrower deposits 9_700 quote at high bucket
         _addLiquidity({ 
             from:    _borrower2,
             amount:  9_700 * 1e18,
@@ -2356,31 +2360,28 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             index:    _i100_33,
             lpRedeem: 100158.474319378828618902 * 1e18
         });
-    
-       // can't remove liquidity as auction isn't settled
-       _removeLiquidity({ 
-            from:     _borrower2,
-            amount:   1.0 * 1e18,
-            index:    _i100_33,
-            newLup:   100.332368143282009890 * 1e18,
-            lpRedeem: 5_123.289462595744338314 * 1e18
+
+        _assertBucket({
+            index:        _i100_33,
+            lpBalance:    146.848613549469835438 * 1e18,
+            collateral:   1.463621523811330774 * 1e18,
+            deposit:      2,
+            exchangeRate: 1.000000000000000001 * 1e18
         });
-        return;
 
+        // Borrower has 2_000 collateral (944... are still in auction), 41_772.738170340631148548 quote
+        assertEq(_quote.balanceOf(address(_borrower2)), 42000.0 * 1e18);
+        assertEq(_collateral.balanceOf(address(_borrower2)), 1998.266822291537581516 * 1e18);
 
-        // // Borrower has 2_000 collateral (944... are still in auction), 41_772.738170340631148548 quote
-        // assertEq(_quote.balanceOf(address(_borrower2)), 41_772.738170340631148548 * 1e18);
-        // assertEq(_collateral.balanceOf(address(_borrower2)), 2_000.000000000000000000 * 1e18);
+        _assertKicker({
+            kicker:    _lender,
+            claimable: 0,
+            locked:    149.115738086847591203 * 1e18
+        });
 
-        // _assertKicker({
-        //     kicker:    _lender,
-        //     claimable: 149.115738086847591203 * 1e18,
-        //     locked:    0
-        // });
-
-        // // kicker (also lender balance)
-        // assertEq(_quote.balanceOf(address(_lender)), 46_850.884261913152408797 * 1e18);
-        // assertEq(_collateral.balanceOf(address(_lender)), 0.0 * 1e18);
+        // kicker (also lender balance)
+        assertEq(_quote.balanceOf(address(_lender)), 46_850.884261913152408797 * 1e18);
+        assertEq(_collateral.balanceOf(address(_lender)), 0.0 * 1e18);
     }
 }
 
