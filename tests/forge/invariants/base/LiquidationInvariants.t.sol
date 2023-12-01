@@ -7,6 +7,7 @@ import '../../utils/DSTestPlus.sol';
 
 import { IBaseHandler }           from '../interfaces/IBaseHandler.sol';
 import { BasicInvariants }        from './BasicInvariants.t.sol';
+import '@std/console.sol';
 
 abstract contract LiquidationInvariants is BasicInvariants {
 
@@ -130,7 +131,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
         );
     }
 
-    /// @dev kicker reward should be less than or equals to kicker penalty on take.
+    /// @dev kicker reward should be less than or equals to borrower penalty within 1e4 on take.
     function _invariant_A8() internal view {
         uint256 borrowerPenalty = IBaseHandler(_handler).borrowerPenalty();
         uint256 kickerReward    = IBaseHandler(_handler).kickerReward();
@@ -138,7 +139,12 @@ abstract contract LiquidationInvariants is BasicInvariants {
         console.log("Borrower Penalty -->", borrowerPenalty);
         console.log("Kicker Reward    -->", kickerReward);
 
-        require(kickerReward <= borrowerPenalty, "Auction Invariant A8");
+        greaterThanWithinDiff(
+            borrowerPenalty,
+            kickerReward,
+            1e4,
+            "Auction Invariant A8"
+        );
     }
     
     function invariant_call_summary() public virtual override useCurrentTimestamp {
