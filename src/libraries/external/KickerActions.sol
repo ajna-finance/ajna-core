@@ -422,8 +422,10 @@ library KickerActions {
         // update auctions queue
         if (auctions_.head != address(0)) {
             // other auctions in queue, liquidation doesn't exist or overwriting.
-            auctions_.liquidations[auctions_.tail].next = borrowerAddress_;
-            liquidation_.prev = auctions_.tail;
+            address tail = auctions_.tail;
+            auctions_.liquidations[tail].next = borrowerAddress_;
+            liquidation_.prev = tail;
+            liquidation_.referencePrice = SafeCast.toUint96(Maths.max(liquidation_.referencePrice, auctions_.liquidations[tail].referencePrice));
         } else {
             // first auction in queue
             auctions_.head = borrowerAddress_;

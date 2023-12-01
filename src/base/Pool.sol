@@ -58,7 +58,8 @@ import {
 import {
     _revertIfAuctionDebtLocked,
     _revertIfAuctionClearable,
-    _revertAfterExpiry
+    _revertAfterExpiry,
+    _revertIfAuctionPriceBelow
 }                               from '../libraries/helpers/RevertsHelper.sol';
 
 import { Buckets }  from '../libraries/internal/Buckets.sol';
@@ -158,6 +159,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         _revertIfAuctionClearable(auctions, loans);
 
+        _revertIfAuctionPriceBelow(_priceAt(index_), auctions);
+
         PoolState memory poolState = _accruePoolInterest();
 
         // round to token precision
@@ -191,6 +194,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _revertAfterExpiry(expiry_);
 
         _revertIfAuctionClearable(auctions, loans);
+
+        _revertIfAuctionPriceBelow(_priceAt(toIndex_), auctions);
 
         PoolState memory poolState = _accruePoolInterest();
 
