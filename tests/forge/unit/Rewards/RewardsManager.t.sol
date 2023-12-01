@@ -560,7 +560,7 @@ contract RewardsManagerTest is RewardsHelperContract {
     // two lenders stake their positions in the pool
     // staker one bucket bankrupt, staker two bucket active
     // interest accrued to both buckets, but staker one receives no rewards
-    function testClaimRewardsBankruptBucket() external {
+    function testClaimRewardsBankruptBucket() external tearDown {
 
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
@@ -710,7 +710,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             from:        _minterTwo,
             borrower:    _borrower2,
             maxDepth:    10,
-            settledDebt: 5_678.605678397318135315 * 1e18
+            settledDebt: 5_757.196206294532254049 * 1e18
         });
 
         // bucket is insolvent, balances are reset
@@ -787,7 +787,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         });
     }
     
-    function testNoRewardsToClaimPostBankrupt() external {
+    function testNoRewardsToClaimPostBankrupt() external tearDown {
         skip(10);
         
         /***************************/
@@ -1122,7 +1122,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             from:        _minterTwo,
             borrower:    _borrower,
             maxDepth:    10,
-            settledDebt: 24_911.288118205001229953 * 1e18
+            settledDebt: 25_665.876911373608528229 * 1e18
         });
 
         // bucket is insolvent, balances are reset
