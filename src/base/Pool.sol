@@ -159,7 +159,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         _revertIfAuctionClearable(auctions, loans);
 
-        _revertIfAuctionPriceBelow(_priceAt(index_), auctions);
+        _revertIfAuctionPriceBelow(index_, auctions);
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -195,7 +195,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         _revertIfAuctionClearable(auctions, loans);
 
-        _revertIfAuctionPriceBelow(_priceAt(toIndex_), auctions);
+        _revertIfAuctionPriceBelow(toIndex_, auctions);
 
         PoolState memory poolState = _accruePoolInterest();
 
