@@ -4,7 +4,6 @@ pragma solidity 0.8.18;
 import { ERC20HelperContract, ERC20FuzzyHelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/libraries/helpers/PoolHelper.sol';
-import '@std/console.sol';
 
 contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
