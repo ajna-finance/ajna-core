@@ -16,6 +16,7 @@ interface IPoolState {
      *  @return kickTime_       Time the liquidation was initiated.
      *  @return referencePrice_ Price used to determine auction start price.
      *  @return neutralPrice_   `Neutral Price` of auction.
+     *  @return thresholdPrice_ Threshold Price when liquidation was started.
      *  @return head_           Address of the head auction.
      *  @return next_           Address of the next auction in queue.
      *  @return prev_           Address of the prev auction in queue.
@@ -30,6 +31,7 @@ interface IPoolState {
             uint256 kickTime_,
             uint256 referencePrice_,
             uint256 neutralPrice_,
+            uint256 thresholdPrice_,
             address head_,
             address next_,
             address prev_
