@@ -494,7 +494,9 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             uint256 debtToCover, 
             bool    isCollateralized,      
             uint256 price,          
-            uint256 neutralPrice    
+            uint256 neutralPrice,
+            ,
+            ,
         ) = _poolUtils.auctionStatus(address(_pool), state_.borrower);
         assertEq(kickTime,     state_.kickTime);
         assertEq(neutralPrice, state_.neutralPrice);
