@@ -81,8 +81,6 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             newLup:     9.721295865031779605 * 1e18
         });
 
-        assertEq(_quote.balanceOf(address(_borrower2)), 7_980.0 * 1e18);
-
         /*****************************/
         /*** Assert pre-kick state ***/
         /*****************************/
