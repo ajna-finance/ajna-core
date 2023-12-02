@@ -30,14 +30,20 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
     address internal _borrower2;
     address internal _lender;
 
+    uint256 internal _i100_33;
+    uint256 internal _i9_91;
+    uint256 internal _i9_81;
+    uint256 internal _i9_72;
+    uint256 internal _i9_62;
+    uint256 internal _i9_52;
+
     function setUp() external {
-        
-        uint256  _i100_33   = 3232;
-        uint256  _i9_91     = 3696;
-        uint256  _i9_81     = 3698;
-        uint256  _i9_72     = 3700;
-        uint256  _i9_62     = 3702;
-        uint256  _i9_52     = 3704;
+
+        _i100_33 = 3232;
+        _i9_81   = 3698;
+        _i9_72   = 3700;
+        _i9_62   = 3702;
+        _i9_52   = 3704;
 
         // create an Ajna pool
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
@@ -62,21 +68,28 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
 
     function testBorrowerArbTakeLittlePenalty() external {
 
+        // External market price is 1 WETH @ 15 USDC 
+
+        // assert Borrower balances
         assertEq(usdc.balanceOf(_borrower), 3_000 * 1e6);
         assertEq(weth.balanceOf(_borrower), 2000.0 * 1e18);
 
+        // assert Kicker (_lender) balances
         assertEq(usdc.balanceOf(_lender), 120_000.000000 * 1e6);
         assertEq(weth.balanceOf(_lender), 0 * 1e18);
 
         // add liquidity to the Ajna pool
         vm.startPrank(_lender);
         usdc.approve(address(_ajnaPool), type(uint256).max);
-        _ajnaPool.addQuoteToken(2_000 * 1e18, 3696, type(uint256).max, false);
+        _ajnaPool.addQuoteToken(2_000 * 1e18, _i9_81, type(uint256).max, false);
         _ajnaPool.addQuoteToken(5_000 * 1e18, 3698, type(uint256).max, false);
         _ajnaPool.addQuoteToken(11_000 * 1e18, 3700, type(uint256).max, false);
         _ajnaPool.addQuoteToken(25_000 * 1e18, 3702, type(uint256).max, false);
         _ajnaPool.addQuoteToken(30_000 * 1e18, 3704, type(uint256).max, false);
         vm.stopPrank();
+
+        // lender balance after deposits (future balance impacts are due to kicking)
+        assertEq(usdc.balanceOf(_lender), 47_000.000000 * 1e6);
 
         // borrower2 is a regular borrower in the pool
         vm.startPrank(_borrower2);
@@ -128,89 +141,100 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         assertEq(collateral, 1.468148188317963756 * 1e18);
         assertEq(deposit, 5);
 
-        // borrower lost 19 USDC | 1.847020555 weth 
+        // borrower LP post borrower removal
+        (lp, ) = _ajnaPool.lenderInfo(3232, _borrower);
+        assertEq(lp, 0.000000000000000051 * 1e18);
+
+        // kicker LP post borrower removal
+        (lp, ) = _ajnaPool.lenderInfo(3232, _lender);
+        assertEq(lp, 147.302784519210463769 * 1e18);
+
+        vm.startPrank(_lender);
+        _ajnaPool.removeCollateral(1.468148188317963755 * 1e18, 3232);
+        vm.stopPrank();
+
+        // kicker LP post kicker removal
+        (lp, ) = _ajnaPool.lenderInfo(3232, _lender);
+        assertEq(lp, 0.000000000000000054 * 1e18);
+
+        // borrower lost 19 USDC | 1.847020555 weth (@ 15 USDC = 27.70530833 USDC) = 46.70530833 USDC w/ arbTake
         assertEq(usdc.balanceOf(_borrower), 2_981.000000 * 1e6);
         assertEq(weth.balanceOf(_borrower), 1_998.152979445346260209 * 1e18);
 
-        assertEq(usdc.balanceOf(_lender), 46_850.406721 * 1e6);
-        assertEq(weth.balanceOf(_lender), 0 * 1e18);
-
-        // kicker makes less with arb take
+        // kicker (_lender) makes less with arb take
         (uint256 kickerClaimable, uint256 kickerLocked) = _ajnaPool.kickerInfo(_lender);
         assertEq(0 * 1e18,   kickerClaimable);
         assertEq(149.593278157167041134 * 1e18, kickerLocked);
 
+        // kicker bal (22.02222282 + 46,850.406721 + 149.593278157167041134) = 47022.022218157
+        // kicker gains  22.02222282 USDC
+        assertEq(usdc.balanceOf(_lender), 46_850.406721 * 1e6);
+        assertEq(weth.balanceOf(_lender), 1.468148188317963755 * 1e18); // (@ 15 USDC = 22.02222282 USDC)
+
         vm.revertTo(snapshot);
 
-        // no new QT so the borrower uses debt drawn previously 9_711.0
+        // borrower uses some of his initial QT to take
         vm.startPrank(_borrower);
         _ajnaPool.take(_borrower, 1000.0 * 1e18, _borrower, new bytes(0));
         vm.stopPrank();
 
-        // borrower lost 170.04644 USDC with trad take
+        // borrower lost 170.04644 USDC with take
         assertEq(usdc.balanceOf(address(_borrower)), 2_829.953560 * 1e6);
         assertEq(weth.balanceOf(address(_borrower)), 2_000.0 * 1e18);
 
-        // kicker makes more with traditional take
+        // kicker (_lender) bond is larger with take
         (kickerClaimable, kickerLocked) = _ajnaPool.kickerInfo(_lender);
         assertEq(0 * 1e18,   kickerClaimable);
         assertEq(296.951892783400907825 * 1e18, kickerLocked);
+
+        // kicker bal (46,850.406721 + 296.951892783400907825) = 47147.358613783
+        // kicker gains 147.358613783 USDC
+        assertEq(usdc.balanceOf(_lender), 46_850.406721 * 1e6);
+        assertEq(weth.balanceOf(_lender), 0); // (@ 15 USDC = 22.02222282 USDC)
     }
     
     // function testBorrowerLittleTakePenalty() external {
         
-    //     // kicker (also lender balance)
-    //     assertEq(_quote.balanceOf(address(_lender)), 47_000.0 * 1e18);
-    //     assertEq(_collateral.balanceOf(address(_lender)), 0.0 * 1e18);
+    //     assertEq(usdc.balanceOf(_borrower), 3_000 * 1e6);
+    //     assertEq(weth.balanceOf(_borrower), 2000.0 * 1e18);
 
-    //     // borrower balance
-    //     // 42_020 is what borrower2 shows up with we mint them more
-    //     assertEq(_quote.balanceOf(address(_borrower2)), 50_000.0 * 1e18);
-    //     assertEq(_collateral.balanceOf(address(_borrower2)), 1_000.0 * 1e18);
+    //     assertEq(usdc.balanceOf(_lender), 120_000.000000 * 1e6);
+    //     assertEq(weth.balanceOf(_lender), 0 * 1e18);
 
-    //     _assertBorrower({
-    //         borrower:                  _borrower2,
-    //         borrowerDebt:              7987.673076923076926760 * 1e18,
-    //         borrowerCollateral:        1_000 * 1e18,
-    //         borrowert0Np:              9.200228999102245332 * 1e18,
-    //         borrowerCollateralization: 1.217037273735858713 * 1e18
-    //     });
+    //     // add liquidity to the Ajna pool
+    //     vm.startPrank(_lender);
+    //     usdc.approve(address(_ajnaPool), type(uint256).max);
+    //     _ajnaPool.addQuoteToken(2_000 * 1e18, 3696, type(uint256).max, false);
+    //     _ajnaPool.addQuoteToken(5_000 * 1e18, 3698, type(uint256).max, false);
+    //     _ajnaPool.addQuoteToken(11_000 * 1e18, 3700, type(uint256).max, false);
+    //     _ajnaPool.addQuoteToken(25_000 * 1e18, 3702, type(uint256).max, false);
+    //     _ajnaPool.addQuoteToken(30_000 * 1e18, 3704, type(uint256).max, false);
+    //     vm.stopPrank();
 
-    //     // borrower bal: 2_000 collateral, 57_987.673076923076926760 quote
-    //     _borrow({
-    //         from:       _borrower2,
-    //         amount:     1_700.0 * 1e18,
-    //         indexLimit: _i9_72,
-    //         newLup:     _p9_72
-    //     });
+    //     // borrower2 is a regular borrower in the pool
+    //     vm.startPrank(_borrower2);
+    //     weth.approve(address(_ajnaPool), type(uint256).max);
+    //     usdc.approve(address(_ajnaPool), type(uint256).max);
+    //     _ajnaPool.drawDebt(_borrower2, 19.25 * 1e18, 7388, 2 * 1e18);
+    //     vm.stopPrank();
 
-    //     _assertPool(
-    //         PoolParams({
-    //             htp:                  9.689307692307692312 * 1e18,
-    //             lup:                  9.721295865031779605 * 1e18,
-    //             poolSize:             73_000.000000000000000000 * 1e18,
-    //             pledgedCollateral:    1_002.000000000000000000 * 1e18,
-    //             encumberedCollateral: 998.691567123838268658 * 1e18,
-    //             poolDebt:             9_708.576201923076927554 * 1e18,
-    //             actualUtilization:    0,
-    //             targetUtilization:    1.000000000000000000 * 1e18,
-    //             minDebtAmount:        485.428810096153846378 * 1e18,
-    //             loans:                2,
-    //             maxBorrower:          address(_borrower2),
-    //             interestRate:         0.05 * 1e18,
-    //             interestRateUpdate:   block.timestamp
-    //         })
-    //     );
+    //     // borrower is the explointing actor, draws debt
+    //     vm.startPrank(_borrower);
+    //     weth.approve(address(_ajnaPool), type(uint256).max);
+    //     usdc.approve(address(_ajnaPool), type(uint256).max);
+    //     _ajnaPool.drawDebt(_borrower, 9_711.0 * 1e18, 7388, 1_000 * 1e18);
+    //     vm.stopPrank();
 
-    //     _assertBorrower({
-    //         borrower:                  _borrower2,
-    //         borrowerDebt:              9_689.307692307692312160 * 1e18,
-    //         borrowerCollateral:        1_000 * 1e18,
-    //         borrowert0Np:              11.160177532745580804 * 1e18,
-    //         borrowerCollateralization: 1.003301388885552947 * 1e18
-    //     });
+    //     skip(17.5 hours);
 
-    //     skip(100 days);
+    //     vm.startPrank(_lender);
+    //     _ajnaPool.kick(_borrower, 3887);
+    //     vm.stopPrank();
+
+    //     skip(80 minutes);
+
+    //     return;
+
 
     //     _kick({
     //         from:           _lender,
@@ -347,5 +371,5 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
     //     assertEq(_collateral.balanceOf(address(_lender)), 0.0 * 1e18);
     // }
         
-
+    // }
 }
