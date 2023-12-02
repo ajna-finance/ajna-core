@@ -625,7 +625,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    10,
-            settledDebt: 13.791494531146433229 * 1e18
+            settledDebt: 15.817069975787312943 * 1e18
         });
 
         _assertAuction(
@@ -798,7 +798,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    10,
-            settledDebt: 19.018269230759725285 * 1e18
+            settledDebt: 21.818209514195374228 * 1e18
         });
     }
 

@@ -535,7 +535,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    10,
-            settledDebt: 5_792.406276780653057707 * 1e18
+            settledDebt: 5_874.378809732129803518 * 1e18
         });
 
         _assertPool(

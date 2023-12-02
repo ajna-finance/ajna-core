@@ -904,7 +904,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             from:        _lender1,
             borrower:    _borrower2,
             maxDepth:    1,
-            settledDebt: 20_019.230769230769240000 * 1e18
+            settledDebt: 20_028.374057845207515293 * 1e18
         });
 
         _assertAuction(
@@ -967,7 +967,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             from:        _lender1,
             borrower:    _borrower4,
             maxDepth:    5,
-            settledDebt: 20_019.230769230769240000 * 1e18
+            settledDebt: 20_028.374057845207515293 * 1e18
         });
 
         _assertAuction(
@@ -1030,7 +1030,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             from:        _lender1,
             borrower:    _borrower1,
             maxDepth:    5,
-            settledDebt: 20_019.230769230769240000 * 1e18
+            settledDebt: 20_028.374057845207515293 * 1e18
         });
 
         _assertAuction(
@@ -1093,7 +1093,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             from:        _lender1,
             borrower:    _borrower5,
             maxDepth:    5,
-            settledDebt: 20_019.230769230769240000 * 1e18
+            settledDebt: 20_028.374057845207515293 * 1e18
         });
 
         _assertAuction(
@@ -1152,13 +1152,11 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             })
         );
 
-
-
         _settle({
             from:        _lender1,
             borrower:    _borrower3,
             maxDepth:    5,
-            settledDebt: 20_019.230769230769240000 * 1e18
+            settledDebt: 20_028.374057845207515293 * 1e18
         });
 
         _assertAuction(

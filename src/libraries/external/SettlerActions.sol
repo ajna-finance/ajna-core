@@ -170,7 +170,7 @@ library SettlerActions {
 
         emit Settle(
             params_.borrower,
-            result_.t0DebtSettled
+            Maths.wmul(result_.t0DebtSettled, poolState_.inflator)
         );
 
         // if entire debt was settled then settle auction
