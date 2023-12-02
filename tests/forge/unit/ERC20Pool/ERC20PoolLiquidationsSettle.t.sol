@@ -1159,7 +1159,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
             from:        actor6,
             borrower:    actor2,
             maxDepth:    2,
-            settledDebt: 56_458_180_321.630022869105202974 * 1e18
+            settledDebt: 59_474_936_428.593370593619524963 * 1e18
         });
 
         // almost all the reserves are used to settle debt
