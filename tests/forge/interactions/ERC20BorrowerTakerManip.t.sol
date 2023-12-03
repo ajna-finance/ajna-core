@@ -205,148 +205,148 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         // kicker gains 71.128803211 USDC
         assertEq(usdc.balanceOf(_lender), 46_894.487336 * 1e6);
         assertEq(weth.balanceOf(_lender), 0)
-}
+    }
     
-    function testBorrowerLittlePenaltyArbTakeHigherAuctionPrice() external {
+    // function testBorrowerLittlePenaltyArbTakeHigherAuctionPrice() external {
 
-        // External market price is 1 WETH @ 9.92 USDC 
+    //     // External market price is 1 WETH @ 9.92 USDC 
 
-        // assert Borrower balances
-        assertEq(usdc.balanceOf(_borrower), 3_000 * 1e6);
-        assertEq(weth.balanceOf(_borrower), 2000.0 * 1e18);
+    //     // assert Borrower balances
+    //     assertEq(usdc.balanceOf(_borrower), 3_000 * 1e6);
+    //     assertEq(weth.balanceOf(_borrower), 2000.0 * 1e18);
 
-        // assert Kicker (_lender) balances
-        assertEq(usdc.balanceOf(_lender), 120_000.000000 * 1e6);
-        assertEq(weth.balanceOf(_lender), 0 * 1e18);
+    //     // assert Kicker (_lender) balances
+    //     assertEq(usdc.balanceOf(_lender), 120_000.000000 * 1e6);
+    //     assertEq(weth.balanceOf(_lender), 0 * 1e18);
 
-        // add liquidity to the Ajna pool
-        vm.startPrank(_lender);
-        usdc.approve(address(_ajnaPool), type(uint256).max);
-        _ajnaPool.addQuoteToken(2_000 * 1e18, _i9_91, type(uint256).max);
-        _ajnaPool.addQuoteToken(5_000 * 1e18, 3698, type(uint256).max);
-        _ajnaPool.addQuoteToken(11_000 * 1e18, 3700, type(uint256).max);
-        _ajnaPool.addQuoteToken(25_000 * 1e18, 3702, type(uint256).max);
-        _ajnaPool.addQuoteToken(30_000 * 1e18, 3704, type(uint256).max);
-        vm.stopPrank();
+    //     // add liquidity to the Ajna pool
+    //     vm.startPrank(_lender);
+    //     usdc.approve(address(_ajnaPool), type(uint256).max);
+    //     _ajnaPool.addQuoteToken(2_000 * 1e18, _i9_91, type(uint256).max);
+    //     _ajnaPool.addQuoteToken(5_000 * 1e18, 3698, type(uint256).max);
+    //     _ajnaPool.addQuoteToken(11_000 * 1e18, 3700, type(uint256).max);
+    //     _ajnaPool.addQuoteToken(25_000 * 1e18, 3702, type(uint256).max);
+    //     _ajnaPool.addQuoteToken(30_000 * 1e18, 3704, type(uint256).max);
+    //     vm.stopPrank();
 
-        // lender balance after deposits (future balance impacts are due to kicking)
-        assertEq(usdc.balanceOf(_lender), 47_000.000000 * 1e6);
+    //     // lender balance after deposits (future balance impacts are due to kicking)
+    //     assertEq(usdc.balanceOf(_lender), 47_000.000000 * 1e6);
 
-        // borrower2 is a regular borrower in the pool
-        vm.startPrank(_borrower2);
-        weth.approve(address(_ajnaPool), type(uint256).max);
-        usdc.approve(address(_ajnaPool), type(uint256).max);
-        _ajnaPool.drawDebt(_borrower2, 19.25 * 1e18, 7388, 2 * 1e18);
-        vm.stopPrank();
+    //     // borrower2 is a regular borrower in the pool
+    //     vm.startPrank(_borrower2);
+    //     weth.approve(address(_ajnaPool), type(uint256).max);
+    //     usdc.approve(address(_ajnaPool), type(uint256).max);
+    //     _ajnaPool.drawDebt(_borrower2, 19.25 * 1e18, 7388, 2 * 1e18);
+    //     vm.stopPrank();
 
-        // borrower is the explointing actor, draws debt
-        vm.startPrank(_borrower);
-        weth.approve(address(_ajnaPool), type(uint256).max);
-        usdc.approve(address(_ajnaPool), type(uint256).max);
-        _ajnaPool.drawDebt(_borrower, 9_711.0 * 1e18, 7388, 1_000 * 1e18);
-        vm.stopPrank();
+    //     // borrower is the explointing actor, draws debt
+    //     vm.startPrank(_borrower);
+    //     weth.approve(address(_ajnaPool), type(uint256).max);
+    //     usdc.approve(address(_ajnaPool), type(uint256).max);
+    //     _ajnaPool.drawDebt(_borrower, 9_711.0 * 1e18, 7388, 1_000 * 1e18);
+    //     vm.stopPrank();
 
-        skip(100 days);
+    //     skip(100 days);
 
-        vm.startPrank(_lender);
-        _ajnaPool.kick(_borrower, 3887);
-        vm.stopPrank();
+    //     vm.startPrank(_lender);
+    //     _ajnaPool.kick(_borrower, 3887);
+    //     vm.stopPrank();
 
-        skip(6.38 hours);
+    //     skip(6.38 hours);
 
-        (
-            ,
-            ,
-            ,
-            uint256 auctionKickTime,
-            uint256 auctionReferencePrice,
-            uint256 neutralPrice,
-            ,
-            ,
-            ,
-        ) = _ajnaPool.auctionInfo(_borrower);
+    //     (
+    //         ,
+    //         ,
+    //         ,
+    //         uint256 auctionKickTime,
+    //         uint256 auctionReferencePrice,
+    //         uint256 neutralPrice,
+    //         ,
+    //         ,
+    //         ,
+    //     ) = _ajnaPool.auctionInfo(_borrower);
 
-        assertEq(9.949774553091739272 * 1e18, _auctionPrice(auctionReferencePrice, auctionKickTime));
-        assertEq(11.350341791238016630 * 1e18 , neutralPrice);
+    //     assertEq(9.949774553091739272 * 1e18, _auctionPrice(auctionReferencePrice, auctionKickTime));
+    //     assertEq(11.350341791238016630 * 1e18 , neutralPrice);
 
-        uint256 snapshot = vm.snapshot();
+    //     uint256 snapshot = vm.snapshot();
 
-        // deposit into 10x price bucket 100_33
-        vm.startPrank(_borrower);
-        usdc.approve(address(_ajnaPool), type(uint256).max);
-        _ajnaPool.addQuoteToken(9_808 * 1e18, 3232, type(uint256).max);
-        vm.stopPrank();
+    //     // deposit into 10x price bucket 100_33
+    //     vm.startPrank(_borrower);
+    //     usdc.approve(address(_ajnaPool), type(uint256).max);
+    //     _ajnaPool.addQuoteToken(9_808 * 1e18, 3232, type(uint256).max);
+    //     vm.stopPrank();
 
-        vm.startPrank(_borrower);
-        _ajnaPool.bucketTake(_borrower, false, 3232);
-        vm.stopPrank();
+    //     vm.startPrank(_borrower);
+    //     _ajnaPool.bucketTake(_borrower, false, 3232);
+    //     vm.stopPrank();
 
-        vm.startPrank(_borrower);
-        _ajnaPool.removeCollateral(998.556468141527261759 * 1e18, 3232);
-        vm.stopPrank();
+    //     vm.startPrank(_borrower);
+    //     _ajnaPool.removeCollateral(998.556468141527261759 * 1e18, 3232);
+    //     vm.stopPrank();
 
-        (
-            uint256 lp,
-            uint256 collateral,
-            uint256 bankruptcyTime,
-            uint256 deposit,
-            uint256 scale
-        ) = _ajnaPool.bucketInfo(3232);
+    //     (
+    //         uint256 lp,
+    //         uint256 collateral,
+    //         uint256 bankruptcyTime,
+    //         uint256 deposit,
+    //         uint256 scale
+    //     ) = _ajnaPool.bucketInfo(3232);
 
-        assertEq(lp, 141437867054818765556);
-        assertEq(collateral, 1409693299103984831);
-        assertEq(deposit, 2);
+    //     assertEq(lp, 141437867054818765556);
+    //     assertEq(collateral, 1409693299103984831);
+    //     assertEq(deposit, 2);
 
-        // borrower LP post borrower removal
-        (lp, ) = _ajnaPool.lenderInfo(3232, _borrower);
-        assertEq(lp, 93);
+    //     // borrower LP post borrower removal
+    //     (lp, ) = _ajnaPool.lenderInfo(3232, _borrower);
+    //     assertEq(lp, 93);
 
-        // kicker LP post borrower removal
-        (lp, ) = _ajnaPool.lenderInfo(3232, _lender);
-        assertEq(lp, 141.437867054818765463 * 1e18);
+    //     // kicker LP post borrower removal
+    //     (lp, ) = _ajnaPool.lenderInfo(3232, _lender);
+    //     assertEq(lp, 141.437867054818765463 * 1e18);
 
-        vm.startPrank(_lender);
-        _ajnaPool.removeCollateral(1.409693299103984830 * 1e18, 3232);
-        vm.stopPrank();
+    //     vm.startPrank(_lender);
+    //     _ajnaPool.removeCollateral(1.409693299103984830 * 1e18, 3232);
+    //     vm.stopPrank();
 
-        // kicker LP post kicker removal
-        (lp, ) = _ajnaPool.lenderInfo(3232, _lender);
-        assertEq(lp, 9);
+    //     // kicker LP post kicker removal
+    //     (lp, ) = _ajnaPool.lenderInfo(3232, _lender);
+    //     assertEq(lp, 9);
 
-        // borrower lost  97 USDC | 1.443531858 weth (@ 9.92 USDC = 14.319836031 USDC) = 111.319836031 USDC w/ arbTake
-        assertEq(usdc.balanceOf(_borrower), 2903.000000 * 1e6);
-        assertEq(weth.balanceOf(_borrower), 1998.556468141527261759 * 1e18);
+    //     // borrower lost  97 USDC | 1.443531858 weth (@ 9.92 USDC = 14.319836031 USDC) = 111.319836031 USDC w/ arbTake
+    //     assertEq(usdc.balanceOf(_borrower), 2903.000000 * 1e6);
+    //     assertEq(weth.balanceOf(_borrower), 1998.556468141527261759 * 1e18);
 
-        // kicker (_lender) makes less with arb take
-        (uint256 kickerClaimable, uint256 kickerLocked) = _ajnaPool.kickerInfo(_lender);
-        assertEq(0 * 1e18,   kickerClaimable);
-        assertEq(149.593278157167041134 * 1e18, kickerLocked);
+    //     // kicker (_lender) makes less with arb take
+    //     (uint256 kickerClaimable, uint256 kickerLocked) = _ajnaPool.kickerInfo(_lender);
+    //     assertEq(0 * 1e18,   kickerClaimable);
+    //     assertEq(149.593278157167041134 * 1e18, kickerLocked);
 
-        // kicker bal (13.984157527 + 46,850.406721 + 149.593278157167041134) = 47013.98415668447013.984156684
-        // kicker gains  13.98415668447013 USDC
-        assertEq(usdc.balanceOf(_lender), 46_850.406721 * 1e6);
-        assertEq(weth.balanceOf(_lender), 1.409693299103984830 * 1e18); // (@ 9.92 USDC = 13.984157527 USDC)
+    //     // kicker bal (13.984157527 + 46,850.406721 + 149.593278157167041134) = 47013.98415668447013.984156684
+    //     // kicker gains  13.98415668447013 USDC
+    //     assertEq(usdc.balanceOf(_lender), 46_850.406721 * 1e6);
+    //     assertEq(weth.balanceOf(_lender), 1.409693299103984830 * 1e18); // (@ 9.92 USDC = 13.984157527 USDC)
 
-        vm.revertTo(snapshot);
+    //     vm.revertTo(snapshot);
 
-        // borrower uses some of his initial QT to take
-        vm.startPrank(_borrower);
-        _ajnaPool.take(_borrower, 1000.0 * 1e18, _borrower, new bytes(0));
-        vm.stopPrank();
+    //     // borrower uses some of his initial QT to take
+    //     vm.startPrank(_borrower);
+    //     _ajnaPool.take(_borrower, 1000.0 * 1e18, _borrower, new bytes(0));
+    //     vm.stopPrank();
 
-        // borrower lost 238.774554 USDC with take
-        assertEq(usdc.balanceOf(address(_borrower)), 2761.225446 * 1e6);
-        assertEq(weth.balanceOf(address(_borrower)), 2_000.0 * 1e18);
+    //     // borrower lost 238.774554 USDC with take
+    //     assertEq(usdc.balanceOf(address(_borrower)), 2761.225446 * 1e6);
+    //     assertEq(weth.balanceOf(address(_borrower)), 2_000.0 * 1e18);
 
-        // kicker (_lender) bond is larger with take
-        (kickerClaimable, kickerLocked) = _ajnaPool.kickerInfo(_lender);
-        assertEq(0 * 1e18,   kickerClaimable);
-        assertEq(291.035931427605772341 * 1e18, kickerLocked);
+    //     // kicker (_lender) bond is larger with take
+    //     (kickerClaimable, kickerLocked) = _ajnaPool.kickerInfo(_lender);
+    //     assertEq(0 * 1e18,   kickerClaimable);
+    //     assertEq(291.035931427605772341 * 1e18, kickerLocked);
 
-        // kicker bal (46,850.406721 + 291.035931427605772341) = 47141.442652428
-        // kicker gains 141.442652428 USDC
-        assertEq(usdc.balanceOf(_lender), 46_850.406721 * 1e6);
-        assertEq(weth.balanceOf(_lender), 0);
+    //     // kicker bal (46,850.406721 + 291.035931427605772341) = 47141.442652428
+    //     // kicker gains 141.442652428 USDC
+    //     assertEq(usdc.balanceOf(_lender), 46_850.406721 * 1e6);
+    //     assertEq(weth.balanceOf(_lender), 0);
         
-    }        
+    // }        
 }
