@@ -25,6 +25,7 @@
 - **A5**: for each `Liquidation` recorded in liquidation mapping (`AuctionsState.liquidations`) the kicker address (`Liquidation.kicker`) has a locked balance (`Kicker.locked`) equal or greater than liquidation bond size (`Liquidation.bondSize`)  
 - **A7**: total bond escrowed accumulator (`AuctionsState.totalBondEscrowed`) should increase when auction is kicked with the difference needed to cover the bond and should decrease only when kicker bonds withdrawn (`Pool.withdrawBonds`). Claimable bonds should be available for withdrawal from pool at any time.  
 - **A8**: Upon a take/arbtake/deposittake the kicker reward <= borrower penalty
+- **A9**: reference prices in liquidation queue shall not decrease
 
 ## Loans
 - **L1**: for each `Loan` in loans array (`LoansState.loans`) starting from index 1, the corresponding address (`Loan.borrower`) is not `0x`, the threshold price (`Loan.thresholdPrice`) is different than 0 and the id mapped in indices mapping (`LoansState.indices`) equals index of loan in loans array.  
