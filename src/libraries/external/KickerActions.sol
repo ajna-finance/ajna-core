@@ -78,10 +78,11 @@ library KickerActions {
     /**************/
 
     // See `IPoolEvents` for descriptions
-    event Kick(address indexed borrower, uint256 debt, uint256 collateral, uint256 bond);
-    event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpRedeemed, uint256 lup);
-    event KickReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 currentBurnEpoch);
+    event BondWithdrawn(address indexed kicker, address indexed reciever, uint256 amount);
     event BucketBankruptcy(uint256 indexed index, uint256 lpForfeited);
+    event Kick(address indexed borrower, uint256 debt, uint256 collateral, uint256 bond);
+    event KickReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 currentBurnEpoch);
+    event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpRedeemed, uint256 lup);
 
     /**************/
     /*** Errors ***/
@@ -240,6 +241,27 @@ library KickerActions {
             _reserveAuctionPrice(block.timestamp),
             latestBurnEpoch
         );
+    }
+
+    function withdrawBonds(
+        AuctionsState storage auctions_,
+        address recipient_,
+        uint256 maxAmount_
+    ) external returns (uint256 amount_) {
+        uint256 claimable = auctions_.kickers[msg.sender].claimable;
+
+        // the amount to claim is constrained by the claimable balance of sender
+        // claiming escrowed bonds is not constraiend by the pool balance
+        amount_ = Maths.min(maxAmount_, claimable);
+
+        // revert if no amount to claim
+        if (amount_ == 0) revert InsufficientLiquidity();
+
+        // decrement total bond escrowed
+        auctions_.totalBondEscrowed             -= amount_;
+        auctions_.kickers[msg.sender].claimable -= amount_;
+
+        emit BondWithdrawn(msg.sender, recipient_, amount_);
     }
 
     /***************************/
