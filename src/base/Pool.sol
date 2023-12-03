@@ -830,24 +830,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /// @inheritdoc IPoolState
     function debtInfo() external view returns (uint256, uint256, uint256, uint256) {
-        uint256 t0Debt   = poolBalances.t0Debt;
-        uint256 inflator = inflatorState.inflator;
-
-        return (
-            Maths.ceilWmul(
-                t0Debt,
-                PoolCommons.pendingInflator(
-                    inflator,
-                    inflatorState.inflatorUpdate,
-                    interestState.interestRate
-                )
-            ),
-            Maths.ceilWmul(t0Debt, inflator),
-            Maths.ceilWmul(poolBalances.t0DebtInAuction, inflator),
-            interestState.t0Debt2ToCollateral
-        );
+        return PoolCommons.debtInfo(poolBalances, inflatorState, interestState);
     }
-
 
     /// @inheritdoc IPoolDerivedState
     function depositUpToIndex(uint256 index_) external view override returns (uint256) {

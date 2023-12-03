@@ -9,7 +9,14 @@ import { IERC20 }    from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 
-import { InterestState, EmaState, PoolState, DepositsState } from '../../interfaces/pool/commons/IPoolState.sol';
+import { 
+    DepositsState, 
+    EmaState, 
+    InflatorState,
+    InterestState, 
+    PoolBalancesState, 
+    PoolState 
+} from '../../interfaces/pool/commons/IPoolState.sol';
 import { IERC3156FlashBorrower }                             from '../../interfaces/pool/IERC3156FlashBorrower.sol';
 
 import { 
@@ -428,6 +435,38 @@ library PoolCommons {
     /**********************/
     /*** View Functions ***/
     /**********************/
+
+    /**
+     *  @notice Calculates pool related debt values.
+     *  @param poolBalances_  Pool debt
+     *  @param inflatorState_ Interest inflator and last update time
+     *  @param interestState_ Interest rate and t0Debt2ToCollateral accumulator
+     *  @return Current amount of debt owed by borrowers in pool.
+     *  @return Debt owed by borrowers based on last inflator snapshot.
+     *  @return Total amount of debt in auction.
+     *  @return t0debt accross all borrowers divided by their collateral, used in determining a collateralization weighted debt.  
+     */
+    function debtInfo(
+        PoolBalancesState memory poolBalances_,
+        InflatorState     memory inflatorState_,
+        InterestState     memory interestState_
+    ) external view returns (uint256, uint256, uint256, uint256) {
+        uint256 t0Debt   = poolBalances_.t0Debt;
+        uint256 inflator = inflatorState_.inflator;
+
+        return (
+            Maths.ceilWmul(
+                t0Debt,
+                Maths.wmul(
+                    inflator,
+                    PRBMathUD60x18.exp((interestState_.interestRate * (block.timestamp - inflatorState_.inflatorUpdate)) / 365 days)
+                )
+            ),
+            Maths.ceilWmul(t0Debt, inflator),
+            Maths.ceilWmul(poolBalances_.t0DebtInAuction, inflator),
+            interestState_.t0Debt2ToCollateral
+        );
+    }
 
     /**
      *  @notice Calculates pool interest factor for a given interest rate and time elapsed since last inflator update.
