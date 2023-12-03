@@ -192,7 +192,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 totalBondEscrowed: 111.910902143138508398 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     10_009.615384615384620000 * 1e18,
-                thresholdPrice:    1_669.031171487100626274 * 1e18,
+                thresholdPrice:    1_668.269230769230770000 * 1e18,
                 neutralPrice:      1_854.787401007794957336 * 1e18
             })
         );
