@@ -952,6 +952,14 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             borrowerCollateralization: 0.992604445165255887 * 1e18
         });
 
+        _addLiquidity({
+            from:    _lender1,
+            amount:  100 * 1e18,
+            index:   _i9_91,
+            lpAward: 99.393308837291078044 * 1e18,
+            newLup:  9.721295865031779605 * 1e18
+        });
+
         // skip ahead so take can be called on the loan
         skip(10 hours);
 
@@ -979,15 +987,6 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             borrowerCollateralization: 0.992553456520532021 * 1e18
         });
 
-        // add liquidity in same block should be possible as debt was not yet settled / bucket is not yet insolvent
-        _addLiquidity({
-            from:    _lender1,
-            amount:  100 * 1e18,
-            index:   _i9_91,
-            lpAward: 99.390961362762982840 * 1e18,
-            newLup:  9.721295865031779605 * 1e18
-        });
-
         // take entire collateral
         _take({
             from:            _lender,
@@ -1002,8 +1001,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       _i9_91,
-            lpBalance:   99.390961362762982840 * 1e18,
-            depositTime: _startTime + 100 days + 10 hours
+            lpBalance:   99.393308837291078044 * 1e18,
+            depositTime: _startTime + 100 days
         });
 
         _assertBorrower({
@@ -1016,15 +1015,15 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         _assertBucket({
             index:        _i9_91,
-            lpBalance:    2_099.299637161849740840 * 1e18,
+            lpBalance:    2_099.301984636377836044 * 1e18,
             collateral:   0,
-            deposit:      2_112.076727894993020025 * 1e18,
-            exchangeRate: 1.006086358758398721 * 1e18
+            deposit:      2_112.078815709953620479 * 1e18,
+            exchangeRate: 1.006086228264005035 * 1e18
         });
 
         // LP forfeited when forgive bad debt should be reflected in BucketBankruptcy event
         vm.expectEmit(true, true, false, true);
-        emit BucketBankruptcy(_i9_91, 2_099.299637161849740840 * 1e18);
+        emit BucketBankruptcy(_i9_91, 2_099.301984636377836044 * 1e18);
         _settle({
             from:        _lender,
             borrower:    _borrower2,
