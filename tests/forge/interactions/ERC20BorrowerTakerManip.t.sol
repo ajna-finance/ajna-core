@@ -285,9 +285,8 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         _ajnaPool.bucketTake(_borrower, false, 3232);
         vm.stopPrank();
 
+        //  proof arbTake is debt bound
         (uint256 borrowerDebt, uint256 borrowerCollateral,) = _ajnaPool.borrowerInfo(_borrower);
-
-        //  proof take is debt bound
         assertEq(borrowerDebt, 0);
         assertEq(borrowerCollateral, 353.135580416835362763 * 1e18);
 
@@ -342,9 +341,8 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         _ajnaPool.take(_borrower, 1000.0 * 1e18, _taker, new bytes(0));
         vm.stopPrank();
 
-        (borrowerDebt, borrowerCollateral,) = _ajnaPool.borrowerInfo(_borrower);
-
         //  proof take is debt bound
+        (borrowerDebt, borrowerCollateral,) = _ajnaPool.borrowerInfo(_borrower);
         assertEq(borrowerDebt, 0);
         assertEq(borrowerCollateral, 353.135580416835362763 * 1e18);
 
