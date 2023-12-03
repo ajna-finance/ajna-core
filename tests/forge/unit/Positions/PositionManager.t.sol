@@ -943,7 +943,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             from:        testMinter,
             borrower:    testBorrowerTwo,
             maxDepth:    10,
-            settledDebt: 6_736.056276265205281160 * 1e18
+            settledDebt: 6_829.316746462954060003 * 1e18
         });
 
         // bucket is insolvent, balances are reset
@@ -2882,7 +2882,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             from:        testMinter,
             borrower:    testBorrowerTwo,
             maxDepth:    10,
-            settledDebt: 6_736.056276265205281160 * 1e18
+            settledDebt: 6_829.316746462954060003 * 1e18
         });
 
         // bucket is insolvent, balances are reset
