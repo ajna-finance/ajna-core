@@ -151,7 +151,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    9.607367579382098527 * 1e18,
+                thresholdPrice:    0,
                 neutralPrice:      0
             })
         );

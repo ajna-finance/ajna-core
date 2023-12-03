@@ -2053,7 +2053,7 @@ contract ERC20PoolLiquidationsLowPriceCollateralTest is ERC20HelperContract {
                 totalBondEscrowed: 8.509085736677607076 * 1e18,
                 auctionPrice:      0 * 1e18,
                 debtInAuction:     761.075765343400230098 * 1e18,
-                thresholdPrice:    0.000015553963016310 * 1e18,
+                thresholdPrice:    0.000015548291115577 * 1e18,
                 neutralPrice:      0.000017286642908996 * 1e18
             })
         );
