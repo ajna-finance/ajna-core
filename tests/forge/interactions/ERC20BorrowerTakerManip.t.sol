@@ -26,10 +26,12 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
     IERC20 private usdc = IERC20(USDC);
 
     ERC20Pool internal _ajnaPool;
+    PoolInfoUtils internal _infoUtils;
 
     address internal _borrower;
     address internal _borrower2;
     address internal _lender;
+    address internal _taker;
 
     uint256 internal _i100_33;
     uint256 internal _i9_91;
@@ -55,9 +57,11 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
+        _taker    = makeAddr("taker");
 
         // fund lenders with quote token
         deal(USDC, _lender, 120_000.0 * 1e6);
+        deal(USDC, _taker,  120_000.0 * 1e6);
 
         // fund borrower
         deal(WETH, _borrower,  2_000.0 * 1e18);
@@ -131,7 +135,6 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         assertEq(10.492466121606186168 * 1e18, neutralPrice);
         assertEq(9.437339490258162853 * 1e18, thresholdPrice);
 
-
         uint256 snapshot = vm.snapshot();
 
         // deposit into 10x price bucket 100_33
@@ -204,149 +207,158 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         // kicker bal (46_894.487336 + 176.641467210861091754 ) = 47071.128803211
         // kicker gains 71.128803211 USDC
         assertEq(usdc.balanceOf(_lender), 46_894.487336 * 1e6);
-        assertEq(weth.balanceOf(_lender), 0)
+        assertEq(weth.balanceOf(_lender), 0);
+    }
+
+    function testTakerArbTakeMaxCollateralDebtBound() external {
+
+        // External market price is 1 WETH @ 15 USDC 
+
+        // assert Borrower balances
+        assertEq(usdc.balanceOf(_borrower), 10_000 * 1e6);
+        assertEq(weth.balanceOf(_borrower), 2000.0 * 1e18);
+
+        // assert Kicker (_lender) balances
+        assertEq(usdc.balanceOf(_lender), 120_000.000000 * 1e6);
+        assertEq(weth.balanceOf(_lender), 0 * 1e18);
+
+        // add liquidity to the Ajna pool
+        vm.startPrank(_lender);
+        usdc.approve(address(_ajnaPool), type(uint256).max);
+        _ajnaPool.addQuoteToken(7_000 * 1e18, _i9_81, type(uint256).max);
+        _ajnaPool.addQuoteToken(11_000 * 1e18, 3700, type(uint256).max);
+        _ajnaPool.addQuoteToken(25_000 * 1e18, 3702, type(uint256).max);
+        _ajnaPool.addQuoteToken(30_000 * 1e18, 3704, type(uint256).max);
+        vm.stopPrank();
+
+        // lender balance after deposits (future balance impacts are due to kicking)
+        assertEq(usdc.balanceOf(_lender), 47_000.000000 * 1e6);
+
+        // borrower2 is a regular borrower in the pool
+        vm.startPrank(_borrower2);
+        weth.approve(address(_ajnaPool), type(uint256).max);
+        usdc.approve(address(_ajnaPool), type(uint256).max);
+        _ajnaPool.drawDebt(_borrower2, 18.0 * 1e18, 7388, 2 * 1e18);
+        vm.stopPrank();
+
+        // exploited borrower draws debt
+        vm.startPrank(_borrower);
+        weth.approve(address(_ajnaPool), type(uint256).max);
+        usdc.approve(address(_ajnaPool), type(uint256).max);
+        _ajnaPool.drawDebt(_borrower, 9_300.0 * 1e18, 7388, 1_000 * 1e18);
+        vm.stopPrank();
+
+        skip(100 days);
+
+        vm.startPrank(_lender);
+        _ajnaPool.kick(_borrower, 3887);
+        vm.stopPrank();
+
+        skip(5 hours);
+
+        (
+            ,
+            ,
+            ,
+            uint256 auctionKickTime,
+            uint256 auctionReferencePrice,
+            uint256 neutralPrice,
+            uint256 thresholdPrice,
+            ,
+            ,
+        ) = _ajnaPool.auctionInfo(_borrower);
+
+        // auction price is below external market price, meaning this is unlikely to happen
+        assertEq(14.838587891915696852 * 1e18, _auctionPrice(auctionReferencePrice, auctionKickTime));
+        assertEq(10.492466121606186168 * 1e18, neutralPrice);
+        assertEq(9.437339490258162853 * 1e18, thresholdPrice);
+
+        uint256 snapshot = vm.snapshot();
+
+        // deposit into 10x price bucket 100_33
+        vm.startPrank(_taker);
+        usdc.approve(address(_ajnaPool), type(uint256).max);
+        _ajnaPool.addQuoteToken(9_599.613713492040293515 * 1e18, 3232, type(uint256).max);
+        vm.stopPrank();
+
+        vm.startPrank(_taker);
+        _ajnaPool.bucketTake(_borrower, false, 3232);
+        vm.stopPrank();
+
+        vm.startPrank(_taker);
+        _ajnaPool.removeCollateral(646.864419583164637237 * 1e18, 3232);
+        vm.stopPrank();
+
+        (
+            uint256 lp,
+            uint256 collateral,
+            uint256 bankruptcyTime,
+            uint256 deposit,
+            uint256 scale
+        ) = _ajnaPool.bucketInfo(3232);
+
+        assertEq(lp, 0.664664189041246530 * 1e18);
+        assertEq(collateral, 0 * 1e18);
+        assertEq(deposit, 0.664664189041246530 * 1e18);
+
+        vm.startPrank(_taker);
+        _ajnaPool.removeQuoteToken(0.664664189041246530 * 1e18, 3232);
+        vm.stopPrank();
+
+        // taker LP post removal
+        (lp, ) = _ajnaPool.lenderInfo(3232, _taker);
+        assertEq(lp, 0 * 1e18);
+
+        // kicker LP post borrower removal, NO LP reward since the bucket price is high
+        (lp, ) = _ajnaPool.lenderInfo(3232, _lender);
+        assertEq(lp, 0);
+
+        // borrower balances
+        assertEq(usdc.balanceOf(_borrower), 19300.000000 * 1e6);
+        assertEq(weth.balanceOf(_borrower), 1000.0 * 1e18);
+
+        // taker 
+        assertEq(usdc.balanceOf(_taker), 110_401.050951 * 1e6);
+        assertEq(weth.balanceOf(_taker), 646.864419583164637237 * 1e18);
+
+        // kicker balances
+        (uint256 kickerClaimable, uint256 kickerLocked) = _ajnaPool.kickerInfo(_lender);
+        assertEq(0, kickerClaimable);
+        assertEq(0, kickerLocked);
+        assertEq(usdc.balanceOf(_lender), 46894.487336 * 1e6);
+        assertEq(weth.balanceOf(_lender), 0); 
+        
+        vm.revertTo(snapshot);
+
+        // borrower uses some of his initial QT to take
+        vm.startPrank(_taker);
+        usdc.approve(address(_ajnaPool), type(uint256).max);
+        _ajnaPool.take(_borrower, 1000.0 * 1e18, _taker, new bytes(0));
+        vm.stopPrank();
+
+        (uint256 borrowerDebt, uint256 borrowerCollateral,) = _ajnaPool.borrowerInfo(_borrower);
+
+        //  proof take is debt bound
+        assertEq(borrowerDebt, 0);
+        assertEq(borrowerCollateral, 353.135580416835362763 * 1e18);
+
+        // borrower lost 506.740552 USDC with take
+        assertEq(usdc.balanceOf(address(_borrower)), 19300.000000 * 1e6); // loss of 253.370276  
+        assertEq(weth.balanceOf(address(_borrower)), 1000.0 * 1e18); // (@ 15 USDC = loss of 362.284776327 USDC)
+
+        // taker balance
+        assertEq(usdc.balanceOf(address(_taker)), 110_446.629724 * 1e6); // loss of 253.370276  
+        assertEq(weth.balanceOf(address(_taker)), 975.847681578175846340 * 1e18); // (@ 15 USDC = loss of 362.284776327 USDC)
+
+        // kicker (_lender) bond is larger with take
+        (kickerClaimable, kickerLocked) = _ajnaPool.kickerInfo(_lender);
+        assertEq(176.641467210861091754 * 1e18,   kickerClaimable);
+        assertEq(0, kickerLocked);
+
+        // kicker bal (46_894.487336 + 176.641467210861091754 ) = 47071.128803211
+        // kicker gains 71.128803211 USDC
+        assertEq(usdc.balanceOf(_lender), 46_894.487336 * 1e6);
+        assertEq(weth.balanceOf(_lender), 0);
     }
     
-    // function testBorrowerLittlePenaltyArbTakeHigherAuctionPrice() external {
-
-    //     // External market price is 1 WETH @ 9.92 USDC 
-
-    //     // assert Borrower balances
-    //     assertEq(usdc.balanceOf(_borrower), 3_000 * 1e6);
-    //     assertEq(weth.balanceOf(_borrower), 2000.0 * 1e18);
-
-    //     // assert Kicker (_lender) balances
-    //     assertEq(usdc.balanceOf(_lender), 120_000.000000 * 1e6);
-    //     assertEq(weth.balanceOf(_lender), 0 * 1e18);
-
-    //     // add liquidity to the Ajna pool
-    //     vm.startPrank(_lender);
-    //     usdc.approve(address(_ajnaPool), type(uint256).max);
-    //     _ajnaPool.addQuoteToken(2_000 * 1e18, _i9_91, type(uint256).max);
-    //     _ajnaPool.addQuoteToken(5_000 * 1e18, 3698, type(uint256).max);
-    //     _ajnaPool.addQuoteToken(11_000 * 1e18, 3700, type(uint256).max);
-    //     _ajnaPool.addQuoteToken(25_000 * 1e18, 3702, type(uint256).max);
-    //     _ajnaPool.addQuoteToken(30_000 * 1e18, 3704, type(uint256).max);
-    //     vm.stopPrank();
-
-    //     // lender balance after deposits (future balance impacts are due to kicking)
-    //     assertEq(usdc.balanceOf(_lender), 47_000.000000 * 1e6);
-
-    //     // borrower2 is a regular borrower in the pool
-    //     vm.startPrank(_borrower2);
-    //     weth.approve(address(_ajnaPool), type(uint256).max);
-    //     usdc.approve(address(_ajnaPool), type(uint256).max);
-    //     _ajnaPool.drawDebt(_borrower2, 19.25 * 1e18, 7388, 2 * 1e18);
-    //     vm.stopPrank();
-
-    //     // borrower is the explointing actor, draws debt
-    //     vm.startPrank(_borrower);
-    //     weth.approve(address(_ajnaPool), type(uint256).max);
-    //     usdc.approve(address(_ajnaPool), type(uint256).max);
-    //     _ajnaPool.drawDebt(_borrower, 9_711.0 * 1e18, 7388, 1_000 * 1e18);
-    //     vm.stopPrank();
-
-    //     skip(100 days);
-
-    //     vm.startPrank(_lender);
-    //     _ajnaPool.kick(_borrower, 3887);
-    //     vm.stopPrank();
-
-    //     skip(6.38 hours);
-
-    //     (
-    //         ,
-    //         ,
-    //         ,
-    //         uint256 auctionKickTime,
-    //         uint256 auctionReferencePrice,
-    //         uint256 neutralPrice,
-    //         ,
-    //         ,
-    //         ,
-    //     ) = _ajnaPool.auctionInfo(_borrower);
-
-    //     assertEq(9.949774553091739272 * 1e18, _auctionPrice(auctionReferencePrice, auctionKickTime));
-    //     assertEq(11.350341791238016630 * 1e18 , neutralPrice);
-
-    //     uint256 snapshot = vm.snapshot();
-
-    //     // deposit into 10x price bucket 100_33
-    //     vm.startPrank(_borrower);
-    //     usdc.approve(address(_ajnaPool), type(uint256).max);
-    //     _ajnaPool.addQuoteToken(9_808 * 1e18, 3232, type(uint256).max);
-    //     vm.stopPrank();
-
-    //     vm.startPrank(_borrower);
-    //     _ajnaPool.bucketTake(_borrower, false, 3232);
-    //     vm.stopPrank();
-
-    //     vm.startPrank(_borrower);
-    //     _ajnaPool.removeCollateral(998.556468141527261759 * 1e18, 3232);
-    //     vm.stopPrank();
-
-    //     (
-    //         uint256 lp,
-    //         uint256 collateral,
-    //         uint256 bankruptcyTime,
-    //         uint256 deposit,
-    //         uint256 scale
-    //     ) = _ajnaPool.bucketInfo(3232);
-
-    //     assertEq(lp, 141437867054818765556);
-    //     assertEq(collateral, 1409693299103984831);
-    //     assertEq(deposit, 2);
-
-    //     // borrower LP post borrower removal
-    //     (lp, ) = _ajnaPool.lenderInfo(3232, _borrower);
-    //     assertEq(lp, 93);
-
-    //     // kicker LP post borrower removal
-    //     (lp, ) = _ajnaPool.lenderInfo(3232, _lender);
-    //     assertEq(lp, 141.437867054818765463 * 1e18);
-
-    //     vm.startPrank(_lender);
-    //     _ajnaPool.removeCollateral(1.409693299103984830 * 1e18, 3232);
-    //     vm.stopPrank();
-
-    //     // kicker LP post kicker removal
-    //     (lp, ) = _ajnaPool.lenderInfo(3232, _lender);
-    //     assertEq(lp, 9);
-
-    //     // borrower lost  97 USDC | 1.443531858 weth (@ 9.92 USDC = 14.319836031 USDC) = 111.319836031 USDC w/ arbTake
-    //     assertEq(usdc.balanceOf(_borrower), 2903.000000 * 1e6);
-    //     assertEq(weth.balanceOf(_borrower), 1998.556468141527261759 * 1e18);
-
-    //     // kicker (_lender) makes less with arb take
-    //     (uint256 kickerClaimable, uint256 kickerLocked) = _ajnaPool.kickerInfo(_lender);
-    //     assertEq(0 * 1e18,   kickerClaimable);
-    //     assertEq(149.593278157167041134 * 1e18, kickerLocked);
-
-    //     // kicker bal (13.984157527 + 46,850.406721 + 149.593278157167041134) = 47013.98415668447013.984156684
-    //     // kicker gains  13.98415668447013 USDC
-    //     assertEq(usdc.balanceOf(_lender), 46_850.406721 * 1e6);
-    //     assertEq(weth.balanceOf(_lender), 1.409693299103984830 * 1e18); // (@ 9.92 USDC = 13.984157527 USDC)
-
-    //     vm.revertTo(snapshot);
-
-    //     // borrower uses some of his initial QT to take
-    //     vm.startPrank(_borrower);
-    //     _ajnaPool.take(_borrower, 1000.0 * 1e18, _borrower, new bytes(0));
-    //     vm.stopPrank();
-
-    //     // borrower lost 238.774554 USDC with take
-    //     assertEq(usdc.balanceOf(address(_borrower)), 2761.225446 * 1e6);
-    //     assertEq(weth.balanceOf(address(_borrower)), 2_000.0 * 1e18);
-
-    //     // kicker (_lender) bond is larger with take
-    //     (kickerClaimable, kickerLocked) = _ajnaPool.kickerInfo(_lender);
-    //     assertEq(0 * 1e18,   kickerClaimable);
-    //     assertEq(291.035931427605772341 * 1e18, kickerLocked);
-
-    //     // kicker bal (46,850.406721 + 291.035931427605772341) = 47141.442652428
-    //     // kicker gains 141.442652428 USDC
-    //     assertEq(usdc.balanceOf(_lender), 46_850.406721 * 1e6);
-    //     assertEq(weth.balanceOf(_lender), 0);
-        
-    // }        
 }
