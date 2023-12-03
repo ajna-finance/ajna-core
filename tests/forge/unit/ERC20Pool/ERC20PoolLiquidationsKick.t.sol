@@ -601,7 +601,7 @@ contract ERC20PoolLiquidationKickFuzzyTest is ERC20FuzzyHelperContract {
         // kick all borrowers
         for (uint256 i = 0; i < noOfBorrowers; i++) {
             _pool.kick(_borrowers[i], 7_388);
-            (uint256 kickTime,,,,,) = _poolUtils.auctionStatus(address(_pool), _borrowers[i]);
+            (uint256 kickTime,,,,,,,,) = _poolUtils.auctionStatus(address(_pool), _borrowers[i]);
 
             // ensure borrower is kicked
             assertEq(kickTime, block.timestamp);

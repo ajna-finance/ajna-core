@@ -305,7 +305,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    5,
-            settledDebt: 6.158815136936785311 * 1e18
+            settledDebt: 7.065836413456418044 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower,

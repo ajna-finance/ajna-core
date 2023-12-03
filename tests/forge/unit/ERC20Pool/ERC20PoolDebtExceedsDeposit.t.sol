@@ -228,7 +228,7 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             from:        _attacker,
             borrower:    _attacker,
             maxDepth:    10,
-            settledDebt: 44.575544496415995711 * 1e18
+            settledDebt: 44.577579955878023186 * 1e18
         });
 
         _assertBucket({
@@ -413,7 +413,7 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             from:        _attacker,
             borrower:    _attacker,
             maxDepth:    10,
-            settledDebt: 479_190.719215249478234659 * 1e18
+            settledDebt: 479_213.056441751898404364 * 1e18
         });
 
         _assertBucket({
@@ -439,7 +439,7 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             from:        _attacker,
             borrower:    _attacker,
             maxDepth:    10,
-            settledDebt: 2_609.098270477324397207 * 1e18
+            settledDebt: 2_609.458188040721145058 * 1e18
         });
 
         _removeAllCollateral({

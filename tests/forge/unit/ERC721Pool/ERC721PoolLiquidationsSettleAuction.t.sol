@@ -160,7 +160,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    1,
-            settledDebt: 2485.445445980762364312 * 1e18
+            settledDebt: 5_000.732078876477988054 * 1e18
         });
 
         // collateral in bucket used to settle auction increased with the amount used to settle debt
@@ -199,7 +199,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    1,
-            settledDebt: 1_369.922338567221579743 * 1e18
+            settledDebt: 2_756.292476715102616970 * 1e18
         });
 
         // no token id left in borrower token ids array
@@ -228,7 +228,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    5,
-            settledDebt: 1_149.439907759708365945 * 1e18
+            settledDebt: 2_312.680420634460396297 * 1e18
         });
 
         _assertBorrower({
@@ -245,7 +245,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    1,
-            settledDebt: 5_004.807692307692310000 * 1e18
+            settledDebt: 10_069.704976226041001321 * 1e18
         });
 
         _assertBucket({
@@ -421,7 +421,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    2,
-            settledDebt: 1_860.706742673273787750 * 1e18
+            settledDebt: 3_744.317995698454162123 * 1e18
         });
         _assertBucket({
             index:        2500,
@@ -456,7 +456,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    2,
-            settledDebt: 5_004.80769230769231 * 1e18
+            settledDebt: 10_071.222443357521878028 * 1e18
         });
 
         _assertBucket({

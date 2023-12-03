@@ -1442,7 +1442,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    10,
-            settledDebt: 7_048.179573549045611871 * 1e18
+            settledDebt: 7_145.761380189146974213 * 1e18
         });
 
         _assertAuction(
@@ -1555,7 +1555,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    0,
-            settledDebt: 4.66826923076923301 * 1e18
+            settledDebt: 4.732901259602669216 * 1e18
         });
         _assertReserveAuction({
             reserves:                   28.161924497603952459 * 1e18,
@@ -1570,7 +1570,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    1,
-            settledDebt: 1_985.159817442235291165 * 1e18
+            settledDebt: 2_012.644287642503398926 * 1e18
         });
 
         _assertAuction(
@@ -1607,7 +1607,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    5,
-            settledDebt: 5_058.351486876041087696 * 1e18
+            settledDebt: 5_128.384191287040906071 * 1e18
         });
 
         _assertAuction(
@@ -2222,7 +2222,7 @@ contract ERC20PoolLiquidationTakeFuzzyTest is ERC20FuzzyHelperContract {
 
         // skip some time to make auction takeable
         skip(skipTimeToTake);
-        (,,,, uint256 auctionPrice, ) = _poolUtils.auctionStatus(address(_pool), _borrower);
+        (,,,, uint256 auctionPrice, , , , ) = _poolUtils.auctionStatus(address(_pool), _borrower);
 
         uint256 minCollateralTakeAmount = Maths.max(Maths.wdiv(1, auctionPrice), 1);
 

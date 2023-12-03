@@ -339,7 +339,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    10,
-            settledDebt: 7_246.629636396779610400 * 1e18
+            settledDebt: 7_349.714603676187901799 * 1e18
         });
 
         _assertAuction(
@@ -541,7 +541,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    10,
-            settledDebt: 9_288.923076923076927360 * 1e18
+            settledDebt: 9_420.576190285556153618 * 1e18
         });
 
         _assertAuction(
@@ -607,7 +607,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         });
     }
 
-    function testSettleAuctionReverts() external {
+    function testSettleAuctionReverts() external tearDown {
         // Borrower2 borrows
         _borrow({
             from:       _borrower2,
@@ -774,7 +774,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    10,
-            settledDebt: 8_215.588590626259842303 * 1e18
+            settledDebt: 8_329.440105291957701961 * 1e18
         });
 
         // bucket is insolvent, balances are resetted
@@ -1028,7 +1028,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    10,
-            settledDebt: 6_736.056276265205281160 * 1e18
+            settledDebt: 6_829.316746462954060003 * 1e18
         });
 
         // bucket is insolvent, balances are resetted
@@ -1158,7 +1158,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
             from:        actor6,
             borrower:    actor2,
             maxDepth:    2,
-            settledDebt: 56_458_180_321.630022869105202974 * 1e18
+            settledDebt: 59_474_936_428.593370593619524963 * 1e18
         });
 
         // almost all the reserves are used to settle debt
@@ -1243,7 +1243,7 @@ contract ERC20PoolLiquidationSettleFuzzyTest is ERC20FuzzyHelperContract {
         skip(wait);
 
         // prevent trying to deposit into a bucket priced higher than the auction price
-        (,,,, uint256 auctionPrice, ) = _poolUtils.auctionStatus(address(_pool), _borrower);
+        (,,,, uint256 auctionPrice,,,,) = _poolUtils.auctionStatus(address(_pool), _borrower);
         if (_priceAt(bucketIndex) > auctionPrice ) {
             if (auctionPrice > MIN_PRICE) bucketIndex = _indexOf(auctionPrice) + 1;
             else bucketIndex = 7388;

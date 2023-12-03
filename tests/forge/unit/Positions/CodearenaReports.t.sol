@@ -163,7 +163,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
             from:        testMinter,
             borrower:    testBorrowerTwo,
             maxDepth:    10,
-            settledDebt: 5_678.605678397318135315 * 1e18
+            settledDebt: 5_757.196206294532254049 * 1e18
         });
 
         // bucket is insolvent, balances are reset
