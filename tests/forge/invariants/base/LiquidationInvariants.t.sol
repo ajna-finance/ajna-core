@@ -21,6 +21,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
         _invariant_A5();
         _invariant_A7();
         _invariant_A8();
+        // _invariant_A9(); // TODO: uncomment once other invariant issues are sorted
     }
 
     /// @dev checks sum of all borrower's t0debt is equals to total pool t0debtInAuction
@@ -139,6 +140,16 @@ abstract contract LiquidationInvariants is BasicInvariants {
         console.log("Kicker Reward    -->", kickerReward);
 
         require(kickerReward <= borrowerPenalty, "Auction Invariant A8");
+    }
+
+    /// @dev reference prices in liquidation queue shall not decrease
+    function _invariant_A9() internal view {
+        (,,,, uint256 lastReferencePrice,,, address nextBorrower,,) = _pool.auctionInfo(address(0));
+        while (nextBorrower != address(0)) {
+            (,,,, uint256 referencePrice,,,,,) = _pool.auctionInfo(nextBorrower);
+            require(lastReferencePrice <= referencePrice, "Auction Invariant A9");
+            lastReferencePrice = referencePrice;
+        }
     }
     
     function invariant_call_summary() public virtual override useCurrentTimestamp {
