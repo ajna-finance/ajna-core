@@ -1235,10 +1235,21 @@ contract ERC20PoolLiquidationSettleFuzzyTest is ERC20FuzzyHelperContract {
         });
     }
 
-    function testSettleWithDepositFuzzy(uint256 quoteAmount, uint256 bucketIndex) external {
+    function testSettleWithDepositFuzzy(uint256 quoteAmount, uint256 bucketIndex, uint256 wait) external {
         quoteAmount = bound(quoteAmount, 1 * 1e18, 500_000 * 1e18);
         bucketIndex = bound(bucketIndex, 1, 7388);
+        wait        = bound(wait, 0, 3600 * 6); // 0-6 hours
 
+        // decrease the auction price
+        skip(wait);
+
+        // prevent trying to deposit into a bucket priced higher than the auction price
+        (,,,, uint256 auctionPrice, ) = _poolUtils.auctionStatus(address(_pool), _borrower);
+        if (_priceAt(bucketIndex) > auctionPrice ) {
+            if (auctionPrice > MIN_PRICE) bucketIndex = _indexOf(auctionPrice) + 1;
+            else bucketIndex = 7388;
+        }
+            
         // add some deposits to be used to settle auction
         _addLiquidityNoEventCheck({
             from:   _lender,
