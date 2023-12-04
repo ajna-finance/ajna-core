@@ -254,7 +254,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         _ajnaPool.kick(_borrower, 3887);
         vm.stopPrank();
 
-        skip(5 hours);
+        skip(6 hours);
 
         (
             ,
@@ -269,7 +269,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         ) = _ajnaPool.auctionInfo(_borrower);
 
         // auction price is below external market price, meaning this is unlikely to happen
-        assertEq(14.838587891915696852 * 1e18, _auctionPrice(auctionReferencePrice, auctionKickTime));
+        assertEq(10.492466121606186168 * 1e18, _auctionPrice(auctionReferencePrice, auctionKickTime));
         assertEq(10.492466121606186168 * 1e18, neutralPrice);
         assertEq(9.437339490258162853 * 1e18, thresholdPrice);
 
@@ -289,10 +289,10 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         //  proof arbTake is debt bound
         (uint256 borrowerDebt, uint256 borrowerCollateral,) = _ajnaPool.borrowerInfo(_borrower);
         assertEq(borrowerDebt, 0);
-        assertEq(borrowerCollateral, 353.135580416835362763 * 1e18);
+        assertEq(borrowerCollateral, 85.190865458966024132 * 1e18);
 
         vm.startPrank(_taker);
-        _ajnaPool.removeCollateral(646.864419583164637237 * 1e18, 3232);
+        _ajnaPool.removeCollateral(914.809134541033975868 * 1e18, 3232);
         vm.stopPrank();
 
         (
@@ -303,12 +303,12 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
             uint256 scale
         ) = _ajnaPool.bucketInfo(3232);
 
-        assertEq(lp, 0.664664189041246530 * 1e18);
+        assertEq(lp, 0.615356419188492954 * 1e18);
         assertEq(collateral, 0 * 1e18);
-        assertEq(deposit, 0.664664189041246530 * 1e18);
+        assertEq(deposit, 0.615356419188492955 * 1e18);
 
         vm.startPrank(_taker);
-        _ajnaPool.removeQuoteToken(0.664664189041246530 * 1e18, 3232);
+        _ajnaPool.removeQuoteToken(0.615356419188492955 * 1e18, 3232);
         vm.stopPrank();
 
         // taker LP post removal
@@ -323,9 +323,10 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         assertEq(usdc.balanceOf(_borrower), 19300.000000 * 1e6);
         assertEq(weth.balanceOf(_borrower), 1000.0 * 1e18);
 
+        uint256 arbtakeCollateralQty = 914.809134541033975868 * 1e18;
         // taker 
-        assertEq(usdc.balanceOf(_taker), 110_401.050951 * 1e6);
-        assertEq(weth.balanceOf(_taker), 646.864419583164637237 * 1e18);
+        assertEq(usdc.balanceOf(_taker), 110_401.001643 * 1e6);
+        assertEq(weth.balanceOf(_taker), arbtakeCollateralQty);
 
         // kicker balances
         (uint256 kickerClaimable, uint256 kickerLocked) = _ajnaPool.kickerInfo(_lender);
@@ -346,25 +347,29 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         //  proof take is debt bound
         (borrowerDebt, borrowerCollateral,) = _ajnaPool.borrowerInfo(_borrower);
         assertEq(borrowerDebt, 0);
-        assertEq(borrowerCollateral, 353.135580416835362763 * 1e18);
+        assertEq(borrowerCollateral, 87.784075941295741767 * 1e18);
 
         // borrower lost 506.740552 USDC with take
         assertEq(usdc.balanceOf(address(_borrower)), 19300.000000 * 1e6); // loss of 253.370276  
         assertEq(weth.balanceOf(address(_borrower)), 1000.0 * 1e18); // (@ 15 USDC = loss of 362.284776327 USDC)
 
+        uint256 takeCollateralQty = 912.215924058704258233 * 1e18;
         // taker balance
-        assertEq(usdc.balanceOf(address(_taker)), 110401.445455 * 1e6); // loss of 253.370276  
-        assertEq(weth.balanceOf(address(_taker)), 646.864419583164637237 * 1e18); // (@ 15 USDC = loss of 362.284776327 USDC)
+        assertEq(usdc.balanceOf(address(_taker)), 110428.605321 * 1e6); // loss of 253.370276  
+        assertEq(weth.balanceOf(address(_taker)), takeCollateralQty); // (@ 15 USDC = loss of 362.284776327 USDC)
 
         // kicker (_lender) bond is larger with take
         (kickerClaimable, kickerLocked) = _ajnaPool.kickerInfo(_lender);
-        assertEq(0,   kickerClaimable);
+        assertEq(105.512663134802327739 * 1e18,   kickerClaimable);
         assertEq(0, kickerLocked);
 
         // kicker bal (46_894.487336 + 176.641467210861091754 ) = 47071.128803211
         // kicker gains 71.128803211 USDC
         assertEq(usdc.balanceOf(_lender), 46_894.487336 * 1e6);
         assertEq(weth.balanceOf(_lender), 0);
+
+        // arbTake collateral is greater than take collateral
+        assertGt(arbtakeCollateralQty, takeCollateralQty+1);
     }
     
 }
