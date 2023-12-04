@@ -1843,7 +1843,10 @@ contract RegressionTestReserveEvmRevertERC721Pool is ReserveERC721PoolInvariants
         invariant_reserves();
     }
 
-    // FIXME: div/0 when kicking
+    /*
+        Test failed because kick was not reverting with BorrowerOk when debt was 0 but price was MIN_PRICE.
+        Fixed by updating PoolHelper._isCollateralized to handle that use case.
+    */
     function test_regression_kick_after_reserve_auction() external {
         _reserveERC721PoolHandler.addQuoteToken(115792089237316195423570985008687907853269984665640564039457584007913129639935, 6935739002941423355049, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 3);
         _reserveERC721PoolHandler.bucketTake(1, 68298831663979631596289246956670551985825478107896188, true, 873193787008170413724397952426848542555828766842772550062607158488206182552, 1755961235259972539);

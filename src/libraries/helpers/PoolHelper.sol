@@ -201,8 +201,8 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 price_,
         uint8 type_
     ) pure returns (bool) {
-        // `False` if LUP = MIN_PRICE
-        if (price_ == MIN_PRICE) return false;
+        // `False` if LUP = MIN_PRICE unless there is no debt
+        if (price_ == MIN_PRICE && debt_ != 0) return false;
 
         // Use collateral floor for NFT pools
         if (type_ == uint8(PoolType.ERC721)) {
@@ -210,7 +210,7 @@ import { Maths }   from '../internal/Maths.sol';
             collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
         }
         
-       return Maths.wmul(collateral_, price_) >= Maths.wmul(COLLATERALIZATION_FACTOR, debt_);
+        return Maths.wmul(collateral_, price_) >= Maths.wmul(COLLATERALIZATION_FACTOR, debt_);
     }
 
     /**
