@@ -34,6 +34,7 @@ struct SettleResult {
     uint256 collateralRemaining; // [WAD] The amount of borrower collateral left after settle
     uint256 collateralSettled;   // [WAD] The amount of borrower collateral settled
     uint256 t0DebtSettled;       // [WAD] The amount of t0 debt settled
+    uint256 debtSettled;         // [WAD] The amount of actual debt settled
 }
 
 /// @dev Struct used to return result of `TakerAction.take` and `TakerAction.bucketTake` actions.

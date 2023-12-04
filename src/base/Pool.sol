@@ -617,7 +617,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState_
     ) internal {
         // update in memory pool state struct
-        poolState_.debt            -= Maths.wmul(result_.t0DebtSettled, poolState_.inflator);
+        poolState_.debt            -= result_.debtSettled;
         poolState_.t0Debt          -= result_.t0DebtSettled;
         poolState_.t0DebtInAuction -= result_.t0DebtSettled;
         poolState_.collateral      -= result_.collateralSettled;
