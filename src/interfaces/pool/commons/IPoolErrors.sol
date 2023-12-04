@@ -14,6 +14,7 @@ interface IPoolErrors {
      *  @notice Adding liquidity above current auction price.
      */
     error AddAboveAuctionPrice();
+
     /**
      *  @notice `LP` allowance is already set by the owner.
      */
