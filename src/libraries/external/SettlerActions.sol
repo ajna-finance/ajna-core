@@ -146,7 +146,7 @@ library SettlerActions {
                 uint256 t0ReserveSettleAmount = Maths.min(Maths.floorWdiv(assets - liabilities, poolState_.inflator), borrower.t0Debt);
 
                 // if the settlement phase of 144 hours has not ended, settle up to the borrower reserve limit
-                if((block.timestamp - kickTime < 144 hours) && (Deposits.treeSum(deposits_) > 0)) {
+                if ((block.timestamp - kickTime < 144 hours) && (Deposits.treeSum(deposits_) > 0)) {
                     t0ReserveSettleAmount = Maths.min(t0ReserveSettleAmount, borrower.t0ReserveSettleAmount);
                     borrower.t0ReserveSettleAmount -= t0ReserveSettleAmount;
                 }
@@ -300,12 +300,12 @@ library SettlerActions {
             auctions_.head = address(0);
             auctions_.tail = address(0);
         }
-        else if(auctions_.head == borrower_) {
+        else if (auctions_.head == borrower_) {
             // liquidation is the head
             auctions_.liquidations[liquidation.next].prev = address(0);
             auctions_.head = liquidation.next;
         }
-        else if(auctions_.tail == borrower_) {
+        else if (auctions_.tail == borrower_) {
             // liquidation is the tail
             auctions_.liquidations[liquidation.prev].next = address(0);
             auctions_.tail = liquidation.prev;

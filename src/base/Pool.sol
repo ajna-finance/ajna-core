@@ -545,10 +545,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // Calculate prior pool debt
             poolState_.debt = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
 
-	        // calculate elapsed time since inflator was last updated
+            // calculate elapsed time since inflator was last updated
             uint256 elapsed = block.timestamp - inflatorState.inflatorUpdate;
 
-	        // set isNewInterestAccrued field to true if elapsed time is not 0, indicating that new interest may have accrued
+            // set isNewInterestAccrued field to true if elapsed time is not 0, indicating that new interest may have accrued
             poolState_.isNewInterestAccrued = elapsed != 0;
 
             // if new interest may have accrued, call accrueInterest function and update inflator and debt fields of poolState_ struct
