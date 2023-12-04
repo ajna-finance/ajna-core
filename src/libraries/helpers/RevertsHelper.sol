@@ -78,7 +78,7 @@ import { Maths }    from '../internal/Maths.sol';
 
 /**
      *  @notice  Check if provided price is above current auction price.
-     *  @notice  Prevents manipulative deposir and arb takes.
+     *  @notice  Prevents manipulative deposits and arbTakes.
      *  @dev     Reverts with `AddAboveAuctionPrice` if price is above head of auction queue.
      *  @param index_    Identifies bucket price to be compared with current auction price.
      *  @param auctions_ Auctions data.
