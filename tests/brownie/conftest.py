@@ -123,7 +123,7 @@ class PoolHelper:
         return Contract(self.pool.collateralAddress())
 
     def debt(self):
-        (debt, accruedDebt, debtInAuction) = self.pool.debtInfo()
+        (debt, accruedDebt, debtInAuction, t0Debt2ToCollateral) = self.pool.debtInfo()
         return debt
 
     def hpb(self):

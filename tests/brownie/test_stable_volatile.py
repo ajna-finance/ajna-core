@@ -58,7 +58,7 @@ def lenders(ajna_protocol, scaled_pool):
 def borrowers(ajna_protocol, scaled_pool):
     collateral_client = ajna_protocol.get_token(scaled_pool.collateralAddress())
     dai_client = ajna_protocol.get_token(scaled_pool.quoteTokenAddress())
-    amount = int(150_000 * 10**18 / NUM_BORROWERS)
+    amount = int(100_000 * 10**18 / NUM_BORROWERS)
     borrowers = []
     print("Initializing borrowers")
     for _ in range(NUM_BORROWERS):
