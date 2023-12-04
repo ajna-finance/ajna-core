@@ -154,7 +154,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    9.417044136515672180 * 1e18,
+                thresholdPrice:    0,
                 neutralPrice:      0
             })
         );
@@ -242,7 +242,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 totalBondEscrowed: 105.285754181824258217 * 1e18,
                 auctionPrice:      2.617475419583478700 * 1e18,
                 debtInAuction:     9_417.044136515672180411 * 1e18,
-                thresholdPrice:    9.417527901208315548 * 1e18,
+                thresholdPrice:    9.417044136515672180 * 1e18,
                 neutralPrice:      10.469901678333914800 * 1e18
             })
         );
@@ -277,7 +277,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 totalBondEscrowed: 128.697166052318027786 * 1e18,
                 auctionPrice:      2.617475419583478700 * 1e18,
                 debtInAuction:     7_346.958977412026357603 * 1e18,
-                thresholdPrice:    36.734794887060131788 * 1e18,
+                thresholdPrice:    9.417044136515672180 * 1e18,
                 neutralPrice:      10.469901678333914800 * 1e18
             })
         );
@@ -436,7 +436,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    9.417044136515672180 * 1e18,
+                thresholdPrice:    0,
                 neutralPrice:      0
             })
         );
@@ -525,7 +525,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 totalBondEscrowed: 105.285754181824258217 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     9_417.044136515672180411 * 1e18,
-                thresholdPrice:    9.420576190285556153 * 1e18,
+                thresholdPrice:    9.417044136515672180 * 1e18,
                 neutralPrice:      10.469901678333914800 * 1e18
             })
         );
@@ -665,6 +665,23 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             borrower: _borrower2
         });
 
+        _addLiquidityWithPenalty({
+            from:        _lender1,
+            amount:      100 * 1e18,
+            amountAdded: 99.995890410958904100 * 1e18,
+            index:       _i9_52,
+            lpAward:     99.995890410958904100 * 1e18,
+            newLup:      9.721295865031779605 * 1e18
+        });
+ 
+        _addLiquidity({
+            from:    _lender1, 
+            amount:  100 * 1e18, 
+            index:   _i9_91, 
+            lpAward: 99.393308837291078044 * 1e18,
+            newLup:  9.721295865031779605 * 1e18
+        });
+
         // skip ahead so take can be called on the loan
         skip(12.5 hours);
 
@@ -680,7 +697,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 totalBondEscrowed: 105.285754181824258217 * 1e18,
                 auctionPrice:      1.100512848671229788 * 1e18,
                 debtInAuction:     9_417.044136515672180411 * 1e18,
-                thresholdPrice:    9.417648846264483444 * 1e18,
+                thresholdPrice:    9.417044136515672180 * 1e18,
                 neutralPrice:      10.469901678333914800 * 1e18
             })
         );
@@ -690,23 +707,6 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             borrowerCollateral:        1_000 * 1e18,
             borrowert0Np:              10.327456248811402322 * 1e18,
             borrowerCollateralization: 0.992540709768608251 * 1e18
-        });
-
-        _addLiquidityWithPenalty({
-            from:        _lender1,
-            amount:      100 * 1e18,
-            amountAdded: 99.995890410958904100 * 1e18,
-            index:       _i9_52,
-            lpAward:     99.995890410958904100 * 1e18,
-            newLup:      9.721295865031779605 * 1e18
-        });
- 
-        _addLiquidity({
-            from:    _lender1, 
-            amount:  100 * 1e18, 
-            index:   _i9_91, 
-            lpAward: 99.390782962995294778 * 1e18,
-            newLup:  9.721295865031779605 * 1e18
         });
 
         // take entire collateral
@@ -748,8 +748,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       _i9_91,
-            lpBalance:   99.390782962995294778 * 1e18,
-            depositTime: _startTime + 100 days + 12.5 hours
+            lpBalance:   99.393308837291078044 * 1e18,
+            depositTime: _startTime + 100 days
         });
 
         // settle to make buckets insolvent
@@ -767,7 +767,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         // LP forfeited when forgive bad debt should be reflected in BucketBankruptcy event
         vm.expectEmit(true, true, false, true);
-        emit BucketBankruptcy(_i9_91, 2_099.299458762082052778 * 1e18);
+        emit BucketBankruptcy(_i9_91, 2_099.301984636377836044 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit BucketBankruptcy(_i9_81, 4_999.771689497716895000 * 1e18);
         _settle({
@@ -796,7 +796,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             lender:      _lender1,
             index:       _i9_91,
             lpBalance:   0,
-            depositTime: _startTime + 100 days + 12.5 hours
+            depositTime: _startTime + 100 days
         });
 
         // cannot add liquidity in same block when bucket marked insolvent
@@ -885,8 +885,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    10_999.497716894977169000 * 1e18,
             collateral:   0 * 1e18,
-            deposit:      9_883.914103612419284122 * 1e18,
-            exchangeRate: 0.898578676772754183 * 1e18
+            deposit:      9_883.913692653515172210 * 1e18,
+            exchangeRate: 0.898578639411147800 * 1e18
         });
 
         _pool.moveQuoteToken(10000000000 * 1e18, _i9_72, _i9_91, type(uint256).max);
@@ -952,6 +952,14 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             borrowerCollateralization: 0.992604445165255887 * 1e18
         });
 
+        _addLiquidity({
+            from:    _lender1,
+            amount:  100 * 1e18,
+            index:   _i9_91,
+            lpAward: 99.393308837291078044 * 1e18,
+            newLup:  9.721295865031779605 * 1e18
+        });
+
         // skip ahead so take can be called on the loan
         skip(10 hours);
 
@@ -967,7 +975,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 totalBondEscrowed: 105.285754181824258217 * 1e18,
                 auctionPrice:      2.617475419583478700 * 1e18,
                 debtInAuction:     9_417.044136515672180411 * 1e18,
-                thresholdPrice:    9.417527901208315548 * 1e18,
+                thresholdPrice:    9.417044136515672180 * 1e18,
                 neutralPrice:      10.469901678333914800 * 1e18
             })
         );
@@ -977,15 +985,6 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             borrowerCollateral:        1_000 * 1e18,
             borrowert0Np:              10.327456248811402322 * 1e18,
             borrowerCollateralization: 0.992553456520532021 * 1e18
-        });
-
-        // add liquidity in same block should be possible as debt was not yet settled / bucket is not yet insolvent
-        _addLiquidity({
-            from:    _lender1,
-            amount:  100 * 1e18,
-            index:   _i9_91,
-            lpAward: 99.390961362762982840 * 1e18,
-            newLup:  9.721295865031779605 * 1e18
         });
 
         // take entire collateral
@@ -1002,8 +1001,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       _i9_91,
-            lpBalance:   99.390961362762982840 * 1e18,
-            depositTime: _startTime + 100 days + 10 hours
+            lpBalance:   99.393308837291078044 * 1e18,
+            depositTime: _startTime + 100 days
         });
 
         _assertBorrower({
@@ -1016,15 +1015,15 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         _assertBucket({
             index:        _i9_91,
-            lpBalance:    2_099.299637161849740840 * 1e18,
+            lpBalance:    2_099.301984636377836044 * 1e18,
             collateral:   0,
-            deposit:      2_112.076727894993020025 * 1e18,
-            exchangeRate: 1.006086358758398721 * 1e18
+            deposit:      2_112.078815709953620479 * 1e18,
+            exchangeRate: 1.006086228264005035 * 1e18
         });
 
         // LP forfeited when forgive bad debt should be reflected in BucketBankruptcy event
         vm.expectEmit(true, true, false, true);
-        emit BucketBankruptcy(_i9_91, 2_099.299637161849740840 * 1e18);
+        emit BucketBankruptcy(_i9_91, 2_099.301984636377836044 * 1e18);
         _settle({
             from:        _lender,
             borrower:    _borrower2,
@@ -1235,10 +1234,21 @@ contract ERC20PoolLiquidationSettleFuzzyTest is ERC20FuzzyHelperContract {
         });
     }
 
-    function testSettleWithDepositFuzzy(uint256 quoteAmount, uint256 bucketIndex) external {
+    function testSettleWithDepositFuzzy(uint256 quoteAmount, uint256 bucketIndex, uint256 wait) external {
         quoteAmount = bound(quoteAmount, 1 * 1e18, 500_000 * 1e18);
         bucketIndex = bound(bucketIndex, 1, 7388);
+        wait        = bound(wait, 0, 3600 * 6); // 0-6 hours
 
+        // decrease the auction price
+        skip(wait);
+
+        // prevent trying to deposit into a bucket priced higher than the auction price
+        (,,,, uint256 auctionPrice,,,,) = _poolUtils.auctionStatus(address(_pool), _borrower);
+        if (_priceAt(bucketIndex) > auctionPrice ) {
+            if (auctionPrice > MIN_PRICE) bucketIndex = _indexOf(auctionPrice) + 1;
+            else bucketIndex = 7388;
+        }
+            
         // add some deposits to be used to settle auction
         _addLiquidityNoEventCheck({
             from:   _lender,

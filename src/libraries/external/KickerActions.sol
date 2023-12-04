@@ -78,10 +78,11 @@ library KickerActions {
     /**************/
 
     // See `IPoolEvents` for descriptions
-    event Kick(address indexed borrower, uint256 debt, uint256 collateral, uint256 bond);
-    event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpRedeemed, uint256 lup);
-    event KickReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 currentBurnEpoch);
+    event BondWithdrawn(address indexed kicker, address indexed reciever, uint256 amount);
     event BucketBankruptcy(uint256 indexed index, uint256 lpForfeited);
+    event Kick(address indexed borrower, uint256 debt, uint256 collateral, uint256 bond);
+    event KickReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 currentBurnEpoch);
+    event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpRedeemed, uint256 lup);
 
     /**************/
     /*** Errors ***/
@@ -240,6 +241,27 @@ library KickerActions {
             _reserveAuctionPrice(block.timestamp),
             latestBurnEpoch
         );
+    }
+
+    function withdrawBonds(
+        AuctionsState storage auctions_,
+        address recipient_,
+        uint256 maxAmount_
+    ) external returns (uint256 amount_) {
+        uint256 claimable = auctions_.kickers[msg.sender].claimable;
+
+        // the amount to claim is constrained by the claimable balance of sender
+        // claiming escrowed bonds is not constraiend by the pool balance
+        amount_ = Maths.min(maxAmount_, claimable);
+
+        // revert if no amount to claim
+        if (amount_ == 0) revert InsufficientLiquidity();
+
+        // decrement total bond escrowed
+        auctions_.totalBondEscrowed             -= amount_;
+        auctions_.kickers[msg.sender].claimable -= amount_;
+
+        emit BondWithdrawn(msg.sender, recipient_, amount_);
     }
 
     /***************************/
@@ -410,7 +432,6 @@ library KickerActions {
         // record liquidation info
         liquidation_.kicker         = msg.sender;
         liquidation_.kickTime       = uint96(block.timestamp);
-        liquidation_.referencePrice = SafeCast.toUint96(referencePrice_);
         liquidation_.bondSize       = SafeCast.toUint160(bondSize_);
         liquidation_.bondFactor     = SafeCast.toUint96(bondFactor_);
         liquidation_.neutralPrice   = SafeCast.toUint96(neutralPrice_);
@@ -422,11 +443,14 @@ library KickerActions {
         // update auctions queue
         if (auctions_.head != address(0)) {
             // other auctions in queue, liquidation doesn't exist or overwriting.
-            auctions_.liquidations[auctions_.tail].next = borrowerAddress_;
-            liquidation_.prev = auctions_.tail;
+            address tail = auctions_.tail;
+            auctions_.liquidations[tail].next = borrowerAddress_;
+            liquidation_.prev = tail;
+            liquidation_.referencePrice = SafeCast.toUint96(Maths.max(referencePrice_, auctions_.liquidations[tail].referencePrice));
         } else {
             // first auction in queue
             auctions_.head = borrowerAddress_;
+            liquidation_.referencePrice = SafeCast.toUint96(referencePrice_);
         }
         // update liquidation with the new ordering
         auctions_.tail = borrowerAddress_;

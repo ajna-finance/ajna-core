@@ -179,7 +179,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
     }
 
     function testKickAndSettleSubsetPoolFractionalCollateral() external tearDown {
-        // settle borrower 2
+        // settle borrower 2, whose neutral price has been carried from borrower 1
         _assertAuction(
             AuctionParams({
                 borrower:          _borrower2,
@@ -188,11 +188,11 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 bondSize:          55.955451071569254199 * 1e18,
                 bondFactor:        0.011180339887498948 * 1e18,
                 kickTime:          _startTime,
-                referencePrice:    1_854.787401007794957336 * 1e18,
+                referencePrice:    2_782.181101511692436004 * 1e18,
                 totalBondEscrowed: 111.910902143138508398 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     10_009.615384615384620000 * 1e18,
-                thresholdPrice:    1_669.031171487100626274 * 1e18,
+                thresholdPrice:    1_668.269230769230770000 * 1e18,
                 neutralPrice:      1_854.787401007794957336 * 1e18
             })
         );

@@ -318,7 +318,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             uint256 auctionKickTime,
             uint256 auctionReferencePrice,
             uint256 auctionNeutralPrice,
-            uint256 auctionThresholdPrice,
+            ,
             ,
             ,
         ) = _pool.auctionInfo(_borrower);
@@ -374,7 +374,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         }
 
         // confirm LP were awarded to the kicker
-        (address kicker, , , uint256 kickTime, uint256 referencePrice, uint256 neutralPrice, uint256 thresholdPrice, , ,) = _pool.auctionInfo(_borrower);
+        (address kicker, , , uint256 kickTime, uint256 referencePrice, uint256 neutralPrice, , , ,) = _pool.auctionInfo(_borrower);
         uint256 auctionPrice = _auctionPrice(referencePrice, kickTime);
         if (auctionPrice < neutralPrice) {
             uint256 kickerLP = _kickerLP(bucketId);
@@ -445,7 +445,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint256 auctionDebt_,
         uint256 auctionCollateral_
     ){
-        (, , , uint256 kickTime, uint256 referencePrice, , uint256 thresholdPrice, , , ) = _pool.auctionInfo(_borrower);
+        (, , , uint256 kickTime, uint256 referencePrice, , , , , ) = _pool.auctionInfo(_borrower);
         uint256 lastAuctionPrice = _auctionPrice(referencePrice, kickTime);
         (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         if (secondsToSkip != 0) {

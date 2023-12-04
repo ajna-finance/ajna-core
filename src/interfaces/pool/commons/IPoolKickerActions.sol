@@ -35,11 +35,12 @@ interface IPoolKickerActions {
      *  @notice Called by kickers to withdraw their auction bonds (the amount of quote tokens that are not locked in active auctions).
      *  @param  recipient_ Address to receive claimed bonds amount.
      *  @param  maxAmount_ The max amount to withdraw from auction bonds (`WAD` precision). Constrained by claimable amounts and liquidity.
+     *  @return withdrawnAmount_ The amount withdrawn (`WAD` precision).
      */
     function withdrawBonds(
         address recipient_,
         uint256 maxAmount_
-    ) external;
+    ) external returns (uint256 withdrawnAmount_);
 
     /***********************/
     /*** Reserve Auction ***/

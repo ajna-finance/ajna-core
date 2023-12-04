@@ -149,7 +149,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    9.462708682436276194 * 1e18,
+                thresholdPrice:    0,
                 neutralPrice:      0
             })
         );
@@ -286,7 +286,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    9.462708682436276194 * 1e18,
+                thresholdPrice:    0,
                 neutralPrice:      0
             })
         );
@@ -353,7 +353,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    9.462708682436276194 * 1e18,
+                thresholdPrice:    0,
                 neutralPrice:      0
             })
         );
@@ -485,19 +485,17 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         // force pool interest accumulation 
         skip(14 hours);
 
-        _addLiquidity({
+        _addCollateralWithoutCheckingLP({
             from:    _lender1,
             amount:  1 * 1e18,
-            index:   _i9_91,
-            lpAward: 0.993924947593286866 * 1e18,
-            newLup:  9.721295865031779605 * 1e18
+            index:   _i9_91
         });
 
         _assertPool(
             PoolParams({
                 htp:                  0,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             73_107.387163902795349310 * 1e18,
+                poolSize:             73_106.387204998685760269 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 1_009.547930285248351849 * 1e18,
                 poolDebt:             9_436.648192532092411327 * 1e18,
