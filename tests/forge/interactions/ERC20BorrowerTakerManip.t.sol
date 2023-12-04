@@ -282,6 +282,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         vm.stopPrank();
 
         vm.startPrank(_taker);
+        //Take Penalty Factor 0.016770509831248422
         _ajnaPool.bucketTake(_borrower, false, 3232);
         vm.stopPrank();
 
@@ -338,6 +339,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         // borrower uses some of his initial QT to take
         vm.startPrank(_taker);
         usdc.approve(address(_ajnaPool), type(uint256).max);
+        //Take Penalty Factor 0.016770509831248422
         _ajnaPool.take(_borrower, 1000.0 * 1e18, _taker, new bytes(0));
         vm.stopPrank();
 
