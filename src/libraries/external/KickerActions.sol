@@ -57,6 +57,7 @@ library KickerActions {
     struct KickLocalVars {
         uint256 borrowerDebt;       // [WAD] the accrued debt of kicked borrower
         uint256 borrowerCollateral; // [WAD] amount of kicked borrower collateral
+        uint256 borrowerNpTpRatio;  // [WAD] borrower NP to TP ratio
         uint256 neutralPrice;       // [WAD] neutral price recorded in kick action
         uint256 htp;                // [WAD] highest threshold price in pool
         uint256 referencePrice;     // [WAD] used to calculate auction start price
@@ -320,6 +321,7 @@ library KickerActions {
         KickLocalVars memory vars;
         vars.borrowerDebt       = Maths.wmul(kickResult_.t0KickedDebt, poolState_.inflator);
         vars.borrowerCollateral = kickResult_.collateralPreAction;
+        vars.borrowerNpTpRatio  = borrower.npTpRatio;
 
         // revert if kick on a collateralized borrower
         if (_isCollateralized(vars.borrowerDebt, vars.borrowerCollateral, kickResult_.lup, poolState_.poolType)) {
@@ -330,7 +332,7 @@ library KickerActions {
         // neutral price = Tp * Np to Tp ratio
         // neutral price is capped at 50 * max pool price
         vars.neutralPrice = Maths.min(
-            Math.mulDiv(vars.borrowerDebt, borrower.npTpRatio, vars.borrowerCollateral),
+            Math.mulDiv(vars.borrowerDebt, vars.borrowerNpTpRatio, vars.borrowerCollateral),
             MAX_INFLATED_PRICE
         );
         // check if NP is not less than price at the limit index provided by the kicker - done to prevent frontrunning kick auction call with a large amount of loan
@@ -342,7 +344,7 @@ library KickerActions {
 
         (vars.bondFactor, vars.bondSize) = _bondParams(
             vars.borrowerDebt,
-            borrower.npTpRatio
+            vars.borrowerNpTpRatio
         );
 
         vars.thresholdPrice = Maths.wdiv(vars.borrowerDebt, vars.borrowerCollateral);
