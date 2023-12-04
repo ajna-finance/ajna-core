@@ -171,10 +171,9 @@ library LenderActions {
         uint256 bucketScale           = Deposits.scale(deposits_, params_.index);
         uint256 bucketDeposit         = Maths.wmul(bucketScale, unscaledBucketDeposit);
         uint256 bucketPrice           = _priceAt(params_.index);
-        addedAmount_                  = params_.amount;
 
-        // charge deposit fee
-        addedAmount_ = Maths.wmul(addedAmount_, Maths.WAD - _depositFeeRate(poolState_.rate));
+        // calculate added amount charging deposit fee
+        addedAmount_ = Maths.wmul(params_.amount, Maths.WAD - _depositFeeRate(poolState_.rate));
 
         bucketLP_ = Buckets.quoteTokensToLP(
             bucket.collateral,
