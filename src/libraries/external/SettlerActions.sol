@@ -132,11 +132,12 @@ library SettlerActions {
 
         if (borrower.t0Debt != 0 && borrower.collateral == 0) {
             // 2. settle debt with pool reserves
-            uint256 assets = Maths.floorWmul(poolState_.t0Debt - result_.t0DebtSettled + borrower.t0Debt, poolState_.inflator) + params_.poolBalance;
+            uint256 assets   = Maths.floorWmul(poolState_.t0Debt - result_.t0DebtSettled + borrower.t0Debt, poolState_.inflator) + params_.poolBalance;
+            uint256 deposits = Deposits.treeSum(deposits_);
 
             uint256 liabilities =
                 // require 1.0 + 1e-9 deposit buffer (extra margin) for deposits
-                Maths.wmul(DEPOSIT_BUFFER, Deposits.treeSum(deposits_)) +
+                Maths.wmul(DEPOSIT_BUFFER, deposits) +
                 auctions_.totalBondEscrowed +
                 reserveAuction_.unclaimed;
 
@@ -146,7 +147,7 @@ library SettlerActions {
                 uint256 t0ReserveSettleAmount = Maths.min(Maths.floorWdiv(assets - liabilities, poolState_.inflator), borrower.t0Debt);
 
                 // if the settlement phase of 144 hours has not ended, settle up to the borrower reserve limit
-                if ((block.timestamp - kickTime < 144 hours) && (Deposits.treeSum(deposits_) > 0)) {
+                if (deposits > 0 && block.timestamp - kickTime < 144 hours) {
                     t0ReserveSettleAmount = Maths.min(t0ReserveSettleAmount, borrower.t0ReserveSettleAmount);
                     borrower.t0ReserveSettleAmount -= t0ReserveSettleAmount;
                 }
