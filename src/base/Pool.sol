@@ -378,23 +378,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function withdrawBonds(
         address recipient_,
         uint256 maxAmount_
-    ) external override nonReentrant {
-        uint256 claimable = auctions.kickers[msg.sender].claimable;
-
-        // the amount to claim is constrained by the claimable balance of sender
-        // claiming escrowed bonds is not constraiend by the pool balance
-        maxAmount_ = Maths.min(maxAmount_, claimable);
-
-        // revert if no amount to claim
-        if (maxAmount_ == 0) revert InsufficientLiquidity();
-
-        // decrement total bond escrowed
-        auctions.totalBondEscrowed             -= maxAmount_;
-        auctions.kickers[msg.sender].claimable -= maxAmount_;
-
-        emit BondWithdrawn(msg.sender, recipient_, maxAmount_);
-
-        _transferQuoteToken(recipient_, maxAmount_);
+    ) external override nonReentrant returns (uint256 withdrawnAmount_) {
+        withdrawnAmount_ = KickerActions.withdrawBonds(auctions, recipient_, maxAmount_);
+        _transferQuoteToken(recipient_, withdrawnAmount_);
     }
 
     /*********************************/
@@ -830,24 +816,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /// @inheritdoc IPoolState
     function debtInfo() external view returns (uint256, uint256, uint256, uint256) {
-        uint256 t0Debt   = poolBalances.t0Debt;
-        uint256 inflator = inflatorState.inflator;
-
-        return (
-            Maths.ceilWmul(
-                t0Debt,
-                PoolCommons.pendingInflator(
-                    inflator,
-                    inflatorState.inflatorUpdate,
-                    interestState.interestRate
-                )
-            ),
-            Maths.ceilWmul(t0Debt, inflator),
-            Maths.ceilWmul(poolBalances.t0DebtInAuction, inflator),
-            interestState.t0Debt2ToCollateral
-        );
+        return PoolCommons.debtInfo(poolBalances, inflatorState, interestState);
     }
-
 
     /// @inheritdoc IPoolDerivedState
     function depositUpToIndex(uint256 index_) external view override returns (uint256) {
