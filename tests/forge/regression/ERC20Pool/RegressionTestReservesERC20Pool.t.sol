@@ -1114,7 +1114,10 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         invariant_auction();
     }
 
-    // FIXME: bucketInfo is under/overflowing for some reason
+    /**
+        Test was failing because kicker reward went negative.
+        Fixed by updating calculation in UnboundedLiquidationPoolHandler._bucketTake.
+    **/
     function test_regression_fenwick_overflow_on_bucketTake() external {
         _reserveERC20PoolHandler.pledgeCollateral(6350058051515749101632494, 394728019280243247197391935, 1000226947060929945);
         _reserveERC20PoolHandler.lenderKickAuction(551739522123447953718609926799, 29959904068493160226, 695277117643056667684065838815807991886030299764502895676394782692460545);
