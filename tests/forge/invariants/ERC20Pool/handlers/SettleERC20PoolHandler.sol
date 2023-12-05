@@ -244,7 +244,10 @@ contract SettleERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBas
         // ensure actor always has amount of quote to repay
         _ensureQuoteAmount(payer_, borrowerDebt + 10 * 1e18);
 
-        _erc20Pool.repayDebt(borrower_, amountToRepay_, 0, borrower_, 7388);
+        try _erc20Pool.repayDebt(borrower_, amountToRepay_, 0, borrower_, 7388) {
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
+        }
     }
 
     function _setupLendersAndDeposits(uint256 count_) internal virtual {

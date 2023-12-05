@@ -62,7 +62,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
             amount_  = auctionedCollateral / 2;
 
             (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
-            // skip to make auction takeable
+            // TODO: eliminate this unnecessary skip, perhaps advance by single block instead
             if (block.timestamp - kickTime < 1 hours) {
                 vm.warp(block.timestamp + 61 minutes);
             }

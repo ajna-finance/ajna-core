@@ -775,10 +775,10 @@ library TakerActions {
 
         if (vars.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
-            vars.bondChange = Maths.wmul(vars.quoteTokenAmount, uint256(vars.bpf));
+            vars.bondChange = Maths.floorWmul(vars.quoteTokenAmount, uint256(vars.bpf));
         } else {
             // take is above neutralPrice, Kicker is penalized
-            vars.bondChange = Maths.wmul(vars.quoteTokenAmount, uint256(-vars.bpf));
+            vars.bondChange = Maths.ceilWmul(vars.quoteTokenAmount, uint256(-vars.bpf));
         }
 
         return vars;
