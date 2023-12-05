@@ -60,7 +60,7 @@ import {
     _revertIfAuctionDebtLocked,
     _revertIfAuctionClearable,
     _revertAfterExpiry,
-    _revertIfAuctionPriceBelow
+    _revertIfAuctionClearableOrPriceBelow
 }                               from '../libraries/helpers/RevertsHelper.sol';
 
 import { Buckets }  from '../libraries/internal/Buckets.sol';
@@ -158,9 +158,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override nonReentrant returns (uint256 bucketLP_, uint256 addedAmount_) {
         _revertAfterExpiry(expiry_);
 
-        _revertIfAuctionClearable(auctions, loans);
-
-        _revertIfAuctionPriceBelow(index_, auctions);
+        _revertIfAuctionClearableOrPriceBelow(auctions, loans, index_);
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -194,9 +192,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override nonReentrant returns (uint256 fromBucketLP_, uint256 toBucketLP_, uint256 movedAmount_) {
         _revertAfterExpiry(expiry_);
 
-        _revertIfAuctionClearable(auctions, loans);
-
-        _revertIfAuctionPriceBelow(toIndex_, auctions);
+        _revertIfAuctionClearableOrPriceBelow(auctions, loans, toIndex_);
 
         PoolState memory poolState = _accruePoolInterest();
 

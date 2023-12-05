@@ -63,6 +63,33 @@ import { Maths }    from '../internal/Maths.sol';
     }
 
     /**
+     *  @notice  Check if if head auction is clearable and if provided price is above current auction price.
+     *  @notice  Prevents manipulative deposits and arbTakes.
+     *  @dev     Reverts with `AuctionNotCleared` if auction is clearable.
+     *  @dev     Reverts with `AddAboveAuctionPrice` if price is above head of auction queue.
+     *  @param auctions_ Auctions data.
+     *  @param loans_    Loans data.
+     *  @param index_    Identifies bucket price to be compared with current auction price.
+     */
+    function _revertIfAuctionClearableOrPriceBelow(
+        AuctionsState storage auctions_,
+        LoansState    storage loans_,
+        uint256 index_
+    ) view {
+        address head     = auctions_.head;
+        uint256 kickTime = auctions_.liquidations[head].kickTime;
+        if (kickTime != 0) {
+            if (block.timestamp - kickTime > 72 hours) revert AuctionNotCleared();
+
+            Borrower storage borrower = loans_.borrowers[head];
+            if (borrower.t0Debt != 0 && borrower.collateral == 0) revert AuctionNotCleared();
+
+            uint256 auctionPrice = _auctionPrice(auctions_.liquidations[head].referencePrice, kickTime);
+            if (_priceAt(index_) >= auctionPrice) revert AddAboveAuctionPrice();
+        }
+    }
+
+    /**
      *  @notice  Check if provided price is at or above index limit provided by borrower.
      *  @notice  Prevents stale transactions and certain `MEV` manipulations.
      *  @dev     Reverts with `LimitIndexExceeded` if index limit provided exceeded.
@@ -74,24 +101,6 @@ import { Maths }    from '../internal/Maths.sol';
         uint256 limitIndex_
     ) pure {
         if (newPrice_ < _priceAt(limitIndex_)) revert LimitIndexExceeded();
-    }
-
-/**
-     *  @notice  Check if provided price is above current auction price.
-     *  @notice  Prevents manipulative deposits and arbTakes.
-     *  @dev     Reverts with `AddAboveAuctionPrice` if price is above head of auction queue.
-     *  @param index_    Identifies bucket price to be compared with current auction price.
-     *  @param auctions_ Auctions data.
-     */
-    function _revertIfAuctionPriceBelow(
-        uint256 index_,
-        AuctionsState storage auctions_
-    ) view {
-        address head = auctions_.head;
-        if (head != address(0)) {
-            uint256 auctionPrice = _auctionPrice(auctions_.liquidations[head].referencePrice, auctions_.liquidations[head].kickTime);
-            if (_priceAt(index_) >= auctionPrice) revert AddAboveAuctionPrice();
-        }
     }
 
     /**
