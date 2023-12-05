@@ -52,6 +52,7 @@ import {
 import {
     COLLATERALIZATION_FACTOR,
     _determineInflatorState,
+    _htp,
     _priceAt,
     _roundToScale
 }                               from '../libraries/helpers/PoolHelper.sol';
@@ -363,7 +364,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
 
         // update pool interest rate state
-        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
+        _updateInterestState(poolState, result.lup);
 
         // transfer from kicker to pool the difference to cover bond
         if (result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
@@ -545,10 +546,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // Calculate prior pool debt
             poolState_.debt = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
 
-	        // calculate elapsed time since inflator was last updated
+            // calculate elapsed time since inflator was last updated
             uint256 elapsed = block.timestamp - inflatorState.inflatorUpdate;
 
-	        // set isNewInterestAccrued field to true if elapsed time is not 0, indicating that new interest may have accrued
+            // set isNewInterestAccrued field to true if elapsed time is not 0, indicating that new interest may have accrued
             poolState_.isNewInterestAccrued = elapsed != 0;
 
             // if new interest may have accrued, call accrueInterest function and update inflator and debt fields of poolState_ struct
@@ -617,7 +618,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState_
     ) internal {
         // update in memory pool state struct
-        poolState_.debt            -= Maths.wmul(result_.t0DebtSettled, poolState_.inflator);
+        poolState_.debt            -= result_.debtSettled;
         poolState_.t0Debt          -= result_.t0DebtSettled;
         poolState_.t0DebtInAuction -= result_.t0DebtSettled;
         poolState_.collateral      -= result_.collateralSettled;
@@ -918,7 +919,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         Loan memory maxLoan = Loans.getMax(loans);
         return (
             maxLoan.borrower,
-            Maths.wmul(Maths.wmul(maxLoan.thresholdPrice, inflatorState.inflator), COLLATERALIZATION_FACTOR),
+            _htp(maxLoan.thresholdPrice, inflatorState.inflator),
             Loans.noOfLoans(loans)
         );
     }

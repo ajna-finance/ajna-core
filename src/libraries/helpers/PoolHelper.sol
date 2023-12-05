@@ -168,6 +168,21 @@ import { Maths }   from '../internal/Maths.sol';
     }
 
     /**
+     *  @notice Calculates `HTP` price.
+     *  @param  thresholdPrice_ Threshold price.
+     *  @param  inflator_       Pool's inflator.
+     */
+    function _htp(
+        uint256 thresholdPrice_,
+        uint256 inflator_
+    ) pure returns (uint256) {
+        return Maths.wmul(
+            Maths.wmul(thresholdPrice_, inflator_),
+            COLLATERALIZATION_FACTOR
+        );
+    }
+
+    /**
      *  @notice Calculates debt-weighted average threshold price.
      *  @param  t0Debt_              Pool debt owed by borrowers in `t0` terms.
      *  @param  inflator_            Pool's borrower inflator.
@@ -201,8 +216,8 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 price_,
         uint8 type_
     ) pure returns (bool) {
-        // `False` if LUP = MIN_PRICE
-        if (price_ == MIN_PRICE) return false;
+        // `False` if LUP = MIN_PRICE unless there is no debt
+        if (price_ == MIN_PRICE && debt_ != 0) return false;
 
         // Use collateral floor for NFT pools
         if (type_ == uint8(PoolType.ERC721)) {
@@ -210,7 +225,7 @@ import { Maths }   from '../internal/Maths.sol';
             collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
         }
         
-       return Maths.wmul(collateral_, price_) >= Maths.wmul(COLLATERALIZATION_FACTOR, debt_);
+        return Maths.wmul(collateral_, price_) >= Maths.wmul(COLLATERALIZATION_FACTOR, debt_);
     }
 
     /**
@@ -385,6 +400,11 @@ import { Maths }   from '../internal/Maths.sol';
     /*** Auction Utilities ***/
     /*************************/
 
+    /// @dev max bond factor.
+    uint256 constant MIN_BOND_FACTOR = 0.005 * 1e18;
+    /// @dev max NP / TP ratio.
+    uint256 constant MAX_NP_TP_RATIO = 0.03 * 1e18;
+
     /**
      *  @notice Calculates auction price.
      *  @param  referencePrice_ Recorded at kick, used to calculate start price.
@@ -459,10 +479,10 @@ import { Maths }   from '../internal/Maths.sol';
         // bondFactor = max(min(0.03,(((NP/TP_ratio)-1)/10)),0.005)
         bondFactor_ = Maths.max(
             Maths.min(
-                0.03 * 1e18,
+                MAX_NP_TP_RATIO,
                 (npTpRatio_ - 1e18) / 10
             ),
-            0.005 * 1e18
+            MIN_BOND_FACTOR
         );
 
         bondSize_ = Maths.wmul(bondFactor_,  borrowerDebt_);

@@ -340,9 +340,6 @@ library TakerActions {
     ) internal returns (TakeLocalVars memory vars_) {
         Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
 
-        // Auction may not be taken in the same block it was kicked
-        if (liquidation.kickTime == block.timestamp) revert AuctionNotTakeable();
-
         vars_ = _prepareTake(
             liquidation,
             0,
@@ -422,9 +419,6 @@ library TakerActions {
         BucketTakeParams memory params_
     ) internal returns (TakeLocalVars memory vars_) {
         Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
-
-        // Auction may not be taken in the same block it was kicked
-        if (liquidation.kickTime == block.timestamp) revert AuctionNotTakeable();
 
         vars_= _prepareTake(
             liquidation,
@@ -693,6 +687,8 @@ library TakerActions {
 
         uint256 kickTime = liquidation_.kickTime;
         if (kickTime == 0) revert NoAuction();
+        // Auction may not be taken in the same block it was kicked
+        if (kickTime == block.timestamp) revert AuctionNotTakeable();
 
         vars.t0BorrowerDebt = t0Debt_;
 
@@ -775,10 +771,10 @@ library TakerActions {
 
         if (vars.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
-            vars.bondChange = Maths.wmul(vars.quoteTokenAmount, uint256(vars.bpf));
+            vars.bondChange = Maths.floorWmul(vars.quoteTokenAmount, uint256(vars.bpf));
         } else {
             // take is above neutralPrice, Kicker is penalized
-            vars.bondChange = Maths.wmul(vars.quoteTokenAmount, uint256(-vars.bpf));
+            vars.bondChange = Maths.ceilWmul(vars.quoteTokenAmount, uint256(-vars.bpf));
         }
 
         return vars;

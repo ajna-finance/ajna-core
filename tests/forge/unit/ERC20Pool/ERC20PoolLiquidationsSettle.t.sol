@@ -714,7 +714,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             from:            _lender,
             borrower:        _borrower2,
             maxCollateral:   1_000 * 1e18,
-            bondChange:      12.304107698704044033 * 1e18,
+            bondChange:      12.304107698704044032 * 1e18,
             givenAmount:     1_100.512848671229788000 * 1e18,
             collateralTaken: 1_000 * 1e18,
             isReward:        true

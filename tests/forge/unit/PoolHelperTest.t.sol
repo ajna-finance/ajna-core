@@ -115,6 +115,11 @@ contract PoolHelperTest is DSTestPlus {
         assertEq(_isCollateralized(debt, 0, price, erc20),  false);
         assertEq(_isCollateralized(debt, 0, price, erc721), false);
 
+        // borrower with no debt or collateral is not undercollateralized
+        assertEq(_collateralization(0, 0, price),        Maths.WAD);
+        assertEq(_isCollateralized(0, 0, price, erc20),  true);
+        assertEq(_isCollateralized(0, 0, price, erc721), true);
+
         // undercollateralized with single unit of collateral at high price
         debt       = 5_000_000_000 * 1e18;
         price      = _priceAt(1); // 999969141.897027226245329498
@@ -148,6 +153,11 @@ contract PoolHelperTest is DSTestPlus {
         assertEq(_collateralization(debt, collateral, price), 0);
         assertEq(_isCollateralized(debt, collateral, price, erc20),  false);
         assertEq(_isCollateralized(debt, collateral, price, erc721), false);
+
+        // borrower with no debt or collateral is still not undercollateralized at MIN_PRICE
+        assertEq(_collateralization(0, 0, price),        Maths.WAD);
+        assertEq(_isCollateralized(0, 0, price, erc20),  true);
+        assertEq(_isCollateralized(0, 0, price, erc721), true);
     }
 
     /**

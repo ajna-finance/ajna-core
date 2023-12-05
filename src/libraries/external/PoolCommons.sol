@@ -21,6 +21,7 @@ import { IERC3156FlashBorrower }                             from '../../interfa
 
 import { 
     _dwatp,
+    _htp,
     _indexOf,
     MAX_FENWICK_INDEX,
     MIN_PRICE, MAX_PRICE,
@@ -258,7 +259,7 @@ library PoolCommons {
 
         // calculate the highest threshold price
         newInflator_ = Maths.wmul(poolState_.inflator, pendingFactor);
-        uint256 htp = Maths.wmul(Maths.wmul(thresholdPrice_, poolState_.inflator), COLLATERALIZATION_FACTOR);
+        uint256 htp  = _htp(thresholdPrice_, poolState_.inflator);
 
         uint256 accrualIndex;
         if (htp > MAX_PRICE)      accrualIndex = 1;                 // if HTP is over the highest price bucket then no buckets earn interest
@@ -288,12 +289,22 @@ library PoolCommons {
         }
     }
 
+    /**
+     *  @notice Executes a flashloan from current pool.
+     *  @dev    === Reverts on ===
+     *  @dev    - `FlashloanCallbackFailed()` if receiver is not an `ERC3156FlashBorrower`
+     *  @dev    - `FlashloanIncorrectBalance()` if pool balance after flashloan is different than initial balance
+     *  @param  receiver_ Address of the contract which implements the appropriate interface to receive tokens.
+     *  @param  token_    Address of the `ERC20` token caller wants to borrow.
+     *  @param  amount_   The denormalized amount (dependent upon token precision) of tokens to borrow.
+     *  @param  data_     User-defined calldata passed to the receiver.
+     */
     function flashLoan(
         IERC3156FlashBorrower receiver_,
         address token_, 
         uint256 amount_,
         bytes calldata data_
-    ) external returns (bool success_) {
+    ) external {
         IERC20 tokenContract = IERC20(token_);
 
         uint256 initialBalance = tokenContract.balanceOf(address(this));
@@ -314,7 +325,6 @@ library PoolCommons {
 
         if (tokenContract.balanceOf(address(this)) != initialBalance) revert FlashloanIncorrectBalance();
 
-        success_ = true;
         emit Flashloan(address(receiver_), token_, amount_);
     }
 

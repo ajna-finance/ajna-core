@@ -82,7 +82,7 @@ contract ERC721TakeWithExternalLiquidityTest is ERC721HelperContract {
         vm.expectEmit(true, true, false, true);
         uint256 quoteTokenPaid = 1_082.785034492073132320 * 1e18;
         uint256 collateralPurchased = 2 * 1e18;
-        uint256 bondChange = 12.105904710718649454 * 1e18;
+        uint256 bondChange = 12.105904710718649453 * 1e18;
         emit Take(_borrower, quoteTokenPaid, collateralPurchased, bondChange, true);
         _pool.take(_borrower, 2, address(taker), data);
 
@@ -112,7 +112,7 @@ contract ERC721TakeWithExternalLiquidityTest is ERC721HelperContract {
         vm.expectEmit(true, true, false, true);
         uint256 quoteTokenPaid = 1_082.785034492073132320 * 1e18;
         uint256 collateralPurchased = 2 * 1e18;
-        uint256 bondChange = 12.105904710718649454 * 1e18;
+        uint256 bondChange = 12.105904710718649453 * 1e18;
         emit Take(_borrower, quoteTokenPaid, collateralPurchased, bondChange, true);
         _pool.take(_borrower, 2, address(taker), data);
 
