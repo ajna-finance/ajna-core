@@ -148,8 +148,15 @@ library SettlerActions {
 
                 // if the settlement phase of 144 hours has not ended, settle up to the borrower reserve limit
                 if (deposits > 0 && block.timestamp - kickTime < 144 hours) {
-                    t0ReserveSettleAmount = Maths.min(t0ReserveSettleAmount, borrower.t0ReserveSettleAmount);
-                    borrower.t0ReserveSettleAmount -= t0ReserveSettleAmount;
+                    // retrieve amount of debt that can be settled with reserves
+                    uint256 reserveSettleLimit = auctions_.liquidations[params_.borrower].t0ReserveSettleAmount;
+
+                    // calculate reserve amount to be used when settling the auction
+                    t0ReserveSettleAmount = Maths.min(t0ReserveSettleAmount, reserveSettleLimit);
+                    reserveSettleLimit -= t0ReserveSettleAmount;
+
+                    // store remaining amount limit to settle
+                    auctions_.liquidations[params_.borrower].t0ReserveSettleAmount = reserveSettleLimit;
                 }
                 borrower.t0Debt -= t0ReserveSettleAmount;
             }

@@ -239,13 +239,13 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             exchangeRate: 1 * 1e18
         });
 
-        uint256 depositRemaining = 0.824398065323323611 * 1e18;
+        uint256 depositRemaining = 0.824443694255901374 * 1e18;
         _assertBucket({
             index:        3231,
             lpBalance:    150.217575774779342174 * 1e18,
             collateral:   1.040000000000000000 * 1e18,
             deposit:      depositRemaining,
-            exchangeRate: 0.703591365414823294 * 1e18
+            exchangeRate: 0.703591669167112881 * 1e18
         });
 
         // 2c. Withdraw the deposit remaing (should be about 50)
@@ -255,19 +255,19 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             amount:   depositRemaining,
             index:    3231,
             newLup:   1.0 * 1e18,
-            lpRedeem: 1.171700088782748380 * 1e18
+            lpRedeem: 1.171764434379743124 * 1e18
         });
 
         _removeAllCollateral({
             from: _attacker,
             amount: 1.040000000000000000 * 1e18,
             index: 3231,
-            lpRedeem: 149.045875685996593794 * 1e18
+            lpRedeem: 149.045811340399599050 * 1e18
         });
 
         _assertReserveAuction({
-            reserves:                   50.532208059054469621 * 1e18,
-            claimableReserves :         50.532207959056147260 * 1e18,
+            reserves:                   50.532162430121891858 * 1e18,
+            claimableReserves :         50.532162330123569497 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -275,7 +275,7 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
 
         // assert attacker's balances
         // attacker does not profit in QT
-        assertEq(_quote.balanceOf(address(_attacker)),      1_999_998.415271251124884433 * 1e18);
+        assertEq(_quote.balanceOf(address(_attacker)),      1_999_998.415316880057462196 * 1e18);
         assertEq(_collateral.balanceOf(address(_attacker)), 11_000.0 * 1e18);
     }
 
@@ -413,7 +413,7 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             from:        _attacker,
             borrower:    _attacker,
             maxDepth:    10,
-            settledDebt: 479_213.056441751898404364 * 1e18
+            settledDebt: 479_213.518269861612655464 * 1e18
         });
 
         _assertBucket({
@@ -439,7 +439,7 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             from:        _attacker,
             borrower:    _attacker,
             maxDepth:    10,
-            settledDebt: 2_609.458188040721145058 * 1e18
+            settledDebt: 2_608.996317752997907862 * 1e18
         });
 
         _removeAllCollateral({

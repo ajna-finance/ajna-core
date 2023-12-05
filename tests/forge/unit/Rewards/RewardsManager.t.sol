@@ -727,8 +727,8 @@ contract RewardsManagerTest is RewardsHelperContract {
             index:        _i9_81,
             lpBalance:    5999.726027397260274000 * 1e18,
             collateral:   0,
-            deposit:      2_293.069461117449889576 * 1e18,
-            exchangeRate: 0.382195695377811412 * 1e18
+            deposit:      2_293.073810430020836872 * 1e18,
+            exchangeRate: 0.382196420296341206 * 1e18
         });
 
         /***********************/

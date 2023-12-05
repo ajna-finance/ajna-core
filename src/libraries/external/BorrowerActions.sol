@@ -161,7 +161,6 @@ library BorrowerActions {
             vars.t0DebtChange = Maths.wmul(vars.t0BorrowAmount, _borrowFeeRate(poolState_.rate) + Maths.WAD);
 
             borrower.t0Debt += vars.t0DebtChange;
-            borrower.t0ReserveSettleAmount += Maths.wmul(vars.t0BorrowAmount, _borrowFeeRate(poolState_.rate)) / 2;
 
             vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
 

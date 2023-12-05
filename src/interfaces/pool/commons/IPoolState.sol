@@ -389,7 +389,6 @@ struct Borrower {
     uint256 t0Debt;                    // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
     uint256 collateral;                // [WAD] Collateral deposited by borrower.
     uint256 npTpRatio;                 // [WAD] Np to Tp ratio at the time of last borrow or pull collateral.
-    uint256 t0ReserveSettleAmount;     // [WAD] Amount of t0Debt that could be settled via reserves in an auction
 }
 
 /**********************/
@@ -408,15 +407,16 @@ struct AuctionsState {
 
 /// @dev Struct holding liquidation state.
 struct Liquidation {
-    address kicker;         // address that initiated liquidation
-    uint96  bondFactor;     // [WAD] bond factor used to start liquidation
-    uint96  kickTime;       // timestamp when liquidation was started
-    address prev;           // previous liquidated borrower in auctions queue
-    uint96  referencePrice; // [WAD] used to calculate auction start price
-    address next;           // next liquidated borrower in auctions queue
-    uint160 bondSize;       // [WAD] liquidation bond size
-    uint96  neutralPrice;   // [WAD] Neutral Price when liquidation was started
-    uint256 thresholdPrice; // [WAD] Threshold Price when liquidation was started
+    address kicker;                // address that initiated liquidation
+    uint96  bondFactor;            // [WAD] bond factor used to start liquidation
+    uint96  kickTime;              // timestamp when liquidation was started
+    address prev;                  // previous liquidated borrower in auctions queue
+    uint96  referencePrice;        // [WAD] used to calculate auction start price
+    address next;                  // next liquidated borrower in auctions queue
+    uint160 bondSize;              // [WAD] liquidation bond size
+    uint96  neutralPrice;          // [WAD] Neutral Price when liquidation was started
+    uint256 thresholdPrice;        // [WAD] Threshold Price when liquidation was started
+    uint256 t0ReserveSettleAmount; // [WAD] Amount of t0Debt that could be settled via reserves in this auction
 }
 
 /// @dev Struct holding kicker state.

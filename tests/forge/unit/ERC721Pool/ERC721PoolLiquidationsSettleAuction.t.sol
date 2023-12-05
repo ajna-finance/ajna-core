@@ -199,7 +199,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    1,
-            settledDebt: 2_756.292476715102616970 * 1e18
+            settledDebt: 2_756.297127247586280076 * 1e18
         });
 
         // no token id left in borrower token ids array
@@ -218,7 +218,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         });
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              2_312.680420634460396298 * 1e18,
+            borrowerDebt:              2_312.675770101976733191 * 1e18,
             borrowerCollateral:        0,
             borrowert0Np:              0,
             borrowerCollateralization: 0
@@ -228,7 +228,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    5,
-            settledDebt: 2_312.680420634460396297 * 1e18
+            settledDebt: 2_312.675770101976733191 * 1e18
         });
 
         _assertBorrower({
@@ -252,8 +252,8 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             index:        2500,
             lpBalance:    20_034.884788261831319325 * 1e18,
             collateral:   3.318402650731141155 * 1e18,
-            deposit:      18164.707642336489729783 * 1e18,
-            exchangeRate: 1.546595793735176658 * 1e18
+            deposit:      18_164.712292868973392890 * 1e18,
+            exchangeRate: 1.546596025856924939 * 1e18
         });
         _assertBucket({
             index:        2499,
@@ -314,10 +314,10 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
 
         _assertBucket({
             index:        2500,
-            lpBalance:    15757.677829213243231010 * 1e18,
+            lpBalance:    15_757.678471160293718635 * 1e18,
             collateral:   1.606264436427373954 * 1e18,
-            deposit:      18164.707642336489729783 * 1e18,
-            exchangeRate: 1.546595793735176658 * 1e18
+            deposit:      18_164.712292868973392890 * 1e18,
+            exchangeRate: 1.546596025856924939 * 1e18
         });
         _assertBucket({
             index:        2499,
@@ -427,8 +427,8 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             index:        2500,
             lpBalance:    7_999.634703196347032000 * 1e18,
             collateral:   0.328094552805976837 * 1e18,
-            deposit:      9_559.438514946326345866 * 1e18,
-            exchangeRate: 1.353447109649970440 * 1e18
+            deposit:      9_559.443166179627977772 * 1e18,
+            exchangeRate: 1.353447691080682492 * 1e18
         });
         _assertBucket({
             index:        2502,
@@ -462,16 +462,16 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         _assertBucket({
             index:        2500,
             lpBalance:    7_999.634703196347032000 * 1e18,
-            collateral:   2.802290638246429771 * 1e18,
+            collateral:   2.802291842089438895 * 1e18,
             deposit:      0,
-            exchangeRate: 1.353447109649970440 * 1e18
+            exchangeRate: 1.353447691080682492 * 1e18
         });
         _assertBucket({
             index:        2501,
             lpBalance:    1_999.908675799086758000 * 1e18,
-            collateral:   0.133123410882128970 * 1e18,
-            deposit:      2_812.945878591575294584 * 1e18,
-            exchangeRate: 1.662440814040839337 * 1e18
+            collateral:   0.133122201019904801 * 1e18,
+            deposit:      2_812.950529824876926491 * 1e18,
+            exchangeRate: 1.662440814040839338 * 1e18
         });
         _assertBucket({
             index:        2502,
@@ -482,10 +482,10 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         });
         _assertBucket({
             index:        7388,
-            lpBalance:    0.000000039203761851 * 1e18,
-            collateral:   0.392680503677418096 * 1e18,
+            lpBalance:    0.000000039203762451 * 1e18,
+            collateral:   0.392680509696633141 * 1e18,
             deposit:      0,
-            exchangeRate: 0.999999999987919485 * 1e18
+            exchangeRate: 1.000000000011796173 * 1e18
         });
 
         _assertCollateralInvariants();
