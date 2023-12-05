@@ -130,7 +130,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
         );
     }
 
-    /// @dev kicker reward should be less than or equal to borrower penalty within 1e4 on take.
+    /// @dev kicker reward should be less than or equal to borrower penalty within 1 on take.
     function _invariant_A8() internal view {
         uint256 borrowerPenalty = IBaseHandler(_handler).borrowerPenalty();
         uint256 kickerReward    = IBaseHandler(_handler).kickerReward();
