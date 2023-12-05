@@ -1103,7 +1103,10 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         invariant_reserves();
     }
 
-    // FIXME: test is failing because rewards differ by 1 gwei
+    /**
+        Test was failing because rewards differ by 1 gwei.
+        Fixed by updating TakerActions to round in favor of the protocol.
+    **/
     function test_regression_equivalent_rewards_on_take_A8() external {
         _reserveERC20PoolHandler.withdrawBonds(115792089237316195423570985008687907853269984665640564039457584007913129639935, 186, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
         _reserveERC20PoolHandler.kickAuction(702555080221925111442235101208458356417149500340156719083570911869585030, 1000032244817342892, 5728, 5907050982353226005633690);
