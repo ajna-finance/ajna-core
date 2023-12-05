@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.18;
 
+import '../../../../utils/DSTestPlus.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import { Math }           from '@openzeppelin/contracts/utils/math/Math.sol';
 
@@ -228,7 +229,13 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                     uint256 takerReward = Maths.floorWmul(beforeBucketTakeVars.borrowerCollateral - afterBucketTakeVars.borrowerCollateral, _priceAt(bucketIndex_) - auctionPrice);
 
                     // **A8**: kicker reward <= Borrower penalty
-                    kickerReward = totalReward - takerReward;
+
+                    if (takerReward > totalReward) {
+                        requireWithinDiff(takerReward, totalReward, 1, "Difference between taker and total reward differs more than rounding error");
+                        kickerReward = 0;
+                    } else {
+                        kickerReward = totalReward - takerReward;
+                    }
                 } else {
                     // **A8**: kicker reward <= Borrower penalty
                     kickerReward = lpToQuoteToken(afterBucketTakeVars.kickerLps - beforeBucketTakeVars.kickerLps, bucketIndex_);
