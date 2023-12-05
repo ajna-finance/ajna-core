@@ -52,6 +52,7 @@ import {
 import {
     COLLATERALIZATION_FACTOR,
     _determineInflatorState,
+    _htp,
     _priceAt,
     _roundToScale
 }                               from '../libraries/helpers/PoolHelper.sol';
@@ -918,7 +919,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         Loan memory maxLoan = Loans.getMax(loans);
         return (
             maxLoan.borrower,
-            Maths.wmul(Maths.wmul(maxLoan.thresholdPrice, inflatorState.inflator), COLLATERALIZATION_FACTOR),
+            _htp(maxLoan.thresholdPrice, inflatorState.inflator),
             Loans.noOfLoans(loans)
         );
     }

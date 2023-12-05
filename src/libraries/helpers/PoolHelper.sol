@@ -168,6 +168,21 @@ import { Maths }   from '../internal/Maths.sol';
     }
 
     /**
+     *  @notice Calculates `HTP` price.
+     *  @param  thresholdPrice_ Threshold price.
+     *  @param  inflator_       Pool's inflator.
+     */
+    function _htp(
+        uint256 thresholdPrice_,
+        uint256 inflator_
+    ) pure returns (uint256) {
+        return Maths.wmul(
+            Maths.wmul(thresholdPrice_, inflator_),
+            COLLATERALIZATION_FACTOR
+        );
+    }
+
+    /**
      *  @notice Calculates debt-weighted average threshold price.
      *  @param  t0Debt_              Pool debt owed by borrowers in `t0` terms.
      *  @param  inflator_            Pool's borrower inflator.
