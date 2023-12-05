@@ -970,14 +970,14 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    11,
-            settledDebt: 402.720322053719854868 * 1e18
+            settledDebt: 402.720595087414922378 * 1e18
         });
 
         _settle({
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    11,
-            settledDebt: 15.996442009087794242 * 1e18
+            settledDebt: 15.996168975392726732 * 1e18
         });
 
         _assertBorrower({

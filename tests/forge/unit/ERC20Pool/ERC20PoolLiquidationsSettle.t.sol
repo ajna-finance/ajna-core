@@ -383,8 +383,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    10_999.497716894977169000 * 1e18,
             collateral:   0,
-            deposit:      10_765.975632053571065948 * 1e18,
-            exchangeRate: 0.978769750142070441 * 1e18
+            deposit:      10_765.979983019790873080 * 1e18,
+            exchangeRate: 0.978770145702516181 * 1e18
         });
         _assertBucket({
             index:        _i9_62,
@@ -397,7 +397,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             PoolParams({
                 htp:                  9.845413922741351377 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             65_763.464216528456910948 * 1e18,
+                poolSize:             65_763.468567494676718080 * 1e18,
                 pledgedCollateral:    2 * 1e18,
                 encumberedCollateral: 2.025535290651122678 * 1e18,
                 poolDebt:             18.933488312964137265 * 1e18,
@@ -840,16 +840,16 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       _i9_91,
-            lpBalance:   149.665040743606661995 * 1e18,
+            lpBalance:   149.665040743606661996 * 1e18,
             depositTime: _startTime + 100 days + 12.5 hours + 1 hours
         });
         // bucket is healthy again
         _assertBucket({
             index:        _i9_91,
-            lpBalance:    149.665040743606661995 * 1e18,
+            lpBalance:    149.665040743606661996 * 1e18,
             collateral:   4 * 1e18,
-            deposit:      109.996301369863013701 * 1e18,
-            exchangeRate: 1.000000000000000001 * 1e18
+            deposit:      109.996301369863013700 * 1e18,
+            exchangeRate: 1 * 1e18
         });
 
         // when moving to a bucket that was marked insolvent, the deposit time should be the greater between from bucket deposit time and insolvency time + 1
@@ -866,7 +866,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       _i9_91,
-            lpBalance:   999.999999999999999986 * 1e18,
+            lpBalance:   1_000 * 1e18,
             depositTime: _startTime + 100 days + 12.5 hours + 1 // _i9_91 bucket insolvency time + 1 (since deposit in _i9_52 from bucket was done before _i9_91 target bucket become insolvent)
         });
 
@@ -876,7 +876,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       _i9_91,
-            lpBalance:   1_999.999999999999999972 * 1e18,
+            lpBalance:   2_000 * 1e18,
             depositTime: _startTime + 100 days + 12.5 hours + 1 hours // time of deposit in _i9_52 from bucket (since deposit in _i9_52 from bucket was done after _i9_91 target bucket become insolvent)
         });
 
@@ -885,8 +885,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    10_999.497716894977169000 * 1e18,
             collateral:   0 * 1e18,
-            deposit:      9_883.913692653515172210 * 1e18,
-            exchangeRate: 0.898578639411147800 * 1e18
+            deposit:      9_883.918042044285073846 * 1e18,
+            exchangeRate: 0.898579034828364281 * 1e18
         });
 
         _pool.moveQuoteToken(10000000000 * 1e18, _i9_72, _i9_91, type(uint256).max);
