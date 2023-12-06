@@ -225,20 +225,14 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
                 // when kicker and taker are same, kicker Reward = total Reward (lps) - taker Reward (Collateral Price * difference of bucket used and auction price)
                 if (!depositTake_ && kicker == _actor) {
-                    uint256 totalReward = lpToQuoteToken(afterBucketTakeVars.kickerLps - beforeBucketTakeVars.kickerLps, bucketIndex_);
+                    uint256 totalReward = rewardedLpToQuoteToken(afterBucketTakeVars.kickerLps - beforeBucketTakeVars.kickerLps, bucketIndex_);
                     uint256 takerReward = Maths.floorWmul(beforeBucketTakeVars.borrowerCollateral - afterBucketTakeVars.borrowerCollateral, _priceAt(bucketIndex_) - auctionPrice);
 
                     // **A8**: kicker reward <= Borrower penalty
-
-                    if (takerReward > totalReward) {
-                        requireWithinDiff(takerReward, totalReward, 1, "Difference between taker and total reward differs more than rounding error");
-                        kickerReward = 0;
-                    } else {
-                        kickerReward = totalReward - takerReward;
-                    }
+                    kickerReward = totalReward - takerReward;
                 } else {
                     // **A8**: kicker reward <= Borrower penalty
-                    kickerReward = lpToQuoteToken(afterBucketTakeVars.kickerLps - beforeBucketTakeVars.kickerLps, bucketIndex_);
+                    kickerReward = rewardedLpToQuoteToken(afterBucketTakeVars.kickerLps - beforeBucketTakeVars.kickerLps, bucketIndex_);
                 }
             }
 
@@ -408,7 +402,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     }
 
     // Helper function to calculate quote tokens from lps in a bucket irrespective of deposit available.
-    function lpToQuoteToken(uint256 lps_, uint256 bucketIndex_) internal view returns(uint256 quoteTokens_) {
+    // LP rewarded -> quote token rounded up (as LP rewarded are calculated as rewarded quote token -> LP rounded down)
+    function rewardedLpToQuoteToken(uint256 lps_, uint256 bucketIndex_) internal view returns(uint256 quoteTokens_) {
         (uint256 bucketLP, uint256 bucketCollateral , , uint256 bucketDeposit, ) = _pool.bucketInfo(bucketIndex_);
 
         quoteTokens_ =  Buckets.lpToQuoteTokens(
@@ -417,7 +412,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             bucketDeposit,
             lps_,
             _priceAt(bucketIndex_),
-            Math.Rounding.Down
+            Math.Rounding.Up
         );
     }
 

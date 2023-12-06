@@ -77,7 +77,8 @@ contract RegressionTestERC721PoolRewardsManager is ERC721PoolRewardsInvariants {
     
     /**
         Test was failing due to rounding error converting LP to quote token.
-        Fixed by updating UnboundedLiquidationPoolHandler._bucketTake to handle such error.
+        Fixed in invariant logic by rounding up when calculating quote tokens from rewarded LP.
+        (opposite of TakerActions implementation which rounds down when calculating rewarded LP from quote tokens).
      */
     function test_regression_failure_rewards_overflow() external {
         _erc721poolrewardsHandler.takeAuction(8916353616233254, 57649844002245701248730112897897147833956884330328914675231893131196499, 2, 1018952559902734233814512249);
