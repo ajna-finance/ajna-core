@@ -94,6 +94,56 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(_indexOf(price_), _poolUtils.priceToIndex(price_));
     }
 
+    function testPoolInfoUtilsAuctionStatus() external {
+        (
+            uint256 kickTime,
+            uint256 collateral,
+            uint256 debtToCover,
+            bool    isCollateralized,
+            uint256 price,
+            uint256 neutralPrice,
+            uint256 referencePrice,
+            uint256 thresholdPrice,
+            uint256 bondFactor
+        ) = _poolUtils.auctionStatus(address(_pool), _borrower);
+        // since loan is not in auction values are 0
+        assertEq(kickTime,        0);
+        assertEq(collateral,      0);
+        assertEq(debtToCover,     0);
+        assertEq(isCollateralized, false);
+        assertEq(price,           0);
+        assertEq(neutralPrice,    0);
+        assertEq(referencePrice,  0);
+        assertEq(thresholdPrice,  0);
+        assertEq(bondFactor,      0);
+    }
+
+    function testPoolInfoUtilsAuctionInfo() external {
+        (
+            address kicker,
+            uint256 bondFactor,
+            uint256 bondSize,
+            uint256 kickTime,
+            uint256 referencePrice,
+            uint256 neutralPrice,
+            uint256 thresholdPrice,
+            address head,
+            address next,
+            address prev
+        ) = _poolUtils.auctionInfo(address(_pool), _borrower);
+        // since loan is not in auction values are 0
+        assertEq(kicker,          address(0));
+        assertEq(bondFactor,      0);
+        assertEq(bondSize,        0);
+        assertEq(kickTime,        0);
+        assertEq(referencePrice,  0);
+        assertEq(neutralPrice,    0);
+        assertEq(thresholdPrice,  0);
+        assertEq(head,            address(0));
+        assertEq(next,            address(0));
+        assertEq(prev,            address(0));
+    }
+
     function testPoolInfoUtilsBorrowerInfo() external {
         (uint256 debt, uint256 collateral, uint256 npTpRatio) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,       21_020.192307692307702000 * 1e18);
@@ -310,5 +360,15 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
 
         assertEq(debt,       21_020.192307692307702000 * 1e18);
         assertEq(abi.decode(result[1], (uint256)), _poolUtils.htp(address(_pool)));
+    }
+
+    function testPoolInfoMulticallRatesAndFees() external {
+        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
+
+        (uint256 lenderInterestMargin, uint256 borrowFeeRate, uint256 depositFeeRate) = poolUtilsMulticall.poolRatesAndFees(address(_pool));
+
+        assertEq(lenderInterestMargin, 0.849999999999999999 * 1e18);
+        assertEq(borrowFeeRate,        0.000961538461538462 * 1e18);
+        assertEq(depositFeeRate,       0.000045662100456621 * 1e18);
     }
 }

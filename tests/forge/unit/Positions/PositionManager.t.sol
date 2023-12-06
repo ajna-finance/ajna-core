@@ -1446,6 +1446,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertEq(_positionManager.nonces(tokenId), 2);
     }
 
+    function testPermitSupportsInterface() external {
+        assertTrue(_positionManager.supportsInterface(0x5604e225));
+        assertFalse(_positionManager.supportsInterface(0xffffffff));
+    }
+
     /**
      *  @notice Tests NFT position can & can't be burned based on liquidity attached to it.
      *          Checks that old owner cannot move positions.
