@@ -65,6 +65,14 @@ abstract contract BaseHandler is Test {
         uint256 depositTime;
     }
 
+    struct ReservesInfo {
+        uint256 reserves;
+        uint256 claimableReserves;
+        uint256 claimableReservesRemaining;
+        uint256 auctionPrice;
+        uint256 timeRemaining;
+    }
+
     // Tokens
     TokenWithNDecimals internal _quote;
     BurnableToken      internal _ajna;
@@ -344,6 +352,16 @@ abstract contract BaseHandler is Test {
             kickerInfo_.lockedBond
         ) = _pool.kickerInfo(kicker_);
         kickerInfo_.totalBond = kickerInfo_.claimableBond + kickerInfo_.lockedBond;
+    }
+
+    function _getReservesInfo() internal view returns (ReservesInfo memory reservesInfo_) {
+        (
+            reservesInfo_.reserves,
+            reservesInfo_.claimableReserves,
+            reservesInfo_.claimableReservesRemaining,
+            reservesInfo_.auctionPrice,
+            reservesInfo_.timeRemaining
+        ) = _poolInfo.poolReservesInfo(address(_pool));
     }
 
     function _getLup() internal view returns (uint256) {

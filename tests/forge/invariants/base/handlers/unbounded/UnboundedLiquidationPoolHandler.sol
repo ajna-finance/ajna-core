@@ -207,7 +207,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.bucketTake']++;
 
-        (address kicker, , , , , , , , , )  = _pool.auctionInfo(borrower_);
+        address kicker = _getAuctionInfo(borrower_).kicker;
         ( , , , , uint256 auctionPrice, , , , ) = _poolInfo.auctionStatus(address(_pool), borrower_);
         uint256 auctionBucketIndex = auctionPrice < MIN_PRICE ? 7388 : (auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionPrice));
         
@@ -279,10 +279,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             }
 
             // **A8**: kicker reward <= Borrower penalty
-            uint256 price = depositTake_ ? _priceAt(bucketIndex_) : auctionPrice;
+            uint256 rewardPrice = depositTake_ ? _priceAt(bucketIndex_) : auctionPrice;
             borrowerPenalty = Maths.wmul(
                 beforeBucketTakeVars.borrowerCollateral - afterBucketTakeVars.borrowerCollateral,
-                price
+                rewardPrice
             ) - (beforeBucketTakeVars.borrowerDebt - afterBucketTakeVars.borrowerDebt);
                 
             // reserves are increased by take penalty of borrower (Deposit used from bucket - Borrower debt reduced)
@@ -304,6 +304,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 // **A7**: Total Bond increase by bond penalty on take.
                 increaseInBonds += afterBucketTakeVars.kickerBond - beforeBucketTakeVars.kickerBond;
             }
+
             // **R7**: Exchange rates are unchanged under depositTakes
             // **R8**: Exchange rates are unchanged under arbTakes
             exchangeRateShouldNotChange[bucketIndex_] = true;
