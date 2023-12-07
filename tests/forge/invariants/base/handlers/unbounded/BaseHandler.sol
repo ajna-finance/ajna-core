@@ -182,11 +182,11 @@ abstract contract BaseHandler is Test {
         address currentActor = _actor;
 
         // clear head auction if more than 72 hours passed
-        (, , , , , , , address headAuction, , ) = _pool.auctionInfo(address(0));
+        address headAuction = _getAuctionInfo(address(0)).head;
         if (headAuction != address(0)) {
-            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(headAuction);
+            uint256 kickTime = _getAuctionInfo(headAuction).kickTime;
             if (block.timestamp - kickTime > 72 hours) {
-                (uint256 auctionedDebt, , ) = _poolInfo.borrowerInfo(address(_pool), headAuction);
+                uint256 auctionedDebt = _getBorrowerInfo(headAuction).debt;
 
                 try vm.startPrank(headAuction) {
                 } catch {
@@ -213,7 +213,7 @@ abstract contract BaseHandler is Test {
                 (address borrower, , ) = _pool.loansInfo();
 
                 if (borrower != address(0)) {
-                    (uint256 debt, , )     = _poolInfo.borrowerInfo(address(_pool), borrower);
+                    uint256 debt = _getBorrowerInfo(borrower).debt;
 
                     try vm.startPrank(borrower) {
                     } catch {
@@ -270,7 +270,9 @@ abstract contract BaseHandler is Test {
 
         if (lenderBucketIndexes.length < 3) {
             // if actor has touched less than three buckets, add a new bucket
-            _lenderBucketIndex = constrictToRange(bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+            _lenderBucketIndex = constrictToRange(
+                bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX
+            );
 
             lenderBucketIndexes.push(_lenderBucketIndex);
         } else {
@@ -290,7 +292,15 @@ abstract contract BaseHandler is Test {
 
         if (logToFile == true) {
             if (numberOfCalls["Write logs"]++ == 0) vm.writeFile(path, "");
-            printInNextLine(string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " ==================")));
+            printInNextLine(
+                string(
+                    abi.encodePacked(
+                        "================= Handler Call : ",
+                        Strings.toString(numberOfCalls["Write logs"]),
+                        " =================="
+                    )
+                )
+            );
         }
 
         if (logVerbosity > 0) {
@@ -479,7 +489,7 @@ abstract contract BaseHandler is Test {
         increaseInReserves = 0;
         decreaseInReserves = 0;
         // record reserves before each action
-        (previousReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
+        previousReserves = _getReservesInfo().reserves;
 
         // reset penalties before each action
         borrowerPenalty = 0;
@@ -559,8 +569,7 @@ abstract contract BaseHandler is Test {
     // update local fenwick to pool fenwick before each action
     function _updateLocalFenwick() internal {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            (, , , uint256 deposits, ) = _pool.bucketInfo(bucketIndex);
-            fenwickDeposits[bucketIndex] = deposits;
+            fenwickDeposits[bucketIndex] = _getBucketInfo(bucketIndex).deposit;
         }
     }
 
@@ -678,7 +687,11 @@ abstract contract BaseHandler is Test {
                 uint256 bucketIndex = buckets.at(j);
                 (uint256 lenderLps, ) = _pool.lenderInfo(bucketIndex, actors[i]);
                 if (lenderLps != 0) {
-                    data = string(abi.encodePacked("Lps at ", Strings.toString(bucketIndex), " = ", Strings.toString(lenderLps)));
+                    data = string(
+                        abi.encodePacked(
+                            "Lps at ", Strings.toString(bucketIndex), " = ", Strings.toString(lenderLps)
+                        )
+                    );
                     printLine(data);
                 }
             }
@@ -691,10 +704,11 @@ abstract contract BaseHandler is Test {
         for (uint256 i = 0; i < actors.length; i++) {
             printLine("");
             printLog("Actor ", i + 1);
-            (uint256 debt, uint256 pledgedCollateral, ) = _poolInfo.borrowerInfo(address(_pool), actors[i]);
-            if (debt != 0 || pledgedCollateral != 0) {
-                printLog("Debt               = ", debt);
-                printLog("Pledged collateral = ", pledgedCollateral);
+
+            BorrowerInfo memory borrowerInfo = _getBorrowerInfo(actors[i]);
+            if (borrowerInfo.debt != 0 || borrowerInfo.collateral != 0) {
+                printLog("Debt               = ", borrowerInfo.debt);
+                printLog("Pledged collateral = ", borrowerInfo.collateral);
             }
         }
         printInNextLine("=======================");
