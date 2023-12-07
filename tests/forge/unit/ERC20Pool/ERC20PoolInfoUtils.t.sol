@@ -77,12 +77,12 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         });
 
         _drawDebt({
-            from: _borrower,
-            borrower: _borrower,
-            amountToBorrow: 21_000 * 1e18,
-            limitIndex: 3_000,
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     21_000 * 1e18,
+            limitIndex:         3_000,
             collateralToPledge: 100 * 1e18,
-            newLup: 2_981.007422784467321543 * 1e18
+            newLup:             2_981.007422784467321543 * 1e18
         });
     }
 
@@ -94,7 +94,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(_indexOf(price_), _poolUtils.priceToIndex(price_));
     }
 
-    function testPoolInfoUtilsAuctionStatus() external {
+    function testPoolInfoUtilsAuctionStatusNoLiquidation() external {
         (
             uint256 kickTime,
             uint256 collateral,
@@ -118,7 +118,34 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(bondFactor,      0);
     }
 
-    function testPoolInfoUtilsAuctionInfo() external {
+    function testPoolInfoUtilsAuctionStatusMatureLiquidation() external {
+        _removeAndKick();
+        skip(6 hours);
+        (
+            uint256 kickTime,
+            uint256 collateral,
+            uint256 debtToCover,
+            bool    isCollateralized,
+            uint256 price,
+            uint256 neutralPrice,
+            uint256 referencePrice,
+            uint256 thresholdPrice,
+            uint256 bondFactor
+        ) = _poolUtils.auctionStatus(address(_pool), _borrower);
+        // at 6 hours, auction price should match reference price
+        assertEq(kickTime,        _startTime);
+        assertEq(collateral,      100 * 1e18);
+        assertEq(debtToCover,     21_020.912189618561131155 * 1e18);
+        assertEq(isCollateralized, true);
+        assertEq(price,           233.703212526982164624 * 1e18);
+        assertEq(neutralPrice,    233.703212526982164624 * 1e18);
+        assertEq(referencePrice,  233.703212526982164624 * 1e18);
+        assertEq(thresholdPrice,  210.201923076923077020 * 1e18);
+        assertEq(bondFactor,      0.011180339887498948 * 1e18);
+    }
+
+
+    function testPoolInfoUtilsAuctionInfoNoLiquidation() external {
         (
             address kicker,
             uint256 bondFactor,
@@ -140,6 +167,32 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(neutralPrice,    0);
         assertEq(thresholdPrice,  0);
         assertEq(head,            address(0));
+        assertEq(next,            address(0));
+        assertEq(prev,            address(0));
+    }
+
+    function testPoolInfoUtilsAuctionInfoSingleLiquidation() external {
+        _removeAndKick();
+        (
+            address kicker,
+            uint256 bondFactor,
+            uint256 bondSize,
+            uint256 kickTime,
+            uint256 referencePrice,
+            uint256 neutralPrice,
+            uint256 thresholdPrice,
+            address head,
+            address next,
+            address prev
+        ) = _poolUtils.auctionInfo(address(_pool), _borrower);
+        assertEq(kicker,          _lender);
+        assertEq(bondFactor,      0.011180339887498948 * 1e18);
+        assertEq(bondSize,        235.012894500590867635 * 1e18);
+        assertEq(kickTime,        _startTime);
+        assertEq(referencePrice,  233.703212526982164624 * 1e18);
+        assertEq(neutralPrice,    233.703212526982164624 * 1e18);
+        assertEq(thresholdPrice,  210.201923076923077020 * 1e18);
+        assertEq(head,            _borrower);
         assertEq(next,            address(0));
         assertEq(prev,            address(0));
     }
@@ -370,5 +423,32 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(lenderInterestMargin, 0.849999999999999999 * 1e18);
         assertEq(borrowFeeRate,        0.000961538461538462 * 1e18);
         assertEq(depositFeeRate,       0.000045662100456621 * 1e18);
+    }
+
+    // Helps test liquidation functions
+    function _removeAndKick() internal {
+        uint256 amountLessFee = 9_999.543378995433790000 * 1e18;
+        _removeAllLiquidity({
+            from:     _lender, 
+            amount:   amountLessFee,
+            index:    lowest,
+            newLup:   _priceAt(med), 
+            lpRedeem: amountLessFee
+        });
+        _removeAllLiquidity({
+            from:     _lender, 
+            amount:   amountLessFee,
+            index:    low,
+            newLup:   _priceAt(med), 
+            lpRedeem: amountLessFee
+        });
+        _lenderKick({
+            from:       _lender, 
+            index:      med, 
+            borrower:   _borrower, 
+            debt:       21_020.192307692307702000 * 1e18, 
+            collateral: 100 * 1e18, 
+            bond:       235.012894500590867635 * 1e18
+        });
     }
 }
