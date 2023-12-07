@@ -24,16 +24,18 @@ abstract contract FlashloanablePool is Pool {
      *  @param  token_    Address of the `ERC20` token caller wants to borrow.
      *  @param  amount_   The denormalized amount (dependent upon token precision) of tokens to borrow.
      *  @param  data_     User-defined calldata passed to the receiver.
-     *  @return success_  `True` if flashloan was successful.
+     *  @return `True` if flashloan was successful.
      */
     function flashLoan(
         IERC3156FlashBorrower receiver_,
         address token_,
         uint256 amount_,
         bytes calldata data_
-    ) external virtual override nonReentrant returns (bool success_) {
+    ) external virtual override nonReentrant returns (bool) {
         if (!_isFlashloanSupported(token_)) revert FlashloanUnavailableForToken();
-        success_ = PoolCommons.flashLoan(receiver_, token_, amount_, data_);
+        PoolCommons.flashLoan(receiver_, token_, amount_, data_);
+        // if flashLoan call didn't revert then flashloan was successful
+        return true;
     }
 
     /**

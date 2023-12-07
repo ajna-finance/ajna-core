@@ -943,7 +943,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             from:        testMinter,
             borrower:    testBorrowerTwo,
             maxDepth:    10,
-            settledDebt: 6_736.056276265205281160 * 1e18
+            settledDebt: 6_829.316746462954060003 * 1e18
         });
 
         // bucket is insolvent, balances are reset
@@ -2882,7 +2882,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             from:        testMinter,
             borrower:    testBorrowerTwo,
             maxDepth:    10,
-            settledDebt: 6_736.056276265205281160 * 1e18
+            settledDebt: 6_829.316746462954060003 * 1e18
         });
 
         // bucket is insolvent, balances are reset
@@ -2898,8 +2898,8 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             index:        _i9_81,
             lpBalance:    4_999.771689497716895000 * 1e18,
             collateral:   0,
-            deposit:      217.489493041063674296 * 1e18,
-            exchangeRate: 0.043499884904327088 * 1e18
+            deposit:      217.493842375977038075 * 1e18,
+            exchangeRate: 0.043500754811031528 * 1e18
         });
 
         _assertBucketAssets({

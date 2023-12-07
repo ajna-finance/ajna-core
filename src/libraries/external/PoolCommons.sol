@@ -9,11 +9,19 @@ import { IERC20 }    from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 
-import { InterestState, EmaState, PoolState, DepositsState } from '../../interfaces/pool/commons/IPoolState.sol';
+import { 
+    DepositsState, 
+    EmaState, 
+    InflatorState,
+    InterestState, 
+    PoolBalancesState, 
+    PoolState 
+} from '../../interfaces/pool/commons/IPoolState.sol';
 import { IERC3156FlashBorrower }                             from '../../interfaces/pool/IERC3156FlashBorrower.sol';
 
 import { 
     _dwatp,
+    _htp,
     _indexOf,
     MAX_FENWICK_INDEX,
     MIN_PRICE, MAX_PRICE,
@@ -251,7 +259,7 @@ library PoolCommons {
 
         // calculate the highest threshold price
         newInflator_ = Maths.wmul(poolState_.inflator, pendingFactor);
-        uint256 htp = Maths.wmul(Maths.wmul(thresholdPrice_, poolState_.inflator), COLLATERALIZATION_FACTOR);
+        uint256 htp  = _htp(thresholdPrice_, poolState_.inflator);
 
         uint256 accrualIndex;
         if (htp > MAX_PRICE)      accrualIndex = 1;                 // if HTP is over the highest price bucket then no buckets earn interest
@@ -281,12 +289,22 @@ library PoolCommons {
         }
     }
 
+    /**
+     *  @notice Executes a flashloan from current pool.
+     *  @dev    === Reverts on ===
+     *  @dev    - `FlashloanCallbackFailed()` if receiver is not an `ERC3156FlashBorrower`
+     *  @dev    - `FlashloanIncorrectBalance()` if pool balance after flashloan is different than initial balance
+     *  @param  receiver_ Address of the contract which implements the appropriate interface to receive tokens.
+     *  @param  token_    Address of the `ERC20` token caller wants to borrow.
+     *  @param  amount_   The denormalized amount (dependent upon token precision) of tokens to borrow.
+     *  @param  data_     User-defined calldata passed to the receiver.
+     */
     function flashLoan(
         IERC3156FlashBorrower receiver_,
         address token_, 
         uint256 amount_,
         bytes calldata data_
-    ) external returns (bool success_) {
+    ) external {
         IERC20 tokenContract = IERC20(token_);
 
         uint256 initialBalance = tokenContract.balanceOf(address(this));
@@ -307,7 +325,6 @@ library PoolCommons {
 
         if (tokenContract.balanceOf(address(this)) != initialBalance) revert FlashloanIncorrectBalance();
 
-        success_ = true;
         emit Flashloan(address(receiver_), token_, amount_);
     }
 
@@ -428,6 +445,38 @@ library PoolCommons {
     /**********************/
     /*** View Functions ***/
     /**********************/
+
+    /**
+     *  @notice Calculates pool related debt values.
+     *  @param poolBalances_  Pool debt
+     *  @param inflatorState_ Interest inflator and last update time
+     *  @param interestState_ Interest rate and t0Debt2ToCollateral accumulator
+     *  @return Current amount of debt owed by borrowers in pool.
+     *  @return Debt owed by borrowers based on last inflator snapshot.
+     *  @return Total amount of debt in auction.
+     *  @return t0debt accross all borrowers divided by their collateral, used in determining a collateralization weighted debt.  
+     */
+    function debtInfo(
+        PoolBalancesState memory poolBalances_,
+        InflatorState     memory inflatorState_,
+        InterestState     memory interestState_
+    ) external view returns (uint256, uint256, uint256, uint256) {
+        uint256 t0Debt   = poolBalances_.t0Debt;
+        uint256 inflator = inflatorState_.inflator;
+
+        return (
+            Maths.ceilWmul(
+                t0Debt,
+                Maths.wmul(
+                    inflator,
+                    PRBMathUD60x18.exp((interestState_.interestRate * (block.timestamp - inflatorState_.inflatorUpdate)) / 365 days)
+                )
+            ),
+            Maths.ceilWmul(t0Debt, inflator),
+            Maths.ceilWmul(poolBalances_.t0DebtInAuction, inflator),
+            interestState_.t0Debt2ToCollateral
+        );
+    }
 
     /**
      *  @notice Calculates pool interest factor for a given interest rate and time elapsed since last inflator update.

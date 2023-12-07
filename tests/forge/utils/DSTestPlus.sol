@@ -163,7 +163,9 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(from, index, amountAdded, lpAward, newLup);
         _assertQuoteTokenTransferEvent(from, address(_pool), amount);
-        _pool.addQuoteToken(amount, index, type(uint256).max);
+        (uint256 returnLpAward, uint256 returnedAmountAdded) = _pool.addQuoteToken(amount, index, type(uint256).max);
+        assertEq(returnLpAward, lpAward);
+        assertEq(returnedAmountAdded, amountAdded);
 
         // Add for tearDown
         lenders.add(from);
@@ -459,6 +461,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             vars.auctionKickTime,
             vars.auctionReferencePrice,
             vars.auctionNeutralPrice,
+            vars.borrowerThresholdPrice,
             ,
             ,
         ) = _pool.auctionInfo(state_.borrower);
@@ -466,8 +469,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         (uint256 borrowerDebt, uint256 borrowerCollateral , ) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
         (, uint256 lockedBonds) = _pool.kickerInfo(state_.kicker);
         (vars.auctionTotalBondEscrowed,,,) = _pool.reservesInfo();
-        (,, vars.auctionDebtInAuction,)  = _pool.debtInfo(); 
-        vars.borrowerThresholdPrice = borrowerCollateral > 0 ? borrowerDebt * Maths.WAD / borrowerCollateral : 0;
+        (,, vars.auctionDebtInAuction,)  = _pool.debtInfo();
 
         assertEq(vars.auctionKickTime != 0,     state_.active);
         assertEq(vars.auctionKicker,            state_.kicker);
@@ -490,7 +492,9 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             uint256 debtToCover, 
             bool    isCollateralized,      
             uint256 price,          
-            uint256 neutralPrice    
+            uint256 neutralPrice,
+            ,
+            ,
         ) = _poolUtils.auctionStatus(address(_pool), state_.borrower);
         assertEq(kickTime,     state_.kickTime);
         assertEq(neutralPrice, state_.neutralPrice);

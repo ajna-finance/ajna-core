@@ -136,9 +136,9 @@ abstract contract BaseHandler is Test {
         address currentActor = _actor;
 
         // clear head auction if more than 72 hours passed
-        (, , , , , , address headAuction, , ) = _pool.auctionInfo(address(0));
+        (, , , , , , , address headAuction, , ) = _pool.auctionInfo(address(0));
         if (headAuction != address(0)) {
-            (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(headAuction);
+            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(headAuction);
             if (block.timestamp - kickTime > 72 hours) {
                 (uint256 auctionedDebt, , ) = _poolInfo.borrowerInfo(address(_pool), headAuction);
 
@@ -320,7 +320,8 @@ abstract contract BaseHandler is Test {
             err == keccak256(abi.encodeWithSignature("ReserveAuctionTooSoon()")) ||
             err == keccak256(abi.encodeWithSignature("NoReserves()")) ||
             err == keccak256(abi.encodeWithSignature("ZeroThresholdPrice()")) ||
-            err == keccak256(abi.encodeWithSignature("NoReservesAuction()")),
+            err == keccak256(abi.encodeWithSignature("NoReservesAuction()")) ||
+            err == keccak256(abi.encodeWithSignature("AddAboveAuctionPrice()")),
             "Unexpected revert error"
         );
     }
@@ -447,7 +448,7 @@ abstract contract BaseHandler is Test {
         uint256 kickTimeBefore_,
         uint256 auctionPrice_
     ) internal {
-        (uint256 kickTimeAfter, , , , , ) = _poolInfo.auctionStatus(address(_pool), borrower_);
+        (uint256 kickTimeAfter, , , , , , , , ) = _poolInfo.auctionStatus(address(_pool), borrower_);
 
         // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
         if (kickTimeBefore_ != 0 && kickTimeAfter == 0 && borrowerCollateralBefore_ % 1e18 != 0) {
@@ -492,7 +493,7 @@ abstract contract BaseHandler is Test {
         ) = _poolInfo.poolLoansInfo(address(_pool));
 
         (
-            , , , , , ,
+            , , , , , , ,
             address headAuction, ,
         ) = _pool.auctionInfo(address(0));
 
@@ -600,11 +601,11 @@ abstract contract BaseHandler is Test {
         uint256 bondFactor;
         uint256 bondSize;
         uint256 neutralPrice;
-        (,,,,,, nextBorrower,,) = _pool.auctionInfo(address(0));
+        (,,,,,,, nextBorrower,,) = _pool.auctionInfo(address(0));
         while (nextBorrower != address(0)) {
             data = string(abi.encodePacked("Borrower ", Strings.toHexString(uint160(nextBorrower), 20), " Auction Details :"));
             printInNextLine(data);
-            (, bondFactor, bondSize, kickTime, referencePrice, neutralPrice,, nextBorrower,) = _pool.auctionInfo(nextBorrower);
+            (, bondFactor, bondSize, kickTime, referencePrice, neutralPrice,,, nextBorrower,) = _pool.auctionInfo(nextBorrower);
 
             printLog("Bond Factor     = ", bondFactor);
             printLog("Bond Size       = ", bondSize);

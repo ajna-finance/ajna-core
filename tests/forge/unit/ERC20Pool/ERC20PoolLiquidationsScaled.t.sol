@@ -83,6 +83,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             });
 
             (lpBalance, ) = _pool.lenderInfo(startBucketId + i, _lender);
+
             assertEq(lpBalance, Maths.wmul(50_000 * 1e18, depositFee));
         }
         assertEq(_pool.depositSize(), 199_991.552511415525100000 * 1e18);
@@ -319,6 +320,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             uint256 auctionNeutralPrice,
             ,
             ,
+            ,
         ) = _pool.auctionInfo(_borrower);
 
         assertEq(auctionKicker,         kicker);
@@ -372,7 +374,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         }
 
         // confirm LP were awarded to the kicker
-        (address kicker, , , uint256 kickTime, uint256 referencePrice, uint256 neutralPrice, ,  ,) = _pool.auctionInfo(_borrower);
+        (address kicker, , , uint256 kickTime, uint256 referencePrice, uint256 neutralPrice, , , ,) = _pool.auctionInfo(_borrower);
         uint256 auctionPrice = _auctionPrice(referencePrice, kickTime);
         if (auctionPrice < neutralPrice) {
             uint256 kickerLP = _kickerLP(bucketId);
@@ -443,7 +445,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint256 auctionDebt_,
         uint256 auctionCollateral_
     ){
-        (, , , uint256 kickTime, uint256 referencePrice, , , , ) = _pool.auctionInfo(_borrower);
+        (, , , uint256 kickTime, uint256 referencePrice, , , , , ) = _pool.auctionInfo(_borrower);
         uint256 lastAuctionPrice = _auctionPrice(referencePrice, kickTime);
         (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         if (secondsToSkip != 0) {
@@ -469,7 +471,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     }
 
     function _kickerLP(uint256 bucketId) internal view returns (uint256) {
-        (address kicker, , , , , , , , ) = _pool.auctionInfo(_borrower);
+        (address kicker, , , , , , , , , ) = _pool.auctionInfo(_borrower);
         (uint256 kickerLP, ) = _pool.lenderInfo(bucketId, kicker);
         return kickerLP;
     }

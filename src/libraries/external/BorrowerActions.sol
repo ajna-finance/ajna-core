@@ -120,7 +120,7 @@ library BorrowerActions {
         if (amountToBorrow_ > maxAvailable_) revert InsufficientLiquidity();
 
         // revert if borrower is in auction
-        if(_inAuction(auctions_, borrowerAddress_)) revert AuctionActive();
+        if (_inAuction(auctions_, borrowerAddress_)) revert AuctionActive();
 
         DrawDebtLocalVars memory vars;
         vars.pledge = collateralToPledge_ != 0;
@@ -161,7 +161,6 @@ library BorrowerActions {
             vars.t0DebtChange = Maths.wmul(vars.t0BorrowAmount, _borrowFeeRate(poolState_.rate) + Maths.WAD);
 
             borrower.t0Debt += vars.t0DebtChange;
-            borrower.t0ReserveSettleAmount += Maths.wmul(vars.t0BorrowAmount, _borrowFeeRate(poolState_.rate)) / 2;
 
             vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
 
@@ -239,7 +238,7 @@ library BorrowerActions {
         // revert if no amount to pull or repay
         if (!vars.repay && !vars.pull) revert InvalidAmount();
 
-        if(_inAuction(auctions_, borrowerAddress_)) revert AuctionActive();
+        if (_inAuction(auctions_, borrowerAddress_)) revert AuctionActive();
 
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 

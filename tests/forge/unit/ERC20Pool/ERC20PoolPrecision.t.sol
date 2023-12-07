@@ -698,7 +698,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         // setup fuzzy bounds and initialize the pool
         uint256 collateralDecimals = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 quoteDecimals      = bound(uint256(quotePrecisionDecimals_),      1, 18);
-        uint256 bucketId           = bound(uint256(bucketId_),                    1, 7388);
+        uint256 bucketId           = bound(uint256(bucketId_),                    1, 7387);
         init(collateralDecimals, quoteDecimals);
 
         _addInitialLiquidity({
@@ -976,7 +976,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         assertGt(desiredCollateralizationRatio, 1e18);
         uint256 colScale      = ERC20Pool(address(_pool)).collateralScale();
         uint256 price         = _priceAt(newLupIndex);
-        uint256 desiredPledge = Maths.wmul(Maths.wdiv(debtToDraw, price), desiredCollateralizationRatio);
+        uint256 desiredPledge = Maths.wmul(Maths.wdiv(Maths.wmul(debtToDraw, COLLATERALIZATION_FACTOR), price), desiredCollateralizationRatio);
         uint256 scaledPledge  = (desiredPledge / colScale) * colScale;
 
         while (Maths.wdiv(Maths.wmul(scaledPledge, price), debtToDraw) < desiredCollateralizationRatio) {

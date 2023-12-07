@@ -18,6 +18,7 @@ import {
 
 import { 
     _depositFeeRate,
+    _htp,
     _priceAt,
     MAX_FENWICK_INDEX,
     COLLATERALIZATION_FACTOR 
@@ -154,7 +155,7 @@ library LenderActions {
         DepositsState storage deposits_,
         PoolState calldata poolState_,
         AddQuoteParams calldata params_
-    ) external returns (uint256 bucketLP_, uint256 lup_) {
+    ) external returns (uint256 bucketLP_, uint256 addedAmount_, uint256 lup_) {
         // revert if no amount to be added
         if (params_.amount == 0) revert InvalidAmount();
         // revert if adding to an invalid index
@@ -171,16 +172,15 @@ library LenderActions {
         uint256 bucketScale           = Deposits.scale(deposits_, params_.index);
         uint256 bucketDeposit         = Maths.wmul(bucketScale, unscaledBucketDeposit);
         uint256 bucketPrice           = _priceAt(params_.index);
-        uint256 addedAmount           = params_.amount;
 
-        // charge deposit fee
-        addedAmount = Maths.wmul(addedAmount, Maths.WAD - _depositFeeRate(poolState_.rate));
+        // calculate added amount charging deposit fee
+        addedAmount_ = Maths.wmul(params_.amount, Maths.WAD - _depositFeeRate(poolState_.rate));
 
         bucketLP_ = Buckets.quoteTokensToLP(
             bucket.collateral,
             bucket.lps,
             bucketDeposit,
-            addedAmount,
+            addedAmount_,
             bucketPrice,
             Math.Rounding.Down
         );
@@ -188,7 +188,7 @@ library LenderActions {
         // revert if (due to rounding) the awarded LP is 0
         if (bucketLP_ == 0) revert InsufficientLP();
 
-        uint256 unscaledAmount = Maths.wdiv(addedAmount, bucketScale);
+        uint256 unscaledAmount = Maths.wdiv(addedAmount_, bucketScale);
         // revert if unscaled amount is 0
         if (unscaledAmount == 0) revert InvalidAmount();
 
@@ -207,7 +207,7 @@ library LenderActions {
         emit AddQuoteToken(
             msg.sender,
             params_.index,
-            addedAmount,
+            addedAmount_,
             bucketLP_,
             lup_
         );
@@ -303,7 +303,7 @@ library LenderActions {
 
         // recalculate LUP and HTP
         lup_ = Deposits.getLup(deposits_, poolState_.debt);
-        vars.htp = Maths.wmul(Maths.wmul(params_.thresholdPrice, poolState_.inflator), COLLATERALIZATION_FACTOR);
+        vars.htp = _htp(params_.thresholdPrice, poolState_.inflator);
 
         // check loan book's htp against new lup, revert if move drives LUP below HTP
         if (
@@ -420,7 +420,7 @@ library LenderActions {
 
         lup_ = Deposits.getLup(deposits_, poolState_.debt);
 
-        uint256 htp = Maths.wmul(Maths.wmul(params_.thresholdPrice, poolState_.inflator), COLLATERALIZATION_FACTOR);
+        uint256 htp = _htp(params_.thresholdPrice, poolState_.inflator);
 
         if (
             // check loan book's htp doesn't exceed new lup

@@ -621,7 +621,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         });
     }
 
-    function testMergeOrRemoveERC721Collateral() external {
+    function testMergeOrRemoveERC721Collateral() external tearDown {
         for (uint256 i = 3060; i < (3060 + 10); i++) {
             _addInitialLiquidity({
                 from:   _lender,
@@ -711,7 +711,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 totalBondEscrowed: 6.605224811402125309 * 1e18,
                 auctionPrice:      0.000078301610411710 * 1e18,
                 debtInAuction:     590.789267398535232527 * 1e18,
-                thresholdPrice:    295.453988355164748340 * 1e18,
+                thresholdPrice:    295.394633699267616263 * 1e18,
                 neutralPrice:      328.420757756278243989 * 1e18
             })
         );
@@ -873,7 +873,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 totalBondEscrowed: 6.605224811402125309 * 1e18,
                 auctionPrice:      0.000078301610411710 * 1e18,
                 debtInAuction:     418.513981107458710209 * 1e18,
-                thresholdPrice:    332.306488529853590250 * 1e18,
+                thresholdPrice:    295.394633699267616263 * 1e18,
                 neutralPrice:      328.420757756278243989 * 1e18
             })
         );
@@ -961,7 +961,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 totalBondEscrowed: 6.605225686840743450 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     418.513903681286916644 * 1e18,
-                thresholdPrice:    1_614.039492321819633172 * 1e18,
+                thresholdPrice:    295.394633699267616263 * 1e18,
                 neutralPrice:      328.420757756278243989 * 1e18
             })
         );
@@ -970,14 +970,14 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    11,
-            settledDebt: 102.277919151483596286 * 1e18
+            settledDebt: 402.720595087414922378 * 1e18
         });
 
         _settle({
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    11,
-            settledDebt: 4.062578203586746574 * 1e18
+            settledDebt: 15.996168975392726732 * 1e18
         });
 
         _assertBorrower({

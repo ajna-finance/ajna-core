@@ -177,13 +177,13 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         // Settle any auctions and then repay debt
         for (uint i = 0; i < borrowers.length(); i++) {
             address borrower = borrowers.at(i);
-            (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower);
+            (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(borrower);
             if (kickTime != 0) {
                 changePrank(borrower);
                 _pool.settle(borrower, bucketsUsed.length() + 1);
 
                 // Settle again if not settled, this can happen when less reserves calculated with DEPOSIT_BUFFER and borrower is not fully settled
-                (,,, kickTime,,,,,) = _pool.auctionInfo(borrower);
+                (,,, kickTime,,,,,,) = _pool.auctionInfo(borrower);
                 if (kickTime != 0) {
                     _pool.settle(borrower, bucketsUsed.length() + 1);
                 }
@@ -820,6 +820,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 
+    function _assertAddAboveAuctionPriceRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AddAboveAuctionPrice.selector);
+        _pool.addQuoteToken(amount, index, type(uint256).max);
+    }
 }
 
 abstract contract ERC20HelperContract is ERC20DSTestPlus {

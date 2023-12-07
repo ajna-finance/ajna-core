@@ -28,7 +28,9 @@ import {
     MAX_INFLATED_PRICE,
     COLLATERALIZATION_FACTOR,
     _bondParams,
+    _borrowFeeRate,
     _claimableReserves,
+    _htp,
     _isCollateralized,
     _priceAt,
     _reserveAuctionPrice
@@ -55,14 +57,16 @@ library KickerActions {
 
     /// @dev Struct used for `kick` function local vars.
     struct KickLocalVars {
-        uint256 borrowerDebt;       // [WAD] the accrued debt of kicked borrower
-        uint256 borrowerCollateral; // [WAD] amount of kicked borrower collateral
-        uint256 neutralPrice;       // [WAD] neutral price recorded in kick action
-        uint256 htp;                // [WAD] highest threshold price in pool
-        uint256 referencePrice;     // [WAD] used to calculate auction start price
-        uint256 bondFactor;         // [WAD] bond factor of kicked auction
-        uint256 bondSize;           // [WAD] bond size of kicked auction
-        uint256 thresholdPrice;     // [WAD] borrower threshold price at kick time
+        uint256 borrowerDebt;          // [WAD] the accrued debt of kicked borrower
+        uint256 borrowerCollateral;    // [WAD] amount of kicked borrower collateral
+        uint256 t0ReserveSettleAmount; // [WAD] Amount of t0Debt that could be settled via reserves in an auction
+        uint256 borrowerNpTpRatio;     // [WAD] borrower NP to TP ratio
+        uint256 neutralPrice;          // [WAD] neutral price recorded in kick action
+        uint256 htp;                   // [WAD] highest threshold price in pool
+        uint256 referencePrice;        // [WAD] used to calculate auction start price
+        uint256 bondFactor;            // [WAD] bond factor of kicked auction
+        uint256 bondSize;              // [WAD] bond size of kicked auction
+        uint256 thresholdPrice;        // [WAD] borrower threshold price at kick time
     }
 
     /// @dev Struct used for `lenderKick` function local vars.
@@ -78,10 +82,11 @@ library KickerActions {
     /**************/
 
     // See `IPoolEvents` for descriptions
-    event Kick(address indexed borrower, uint256 debt, uint256 collateral, uint256 bond);
-    event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpRedeemed, uint256 lup);
-    event KickReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 currentBurnEpoch);
+    event BondWithdrawn(address indexed kicker, address indexed reciever, uint256 amount);
     event BucketBankruptcy(uint256 indexed index, uint256 lpForfeited);
+    event Kick(address indexed borrower, uint256 debt, uint256 collateral, uint256 bond);
+    event KickReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 currentBurnEpoch);
+    event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpRedeemed, uint256 lup);
 
     /**************/
     /*** Errors ***/
@@ -103,7 +108,7 @@ library KickerActions {
 
     /**
      *  @notice See `IPoolKickerActions` for descriptions.
-     *  @return The `KickResult` struct result of the kick action.
+     *  @return kickResult_ The `KickResult` struct result of the kick action.
      */
     function kick(
         AuctionsState storage auctions_,
@@ -113,17 +118,20 @@ library KickerActions {
         address borrowerAddress_,
         uint256 limitIndex_
     ) external returns (
-        KickResult memory
+        KickResult memory kickResult_
     ) {
-        return _kick(
+        uint256 curLup = Deposits.getLup(deposits_, poolState_.debt);
+
+        kickResult_ = _kick(
             auctions_,
-            deposits_,
             loans_,
             poolState_,
             borrowerAddress_,
             limitIndex_,
-            0
+            curLup // proposed LUP is the current pool LUP
         );
+        // return current LUP in pool
+        kickResult_.lup = curLup;
     }
 
     /**
@@ -149,7 +157,8 @@ library KickerActions {
         vars.bucketPrice = _priceAt(index_);
 
         // revert if the bucket price is below current LUP
-        if (vars.bucketPrice < Deposits.getLup(deposits_, poolState_.debt)) revert PriceBelowLUP();
+        uint256 curLup = Deposits.getLup(deposits_, poolState_.debt);
+        if (vars.bucketPrice < curLup) revert PriceBelowLUP();
 
         Bucket storage bucket = buckets_[index_];
         Lender storage lender = bucket.lenders[msg.sender];
@@ -173,16 +182,21 @@ library KickerActions {
         // revert if no entitled amount
         if (vars.entitledAmount == 0) revert InsufficientLiquidity();
 
+        // add amount to remove to pool debt in order to calculate proposed LUP
+        // this simulates LUP movement with additional debt
+        uint256 proposedLup =  Deposits.getLup(deposits_, poolState_.debt + vars.entitledAmount);
+
         // kick top borrower
         kickResult_ = _kick(
             auctions_,
-            deposits_,
             loans_,
             poolState_,
             Loans.getMax(loans_).borrower,
             limitIndex_,
-            vars.entitledAmount
+            proposedLup
         );
+        // return current LUP in pool
+        kickResult_.lup = curLup;
     }
 
     /*************************/
@@ -242,6 +256,27 @@ library KickerActions {
         );
     }
 
+    function withdrawBonds(
+        AuctionsState storage auctions_,
+        address recipient_,
+        uint256 maxAmount_
+    ) external returns (uint256 amount_) {
+        uint256 claimable = auctions_.kickers[msg.sender].claimable;
+
+        // the amount to claim is constrained by the claimable balance of sender
+        // claiming escrowed bonds is not constraiend by the pool balance
+        amount_ = Maths.min(maxAmount_, claimable);
+
+        // revert if no amount to claim
+        if (amount_ == 0) revert InsufficientLiquidity();
+
+        // decrement total bond escrowed
+        auctions_.totalBondEscrowed             -= amount_;
+        auctions_.kickers[msg.sender].claimable -= amount_;
+
+        emit BondWithdrawn(msg.sender, recipient_, amount_);
+    }
+
     /***************************/
     /***  Internal Functions ***/
     /***************************/
@@ -262,22 +297,20 @@ library KickerActions {
      *  @dev    === Emit events ===
      *  @dev    - `Kick`
      *  @param  auctions_        Struct for pool auctions state.
-     *  @param  deposits_        Struct for pool deposits state.
      *  @param  loans_           Struct for pool loans state.
      *  @param  poolState_       Current state of the pool.
      *  @param  borrowerAddress_ Address of the borrower to kick.
      *  @param  limitIndex_      Index of the lower bound of `NP` tolerated when kicking the auction.
-     *  @param  additionalDebt_  Additional debt to be used when calculating proposed `LUP`.
+     *  @param  proposedLup_     Proposed `LUP` in pool.
      *  @return kickResult_      The `KickResult` struct result of the kick action.
      */
     function _kick(
         AuctionsState storage auctions_,
-        DepositsState storage deposits_,
         LoansState    storage loans_,
         PoolState calldata poolState_,
         address borrowerAddress_,
         uint256 limitIndex_,
-        uint256 additionalDebt_
+        uint256 proposedLup_
     ) internal returns (
         KickResult memory kickResult_
     ) {
@@ -290,17 +323,14 @@ library KickerActions {
         kickResult_.t0KickedDebt        = borrower.t0Debt;
         kickResult_.collateralPreAction = borrower.collateral;
 
-        // add amount to remove to pool debt in order to calculate proposed LUP
-        // for regular kick this is the currrent LUP in pool
-        // for provisional kick this simulates LUP movement with additional debt
-        kickResult_.lup = Deposits.getLup(deposits_, poolState_.debt + additionalDebt_);
-
         KickLocalVars memory vars;
-        vars.borrowerDebt       = Maths.wmul(kickResult_.t0KickedDebt, poolState_.inflator);
-        vars.borrowerCollateral = kickResult_.collateralPreAction;
+        vars.borrowerDebt          = Maths.wmul(kickResult_.t0KickedDebt, poolState_.inflator);
+        vars.borrowerCollateral    = kickResult_.collateralPreAction;
+        vars.t0ReserveSettleAmount = Maths.wmul(kickResult_.t0KickedDebt, _borrowFeeRate(poolState_.rate)) / 2;
+        vars.borrowerNpTpRatio     = borrower.npTpRatio;
 
         // revert if kick on a collateralized borrower
-        if (_isCollateralized(vars.borrowerDebt, vars.borrowerCollateral, kickResult_.lup, poolState_.poolType)) {
+        if (_isCollateralized(vars.borrowerDebt, vars.borrowerCollateral, proposedLup_, poolState_.poolType)) {
             revert BorrowerOk();
         }
 
@@ -308,19 +338,19 @@ library KickerActions {
         // neutral price = Tp * Np to Tp ratio
         // neutral price is capped at 50 * max pool price
         vars.neutralPrice = Maths.min(
-            Math.mulDiv(vars.borrowerDebt, borrower.npTpRatio, vars.borrowerCollateral),
+            Math.mulDiv(vars.borrowerDebt, vars.borrowerNpTpRatio, vars.borrowerCollateral),
             MAX_INFLATED_PRICE
         );
         // check if NP is not less than price at the limit index provided by the kicker - done to prevent frontrunning kick auction call with a large amount of loan
         // which will make it harder for kicker to earn a reward and more likely that the kicker is penalized
         _revertIfPriceDroppedBelowLimit(vars.neutralPrice, limitIndex_);
 
-        vars.htp            = Maths.wmul(Maths.wmul(Loans.getMax(loans_).thresholdPrice, poolState_.inflator), COLLATERALIZATION_FACTOR);
+        vars.htp            = _htp(Loans.getMax(loans_).thresholdPrice, poolState_.inflator);
         vars.referencePrice = Maths.min(Maths.max(vars.htp, vars.neutralPrice), MAX_INFLATED_PRICE);
 
         (vars.bondFactor, vars.bondSize) = _bondParams(
             vars.borrowerDebt,
-            borrower.npTpRatio
+            vars.borrowerNpTpRatio
         );
 
         vars.thresholdPrice = Maths.wdiv(vars.borrowerDebt, vars.borrowerCollateral);
@@ -334,7 +364,8 @@ library KickerActions {
             vars.bondFactor,
             vars.referencePrice,
             vars.neutralPrice,
-            vars.thresholdPrice
+            vars.thresholdPrice,
+            vars.t0ReserveSettleAmount
         );
 
         // update escrowed bonds balances and get the difference needed to cover bond (after using any kick claimable funds if any)
@@ -388,14 +419,15 @@ library KickerActions {
      *  @dev    `borrower -> liquidation` mapping update
      *  @dev    increment auctions count accumulator
      *  @dev    updates auction queue state
-     *  @param  auctions_        Struct for pool auctions state.
-     *  @param  liquidation_     Struct for current auction state.
-     *  @param  borrowerAddress_ Address of the borrower that is kicked.
-     *  @param  bondSize_        Bond size to cover newly kicked auction.
-     *  @param  bondFactor_      Bond factor of the newly kicked auction.
-     *  @param  referencePrice_  Used to calculate auction start price.
-     *  @param  neutralPrice_    Current pool `Neutral Price`.
-     *  @param  thresholdPrice_  Borrower threshold price.
+     *  @param  auctions_              Struct for pool auctions state.
+     *  @param  liquidation_           Struct for current auction state.
+     *  @param  borrowerAddress_       Address of the borrower that is kicked.
+     *  @param  bondSize_              Bond size to cover newly kicked auction.
+     *  @param  bondFactor_            Bond factor of the newly kicked auction.
+     *  @param  referencePrice_        Used to calculate auction start price.
+     *  @param  neutralPrice_          Current pool `Neutral Price`.
+     *  @param  thresholdPrice_        Borrower threshold price.
+     *  @param  t0ReserveSettleAmount_ Amount of t0Debt that could be settled via reserves in auction
      */
     function _recordAuction(
         AuctionsState storage auctions_,
@@ -405,16 +437,17 @@ library KickerActions {
         uint256 bondFactor_,
         uint256 referencePrice_,
         uint256 neutralPrice_,
-        uint256 thresholdPrice_
+        uint256 thresholdPrice_,
+        uint256 t0ReserveSettleAmount_
     ) internal {
         // record liquidation info
-        liquidation_.kicker         = msg.sender;
-        liquidation_.kickTime       = uint96(block.timestamp);
-        liquidation_.referencePrice = SafeCast.toUint96(referencePrice_);
-        liquidation_.bondSize       = SafeCast.toUint160(bondSize_);
-        liquidation_.bondFactor     = SafeCast.toUint96(bondFactor_);
-        liquidation_.neutralPrice   = SafeCast.toUint96(neutralPrice_);
-        liquidation_.thresholdPrice = thresholdPrice_;
+        liquidation_.kicker                = msg.sender;
+        liquidation_.kickTime              = uint96(block.timestamp);
+        liquidation_.bondSize              = SafeCast.toUint160(bondSize_);
+        liquidation_.bondFactor            = SafeCast.toUint96(bondFactor_);
+        liquidation_.neutralPrice          = SafeCast.toUint96(neutralPrice_);
+        liquidation_.thresholdPrice        = thresholdPrice_;
+        liquidation_.t0ReserveSettleAmount = t0ReserveSettleAmount_;
 
         // increment number of active auctions
         ++auctions_.noOfAuctions;
@@ -422,11 +455,14 @@ library KickerActions {
         // update auctions queue
         if (auctions_.head != address(0)) {
             // other auctions in queue, liquidation doesn't exist or overwriting.
-            auctions_.liquidations[auctions_.tail].next = borrowerAddress_;
-            liquidation_.prev = auctions_.tail;
+            address tail = auctions_.tail;
+            auctions_.liquidations[tail].next = borrowerAddress_;
+            liquidation_.prev = tail;
+            liquidation_.referencePrice = SafeCast.toUint96(Maths.max(referencePrice_, auctions_.liquidations[tail].referencePrice));
         } else {
             // first auction in queue
             auctions_.head = borrowerAddress_;
+            liquidation_.referencePrice = SafeCast.toUint96(referencePrice_);
         }
         // update liquidation with the new ordering
         auctions_.tail = borrowerAddress_;
