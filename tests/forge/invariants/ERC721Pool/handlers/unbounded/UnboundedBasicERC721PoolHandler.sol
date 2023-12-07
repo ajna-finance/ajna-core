@@ -112,7 +112,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.pledgeCollateral']++;
 
-        (, uint256 borrowerCollateralBefore, ) = _pool.borrowerInfo(_actor);
+        uint256 borrowerCollateralBefore = _getBorrowerInfo(_actor).collateral;
         (uint256 kickTimeBefore, , , , uint256 auctionPrice, , , , ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
 
         // **R1**: Exchange rates are unchanged by pledging collateral
@@ -134,7 +134,6 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
                 kickTimeBefore,
                 auctionPrice
             );
-
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -175,7 +174,10 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         if (bucket > LENDER_MAX_BUCKET_INDEX) return;
 
         // calculates collateral required to borrow <amount_> quote tokens, added 1 for roundup such that 0.8 NFT will become 1
-        uint256 collateralToPledge = Maths.wdiv(Maths.wmul(COLLATERALIZATION_FACTOR, amount_), price) / 1e18 + 1;
+        uint256 collateralToPledge = Maths.wdiv(
+            Maths.wmul(COLLATERALIZATION_FACTOR, amount_),
+            price
+        ) / 1e18 + 1;
 
         _ensureCollateralAmount(_actor, collateralToPledge);
         uint256[] memory tokenIds = new uint256[](collateralToPledge);
@@ -185,7 +187,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
 
         (uint256 interestRate, ) = _erc721Pool.interestRateInfo();
 
-        (, uint256 borrowerCollateralBefore, ) = _pool.borrowerInfo(_actor);
+        uint256 borrowerCollateralBefore = _getBorrowerInfo(_actor).collateral;
         (uint256 kickTimeBefore, , , , uint256 auctionPrice, , , , ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
 
         try _erc721Pool.drawDebt(_actor, amount_, 7388, tokenIds) {
@@ -214,17 +216,17 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
-        (uint256 borrowerDebt, uint256 borrowerCollateralBefore, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+        BorrowerInfo memory borrowerInfoBeforeAction = _getBorrowerInfo(_actor);
         (uint256 kickTimeBefore, , , , uint256 auctionPrice, , , , ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
 
         // ensure actor always has amount of quote to repay
-        _ensureQuoteAmount(_actor, borrowerDebt + 10 * 1e18);
+        _ensureQuoteAmount(_actor, borrowerInfoBeforeAction.debt + 10 * 1e18);
 
         try _erc721Pool.repayDebt(_actor, amountToRepay_, 0, _actor, 7388) {
 
             _recordSettleBucket(
                 _actor,
-                borrowerCollateralBefore,
+                borrowerInfoBeforeAction.collateral,
                 kickTimeBefore,
                 auctionPrice
             );

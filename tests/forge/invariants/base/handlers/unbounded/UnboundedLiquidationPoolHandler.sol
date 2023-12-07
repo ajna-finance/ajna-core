@@ -103,8 +103,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         KickerInfo memory kickerInfoBeforeWithdraw = _getKickerInfo(_actor);
         uint256 poolBalanceBeforeWithdraw = _getPoolQuoteBalance();
 
-        try _pool.withdrawBonds(kicker_, maxAmount_) {
-
+        try _pool.withdrawBonds(
+            kicker_,
+            maxAmount_
+        ) {
             KickerInfo memory kickerInfoAfterWithdraw = _getKickerInfo(_actor);
             uint256 poolBalanceAfterWithdraw = _getPoolQuoteBalance();
 
@@ -116,7 +118,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             // **A7**: totalBondEscrowed should decrease only when kicker bonds withdrawned 
             decreaseInBonds += poolBalanceBeforeWithdraw - poolBalanceAfterWithdraw;
-
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -338,11 +339,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         uint256 maxDepth_
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.settleAuction']++;
-        (
-            uint256 borrowerT0Debt,
-            uint256 collateral,
-        ) = _pool.borrowerInfo(borrower_);
-        (uint256 reservesBeforeAction, , , , )= _poolInfo.poolReservesInfo(address(_pool));
+
+        BorrowerInfo memory borrowerInfo = _getBorrowerInfo(borrower_);
+
+        uint256 reservesBeforeAction = _getReservesInfo().reserves;
         (uint256 inflator, ) = _pool.inflatorInfo();
 
         try _pool.settle(
@@ -352,14 +352,14 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             numberOfActions['settle']++;
 
             // settle borrower debt with exchanging borrower collateral with quote tokens starting from hpb
-            while (maxDepth_ != 0 && borrowerT0Debt != 0 && collateral != 0) {
+            while (maxDepth_ != 0 && borrowerInfo.t0Debt != 0 && borrowerInfo.collateral != 0) {
                 uint256 bucketIndex       = fenwickIndexForSum(1);
-                uint256 maxSettleableDebt = Maths.floorWmul(collateral, _priceAt(bucketIndex));
+                uint256 maxSettleableDebt = Maths.floorWmul(borrowerInfo.collateral, _priceAt(bucketIndex));
                 uint256 fenwickDeposit    = fenwickDeposits[bucketIndex];
-                uint256 borrowerDebt      = Maths.wmul(borrowerT0Debt, inflator);
+                uint256 borrowerDebt      = Maths.wmul(borrowerInfo.t0Debt, inflator);
 
                 if (fenwickDeposit == 0 && maxSettleableDebt != 0) {
-                    collateral = 0;
+                    borrowerInfo.collateral = 0;
                     // Deposits in the tree is zero, insert entire collateral into lowest bucket 7388
                     // **B5**: when settle with collateral: record min bucket where collateral added
                     buckets.add(7388);
@@ -369,23 +369,26 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                         // enough deposit in bucket and collateral avail to settle entire debt
                         if (fenwickDeposit >= borrowerDebt && maxSettleableDebt >= borrowerDebt) {
                             fenwickDeposits[bucketIndex] -= borrowerDebt;
-                            collateral                   -= Maths.ceilWdiv(borrowerDebt, _priceAt(bucketIndex));
-                            borrowerT0Debt               = 0;
+
+                            borrowerInfo.collateral -= Maths.ceilWdiv(borrowerDebt, _priceAt(bucketIndex));
+                            borrowerInfo.t0Debt     = 0;
                         }
                         // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
                         else if (maxSettleableDebt >= fenwickDeposit) {
                             fenwickDeposits[bucketIndex] = 0;
-                            collateral                   -= Maths.ceilWdiv(fenwickDeposit, _priceAt(bucketIndex));
-                            borrowerT0Debt               -= Maths.floorWdiv(fenwickDeposit, inflator);
+
+                            borrowerInfo.collateral -= Maths.ceilWdiv(fenwickDeposit, _priceAt(bucketIndex));
+                            borrowerInfo.t0Debt     -= Maths.floorWdiv(fenwickDeposit, inflator);
                         }
                         // exchange all collateral with deposit
                         else {
                             fenwickDeposits[bucketIndex] -= maxSettleableDebt;
-                            collateral                   = 0;
-                            borrowerT0Debt               -= Maths.floorWdiv(maxSettleableDebt, inflator);
+
+                            borrowerInfo.collateral = 0;
+                            borrowerInfo.t0Debt     -= Maths.floorWdiv(maxSettleableDebt, inflator);
                         }
                     } else {
-                        collateral = 0;
+                        borrowerInfo.collateral = 0;
                         // **B5**: when settle with collateral: record min bucket where collateral added.
                         // Lender doesn't get any LP when settle bad debt.
                         buckets.add(7388);
@@ -396,9 +399,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             }
 
             // if collateral becomes 0 and still debt is left, settle debt by reserves and hpb making buckets bankrupt
-            if (borrowerT0Debt != 0 && collateral == 0) {
+            if (borrowerInfo.t0Debt != 0 && borrowerInfo.collateral == 0) {
 
-                (uint256 reservesAfterAction, , , , )= _poolInfo.poolReservesInfo(address(_pool));
+                uint256 reservesAfterAction = _getReservesInfo().reserves;
+
                 if (reservesBeforeAction > reservesAfterAction) {
                     // **RE12**: Reserves decrease by amount of reserve used to settle a auction
                     decreaseInReserves = reservesBeforeAction - reservesAfterAction;
@@ -406,23 +410,28 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                     // Reserves might increase upto 2 WAD due to rounding issue
                     increaseInReserves = reservesAfterAction - reservesBeforeAction;
                 }
-                borrowerT0Debt -= Maths.min(Maths.wdiv(decreaseInReserves, inflator), borrowerT0Debt);
+                borrowerInfo.t0Debt -= Maths.min(
+                    Maths.wdiv(decreaseInReserves, inflator),
+                    borrowerInfo.t0Debt
+                );
 
-                while (maxDepth_ != 0 && borrowerT0Debt != 0) {
+                while (maxDepth_ != 0 && borrowerInfo.t0Debt != 0) {
                     uint256 bucketIndex    = fenwickIndexForSum(1);
                     uint256 fenwickDeposit = fenwickDeposits[bucketIndex];
-                    uint256 borrowerDebt   = Maths.wmul(borrowerT0Debt, inflator);
+                    uint256 borrowerDebt   = Maths.wmul(borrowerInfo.t0Debt, inflator);
 
                     if (bucketIndex != MAX_FENWICK_INDEX) {
                         // debt is greater than bucket deposit
                         if (borrowerDebt > fenwickDeposit) {
                             fenwickDeposits[bucketIndex] = 0;
-                            borrowerT0Debt               -= Maths.floorWdiv(fenwickDeposit, inflator);
+
+                            borrowerInfo.t0Debt -= Maths.floorWdiv(fenwickDeposit, inflator);
                         }
                         // bucket deposit is greater than debt
                         else {
                             fenwickDeposits[bucketIndex] -= borrowerDebt;
-                            borrowerT0Debt               = 0;
+
+                            borrowerInfo.t0Debt = 0;
                         }
                     }
 
@@ -433,7 +442,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             if (
                 _getAuctionInfo(borrower_).kickTime == 0
                 &&
-                collateral % 1e18 != 0
+                borrowerInfo.collateral % 1e18 != 0
                 &&
                 _pool.poolType() == 1
             ) {
@@ -468,12 +477,11 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     // Helper function to calculate quote tokens from lps in a bucket irrespective of deposit available.
     // LP rewarded -> quote token rounded up (as LP rewarded are calculated as rewarded quote token -> LP rounded down)
     function _rewardedLpToQuoteToken(uint256 lps_, uint256 bucketIndex_) internal view returns(uint256 quoteTokens_) {
-        (uint256 bucketLP, uint256 bucketCollateral , , uint256 bucketDeposit, ) = _pool.bucketInfo(bucketIndex_);
-
-        quoteTokens_ =  Buckets.lpToQuoteTokens(
-            bucketCollateral,
-            bucketLP,
-            bucketDeposit,
+        BucketInfo memory bucketInfo = _getBucketInfo(bucketIndex_);
+        quoteTokens_ = Buckets.lpToQuoteTokens(
+            bucketInfo.collateral,
+            bucketInfo.lpBalance,
+            bucketInfo.deposit,
             lps_,
             _priceAt(bucketIndex_),
             Math.Rounding.Up

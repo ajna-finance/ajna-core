@@ -74,8 +74,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         numberOfCalls['BBasicHandler.pledgeCollateral']++;
 
         //  borrower cannot make any action when in auction
-        (uint256 kickTime,,,,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
-        if (kickTime != 0) return;
+        if (_getAuctionInfo(_actor).kickTime != 0) return;
 
         // Prepare test phase
         uint256 boundedAmount = _prePledgeCollateral(amountToPledge_);
@@ -92,8 +91,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         numberOfCalls['BBasicHandler.pullCollateral']++;
 
         //  borrower cannot make any action when in auction
-        (uint256 kickTime,,,,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
-        if (kickTime != 0) return;
+        if (_getAuctionInfo(_actor).kickTime != 0) return;
 
         // Prepare test phase
         uint256 boundedAmount = _prePullCollateral(amountToPull_);
@@ -110,8 +108,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         numberOfCalls['BBasicHandler.drawDebt']++;
 
         //  borrower cannot make any action when in auction
-        (uint256 kickTime,,,,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
-        if (kickTime != 0) return;
+        if (_getAuctionInfo(_actor).kickTime != 0) return;
 
         // Prepare test phase
         uint256 boundedAmount = _preDrawDebt(amountToBorrow_);
@@ -128,8 +125,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         numberOfCalls['BBasicHandler.repayDebt']++;
 
         //  borrower cannot make any action when in auction
-        (uint256 kickTime,,,,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
-        if (kickTime != 0) return;
+        if (_getAuctionInfo(_actor).kickTime != 0) return;
 
         // Prepare test phase
         uint256 boundedAmount = _preRepayDebt(amountToRepay_);
@@ -145,35 +141,46 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
     function _preAddCollateral(
         uint256 amountToAdd_
     ) internal view returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToAdd_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT);
+        boundedAmount_ = constrictToRange(
+            amountToAdd_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT
+        );
     }
 
     function _preRemoveCollateral(
         uint256 amountToRemove_
     ) internal returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToRemove_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT);
+        boundedAmount_ = constrictToRange(
+            amountToRemove_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT
+        );
 
         // ensure actor has collateral to remove
-        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-        if (lpBalanceBefore == 0) _addCollateral(boundedAmount_, _lenderBucketIndex);
+        if (_getLenderInfo(_lenderBucketIndex, _actor).lpBalance == 0) {
+            _addCollateral(boundedAmount_, _lenderBucketIndex);
+        }
     }
 
     function _prePledgeCollateral(
         uint256 amountToPledge_
     ) internal view returns (uint256 boundedAmount_) {
-        boundedAmount_ =  constrictToRange(amountToPledge_, _erc20Pool.collateralScale(), MAX_COLLATERAL_AMOUNT);
+        boundedAmount_ =  constrictToRange(
+            amountToPledge_, _erc20Pool.collateralScale(), MAX_COLLATERAL_AMOUNT
+        );
     }
 
     function _prePullCollateral(
         uint256 amountToPull_
     ) internal view returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToPull_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT);
+        boundedAmount_ = constrictToRange(
+            amountToPull_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT
+        );
     }
 
     function _preDrawDebt(
         uint256 amountToBorrow_
     ) internal override returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToBorrow_, MIN_DEBT_AMOUNT, MAX_DEBT_AMOUNT);
+        boundedAmount_ = constrictToRange(
+            amountToBorrow_, MIN_DEBT_AMOUNT, MAX_DEBT_AMOUNT
+        );
 
         //  borrower cannot make any action when in auction
         (uint256 kickTime, uint256 collateral,,,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
@@ -218,11 +225,12 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
     function _preRepayDebt(
         uint256 amountToRepay_
     ) internal returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToRepay_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
+        boundedAmount_ = constrictToRange(
+            amountToRepay_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT
+        );
 
         // ensure actor has debt to repay
-        (uint256 debt, , ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
-        if (debt == 0) {
+        if (_getBorrowerInfo(_actor).debt == 0) {
             boundedAmount_ = _preDrawDebt(boundedAmount_);
             _drawDebt(boundedAmount_);
         }
