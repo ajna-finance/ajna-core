@@ -20,77 +20,47 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         _startTest();
 
         _borrower          = makeAddr("borrower");
-        _borrower2         = makeAddr("borrower2");
-        _borrower3         = makeAddr("borrower3");
         _lender            = makeAddr("lender");
         _withdrawRecipient = makeAddr("withdrawRecipient");
 
         // deploy subset pool
-        uint256[] memory subsetTokenIds = new uint256[](17);
+        uint256[] memory subsetTokenIds = new uint256[](1);
         subsetTokenIds[0] = 1;
-        subsetTokenIds[1] = 3;
-        subsetTokenIds[2] = 5;
-        subsetTokenIds[3] = 6;
-        subsetTokenIds[4] = 7;
-        subsetTokenIds[5] = 8;
-        subsetTokenIds[6] = 9;
-        subsetTokenIds[7] = 10;
-        subsetTokenIds[8] = 11;
-        subsetTokenIds[9] = 12;
-        subsetTokenIds[10] = 13;
-        subsetTokenIds[11] = 14;
-        subsetTokenIds[12] = 15;
-        subsetTokenIds[13] = 51;
-        subsetTokenIds[14] = 53;
-        subsetTokenIds[15] = 73;
-        subsetTokenIds[16] = 76;
+        // subsetTokenIds[1] = 3;
+        // subsetTokenIds[2] = 5;
+        // subsetTokenIds[3] = 6;
+        // subsetTokenIds[4] = 7;
+        // subsetTokenIds[5] = 8;
+        // subsetTokenIds[6] = 9;
+        // subsetTokenIds[7] = 10;
+        // subsetTokenIds[8] = 11;
+        // subsetTokenIds[9] = 12;
+        // subsetTokenIds[10] = 13;
+        // subsetTokenIds[11] = 14;
+        // subsetTokenIds[12] = 15;
+        // subsetTokenIds[13] = 51;
+        // subsetTokenIds[14] = 53;
+        // subsetTokenIds[15] = 73;
+        // subsetTokenIds[16] = 76;
 
         _pool = _deploySubsetPool(subsetTokenIds);
 
-       _mintAndApproveQuoteTokens(_lender,    1_000_000 * 1e18);
+       _mintAndApproveQuoteTokens(_lender,    300_000_000_000 * 1e18);
        _mintAndApproveQuoteTokens(_borrower,  100 * 1e18);
-       _mintAndApproveQuoteTokens(_borrower2, 8_000 * 1e18);
 
        _mintAndApproveCollateralTokens(_borrower,  6);
-       _mintAndApproveCollateralTokens(_borrower2, 68);
-       _mintAndApproveCollateralTokens(_borrower3, 2);
 
         // Lender adds Quote token accross 5 prices
         _addInitialLiquidity({
             from:   _lender,
-            amount: 2_000 * 1e18,
+            amount: 1_000_000_000.0 * 1e18,
             index:  1
-        });
-        _addInitialLiquidity({
-            from:   _lender,
-            amount: 5_000 * 1e18,
-            index:  1
-        });
-        _addInitialLiquidity({
-            from:   _lender,
-            amount: 11_000 * 1e18,
-            index:  8
-        });
-        _addInitialLiquidity({
-            from:   _lender,
-            amount: 25_000 * 1e18,
-            index:  10
-        });
-        _addInitialLiquidity({
-            from:   _lender,
-            amount: 30_000 * 1e18,
-            index:  12
-        });
-        _addInitialLiquidity({
-            from:   _lender,
-            amount: 30_000.0 * 1e18,
-            index:  _i9_91
         });
 
        // first borrower adds collateral token and borrows
-        uint256[] memory tokenIdsToAdd = new uint256[](2);
+        uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 1;
-        tokenIdsToAdd[1] = 3;
+        // tokenIdsToAdd[1] = 3;
 
         // borrower deposits two NFTs into the subset pool and borrows
         _pledgeCollateral({
@@ -100,52 +70,52 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         });
         _borrow({
             from:       _borrower,
-            amount:     70_000.0 * 1e18,
+            amount:     960_550_000.0 * 1e18,
             indexLimit: _i9_91,
-            newLup:     946585655.625225796879504875 * 1e18
+            newLup:     999_969_141.897027226245329498 * 1e18
         });
 
         // second borrower deposits three NFTs into the subset pool and borrows
-        tokenIdsToAdd = new uint256[](12);
-        tokenIdsToAdd[0] = 7;
-        tokenIdsToAdd[1] = 8;
-        tokenIdsToAdd[2] = 9;
-        tokenIdsToAdd[3] = 10;
-        tokenIdsToAdd[4] = 11;
-        tokenIdsToAdd[5] = 12;
-        tokenIdsToAdd[6] = 13;
-        tokenIdsToAdd[7] = 14;
-        tokenIdsToAdd[8] = 15;
-        tokenIdsToAdd[9] = 51;
-        tokenIdsToAdd[10] = 53;
-        tokenIdsToAdd[11] = 73;
+        // tokenIdsToAdd = new uint256[](12);
+        // tokenIdsToAdd[0] = 7;
+        // tokenIdsToAdd[1] = 8;
+        // tokenIdsToAdd[2] = 9;
+        // tokenIdsToAdd[3] = 10;
+        // tokenIdsToAdd[4] = 11;
+        // tokenIdsToAdd[5] = 12;
+        // tokenIdsToAdd[6] = 13;
+        // tokenIdsToAdd[7] = 14;
+        // tokenIdsToAdd[8] = 15;
+        // tokenIdsToAdd[9] = 51;
+        // tokenIdsToAdd[10] = 53;
+        // tokenIdsToAdd[11] = 73;
 
-        _pledgeCollateral({
-            from:     _borrower2,
-            borrower: _borrower2,
-            tokenIds: tokenIdsToAdd
-        });
-        _borrow({
-            from:       _borrower2,
-            amount:     1.0 * 1e18,
-            indexLimit: _i9_72,
-            newLup:     946_585_655.625225796879504875 * 1e18
-        });
+        // _pledgeCollateral({
+        //     from:     _borrower2,
+        //     borrower: _borrower2,
+        //     tokenIds: tokenIdsToAdd
+        // });
+        // _borrow({
+        //     from:       _borrower2,
+        //     amount:     1.0 * 1e18,
+        //     indexLimit: _i9_72,
+        //     newLup:     946_585_655.625225796879504875 * 1e18
+        // });
 
-        tokenIdsToAdd = new uint256[](1);
-        tokenIdsToAdd[0] = 76;
+        // tokenIdsToAdd = new uint256[](1);
+        // tokenIdsToAdd[0] = 76;
 
-        _pledgeCollateral({
-            from:     _borrower3,
-            borrower: _borrower3,
-            tokenIds: tokenIdsToAdd
-        });
-        _borrow({
-            from:       _borrower3,
-            amount:     2_900.0 * 1e18,
-            indexLimit: _i9_72,
-            newLup:     946_585_655.625225796879504875 * 1e18
-        });
+        // _pledgeCollateral({
+        //     from:     _borrower3,
+        //     borrower: _borrower3,
+        //     tokenIds: tokenIdsToAdd
+        // });
+        // _borrow({
+        //     from:       _borrower3,
+        //     amount:     2_900.0 * 1e18,
+        //     indexLimit: _i9_72,
+        //     newLup:     946_585_655.625225796879504875 * 1e18
+        // });
 
         skip(100 days);
 
@@ -179,21 +149,11 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         // });
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              71033.738098717354809129 * 1e18,
-            borrowerCollateral:        2 * 1e18,
-            borrowert0Np:              38950.535421163694104056 * 1e18,
-            borrowerCollateralization: 0.000268485227228161 * 1e18
+            borrowerDebt:              974735101.867470788027259956 * 1e18,
+            borrowerCollateral:        1 * 1e18,
+            borrowert0Np:              1068969622.822822467761458386 * 1e18,
+            borrowerCollateralization: 0.986430865620282143 * 1e18
         });
-
-        _assertBorrower({
-            borrower:                  _borrower2,
-            borrowerDebt:              1.014767687124533641 * 1e18,
-            borrowerCollateral:        12 * 1e18,
-            borrowert0Np:              0.092739370050389747 * 1e18,
-            borrowerCollateralization: 112.763795435827766372 * 1e18
-        });
-
-        assertEq(_quote.balanceOf(_lender), 897_000 * 1e18);
     }
 
 
@@ -219,27 +179,67 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower,
-            debt:           71033.738098717354809128 * 1e18,
-            collateral:     2 * 1e18,
-            bond:           794.181335423243327069 * 1e18,
-            transferAmount: 794.181335423243327069 * 1e18
+            debt:           974735101.867470788027259955 * 1e18,
+            collateral:     1 * 1e18,
+            bond:           10897869.739154233968795067 * 1e18,
+            transferAmount: 10897869.739154233968795067 * 1e18
         });
+
+        skip(1 minutes);
 
         _assertAuction(
             AuctionParams({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            address(_lender),
-                bondSize:          794.181335423243327069 * 1e18,
+                bondSize:          10897869.739154233968795067 * 1e18,
                 bondFactor:        0.011180339887498948 * 1e18,
-                kickTime:          block.timestamp,
-                referencePrice:    39487.775726474894181973 * 1e18,
-                totalBondEscrowed: 794.181335423243327069 * 1e18,
-                auctionPrice:      10_108_870.585977572910585088 * 1e18,
-                debtInAuction:     71033.738098717354809129 * 1e18,
-                thresholdPrice:    35516.869049358677404564 * 1e18,
-                neutralPrice:      39_487.775726474894181973 * 1e18
+                kickTime:          block.timestamp - 1 minutes,
+                referencePrice:    1083713799.259013131614151035 * 1e18,
+                totalBondEscrowed: 10897869.739154233968795067 * 1e18,
+                auctionPrice:      267_980_423_388.530726670632743680 * 1e18,
+                debtInAuction:     974735101.867470788027259956 * 1e18,
+                thresholdPrice:    974735101.867470788027259955 * 1e18,
+                neutralPrice:      1083713799.259013131614151035 * 1e18
             })
         );
+
+        assertEq(1_004_968_987.606512354182109771 * 1e18, _priceAt(0));
+
+        _take({
+            from:            _lender,
+            borrower:        _borrower,
+            maxCollateral:   2 * 1e18,
+            bondChange:      10897869739154233968795067,
+            givenAmount:     991360820988112808697327591,
+            collateralTaken: 3699377769661894,
+            isReward:        false
+        });
+
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                referencePrice:    0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );
+
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              0,
+            borrowerCollateral:        0,
+            borrowert0Np:              0,
+            borrowerCollateralization: 1.0 * 1e18
+        });
+
     }
 }
