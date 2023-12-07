@@ -42,7 +42,10 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
         // take reserve auction if remaining claimable reserves
         (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
         if (claimableReservesRemaining != 0) {
-            uint256 boundedAmount = constrictToRange(amountToTake_, claimableReservesRemaining / 2, claimableReservesRemaining);
+            uint256 boundedAmount = constrictToRange(
+                amountToTake_, claimableReservesRemaining / 2, claimableReservesRemaining
+            );
+
             _takeReserves(boundedAmount);
         }
     }

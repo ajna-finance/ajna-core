@@ -13,7 +13,8 @@ import {
     MAX_FENWICK_INDEX,
     MAX_PRICE,
     MIN_PRICE,
-    _indexOf
+    _indexOf,
+    _isCollateralized
 }                           from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }            from 'src/libraries/internal/Maths.sol';
 
@@ -27,6 +28,42 @@ uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
 abstract contract BaseHandler is Test {
 
     using EnumerableSet for EnumerableSet.UintSet;
+
+    struct BorrowerInfo {
+        uint256 debt;
+        uint256 collateral;
+        uint256 t0Np;
+    }
+
+    struct BucketInfo {
+        uint256 lpBalance;
+        uint256 collateral;
+        uint256 deposit;
+        uint256 scale;
+        uint256 bankruptcyTime;
+    }
+
+    struct AuctionInfo {
+        address kicker;
+        uint256 bondFactor;
+        uint256 bondSize;
+        uint256 kickTime;
+        uint256 referencePrice;
+        uint256 neutralPrice;
+        uint256 thresholdPrice;
+        address head;
+    }
+
+    struct KickerInfo {
+        uint256 claimableBond;
+        uint256 lockedBond;
+        uint256 totalBond;
+    }
+
+    struct LenderInfo {
+        uint256 lpBalance;
+        uint256 depositTime;
+    }
 
     // Tokens
     TokenWithNDecimals internal _quote;
@@ -259,6 +296,75 @@ abstract contract BaseHandler is Test {
     /*** Pool Helper Functions ***/
     /*****************************/
 
+    function _getAuctionInfo(address borrower_) internal view returns (AuctionInfo memory auctionInfo_) {
+        (
+            auctionInfo_.kicker,
+            auctionInfo_.bondFactor,
+            auctionInfo_.bondSize,
+            auctionInfo_.kickTime,
+            auctionInfo_.referencePrice,
+            auctionInfo_.neutralPrice,
+            auctionInfo_.thresholdPrice,
+            auctionInfo_.head,
+            ,
+        ) = _pool.auctionInfo(borrower_);
+    }
+
+    function _getBorrowerInfo(address borrower_) internal view returns (BorrowerInfo memory borrowerInfo_) {
+        (
+            borrowerInfo_.debt,
+            borrowerInfo_.collateral,
+            borrowerInfo_.t0Np
+        ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+    }
+
+    function _getBucketInfo(uint256 index_) internal view returns (BucketInfo memory bucketInfo_) {
+        (
+            bucketInfo_.lpBalance,
+            bucketInfo_.collateral,
+            bucketInfo_.bankruptcyTime,
+            bucketInfo_.deposit,
+            bucketInfo_.scale
+        ) = _pool.bucketInfo(index_);
+    }
+
+    function _getLenderInfo(
+        uint256 index_,
+        address lender_
+    ) internal view returns (LenderInfo memory lenderInfo_) {
+        (
+            lenderInfo_.lpBalance,
+            lenderInfo_.depositTime
+        ) = _pool.lenderInfo(index_, lender_);
+    }
+
+    function _getKickerInfo(address kicker_) internal view returns (KickerInfo memory kickerInfo_) {
+        (
+            kickerInfo_.claimableBond,
+            kickerInfo_.lockedBond
+        ) = _pool.kickerInfo(kicker_);
+        kickerInfo_.totalBond = kickerInfo_.claimableBond + kickerInfo_.lockedBond;
+    }
+
+    function _getLup() internal view returns (uint256) {
+        return _poolInfo.lup(address(_pool));
+    }
+
+    function _getPoolQuoteBalance() internal view returns (uint256) {
+        return _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
+    }
+
+    function _isBorrowerCollateralized(BorrowerInfo memory borrowerInfo_) internal view returns (bool) {
+        return _isCollateralized(borrowerInfo_.debt, borrowerInfo_.collateral, _getLup(), _pool.poolType());
+    }
+
+    function _lpToQuoteTokens(
+        uint256 lp_,
+        uint256 index_
+    ) internal view returns (uint256) {
+        return _poolInfo.lpToQuoteTokens(address(_pool), lp_, index_);
+    }
+
     function _getKickSkipTime() internal returns (uint256) {
         return vm.envOr("SKIP_TIME_TO_KICK", uint256(200 days));
     }
@@ -435,11 +541,6 @@ abstract contract BaseHandler is Test {
     /*********************************/
     /*** Auctions Helper Functions ***/
     /*********************************/
-
-    function _getKickerBond(address kicker_) internal view returns (uint256 bond_) {
-        (uint256 claimableBond, uint256 lockedBond) = _pool.kickerInfo(kicker_);
-        bond_ = claimableBond + lockedBond;
-    }
 
     function _recordSettleBucket(
         address borrower_,

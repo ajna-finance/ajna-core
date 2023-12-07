@@ -21,7 +21,6 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
         if (claimableReserves == 0) return;
 
         try _pool.kickReserveAuction() {
-
             // **RE11**:  Reserves increase by claimableReserves by kickReserveAuction
             decreaseInReserves += claimableReserves;
         } catch (bytes memory err) {
@@ -44,7 +43,6 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
         (, uint256 claimableReservesBeforeAction, ,) = _pool.reservesInfo();
 
         try _pool.takeReserves(amount_) {
-
             (, uint256 claimableReservesAfterAction, ,) = _pool.reservesInfo();
             // reserves are guaranteed by the protocol)
             require(

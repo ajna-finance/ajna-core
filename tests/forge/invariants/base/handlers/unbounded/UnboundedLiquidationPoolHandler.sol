@@ -37,21 +37,22 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.kickAuction']++;
 
-        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+        BorrowerInfo memory borrowerInfo = _getBorrowerInfo(borrower_);
+        KickerInfo   memory kickerInfoBeforeKick = _getKickerInfo(_actor);
 
         // ensure actor always has the amount to pay for bond
-        _ensureQuoteAmount(_actor, borrowerDebt);
+        _ensureQuoteAmount(_actor, borrowerInfo.debt);
 
-        uint256 kickerBondBefore = _getKickerBond(_actor);
-
-        try _pool.kick(borrower_, 7388) {
+        try _pool.kick(
+            borrower_,
+            7388
+        ) {
             numberOfActions['kick']++;
 
-            uint256 kickerBondAfter = _getKickerBond(_actor);
+            KickerInfo memory kickerInfoAfterKick = _getKickerInfo(_actor);
 
             // **A7**: totalBondEscrowed should increase when auctioned kicked with the difference needed to cover the bond 
-            increaseInBonds += kickerBondAfter - kickerBondBefore;
-
+            increaseInBonds += kickerInfoAfterKick.totalBond - kickerInfoBeforeKick.totalBond;
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -63,29 +64,31 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         numberOfCalls['UBLiquidationHandler.lenderKickAuction']++;
         
         (address maxBorrower, , )              = _pool.loansInfo();
-        (uint256 borrowerDebt, , )             = _poolInfo.borrowerInfo(address(_pool), maxBorrower);
-        ( , , , uint256 depositBeforeAction, ) = _pool.bucketInfo(bucketIndex_);
-        fenwickDeposits[bucketIndex_] = depositBeforeAction;
+        BorrowerInfo memory borrowerInfo = _getBorrowerInfo(maxBorrower);
+        if (borrowerInfo.debt == 0) return;
 
-        uint256 kickerBondBefore = _getKickerBond(_actor);
+        BucketInfo memory bucketInfoBeforeKick = _getBucketInfo(bucketIndex_);
+        KickerInfo memory kickerInfoBeforeKick = _getKickerInfo(_actor);
 
-        if (borrowerDebt == 0) return;
+        // record fenwick tree state before action
+        fenwickDeposits[bucketIndex_] = bucketInfoBeforeKick.deposit;
 
         // ensure actor always has the amount to add for kick
-        _ensureQuoteAmount(_actor, borrowerDebt);
+        _ensureQuoteAmount(_actor, borrowerInfo.debt);
 
-        try _pool.lenderKick(bucketIndex_, 7388) {
+        try _pool.lenderKick(
+            bucketIndex_,
+            7388
+        ) {
             numberOfActions['lenderKick']++;
 
-            ( , , , uint256 depositAfterAction, ) = _pool.bucketInfo(bucketIndex_);
-
-            uint256 kickerBondAfter = _getKickerBond(_actor);
+            BucketInfo memory bucketInfoAfterKick = _getBucketInfo(bucketIndex_);
+            KickerInfo memory kickerInfoAfterKick = _getKickerInfo(_actor);
 
             // **A7**: totalBondEscrowed should increase when auctioned kicked with the difference needed to cover the bond 
-            increaseInBonds += kickerBondAfter - kickerBondBefore;
+            increaseInBonds += kickerInfoAfterKick.totalBond - kickerInfoBeforeKick.totalBond;
 
-            _fenwickRemove(depositBeforeAction - depositAfterAction, bucketIndex_);
-
+            _fenwickRemove(bucketInfoBeforeKick.deposit - bucketInfoAfterKick.deposit, bucketIndex_);
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -97,22 +100,22 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.withdrawBonds']++;
 
-        uint256 balanceBeforeWithdraw = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
-        (uint256 claimableBondBeforeWithdraw, ) = _pool.kickerInfo(_actor);
+        KickerInfo memory kickerInfoBeforeWithdraw = _getKickerInfo(_actor);
+        uint256 poolBalanceBeforeWithdraw = _getPoolQuoteBalance();
 
         try _pool.withdrawBonds(kicker_, maxAmount_) {
 
-            uint256 balanceAfterWithdraw           = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
-            (uint256 claimableBondAfterWithdraw, ) = _pool.kickerInfo(_actor);
+            KickerInfo memory kickerInfoAfterWithdraw = _getKickerInfo(_actor);
+            uint256 poolBalanceAfterWithdraw = _getPoolQuoteBalance();
 
             // **A7** Claimable bonds should be available for withdrawal from pool at any time (bonds are guaranteed by the protocol).
             require(
-                claimableBondAfterWithdraw < claimableBondBeforeWithdraw,
+                kickerInfoAfterWithdraw.claimableBond < kickerInfoBeforeWithdraw.claimableBond,
                 "A7: claimable bond not available to withdraw"
             );
 
             // **A7**: totalBondEscrowed should decrease only when kicker bonds withdrawned 
-            decreaseInBonds += balanceBeforeWithdraw - balanceAfterWithdraw;
+            decreaseInBonds += poolBalanceBeforeWithdraw - poolBalanceAfterWithdraw;
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -130,48 +133,54 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.takeAuction']++;
 
-        (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
+        AuctionInfo  memory auctionInfo            = _getAuctionInfo(borrower_);
+        BorrowerInfo memory borrowerInfoBeforeTake = _getBorrowerInfo(borrower_);
+        KickerInfo   memory kickerInfoBeforeTake   = _getKickerInfo(auctionInfo.kicker);
 
-        (
-            uint256 borrowerDebtBeforeTake,
-            uint256 borrowerCollateralBeforeTake, 
-        ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
-        uint256 totalBondBeforeTake    = _getKickerBond(kicker);
-        uint256 totalBalanceBeforeTake = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
+        uint256 totalBalanceBeforeTake = _getPoolQuoteBalance();
 
         (uint256 kickTimeBefore, , , , uint256 auctionPrice, , , , )    = _poolInfo.auctionStatus(address(_pool), borrower_);
 
         // ensure actor always has the amount to take collateral
         _ensureQuoteAmount(taker_, 1e45);
 
-        try _pool.take(borrower_, amount_, taker_, bytes("")) {
+        try _pool.take(
+            borrower_,
+            amount_,
+            taker_,
+            bytes("")
+        ) {
             numberOfActions['take']++;
 
-            (uint256 borrowerDebtAfterTake, uint256 borrowerCollateralAfterTake, ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
-            uint256 totalBondAfterTake          = _getKickerBond(kicker);
-            uint256 totalBalanceAfterTake       = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
+            BorrowerInfo memory borrowerInfoAfterTake = _getBorrowerInfo(borrower_);
+            KickerInfo   memory kickerInfoAfterTake   = _getKickerInfo(auctionInfo.kicker);
+
+            uint256 totalBalanceAfterTake = _getPoolQuoteBalance();
 
             // **RE7**: Reserves decrease with debt covered by take.
-            decreaseInReserves += borrowerDebtBeforeTake - borrowerDebtAfterTake;
+            decreaseInReserves += borrowerInfoBeforeTake.debt - borrowerInfoAfterTake.debt;
             
             // **A8**: kicker reward <= Borrower penalty
-            borrowerPenalty = Maths.wmul(borrowerCollateralBeforeTake - borrowerCollateralAfterTake, auctionPrice) - (borrowerDebtBeforeTake - borrowerDebtAfterTake);
+            borrowerPenalty = Maths.wmul(
+                borrowerInfoBeforeTake.collateral - borrowerInfoAfterTake.collateral,
+                auctionPrice
+            ) - (borrowerInfoBeforeTake.debt - borrowerInfoAfterTake.debt);
 
-            if (totalBondBeforeTake > totalBondAfterTake) {
+            if (kickerInfoBeforeTake.totalBond > kickerInfoAfterTake.totalBond) {
                 // **RE7**: Reserves increase by bond penalty on take.
-                increaseInReserves += totalBondBeforeTake - totalBondAfterTake;
+                increaseInReserves += kickerInfoBeforeTake.totalBond - kickerInfoAfterTake.totalBond;
 
                 // **A7**: Total Bond decrease by bond penalty on take.
-                decreaseInBonds    += totalBondBeforeTake - totalBondAfterTake;
+                decreaseInBonds    += kickerInfoBeforeTake.totalBond - kickerInfoAfterTake.totalBond;
             } else {
                 // **RE7**: Reserves decrease by bond reward on take.
-                decreaseInReserves += totalBondAfterTake - totalBondBeforeTake;
+                decreaseInReserves += kickerInfoAfterTake.totalBond - kickerInfoBeforeTake.totalBond;
 
                 // **A7**: Total Bond increase by bond penalty on take.
-                increaseInBonds += totalBondAfterTake - totalBondBeforeTake;
+                increaseInBonds += kickerInfoAfterTake.totalBond - kickerInfoBeforeTake.totalBond;
 
                 // **A8**: kicker reward <= Borrower penalty
-                kickerReward += totalBondAfterTake - totalBondBeforeTake;
+                kickerReward += kickerInfoAfterTake.totalBond - kickerInfoBeforeTake.totalBond;
             }
 
             // **RE7**: Reserves increase with the quote token paid by taker.
@@ -180,12 +189,11 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             if (_pool.poolType() == 1) {
                 _recordSettleBucket(
                     borrower_,
-                    borrowerCollateralBeforeTake,
+                    borrowerInfoBeforeTake.collateral,
                     kickTimeBefore,
                     auctionPrice
                 );
             }
-
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -201,21 +209,46 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         (address kicker, , , , , , , , , )  = _pool.auctionInfo(borrower_);
         ( , , , , uint256 auctionPrice, , , , ) = _poolInfo.auctionStatus(address(_pool), borrower_);
-        uint256 auctionBucketIndex        = auctionPrice < MIN_PRICE ? 7388 : (auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionPrice));
+        uint256 auctionBucketIndex = auctionPrice < MIN_PRICE ? 7388 : (auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionPrice));
         
-        LocalBucketTakeVars memory beforeBucketTakeVars = getBucketTakeInfo(bucketIndex_, kicker, _actor, auctionBucketIndex, borrower_);
+        LocalBucketTakeVars memory beforeBucketTakeVars = _getBucketTakeInfo(
+            bucketIndex_,
+            kicker,
+            _actor,
+            auctionBucketIndex,
+            borrower_
+        );
 
-        try _pool.bucketTake(borrower_, depositTake_, bucketIndex_) {
+        try _pool.bucketTake(
+            borrower_,
+            depositTake_,
+            bucketIndex_
+        ) {
             numberOfActions['bucketTake']++;
 
-            LocalBucketTakeVars memory afterBucketTakeVars = getBucketTakeInfo(bucketIndex_, kicker, _actor, auctionBucketIndex, borrower_);
+            LocalBucketTakeVars memory afterBucketTakeVars = _getBucketTakeInfo(
+                bucketIndex_,
+                kicker,
+                _actor,
+                auctionBucketIndex,
+                borrower_
+            );
 
             // **B7**: when awarded bucket take LP : taker deposit time = timestamp of block when award happened
-            if (afterBucketTakeVars.takerLps > beforeBucketTakeVars.takerLps) lenderDepositTime[taker_][bucketIndex_] = block.timestamp;
+            if (afterBucketTakeVars.takerLps > beforeBucketTakeVars.takerLps) {
+                lenderDepositTime[taker_][bucketIndex_] = block.timestamp;
+            }
 
             // for ERC-721 pools; adjust borrower collateral by compensated collateral awarded to the bucket at the auction price
-            if (_pool.poolType() == 1 && beforeBucketTakeVars.borrowerLps != afterBucketTakeVars.borrowerLps) {
-                if (bucketIndex_ == auctionBucketIndex) revert("Cannot distinguish bucketTake collateral from compensated bucket collateral");
+            if (
+                _pool.poolType() == 1
+                &&
+                beforeBucketTakeVars.borrowerLps != afterBucketTakeVars.borrowerLps
+            ) {
+                if (bucketIndex_ == auctionBucketIndex) {
+                    revert("Cannot distinguish bucketTake collateral from compensated bucket collateral");
+                }
+
                 afterBucketTakeVars.borrowerCollateral += afterBucketTakeVars.compensatedBucketCollateral - beforeBucketTakeVars.compensatedBucketCollateral;
             }
 
@@ -225,23 +258,32 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
                 // when kicker and taker are same, kicker Reward = total Reward (lps) - taker Reward (Collateral Price * difference of bucket used and auction price)
                 if (!depositTake_ && kicker == _actor) {
-                    uint256 totalReward = rewardedLpToQuoteToken(afterBucketTakeVars.kickerLps - beforeBucketTakeVars.kickerLps, bucketIndex_);
-                    uint256 takerReward = Maths.floorWmul(beforeBucketTakeVars.borrowerCollateral - afterBucketTakeVars.borrowerCollateral, _priceAt(bucketIndex_) - auctionPrice);
+                    uint256 totalReward = _rewardedLpToQuoteToken(
+                        afterBucketTakeVars.kickerLps - beforeBucketTakeVars.kickerLps,
+                        bucketIndex_
+                    );
+                    uint256 takerReward = Maths.floorWmul(
+                        beforeBucketTakeVars.borrowerCollateral - afterBucketTakeVars.borrowerCollateral,
+                        _priceAt(bucketIndex_) - auctionPrice
+                    );
 
                     // **A8**: kicker reward <= Borrower penalty
                     kickerReward = totalReward - takerReward;
                 } else {
                     // **A8**: kicker reward <= Borrower penalty
-                    kickerReward = rewardedLpToQuoteToken(afterBucketTakeVars.kickerLps - beforeBucketTakeVars.kickerLps, bucketIndex_);
+                    kickerReward = _rewardedLpToQuoteToken(
+                        afterBucketTakeVars.kickerLps - beforeBucketTakeVars.kickerLps,
+                        bucketIndex_
+                    );
                 }
             }
 
             // **A8**: kicker reward <= Borrower penalty
-            if (depositTake_) {
-                borrowerPenalty = Maths.wmul(beforeBucketTakeVars.borrowerCollateral - afterBucketTakeVars.borrowerCollateral, _priceAt(bucketIndex_)) - (beforeBucketTakeVars.borrowerDebt - afterBucketTakeVars.borrowerDebt);
-            } else {
-                borrowerPenalty = Maths.wmul(beforeBucketTakeVars.borrowerCollateral - afterBucketTakeVars.borrowerCollateral, auctionPrice) - (beforeBucketTakeVars.borrowerDebt - afterBucketTakeVars.borrowerDebt);
-            }
+            uint256 price = depositTake_ ? _priceAt(bucketIndex_) : auctionPrice;
+            borrowerPenalty = Maths.wmul(
+                beforeBucketTakeVars.borrowerCollateral - afterBucketTakeVars.borrowerCollateral,
+                price
+            ) - (beforeBucketTakeVars.borrowerDebt - afterBucketTakeVars.borrowerDebt);
                 
             // reserves are increased by take penalty of borrower (Deposit used from bucket - Borrower debt reduced)
             increaseInReserves += borrowerPenalty;
@@ -267,9 +309,13 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             exchangeRateShouldNotChange[bucketIndex_] = true;
 
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
-            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
-            if (kickTime == 0 && _pool.poolType() == 1) {
+            if (
+                _getAuctionInfo(borrower_).kickTime == 0
+                &&
+                _pool.poolType() == 1
+            ) {
                 buckets.add(auctionBucketIndex);
+
                 if (beforeBucketTakeVars.borrowerLps < afterBucketTakeVars.borrowerLps) {
                     lenderDepositTime[borrower_][auctionBucketIndex] = block.timestamp;
                 }
@@ -277,7 +323,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             // assign value to fenwick tree to mitigate rounding error that could be created in a _fenwickRemove call
             fenwickDeposits[bucketIndex_] = afterBucketTakeVars.deposit;
-
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -299,7 +344,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         (uint256 reservesBeforeAction, , , , )= _poolInfo.poolReservesInfo(address(_pool));
         (uint256 inflator, ) = _pool.inflatorInfo();
 
-        try _pool.settle(borrower_, maxDepth_) {
+        try _pool.settle(
+            borrower_,
+            maxDepth_
+        ) {
             numberOfActions['settle']++;
 
             // settle borrower debt with exchanging borrower collateral with quote tokens starting from hpb
@@ -381,8 +429,13 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 }
             }
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
-            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
-            if (kickTime == 0 && collateral % 1e18 != 0 && _pool.poolType() == 1) {
+            if (
+                _getAuctionInfo(borrower_).kickTime == 0
+                &&
+                collateral % 1e18 != 0
+                &&
+                _pool.poolType() == 1
+            ) {
                 buckets.add(7388);
                 lenderDepositTime[borrower_][7388] = block.timestamp;
             }
@@ -391,19 +444,29 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         }
     }
 
-    function getBucketTakeInfo(uint256 bucketIndex_, address kicker_, address taker_, uint256 auctionBucketIndex_, address borrower_) internal view returns(LocalBucketTakeVars memory bucketTakeVars) {
-        (bucketTakeVars.kickerLps, )      = _pool.lenderInfo(bucketIndex_, kicker_);
-        (bucketTakeVars.takerLps, )       = _pool.lenderInfo(bucketIndex_, taker_);
-        ( , , , bucketTakeVars.deposit, ) = _pool.bucketInfo(bucketIndex_);
-        bucketTakeVars.kickerBond         = _getKickerBond(kicker_);
-        (bucketTakeVars.borrowerLps, )    = _pool.lenderInfo(auctionBucketIndex_, borrower_);
-        (bucketTakeVars.borrowerDebt, bucketTakeVars.borrowerCollateral, ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
-        ( , bucketTakeVars.compensatedBucketCollateral, , , )              = _pool.bucketInfo(auctionBucketIndex_);
+    function _getBucketTakeInfo(
+        uint256 bucketIndex_,
+        address kicker_,
+        address taker_,
+        uint256 auctionBucketIndex_,
+        address borrower_
+    ) internal view returns(LocalBucketTakeVars memory bucketTakeVars) {
+        bucketTakeVars.kickerLps   = _getLenderInfo(bucketIndex_, kicker_).lpBalance;
+        bucketTakeVars.takerLps    = _getLenderInfo(bucketIndex_, taker_).lpBalance;
+        bucketTakeVars.borrowerLps = _getLenderInfo(auctionBucketIndex_, borrower_).lpBalance;
+
+        bucketTakeVars.deposit = _getBucketInfo(bucketIndex_).deposit;
+        bucketTakeVars.compensatedBucketCollateral = _getBucketInfo(auctionBucketIndex_).collateral;
+        bucketTakeVars.kickerBond = _getKickerInfo(kicker_).totalBond;
+
+        BorrowerInfo memory borrowerInfo = _getBorrowerInfo(borrower_);
+        bucketTakeVars.borrowerDebt = borrowerInfo.debt;
+        bucketTakeVars.borrowerCollateral = borrowerInfo.collateral;
     }
 
     // Helper function to calculate quote tokens from lps in a bucket irrespective of deposit available.
     // LP rewarded -> quote token rounded up (as LP rewarded are calculated as rewarded quote token -> LP rounded down)
-    function rewardedLpToQuoteToken(uint256 lps_, uint256 bucketIndex_) internal view returns(uint256 quoteTokens_) {
+    function _rewardedLpToQuoteToken(uint256 lps_, uint256 bucketIndex_) internal view returns(uint256 quoteTokens_) {
         (uint256 bucketLP, uint256 bucketCollateral , , uint256 bucketDeposit, ) = _pool.bucketInfo(bucketIndex_);
 
         quoteTokens_ =  Buckets.lpToQuoteTokens(

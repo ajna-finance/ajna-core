@@ -52,8 +52,8 @@ test-swap-load-erc20             :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST
 
 # Regression Tests
 test-regression-all             : test-regression-erc20 test-regression-erc721 test-regression-prototech
-test-regression-erc20           :; forge t --mt test_regression --mc ERC20 --nmc "RealWorldRegression|Prototech"
-test-regression-erc721          :; forge t --mt test_regression --mc ERC721 --nmc "RealWorldRegression|Prototech"
+test-regression-erc20           :; forge t --mt test_regression --mc ERC20 --nmc "RealWorldRegression|Prototech|Position"
+test-regression-erc721          :; forge t --mt test_regression --mc ERC721 --nmc "RealWorldRegression|Prototech|Position"
 test-regression-rewards         :; forge t --mt test_regression --mc Rewards --nmc "RealWorldRegression|Prototech"
 test-regression-position        :; forge t --mt test_regression --mc Position --nmc "RealWorldRegression|Prototech"
 test-regression-prototech       :; forge t --mt test_regression --mc Prototech
