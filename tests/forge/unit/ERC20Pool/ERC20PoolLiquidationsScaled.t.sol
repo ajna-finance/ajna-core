@@ -136,7 +136,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         init(boundColPrecision, boundQuotePrecision);
         addLiquidity(startBucketId);
 
-        // Borrow half the pool's liquidity at 101% collateralization, leaving room for origination fee
+        // Borrow half the pool's liquidity at 105% collateralization, leaving room for origination fee
         (uint256 collateralPledged) = drawDebt(_borrower, 99_000 * 1e18, 1.05 * 1e18);
         assertGt(_borrowerCollateralization(_borrower), 1e18);
 
