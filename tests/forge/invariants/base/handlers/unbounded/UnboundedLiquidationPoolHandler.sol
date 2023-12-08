@@ -27,7 +27,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         uint256 borrowerLps;
         uint256 borrowerCollateral;
         uint256 borrowerDebt;
-        uint256 compensatedBucketCollateral;
     }
 
     /*******************************/
@@ -223,12 +222,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // **B7**: when awarded bucket take LP : taker deposit time = timestamp of block when award happened
             if (afterTakeVars.takerLps > beforeTakeVars.takerLps) lenderDepositTime[taker_][bucketIndex_] = block.timestamp;
 
-            // for ERC-721 pools; adjust borrower collateral by compensated collateral awarded to the bucket at the auction price
-            if (_pool.poolType() == 1 && beforeTakeVars.borrowerLps != afterTakeVars.borrowerLps) {
-                if (bucketIndex_ == auctionBucketIndex) revert("Cannot distinguish bucketTake collateral from compensated bucket collateral");
-                afterTakeVars.borrowerCollateral += afterTakeVars.compensatedBucketCollateral - beforeTakeVars.compensatedBucketCollateral;
-            }
-
             Vm.Log[] memory entries = vm.getRecordedLogs();
             if (afterTakeVars.kickerLps > beforeTakeVars.kickerLps) {
                 // **B7**: when awarded bucket take LP : kicker deposit time = timestamp of block when award happened
@@ -409,7 +402,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         takeVars.kickerBond         = _getKickerBond(kicker_);
         (takeVars.borrowerLps, )    = _pool.lenderInfo(auctionBucketIndex_, borrower_);
         (takeVars.borrowerDebt, takeVars.borrowerCollateral,) = _poolInfo.borrowerInfo(address(_pool), borrower_);
-        ( , takeVars.compensatedBucketCollateral, , , )       = _pool.bucketInfo(auctionBucketIndex_);
     }
 
     // Helper function to calculate quote tokens from lps in a bucket irrespective of deposit available.
