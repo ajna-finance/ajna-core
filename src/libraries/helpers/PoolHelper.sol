@@ -35,6 +35,9 @@ import { Maths }   from '../internal/Maths.sol';
     /// @dev step amounts in basis points. This is a constant across pools at `0.005`, achieved by dividing `WAD` by `10,000`
     int256 constant FLOAT_STEP_INT = 1.005 * 1e18;
 
+    /// @dev collateralization factor used to calculate borrrower HTP/TP/collateralization.
+    uint256 constant COLLATERALIZATION_FACTOR = 1.04 * 1e18;
+
     /**
      *  @notice Calculates the price (`WAD` precision) for a given `Fenwick` index.
      *  @dev    Reverts with `BucketIndexOutOfBounds` if index exceeds maximum constant.
@@ -126,13 +129,13 @@ import { Maths }   from '../internal/Maths.sol';
     /**
      * @notice Calculates the unutilized deposit fee, charged to lenders who deposit below the `LUP`.
      * @param  interestRate_ The current interest rate.
-     * @return Fee rate based upon the given interest rate, capped at 10%.
+     * @return Fee rate based upon the given interest rate
      */
     function _depositFeeRate(
         uint256 interestRate_
     ) pure returns (uint256) {
-        // current annualized rate divided by 365 (24 hours of interest), capped at 10%
-        return Maths.min(Maths.wdiv(interestRate_, 365 * 1e18), 0.1 * 1e18);
+        // current annualized rate divided by 365 * 3 (8 hours of interest)
+        return Maths.wdiv(interestRate_, 365 * 3e18);
     }
 
     /**
@@ -165,6 +168,21 @@ import { Maths }   from '../internal/Maths.sol';
     }
 
     /**
+     *  @notice Calculates `HTP` price.
+     *  @param  thresholdPrice_ Threshold price.
+     *  @param  inflator_       Pool's inflator.
+     */
+    function _htp(
+        uint256 thresholdPrice_,
+        uint256 inflator_
+    ) pure returns (uint256) {
+        return Maths.wmul(
+            Maths.wmul(thresholdPrice_, inflator_),
+            COLLATERALIZATION_FACTOR
+        );
+    }
+
+    /**
      *  @notice Calculates debt-weighted average threshold price.
      *  @param  t0Debt_              Pool debt owed by borrowers in `t0` terms.
      *  @param  inflator_            Pool's borrower inflator.
@@ -175,7 +193,13 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 inflator_,
         uint256 t0Debt2ToCollateral_
     ) pure returns (uint256) {
-        return t0Debt_ == 0 ? 0 : Maths.wdiv(Maths.wmul(inflator_, t0Debt2ToCollateral_), t0Debt_);
+        return t0Debt_ == 0 ? 0 : Maths.wdiv(
+            Maths.wmul(
+                Maths.wmul(inflator_, t0Debt2ToCollateral_),
+                COLLATERALIZATION_FACTOR
+            ),
+            t0Debt_
+        );
     }
 
     /**
@@ -192,16 +216,16 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 price_,
         uint8 type_
     ) pure returns (bool) {
-        // `False` if LUP = MIN_PRICE
-        if (price_ == MIN_PRICE) return false;
+        // `False` if LUP = MIN_PRICE unless there is no debt
+        if (price_ == MIN_PRICE && debt_ != 0) return false;
 
         // Use collateral floor for NFT pools
         if (type_ == uint8(PoolType.ERC721)) {
             //slither-disable-next-line divide-before-multiply
-            collateral_ = (collateral_ / Maths.WAD) * Maths.WAD;
+            collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
         }
         
-        return Maths.wmul(collateral_, price_) >= debt_;
+        return Maths.wmul(collateral_, price_) >= Maths.wmul(COLLATERALIZATION_FACTOR, debt_);
     }
 
     /**
@@ -339,7 +363,7 @@ import { Maths }   from '../internal/Maths.sol';
 
         // calculate claimable reserves if there's quote token excess
         if (quoteTokenBalance_ > guaranteedFunds) {
-            claimable_ = Maths.wmul(0.995 * 1e18, debt_) + quoteTokenBalance_;
+            claimable_ = debt_ + quoteTokenBalance_;
 
             claimable_ -= Maths.min(
                 claimable_,
@@ -375,6 +399,11 @@ import { Maths }   from '../internal/Maths.sol';
     /*************************/
     /*** Auction Utilities ***/
     /*************************/
+
+    /// @dev max bond factor.
+    uint256 constant MIN_BOND_FACTOR = 0.005 * 1e18;
+    /// @dev max NP / TP ratio.
+    uint256 constant MAX_NP_TP_RATIO = 0.03 * 1e18;
 
     /**
      *  @notice Calculates auction price.
@@ -447,10 +476,13 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 borrowerDebt_,
         uint256 npTpRatio_
     ) pure returns (uint256 bondFactor_, uint256 bondSize_) {
-        // bondFactor = min((NP-to-TP-ratio - 1)/10, 0.03)
-        bondFactor_ = Maths.min(
-            0.03 * 1e18,
-            (npTpRatio_ - 1e18) / 10
+        // bondFactor = max(min(0.03,(((NP/TP_ratio)-1)/10)),0.005)
+        bondFactor_ = Maths.max(
+            Maths.min(
+                MAX_NP_TP_RATIO,
+                (npTpRatio_ - 1e18) / 10
+            ),
+            MIN_BOND_FACTOR
         );
 
         bondSize_ = Maths.wmul(bondFactor_,  borrowerDebt_);

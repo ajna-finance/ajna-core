@@ -154,7 +154,7 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
     ) external useTimestamps useRandomActor(takerIndex_) skipTime(skippedTime_) writeLogs {
         address borrower = _borrowers[constrictToRange(borrowerIndex_, 0, _borrowers.length - 1)];
 
-        (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
+        (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
         // Kick borrower if not already kicked
         if (kickTime == 0) {
@@ -255,7 +255,7 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
     /*******************************/
 
     function _resetSettledAuction(address borrower_, uint256 borrowerIndex_) internal {
-        (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower_);
+        (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(borrower_);
         if (kickTime == 0) {
             if (borrowerIndex_ != 0) _activeBorrowers.remove(borrowerIndex_);
         }

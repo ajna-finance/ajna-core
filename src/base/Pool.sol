@@ -50,14 +50,17 @@ import {
 }                                   from '../interfaces/pool/commons/IPoolInternals.sol';
 
 import {
+    COLLATERALIZATION_FACTOR,
     _determineInflatorState,
+    _htp,
     _priceAt,
     _roundToScale
 }                               from '../libraries/helpers/PoolHelper.sol';
 import {
     _revertIfAuctionDebtLocked,
     _revertIfAuctionClearable,
-    _revertAfterExpiry
+    _revertAfterExpiry,
+    _revertIfAuctionPriceBelow
 }                               from '../libraries/helpers/RevertsHelper.sol';
 
 import { Buckets }  from '../libraries/internal/Buckets.sol';
@@ -151,12 +154,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function addQuoteToken(
         uint256 amount_,
         uint256 index_,
-        uint256 expiry_,
-        bool    revertIfBelowLup_
-    ) external override nonReentrant returns (uint256 bucketLP_) {
+        uint256 expiry_
+    ) external override nonReentrant returns (uint256 bucketLP_, uint256 addedAmount_) {
         _revertAfterExpiry(expiry_);
 
         _revertIfAuctionClearable(auctions, loans);
+
+        _revertIfAuctionPriceBelow(index_, auctions);
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -164,14 +168,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         amount_ = _roundToScale(amount_, poolState.quoteTokenScale);
 
         uint256 newLup;
-        (bucketLP_, newLup) = LenderActions.addQuoteToken(
+        (bucketLP_, addedAmount_, newLup) = LenderActions.addQuoteToken(
             buckets,
             deposits,
             poolState,
             AddQuoteParams({
                 amount:           amount_,
-                index:            index_,
-                revertIfBelowLup: revertIfBelowLup_
+                index:            index_
             })
         );
 
@@ -187,12 +190,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 maxAmount_,
         uint256 fromIndex_,
         uint256 toIndex_,
-        uint256 expiry_,
-        bool    revertIfBelowLup_
+        uint256 expiry_
     ) external override nonReentrant returns (uint256 fromBucketLP_, uint256 toBucketLP_, uint256 movedAmount_) {
         _revertAfterExpiry(expiry_);
 
         _revertIfAuctionClearable(auctions, loans);
+
+        _revertIfAuctionPriceBelow(toIndex_, auctions);
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -203,7 +207,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         moveParams.fromIndex        = fromIndex_;
         moveParams.toIndex          = toIndex_;
         moveParams.thresholdPrice   = Loans.getMax(loans).thresholdPrice;
-        moveParams.revertIfBelowLup = revertIfBelowLup_;
 
         uint256 newLup;
         (
@@ -361,7 +364,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
 
         // update pool interest rate state
-        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
+        _updateInterestState(poolState, result.lup);
 
         // transfer from kicker to pool the difference to cover bond
         if (result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
@@ -376,23 +379,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function withdrawBonds(
         address recipient_,
         uint256 maxAmount_
-    ) external override nonReentrant {
-        uint256 claimable = auctions.kickers[msg.sender].claimable;
-
-        // the amount to claim is constrained by the claimable balance of sender
-        // claiming escrowed bonds is not constraiend by the pool balance
-        maxAmount_ = Maths.min(maxAmount_, claimable);
-
-        // revert if no amount to claim
-        if (maxAmount_ == 0) revert InsufficientLiquidity();
-
-        // decrement total bond escrowed
-        auctions.totalBondEscrowed             -= maxAmount_;
-        auctions.kickers[msg.sender].claimable -= maxAmount_;
-
-        emit BondWithdrawn(msg.sender, recipient_, maxAmount_);
-
-        _transferQuoteToken(recipient_, maxAmount_);
+    ) external override nonReentrant returns (uint256 withdrawnAmount_) {
+        withdrawnAmount_ = KickerActions.withdrawBonds(auctions, recipient_, maxAmount_);
+        _transferQuoteToken(recipient_, withdrawnAmount_);
     }
 
     /*********************************/
@@ -557,10 +546,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // Calculate prior pool debt
             poolState_.debt = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
 
-	        // calculate elapsed time since inflator was last updated
+            // calculate elapsed time since inflator was last updated
             uint256 elapsed = block.timestamp - inflatorState.inflatorUpdate;
 
-	        // set isNewInterestAccrued field to true if elapsed time is not 0, indicating that new interest may have accrued
+            // set isNewInterestAccrued field to true if elapsed time is not 0, indicating that new interest may have accrued
             poolState_.isNewInterestAccrued = elapsed != 0;
 
             // if new interest may have accrued, call accrueInterest function and update inflator and debt fields of poolState_ struct
@@ -629,7 +618,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState_
     ) internal {
         // update in memory pool state struct
-        poolState_.debt            -= Maths.wmul(result_.t0DebtSettled, poolState_.inflator);
+        poolState_.debt            -= result_.debtSettled;
         poolState_.t0Debt          -= result_.t0DebtSettled;
         poolState_.t0DebtInAuction -= result_.t0DebtSettled;
         poolState_.collateral      -= result_.collateralSettled;
@@ -749,6 +738,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 kickTime_,
         uint256 referencePrice_,
         uint256 neutralPrice_,
+        uint256 thresholdPrice_,
         address head_,
         address next_,
         address prev_
@@ -761,6 +751,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             liquidation.kickTime,
             liquidation.referencePrice,
             liquidation.neutralPrice,
+            liquidation.thresholdPrice,
             auctions.head,
             liquidation.next,
             liquidation.prev
@@ -826,24 +817,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /// @inheritdoc IPoolState
     function debtInfo() external view returns (uint256, uint256, uint256, uint256) {
-        uint256 t0Debt   = poolBalances.t0Debt;
-        uint256 inflator = inflatorState.inflator;
-
-        return (
-            Maths.ceilWmul(
-                t0Debt,
-                PoolCommons.pendingInflator(
-                    inflator,
-                    inflatorState.inflatorUpdate,
-                    interestState.interestRate
-                )
-            ),
-            Maths.ceilWmul(t0Debt, inflator),
-            Maths.ceilWmul(poolBalances.t0DebtInAuction, inflator),
-            interestState.t0Debt2ToCollateral
-        );
+        return PoolCommons.debtInfo(poolBalances, inflatorState, interestState);
     }
-
 
     /// @inheritdoc IPoolDerivedState
     function depositUpToIndex(uint256 index_) external view override returns (uint256) {
@@ -944,7 +919,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         Loan memory maxLoan = Loans.getMax(loans);
         return (
             maxLoan.borrower,
-            Maths.wmul(maxLoan.thresholdPrice, inflatorState.inflator),
+            _htp(maxLoan.thresholdPrice, inflatorState.inflator),
             Loans.noOfLoans(loans)
         );
     }

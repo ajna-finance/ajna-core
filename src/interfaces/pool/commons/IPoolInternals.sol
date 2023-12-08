@@ -34,6 +34,7 @@ struct SettleResult {
     uint256 collateralRemaining; // [WAD] The amount of borrower collateral left after settle
     uint256 collateralSettled;   // [WAD] The amount of borrower collateral settled
     uint256 t0DebtSettled;       // [WAD] The amount of t0 debt settled
+    uint256 debtSettled;         // [WAD] The amount of actual debt settled
 }
 
 /// @dev Struct used to return result of `TakerAction.take` and `TakerAction.bucketTake` actions.
@@ -70,7 +71,6 @@ struct KickReserveAuctionParams {
 struct AddQuoteParams {
     uint256 amount;           // [WAD] amount to be added
     uint256 index;            // the index in which to deposit
-    bool    revertIfBelowLup; // revert tx if index in which to deposit is below LUP
 }
 
 /// @dev Struct used to hold parameters for `LenderAction.moveQuoteToken` action.
@@ -79,7 +79,6 @@ struct MoveQuoteParams {
     uint256 maxAmountToMove;  // [WAD] max amount to move between deposits
     uint256 toIndex;          // the deposit index where amount is moved to
     uint256 thresholdPrice;   // [WAD] max threshold price in pool
-    bool    revertIfBelowLup; // revert tx if quote token is moved from above the LUP to below the LUP
 }
 
 /// @dev Struct used to hold parameters for `LenderAction.removeQuoteToken` action.

@@ -20,7 +20,7 @@ import { RewardsInvariants }                   from './RewardsInvariants.t.sol';
 
 contract BucketBankruptcyERC20PoolRewardsInvariants is RewardsInvariants {
 
-    BucketBankruptcyERC20PoolRewardsHandler internal _bucketBankruptcyerc20poolrewardsHandler;
+    BucketBankruptcyERC20PoolRewardsHandler internal _bucketBankruptcyERC20PoolRewardsHandler;
     
     function setUp() public override virtual {
 
@@ -59,7 +59,7 @@ contract BucketBankruptcyERC20PoolRewardsInvariants is RewardsInvariants {
         excludeContract(address(_positionManager));
         excludeContract(address(_rewardsManager));
 
-        _bucketBankruptcyerc20poolrewardsHandler = new BucketBankruptcyERC20PoolRewardsHandler(
+        _bucketBankruptcyERC20PoolRewardsHandler = new BucketBankruptcyERC20PoolRewardsHandler(
             address(_rewardsManager),
             address(_positionManager),
             _pools,
@@ -69,6 +69,6 @@ contract BucketBankruptcyERC20PoolRewardsInvariants is RewardsInvariants {
             address(this)
         );
 
-        _handler = address(_bucketBankruptcyerc20poolrewardsHandler);
+        _handler = address(_bucketBankruptcyERC20PoolRewardsHandler);
     }
 }

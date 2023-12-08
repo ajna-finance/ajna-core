@@ -62,7 +62,7 @@ contract SettleERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBas
         kickerIndex_   = constrictToRange(kickerIndex_, 0, LENDERS - 1);
         address kicker = _lenders[kickerIndex_];
 
-        (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower);
+        (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(borrower);
 
         // Kick auction if not already kicked
         if (kickTime == 0) {
@@ -71,7 +71,7 @@ contract SettleERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBas
             _kickAuction(borrower);
         }
 
-        (,,, kickTime,,,,,) = _pool.auctionInfo(borrower);
+        (,,, kickTime,,,,,,) = _pool.auctionInfo(borrower);
 
         if (kickTime == 0) return;
 
@@ -104,7 +104,7 @@ contract SettleERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBas
         actorIndex_    = constrictToRange(actorIndex_, 0, LENDERS - 1);
         address payer = _lenders[actorIndex_];
 
-        (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower);
+        (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(borrower);
 
         // Kick auction if not already kicked
         if (kickTime == 0) {
@@ -113,7 +113,7 @@ contract SettleERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBas
             _kickAuction(borrower);
         }
 
-        (,,, kickTime,,,,,) = _pool.auctionInfo(borrower);
+        (,,, kickTime,,,,,,) = _pool.auctionInfo(borrower);
 
         if (kickTime == 0) return;
 
@@ -225,7 +225,7 @@ contract SettleERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBas
             }
         }
         // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
-        (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower_);
+        (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
         if (kickTime == 0 && collateral % 1e18 != 0 && _pool.poolType() == 1) {
             buckets.add(7388);
             lenderDepositTime[borrower_][7388] = block.timestamp;
@@ -244,7 +244,10 @@ contract SettleERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBas
         // ensure actor always has amount of quote to repay
         _ensureQuoteAmount(payer_, borrowerDebt + 10 * 1e18);
 
-        _erc20Pool.repayDebt(borrower_, amountToRepay_, 0, borrower_, 7388);
+        try _erc20Pool.repayDebt(borrower_, amountToRepay_, 0, borrower_, 7388) {
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
+        }
     }
 
     function _setupLendersAndDeposits(uint256 count_) internal virtual {
@@ -294,7 +297,7 @@ contract SettleERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBas
     }
 
     function _resetSettledAuction(address borrower_, uint256 borrowerIndex_) internal {
-        (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower_);
+        (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(borrower_);
         if (kickTime == 0) {
             if (borrowerIndex_ != 0) _activeBorrowers.remove(borrowerIndex_);
         }

@@ -8,7 +8,8 @@ import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
 import {
     _borrowFeeRate,
     _depositFeeRate,
-    _roundToScale
+    _roundToScale,
+    COLLATERALIZATION_FACTOR
 }                           from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }            from "src/libraries/internal/Maths.sol";
 
@@ -126,7 +127,7 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
 
         uint256 bucket = depositIndex - 1;
         uint256 price = _poolInfo.indexToPrice(bucket);
-        uint256 collateralToPledge = ((amount_ * 1e18 + price / 2) / price) * 101 / 100 + 1;
+        uint256 collateralToPledge = ((COLLATERALIZATION_FACTOR * amount_ + price / 2) / price) * 101 / 100 + 1;
 
         // ensure actor always has amount of collateral to pledge
         _ensureCollateralAmount(_actor, collateralToPledge);

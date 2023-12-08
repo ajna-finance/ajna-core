@@ -12,7 +12,7 @@ import 'src/interfaces/pool/commons/IPoolEvents.sol';
 import 'src/interfaces/pool/IERC3156FlashBorrower.sol';
 import 'src/PoolInfoUtils.sol';
 
-import { _auctionPrice, _bpf, MAX_PRICE } from 'src/libraries/helpers/PoolHelper.sol';
+import { _auctionPrice, _bpf, _depositFeeRate, MAX_PRICE } from 'src/libraries/helpers/PoolHelper.sol';
 
 abstract contract DSTestPlus is Test, IPoolEvents {
 
@@ -118,19 +118,19 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 amount,
         uint256 index
     ) internal {
-        uint256 quoteTokenScale = IPool(address(_pool)).quoteTokenScale();
-        uint256 lpAmount        = (amount / quoteTokenScale) * quoteTokenScale;
-        _addLiquidity(from, amount, index, lpAmount, MAX_PRICE);
+        uint256 amountAdded     = Maths.wmul(amount, _depositFee());
+        uint256 lpAmount        = amountAdded;
+        _addLiquidityWithPenalty(from, amount, amountAdded, index, lpAmount, MAX_PRICE);
     }
 
-    // Adds liquidity with interest rate update
+    // Adds liquidity without checking LP awarded or LUP
     function _addLiquidityNoEventCheck(
         address from,
         uint256 amount,
         uint256 index
     ) internal {
         changePrank(from);
-        _pool.addQuoteToken(amount, index, type(uint256).max, false);
+        _pool.addQuoteToken(amount, index, type(uint256).max);
 
         // Add for tearDown
         lenders.add(from);
@@ -145,24 +145,27 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 lpAward,
         uint256 newLup
     ) internal {
-        _addLiquidityWithPenalty(from, amount, amount, index, lpAward, newLup);
+        uint256 amountAdded = Maths.wmul(amount, _depositFee());
+        _addLiquidityWithPenalty(from, amount, amountAdded, index, lpAward, newLup);
     }
 
+    // Adds liquidity validating the lender deposit fee
     function _addLiquidityWithPenalty(
         address from,
         uint256 amount,
-        uint256 amountAdded,    // amount less penalty, where applicable
+        uint256 amountAdded,    // amount less fee
         uint256 index,
         uint256 lpAward,
         uint256 newLup
     ) internal {
-        uint256 quoteTokenScale = IPool(address(_pool)).quoteTokenScale();
         changePrank(from);
 
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(from, index, (amountAdded / quoteTokenScale) * quoteTokenScale, lpAward, newLup);
+        emit AddQuoteToken(from, index, amountAdded, lpAward, newLup);
         _assertQuoteTokenTransferEvent(from, address(_pool), amount);
-        _pool.addQuoteToken(amount, index, type(uint256).max, false);
+        (uint256 returnLpAward, uint256 returnedAmountAdded) = _pool.addQuoteToken(amount, index, type(uint256).max);
+        assertEq(returnLpAward, lpAward);
+        assertEq(returnedAmountAdded, amountAdded);
 
         // Add for tearDown
         lenders.add(from);
@@ -281,7 +284,8 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 lpAwardTo,
         uint256 newLup
     ) internal {
-        _moveLiquidityWithPenalty(from, amount, amount, fromIndex, toIndex, lpRedeemFrom, lpAwardTo, newLup);
+        uint256 amountMoved = fromIndex > toIndex ? amount : Maths.wmul(amount, _depositFee());
+        _moveLiquidityWithPenalty(from, amount, amountMoved, fromIndex, toIndex, lpRedeemFrom, lpAwardTo, newLup);
     }
 
     function _moveLiquidityWithPenalty(
@@ -297,7 +301,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
         emit MoveQuoteToken(from, fromIndex, toIndex, amountMoved, lpRedeemFrom, lpAwardTo, newLup);
-        (uint256 lpbFrom, uint256 lpbTo, ) = _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max, false);
+        (uint256 lpbFrom, uint256 lpbTo, ) = _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
         assertEq(lpbFrom, lpRedeemFrom);
         assertEq(lpbTo,   lpAwardTo);
 
@@ -357,7 +361,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, amount, lpRedeem, newLup);
-        _assertQuoteTokenTransferEvent(address(_pool), from, amount);
+        _assertQuoteTokenTransferEventRoundingDown(address(_pool), from, amount);
         (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(amount, index);
         assertEq(removedAmount, amount);
         assertEq(lpRedeemed,    lpRedeem);
@@ -416,6 +420,14 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         // to be overidden by ERC20 helper 
     }
 
+    function _assertQuoteTokenTransferEventRoundingDown(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {
+        // to be overidden by ERC20 helper 
+    }
+
     function _assertCollateralTokenTransferEvent(
         address from,
         address to,
@@ -449,6 +461,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             vars.auctionKickTime,
             vars.auctionReferencePrice,
             vars.auctionNeutralPrice,
+            vars.borrowerThresholdPrice,
             ,
             ,
         ) = _pool.auctionInfo(state_.borrower);
@@ -456,8 +469,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         (uint256 borrowerDebt, uint256 borrowerCollateral , ) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
         (, uint256 lockedBonds) = _pool.kickerInfo(state_.kicker);
         (vars.auctionTotalBondEscrowed,,,) = _pool.reservesInfo();
-        (,, vars.auctionDebtInAuction,)  = _pool.debtInfo(); 
-        vars.borrowerThresholdPrice = borrowerCollateral > 0 ? borrowerDebt * Maths.WAD / borrowerCollateral : 0;
+        (,, vars.auctionDebtInAuction,)  = _pool.debtInfo();
 
         assertEq(vars.auctionKickTime != 0,     state_.active);
         assertEq(vars.auctionKicker,            state_.kicker);
@@ -480,7 +492,9 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             uint256 debtToCover, 
             bool    isCollateralized,      
             uint256 price,          
-            uint256 neutralPrice    
+            uint256 neutralPrice,
+            ,
+            ,
         ) = _poolUtils.auctionStatus(address(_pool), state_.borrower);
         assertEq(kickTime,     state_.kickTime);
         assertEq(neutralPrice, state_.neutralPrice);
@@ -794,7 +808,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('BucketBankruptcyBlock()'));
-        _pool.addQuoteToken(amount, index, type(uint256).max, false);
+        _pool.addQuoteToken(amount, index, type(uint256).max);
     }
 
     function _assertAddLiquidityAtIndex0Revert(
@@ -803,7 +817,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InvalidIndex.selector);
-        _pool.addQuoteToken(amount, 0, type(uint256).max, false);
+        _pool.addQuoteToken(amount, 0, type(uint256).max);
     }
 
     function _assertAddLiquidityDustRevert(
@@ -813,7 +827,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
-        _pool.addQuoteToken(amount, index, type(uint256).max, false);
+        _pool.addQuoteToken(amount, index, type(uint256).max);
     }
 
     function _assertAddLiquidityExpiredRevert(
@@ -824,17 +838,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.TransactionExpired.selector);
-        _pool.addQuoteToken(amount, index, expiry, false);
-    }
-
-    function _assertAddLiquidityPriceBelowLUPRevert(
-        address from,
-        uint256 amount,
-        uint256 index
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('PriceBelowLUP()'));
-        _pool.addQuoteToken(amount, index, type(uint256).max, true);
+        _pool.addQuoteToken(amount, index, expiry);
     }
 
     function _assertArbTakeNoAuction(
@@ -1258,7 +1262,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('BucketBankruptcyBlock()'));
-        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max, false);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 
     function _assertMoveLiquidityLupBelowHtpRevert(
@@ -1269,7 +1273,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LUPBelowHTP.selector);
-        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max, false);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 
     function _assertMoveLiquidityExpiredRevert(
@@ -1281,7 +1285,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.TransactionExpired.selector);
-        _pool.moveQuoteToken(amount, fromIndex, toIndex, expiry, false);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex, expiry);
     }
 
     function _assertMoveLiquidityDustRevert(
@@ -1292,7 +1296,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
-        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max, false);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 
     function _assertMoveLiquidityToSameIndexRevert(
@@ -1303,7 +1307,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.MoveToSameIndex.selector);
-        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max, false);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 
     function _assertMoveLiquidityToIndex0Revert(
@@ -1313,7 +1317,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InvalidIndex.selector);
-        _pool.moveQuoteToken(amount, fromIndex, 0, type(uint256).max, false);
+        _pool.moveQuoteToken(amount, fromIndex, 0, type(uint256).max);
     }
 
     function _assertMoveDepositLockedByAuctionDebtRevert(
@@ -1324,7 +1328,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.RemoveDepositLockedByAuctionDebt.selector);
-        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max, false);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 
     function _assertMoveDepositAuctionNotClearedRevert(
@@ -1335,18 +1339,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AuctionNotCleared.selector);
-        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max, false);
-    }
-
-    function _assertMoveDepositBelowLUPRevert(
-        address from,
-        uint256 amount,
-        uint256 fromIndex,
-        uint256 toIndex
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.PriceBelowLUP.selector);
-        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max, true);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 
     function _assertRepayAuctionActiveRevert(
@@ -1393,7 +1386,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.takeReserves(amount);
     }
 
-    function _assertTakeReservesNoReservesRevert() internal {
+    function _assertKickReservesNoReservesRevert() internal {
         vm.expectRevert(IPoolErrors.NoReserves.selector);
         _pool.kickReserveAuction();
     }
@@ -1535,7 +1528,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         (uint256 interestRate, ) = _pool.interestRateInfo();
         uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
         uint256 expectedDebt = Maths.wmul(borrowAmount, _borrowFeeRate(newInterestRate) + Maths.WAD);
-        requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice));
+        requiredCollateral_ = Maths.wdiv(Maths.wmul(expectedDebt, COLLATERALIZATION_FACTOR), _poolUtils.indexToPrice(indexPrice));
     }
 
     // calculate the fee that will be charged a borrower
@@ -1544,6 +1537,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
         // calculate the fee rate based upon the interest rate
         feeRate_ = _borrowFeeRate(newInterestRate) + Maths.WAD;
+    }
+
+    // calculate the fee that will be charged a lender
+    function _depositFee() internal view returns (uint256 feeRate_) {
+        (uint256 interestRate, ) = _pool.interestRateInfo();
+        feeRate_ = Maths.WAD - _depositFeeRate(interestRate);
     }
 }
 
@@ -1558,5 +1557,3 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     function greaterThanWithinDiff(uint256 x, uint256 y, uint256 expectedDiff, string memory err) pure {
         require(x > y || getDiff(x, y) <= expectedDiff, err);
     }
-
-

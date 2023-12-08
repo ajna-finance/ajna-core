@@ -292,8 +292,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
         uint256 tokenId_,
         uint256 fromIndex_,
         uint256 toIndex_,
-        uint256 expiry_,
-        bool    revertIfBelowLup_
+        uint256 expiry_
     ) external override nonReentrant mayInteract(pool_, tokenId_) {
         TokenInfo storage tokenInfo    = positionTokens[tokenId_];
         Position  storage fromPosition = tokenInfo.positions[fromIndex_];
@@ -336,8 +335,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
             vars.maxQuote,
             fromIndex_,
             toIndex_,
-            expiry_,
-            revertIfBelowLup_
+            expiry_
         );
 
         EnumerableSet.UintSet storage positionIndexes = tokenInfo.positionIndexes;
