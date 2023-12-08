@@ -579,7 +579,7 @@ contract ERC20PoolLiquidationKickFuzzyTest is ERC20FuzzyHelperContract {
 
             uint256 borrowerDebt = Maths.wmul(amountToBorrow, _poolUtils.borrowFeeRate(address(_pool)) + Maths.WAD);
 
-            (,, uint256 borrowert0Np) = _poolUtils.borrowerInfo(address(_pool), _borrowers[i]);
+            (,, uint256 borrowert0Np, uint256 t0ThresholdPrice) = _poolUtils.borrowerInfo(address(_pool), _borrowers[i]);
 
             uint256 lup = _poolUtils.lup(address(_pool));
 

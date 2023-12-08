@@ -152,7 +152,7 @@ def aggregate_borrower_debt(borrowers, pool_helper, debug=False):
     total_debt = 0
     for i in range(0, len(borrowers) - 1):
         borrower = borrowers[i]
-        (debt, _, _) = pool_helper.borrowerInfo(borrower.address)
+        (debt, _, _, _) = pool_helper.borrowerInfo(borrower.address)
         if debug and debt > 0:
             log(f"   borrower {i:>4}     debt: {debt/1e18:>15.3f}")
         total_debt += debt
@@ -177,7 +177,7 @@ def pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_depos
     pool = pool_helper.pool
 
     # prevent invalid actions
-    (debt, pledged, _) = pool_helper.borrowerInfo(borrower.address)
+    (debt, pledged, _, _) = pool_helper.borrowerInfo(borrower.address)
     if not ensure_pool_is_funded(pool, borrow_amount, "borrow"):
         # ensure_pool_is_funded logs a message
         return
@@ -320,7 +320,7 @@ def remove_quote_token(lender, lender_index, price, pool_helper) -> bool:
 
 def repay_debt(borrower, borrower_index, pool_helper, test_utils):
     dai = pool_helper.quoteToken()
-    (debt, collateral_deposited, _) = pool_helper.borrowerInfo(borrower)
+    (debt, collateral_deposited, _, _) = pool_helper.borrowerInfo(borrower)
     quote_balance = dai.balanceOf(borrower)
     (_, _, _, min_debt) = pool_helper.utilizationInfo()
 

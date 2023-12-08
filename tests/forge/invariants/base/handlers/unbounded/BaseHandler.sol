@@ -139,7 +139,7 @@ abstract contract BaseHandler is Test {
         if (headAuction != address(0)) {
             (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(headAuction);
             if (block.timestamp - kickTime > 72 hours) {
-                (uint256 auctionedDebt, , ) = _poolInfo.borrowerInfo(address(_pool), headAuction);
+                (uint256 auctionedDebt, , , ) = _poolInfo.borrowerInfo(address(_pool), headAuction);
 
                 try vm.startPrank(headAuction) {
                 } catch {
@@ -166,7 +166,7 @@ abstract contract BaseHandler is Test {
                 (address borrower, , ) = _pool.loansInfo();
 
                 if (borrower != address(0)) {
-                    (uint256 debt, , )     = _poolInfo.borrowerInfo(address(_pool), borrower);
+                    (uint256 debt, , , )     = _poolInfo.borrowerInfo(address(_pool), borrower);
 
                     try vm.startPrank(borrower) {
                     } catch {
@@ -558,10 +558,13 @@ abstract contract BaseHandler is Test {
         for (uint256 i = 0; i < actors.length; i++) {
             printLine("");
             printLog("Actor ", i + 1);
-            (uint256 debt, uint256 pledgedCollateral, ) = _poolInfo.borrowerInfo(address(_pool), actors[i]);
+            (uint256 debt, uint256 pledgedCollateral, uint256 t0NeutralPrice, uint256 t0ThresholdPrice) = _poolInfo.borrowerInfo(address(_pool), actors[i]);
             if (debt != 0 || pledgedCollateral != 0) {
                 printLog("Debt               = ", debt);
                 printLog("Pledged collateral = ", pledgedCollateral);
+                printLog("t0 Neutral Price   = ", t0NeutralPrice);
+                printLog("t0 Threshold Price = ", t0ThresholdPrice);
+
             }
         }
         printInNextLine("=======================");

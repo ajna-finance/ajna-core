@@ -37,7 +37,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.kickAuction']++;
 
-        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+        (uint256 borrowerDebt, , , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
 
         // ensure actor always has the amount to pay for bond
         _ensureQuoteAmount(_actor, borrowerDebt);
@@ -63,7 +63,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         numberOfCalls['UBLiquidationHandler.lenderKickAuction']++;
         
         (address maxBorrower, , )              = _pool.loansInfo();
-        (uint256 borrowerDebt, , )             = _poolInfo.borrowerInfo(address(_pool), maxBorrower);
+        (uint256 borrowerDebt, , , )             = _poolInfo.borrowerInfo(address(_pool), maxBorrower);
         ( , , , uint256 depositBeforeAction, ) = _pool.bucketInfo(bucketIndex_);
         fenwickDeposits[bucketIndex_] = depositBeforeAction;
 
@@ -134,7 +134,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         (
             uint256 borrowerDebtBeforeTake,
-            uint256 borrowerCollateralBeforeTake, 
+            uint256 borrowerCollateralBeforeTake,
+            ,
         ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
         uint256 totalBondBeforeTake    = _getKickerBond(kicker);
         uint256 totalBalanceBeforeTake = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
@@ -147,7 +148,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         try _pool.take(borrower_, amount_, taker_, bytes("")) {
             numberOfActions['take']++;
 
-            (uint256 borrowerDebtAfterTake, uint256 borrowerCollateralAfterTake, ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+            (uint256 borrowerDebtAfterTake, uint256 borrowerCollateralAfterTake, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
             uint256 totalBondAfterTake          = _getKickerBond(kicker);
             uint256 totalBalanceAfterTake       = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
 
@@ -397,7 +398,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         ( , , , bucketTakeVars.deposit, ) = _pool.bucketInfo(bucketIndex_);
         bucketTakeVars.kickerBond         = _getKickerBond(kicker_);
         (bucketTakeVars.borrowerLps, )    = _pool.lenderInfo(auctionBucketIndex_, borrower_);
-        (bucketTakeVars.borrowerDebt, bucketTakeVars.borrowerCollateral, ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+        (bucketTakeVars.borrowerDebt, bucketTakeVars.borrowerCollateral, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
         ( , bucketTakeVars.compensatedBucketCollateral, , , )              = _pool.bucketInfo(auctionBucketIndex_);
     }
 

@@ -239,7 +239,7 @@ contract SettleERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBas
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
-        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+        (uint256 borrowerDebt, , , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
 
         // ensure actor always has amount of quote to repay
         _ensureQuoteAmount(payer_, borrowerDebt + 10 * 1e18);

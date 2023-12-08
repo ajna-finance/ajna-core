@@ -84,7 +84,7 @@ contract PoolInfoUtils {
             thresholdPrice_, , , ) = IPool(ajnaPool_).auctionInfo(borrower_);
 
         if (kickTime_ != 0) {
-            (debtToCover_, collateral_, ) = this.borrowerInfo(ajnaPool_, borrower_);
+            (debtToCover_, collateral_, , ) = this.borrowerInfo(ajnaPool_, borrower_);
 
             (vars.poolDebt,,,) = IPool(ajnaPool_).debtInfo();
             vars.lup           = _priceAt(IPool(ajnaPool_).depositIndex(vars.poolDebt));
@@ -139,7 +139,8 @@ contract PoolInfoUtils {
         returns (
             uint256 debt_,
             uint256 collateral_,
-            uint256 t0Np_
+            uint256 t0Np_,
+            uint256 t0ThresholdPrice_
         )
     {
         IPool pool = IPool(ajnaPool_);
@@ -157,7 +158,10 @@ contract PoolInfoUtils {
         uint256 npTpRatio;
         (t0Debt, collateral_, npTpRatio)  = pool.borrowerInfo(borrower_);
 
+        // (, thresholdPrice_) = pool.loanInfo(borrower_);
+
         t0Np_ = collateral_ == 0 ? 0 : Math.mulDiv(t0Debt, npTpRatio, collateral_);
+        t0ThresholdPrice_ = collateral_ == 0 ? 0 : Maths.wdiv(t0Debt, collateral_);
 
         debt_ = Maths.ceilWmul(t0Debt, pendingInflator);
     }

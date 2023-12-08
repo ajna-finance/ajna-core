@@ -95,10 +95,11 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
     }
 
     function testPoolInfoUtilsBorrowerInfo() external {
-        (uint256 debt, uint256 collateral, uint256 npTpRatio) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        (uint256 debt, uint256 collateral, uint256 npTpRatio, uint256 thresholdPrice) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,       21_020.192307692307702000 * 1e18);
         assertEq(collateral, 100 * 1e18);
         assertEq(npTpRatio,  233.703212526982164624 * 1e18);
+        assertEq(thresholdPrice, 0.004739336492890995 * 1e18);
     }
 
     function testPoolInfoUtilsBucketInfo() external {
@@ -306,7 +307,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
 
         bytes[] memory result = poolUtilsMulticall.multicall(functionSignatures, args);
 
-        (uint256 debt,,) = abi.decode(result[0], (uint256, uint256, uint256));
+        (uint256 debt,,,) = abi.decode(result[0], (uint256, uint256, uint256, uint256));
 
         assertEq(debt,       21_020.192307692307702000 * 1e18);
         assertEq(abi.decode(result[1], (uint256)), _poolUtils.htp(address(_pool)));

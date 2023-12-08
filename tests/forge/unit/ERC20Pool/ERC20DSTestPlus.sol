@@ -110,7 +110,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
         uint256 pledgedCollateral = 0;
         for (uint i = 0; i < borrowers.length(); i++) {
-            (, uint256 collateral,) = _poolUtils.borrowerInfo(address(_pool), borrowers.at(i));
+            (, uint256 collateral, , ) = _poolUtils.borrowerInfo(address(_pool), borrowers.at(i));
             pledgedCollateral += collateral;
         }
 

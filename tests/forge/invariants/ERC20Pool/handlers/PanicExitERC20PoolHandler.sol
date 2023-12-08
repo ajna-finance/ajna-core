@@ -68,7 +68,7 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
             numberOfCalls['BPanicExitPoolHandler.repayLoan']++;
             _repayDebt(type(uint256).max);
         }
-        (, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+        (, uint256 collateral, , ) = _poolInfo.borrowerInfo(address(_pool), _actor);
         _pullCollateral(collateral);
 
         _resetSettledAuction(_actor, borrowerIndex_);

@@ -214,7 +214,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
-        (uint256 borrowerDebt, uint256 borrowerCollateralBefore, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+        (uint256 borrowerDebt, uint256 borrowerCollateralBefore, , ) = _poolInfo.borrowerInfo(address(_pool), _actor);
         (uint256 kickTimeBefore, , , , uint256 auctionPrice, , , , ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
 
         // ensure actor always has amount of quote to repay

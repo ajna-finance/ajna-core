@@ -218,7 +218,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         // 3. drawDebt should not make borrower under collateralized
 
         // 1. borrower's debt should exceed minDebt
-        (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+        (debt, collateral, , ) = _poolInfo.borrowerInfo(address(_pool), _actor);
         (uint256 minDebt, , , ) = _poolInfo.poolUtilizationInfo(address(_pool));
 
         if (boundedAmount_ < minDebt && minDebt < MAX_DEBT_AMOUNT) boundedAmount_ = minDebt + 1;
@@ -235,13 +235,13 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         (uint256 currentPoolDebt, , , ) = _pool.debtInfo();
         uint256 nextPoolDebt = currentPoolDebt + boundedAmount_;
         uint256 newLup = _priceAt(_pool.depositIndex(nextPoolDebt));
-        (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+        (debt, collateral, , ) = _poolInfo.borrowerInfo(address(_pool), _actor);
 
         // repay debt if borrower becomes undercollateralized with new debt at new lup
         if (!_isCollateralized(debt + boundedAmount_, collateral, newLup, _pool.poolType())) {
             _repayDebt(type(uint256).max);
 
-            (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+            (debt, collateral, , ) = _poolInfo.borrowerInfo(address(_pool), _actor);
             _pullCollateral(collateral);
 
             require(debt == 0, "borrower has debt");
@@ -254,7 +254,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         boundedAmount_ = constrictToRange(amountToRepay_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
 
         // ensure actor has debt to repay
-        (uint256 debt, , ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
+        (uint256 debt, , , ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
         if (debt == 0) {
             boundedAmount_ = _preDrawDebt(boundedAmount_);
             _drawDebt(boundedAmount_);

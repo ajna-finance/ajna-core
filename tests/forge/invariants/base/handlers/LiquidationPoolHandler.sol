@@ -57,7 +57,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         // try to take from head auction if any
         (, , , , , , , address headAuction, , ) = _pool.auctionInfo(address(0));
         if (headAuction != address(0)) {
-            (, uint256 auctionedCollateral, ) = _poolInfo.borrowerInfo(address(_pool), headAuction);
+            (, uint256 auctionedCollateral, , ) = _poolInfo.borrowerInfo(address(_pool), headAuction);
             borrower = headAuction;
             amount_  = auctionedCollateral / 2;
 
@@ -157,7 +157,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         if (!borrowerKicked_) {
             // if borrower not kicked then check if it is undercollateralized / kickable
             uint256 lup = _poolInfo.lup(address(_pool));
-            (uint256 debt, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+            (uint256 debt, uint256 collateral, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
 
             if (_isCollateralized(debt, collateral, lup, _pool.poolType())) {
                 changePrank(borrower_);
@@ -166,7 +166,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
                 _drawDebt(drawDebtAmount);
 
                 // skip to make borrower undercollateralized
-                (debt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+                (debt, , ,) = _poolInfo.borrowerInfo(address(_pool), borrower_);
                 if (debt != 0) vm.warp(block.timestamp + _getKickSkipTime());
             }
         }
