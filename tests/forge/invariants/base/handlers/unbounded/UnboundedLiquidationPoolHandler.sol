@@ -265,13 +265,13 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 reservesErrorMargin = (beforeTakeVars.deposit - afterTakeVars.deposit) / auctionPrice;
             }
 
-            // In case of deposit take, collateral is taken at bucket price.
-            uint256 takePrice = depositTake_ ? _priceAt(bucketIndex_) : auctionPrice;
+            // In case of bucket take, collateral is taken at bucket price.
+            uint256 takePrice = _priceAt(bucketIndex_);
 
             // **RE9**: Reserves are unchanged by take below tp
             if (takePrice < Maths.wdiv(beforeTakeVars.borrowerDebt, beforeTakeVars.borrowerCollateral)) {
                 increaseInReserves = 0;
-                decreaseInReserves = 0;   
+                decreaseInReserves = 0;
             }
 
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
