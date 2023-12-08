@@ -1427,6 +1427,18 @@ contract RegressionTestReserveWith8CollateralPrecisionERC20Pool is ReserveERC20P
 
         invariant_reserves();
     }
+
+    // FIXME: incorrect reserves change
+    function test_regression_failure_reserves_on_bucketTake() external {
+        _reserveERC20PoolHandler.bucketTake(21318, 17209, false, 7256, 2112895574);
+        _reserveERC20PoolHandler.failed();
+        _reserveERC20PoolHandler.removeQuoteToken(134507693871374985842462, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 3133413913960740507);
+        _reserveERC20PoolHandler.bucketTake(2198, 20978, true, 9160, 2602);
+        _reserveERC20PoolHandler.takeAuction(19082, 7296, 22883, 1795);
+        _reserveERC20PoolHandler.bucketTake(3048, 3562, true, 11832, 12708);
+
+        invariant_reserves();
+    }
 }
 
 contract RegressionTestReservesWith18QuotePrecision4CollateralPrecisionERC20Pool is ReserveERC20PoolInvariants { 
