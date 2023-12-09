@@ -82,7 +82,7 @@ library KickerActions {
     /**************/
 
     // See `IPoolEvents` for descriptions
-    event BondWithdrawn(address indexed kicker, address indexed reciever, uint256 amount);
+    event BondWithdrawn(address indexed kicker, address indexed receiver, uint256 amount);
     event BucketBankruptcy(uint256 indexed index, uint256 lpForfeited);
     event Kick(address indexed borrower, uint256 debt, uint256 collateral, uint256 bond);
     event KickReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 currentBurnEpoch);
