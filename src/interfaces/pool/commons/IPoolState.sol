@@ -386,9 +386,9 @@ struct Loan {
 
 /// @dev Struct holding borrower state.
 struct Borrower {
-    uint256 t0Debt;                    // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
-    uint256 collateral;                // [WAD] Collateral deposited by borrower.
-    uint256 npTpRatio;                 // [WAD] Np to Tp ratio at the time of last borrow or pull collateral.
+    uint256 t0Debt;     // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
+    uint256 collateral; // [WAD] Collateral deposited by borrower.
+    uint256 npTpRatio;  // [WAD] Np to Tp ratio at the time of last borrow or pull collateral.
 }
 
 /**********************/
