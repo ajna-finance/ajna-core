@@ -338,7 +338,7 @@ library KickerActions {
         // neutral price = Tp * Np to Tp ratio
         // neutral price is capped at 50 * max pool price
         vars.neutralPrice = Maths.min(
-            Math.mulDiv(vars.borrowerDebt, vars.borrowerNpTpRatio, vars.borrowerCollateral),
+            Maths.wmul(Math.mulDiv(vars.borrowerDebt, vars.borrowerNpTpRatio, vars.borrowerCollateral), COLLATERALIZATION_FACTOR),
             MAX_INFLATED_PRICE
         );
         // check if NP is not less than price at the limit index provided by the kicker - done to prevent frontrunning kick auction call with a large amount of loan
