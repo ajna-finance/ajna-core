@@ -127,11 +127,12 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Retrieves info of a given borrower in a given `Ajna` pool.
-     *  @param  ajnaPool_   Address of `Ajna` pool.
-     *  @param  borrower_   Borrower's address.
-     *  @return debt_       Current debt owed by borrower (`WAD`).
-     *  @return collateral_ Pledged collateral, including encumbered (`WAD`).
-     *  @return t0Np_       `Neutral price` (`WAD`).
+     *  @param  ajnaPool_         Address of `Ajna` pool.
+     *  @param  borrower_         Borrower's address.
+     *  @return debt_             Current debt owed by borrower (`WAD`).
+     *  @return collateral_       Pledged collateral, including encumbered (`WAD`).
+     *  @return t0Np_             `Neutral price` (`WAD`).
+     *  @return t0ThresholdPrice_ Borrower's `Threshold Price` in t0 terms (`WAD`).
      */
     function borrowerInfo(address ajnaPool_, address borrower_)
         external
@@ -157,8 +158,6 @@ contract PoolInfoUtils {
         uint256 t0Debt;
         uint256 npTpRatio;
         (t0Debt, collateral_, npTpRatio)  = pool.borrowerInfo(borrower_);
-
-        // (, thresholdPrice_) = pool.loanInfo(borrower_);
 
         t0Np_ = collateral_ == 0 ? 0 : Math.mulDiv(t0Debt, npTpRatio, collateral_);
         t0ThresholdPrice_ = collateral_ == 0 ? 0 : Maths.wdiv(t0Debt, collateral_);

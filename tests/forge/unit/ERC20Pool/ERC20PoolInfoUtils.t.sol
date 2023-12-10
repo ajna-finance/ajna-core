@@ -99,7 +99,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(debt,       21_020.192307692307702000 * 1e18);
         assertEq(collateral, 100 * 1e18);
         assertEq(npTpRatio,  233.703212526982164624 * 1e18);
-        assertEq(thresholdPrice, 0.004739336492890995 * 1e18);
+        assertEq(thresholdPrice, 210.201923076923077020 * 1e18);
     }
 
     function testPoolInfoUtilsBucketInfo() external {
