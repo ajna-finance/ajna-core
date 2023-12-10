@@ -20,8 +20,7 @@ import {
     _depositFeeRate,
     _htp,
     _priceAt,
-    MAX_FENWICK_INDEX,
-    COLLATERALIZATION_FACTOR 
+    MAX_FENWICK_INDEX
 } from '../helpers/PoolHelper.sol';
 
 import { Deposits } from '../internal/Deposits.sol';
