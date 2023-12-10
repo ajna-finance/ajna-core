@@ -380,7 +380,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              10_064.648403565736152555 * 1e18,
             borrowerCollateral:        2 * 1e18,
-            borrowert0Np:              2_782.181101511692436004 * 1e18,
+            borrowert0Np:              2_893.468345572160133444 * 1e18,
             borrowerCollateralization: 0.727274117376371889 * 1e18
         });
 
@@ -543,7 +543,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              10_064.648403565736152555 * 1e18,
             borrowerCollateral:        2 * 1e18,
-            borrowert0Np:              2_782.181101511692436004 * 1e18,
+            borrowert0Np:              2_893.468345572160133444 * 1e18,
             borrowerCollateralization: 0.727274117376371889 * 1e18
         });
 
@@ -838,7 +838,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              10_064.648403565736152555 * 1e18,
             borrowerCollateral:        2 * 1e18,
-            borrowert0Np:              2_782.181101511692436004 * 1e18,
+            borrowert0Np:              2_893.468345572160133444 * 1e18,
             borrowerCollateralization: 0.727274117376371889 * 1e18
         });
 
@@ -875,7 +875,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              6_743.269509053983393196 * 1e18,
             borrowerCollateral:        1.121383131720870829 * 1e18,
-            borrowert0Np:              3_323.885286217704891575 * 1e18,
+            borrowert0Np:              3_456.840697666413087238 * 1e18,
             borrowerCollateralization: 7.479616124596050273 * 1e18
         });
 
@@ -919,11 +919,11 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             })
         );
         _assertBucket({
-            index:        5483,
-            lpBalance:    0.001301775691607258 * 1e18,
+            index:        5475,
+            lpBalance:    0.001354767131866582 * 1e18,
             collateral:   0.974765407370291492 * 1e18,
             deposit:      0,
-            exchangeRate: 0.999999999999999865 * 1e18
+            exchangeRate: 1.000000000000000024 * 1e18
         });
 
         // bucket take on borrower 2
@@ -990,7 +990,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         _addLiquidityNoEventCheck({
             from:    _lender,
             amount:  2_000 * 1e18,
-            index:   5483
+            index:   5475
         });
         _addLiquidityNoEventCheck({
             from:    _lender,
@@ -1000,7 +1000,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         uint256[] memory removalIndexes = new uint256[](4);
         removalIndexes[0] = 2000;
         removalIndexes[1] = 2502;
-        removalIndexes[2] = 5483;
+        removalIndexes[2] = 5475;
         removalIndexes[3] = 5565;
 
         _mergeOrRemoveCollateral({
@@ -1022,18 +1022,18 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         // remove lps for both borrower and borrower 2
         _removeAllLiquidity({
             from:     _borrower,
-            amount:   0.001301775691607258 * 1e18,
-            index:    5483,
+            amount:   0.001354767131866582 * 1e18,
+            index:    5475,
             newLup:   MAX_PRICE,
-            lpRedeem: 0.001301775691607258 * 1e18
+            lpRedeem: 0.001354767131866582 * 1e18
         });
 
         _removeAllLiquidity({
             from:     _borrower2,
-            amount:   0.001043169787469419 * 1e18,
-            index:    5483,
+            amount:   0.001085634145829627 * 1e18,
+            index:    5475,
             newLup:   MAX_PRICE,
-            lpRedeem: 0.001043169787469419 * 1e18
+            lpRedeem: 0.001085634145829627 * 1e18
         });
 
         // remove lps for both borrower and borrower 2
