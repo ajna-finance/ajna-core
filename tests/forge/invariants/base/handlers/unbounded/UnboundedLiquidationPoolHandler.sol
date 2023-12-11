@@ -29,6 +29,12 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         uint256 borrowerDebt;
     }
 
+    struct AuctionInfo {
+        uint256 kickTime;
+        uint256 auctionPrice;
+        uint256 kickThresholdPrice;
+    }
+
     /*******************************/
     /*** Kicker Helper Functions ***/
     /*******************************/
@@ -133,8 +139,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
         uint256 totalBalanceBeforeTake = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
-        (uint256 kickTimeBefore, , , , uint256 auctionPrice, , , uint256 kickThresholdPrice, )    = _poolInfo.auctionStatus(address(_pool), borrower_);
-        uint256 auctionBucketIndex     = auctionPrice < MIN_PRICE ? 7388 : (auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionPrice));
+        AuctionInfo memory auctionInfo;
+        (auctionInfo.kickTime, , , , auctionInfo.auctionPrice, , , auctionInfo.kickThresholdPrice, )    = _poolInfo.auctionStatus(address(_pool), borrower_);
+        uint256 auctionBucketIndex     = auctionInfo.auctionPrice < MIN_PRICE ? 7388 : (auctionInfo.auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionInfo.auctionPrice));
 
         LocalTakeVars memory beforeTakeVars = getTakeInfo(auctionBucketIndex, kicker, _actor, auctionBucketIndex, borrower_);
 
@@ -152,7 +159,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             decreaseInReserves += beforeTakeVars.borrowerDebt - afterTakeVars.borrowerDebt;
 
             // **A8**: kicker reward <= Borrower penalty
-            borrowerPenalty = Maths.ceilWmul(beforeTakeVars.borrowerCollateral - afterTakeVars.borrowerCollateral, auctionPrice) - (beforeTakeVars.borrowerDebt - afterTakeVars.borrowerDebt);
+            borrowerPenalty = Maths.ceilWmul(beforeTakeVars.borrowerCollateral - afterTakeVars.borrowerCollateral, auctionInfo.auctionPrice) - (beforeTakeVars.borrowerDebt - afterTakeVars.borrowerDebt);
 
             if (afterTakeVars.borrowerLps > beforeTakeVars.borrowerLps) {
                 borrowerPenalty -= rewardedLpToQuoteToken(afterTakeVars.borrowerLps - beforeTakeVars.borrowerLps, auctionBucketIndex);
@@ -179,7 +186,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             increaseInReserves += totalBalanceAfterTake - totalBalanceBeforeTake;
 
             // **RE9**: Reserves unchanged by takes and bucket takes below TP(at the time of kick)
-            if (auctionPrice < kickThresholdPrice) {
+            if (auctionInfo.auctionPrice < auctionInfo.kickThresholdPrice) {
                 increaseInReserves = 0;
                 decreaseInReserves = 0;
             }
@@ -188,8 +195,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 _recordSettleBucket(
                     borrower_,
                     beforeTakeVars.borrowerCollateral,
-                    kickTimeBefore,
-                    auctionPrice
+                    auctionInfo.kickTime,
+                    auctionInfo.auctionPrice
                 );
             }
 
@@ -207,8 +214,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         numberOfCalls['UBLiquidationHandler.bucketTake']++;
 
         (address kicker, , , , , , , , , )  = _pool.auctionInfo(borrower_);
-        ( , , , , uint256 auctionPrice, , , uint256 kickThresholdPrice, ) = _poolInfo.auctionStatus(address(_pool), borrower_);
-        uint256 auctionBucketIndex        = auctionPrice < MIN_PRICE ? 7388 : (auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionPrice));
+        AuctionInfo memory auctionInfo;
+        ( , , , , auctionInfo.auctionPrice, , , auctionInfo.kickThresholdPrice, ) = _poolInfo.auctionStatus(address(_pool), borrower_);
+        uint256 auctionBucketIndex        = auctionInfo.auctionPrice < MIN_PRICE ? 7388 : (auctionInfo.auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionInfo.auctionPrice));
         
         LocalTakeVars memory beforeTakeVars = getTakeInfo(bucketIndex_, kicker, _actor, auctionBucketIndex, borrower_);
 
@@ -233,7 +241,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 bucketIndex_,
                 beforeTakeVars.borrowerDebt - afterTakeVars.borrowerDebt,
                 depositTake_,
-                auctionPrice
+                auctionInfo.auctionPrice
             );
                 
             // reserves are increased by take penalty of borrower (Deposit used from bucket - Borrower debt reduced)
@@ -254,15 +262,15 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             exchangeRateShouldNotChange[bucketIndex_] = true;
 
             // Reserves can increase with roundings in deposit calculations when auction Price is very small
-            if (auctionPrice != 0 && auctionPrice < 100) {
-                reservesErrorMargin = (beforeTakeVars.deposit - afterTakeVars.deposit) / auctionPrice;
+            if (auctionInfo.auctionPrice != 0 && auctionInfo.auctionPrice < 100) {
+                reservesErrorMargin = (beforeTakeVars.deposit - afterTakeVars.deposit) / auctionInfo.auctionPrice;
             }
 
             // In case of bucket take, collateral is taken at bucket price.
             uint256 takePrice = _priceAt(bucketIndex_);
 
             // **RE9**: Reserves unchanged by takes and bucket takes below TP(at the time of kick)
-            if (takePrice < kickThresholdPrice) {
+            if (takePrice < auctionInfo.kickThresholdPrice) {
                 increaseInReserves = 0;
                 decreaseInReserves = 0;
             }
