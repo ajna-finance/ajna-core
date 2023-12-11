@@ -917,7 +917,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              500.480769230769231 * 1e18,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              11.573873382288640534 * 1e18,
+            borrowert0Np:              11.573873382288640533 * 1e18,
             borrowerCollateralization: 289.230741805752310899 * 1e18
         });
 
