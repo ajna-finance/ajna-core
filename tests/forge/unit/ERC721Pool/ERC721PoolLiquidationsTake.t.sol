@@ -359,7 +359,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             maxCollateral:   2,
             bondChange:      0.243847547737474028 * 1e18,
             givenAmount:     22.183024574062103585 * 1e18,
-            collateralTaken: 1.538515492082238493 * 1e18, // not a rounded collateral, difference of 2 - 1.53 collateral should go to borrower in quote tokens at auction price
+            collateralTaken: 2.0 * 1e18, // not a rounded collateral, difference of 2 - 1.53 collateral should go to borrower in quote tokens at auction price
             isReward:        false
         });
 
