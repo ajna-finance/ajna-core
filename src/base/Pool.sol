@@ -910,7 +910,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         Loan memory loan = Loans.getByIndex(loans, loanId_);
         return (
             loan.borrower,
-            loan.thresholdPrice
+            Maths.wmul(loan.thresholdPrice, COLLATERALIZATION_FACTOR)
         );
     }
 
