@@ -591,9 +591,7 @@ contract PositionManager is PermitERC721, IPositionManager, Multicall, Reentranc
             collateralTokenSymbol: tokenSymbol(collateralTokenAddress),
             quoteTokenSymbol:      tokenSymbol(quoteTokenAddress),
             tokenId:               tokenId_,
-            pool:                  pool,
-            owner:                 ownerOf(tokenId_),
-            indexes:               tokenInfo.positionIndexes.values()
+            owner:                 ownerOf(tokenId_)
         });
 
         return PositionNFTSVG.constructTokenURI(params);

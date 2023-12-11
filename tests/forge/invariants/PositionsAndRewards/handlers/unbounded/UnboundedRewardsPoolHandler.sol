@@ -294,7 +294,6 @@ abstract contract UnboundedRewardsPoolHandler is UnboundedPositionPoolHandler {
             err == keccak256(abi.encodeWithSignature("AlreadyClaimed()")) ||
             err == keccak256(abi.encodeWithSignature("EpochNotAvailable()")) ||
             err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")) ||
-            err == keccak256(abi.encodeWithSignature("MoveStakedLiquidityInvalid()")) ||
             err == keccak256(abi.encodeWithSignature("NotAjnaPool()")) ||
             err == keccak256(abi.encodeWithSignature("NotOwnerOfDeposit()")) ||
             err == keccak256(abi.encodeWithSignature("DeployWithZeroAddress()")),
