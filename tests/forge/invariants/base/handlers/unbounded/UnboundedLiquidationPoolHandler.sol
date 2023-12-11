@@ -133,10 +133,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
         uint256 totalBalanceBeforeTake = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
-        (uint256 kickTimeBefore, , , , uint256 auctionPrice, , , , )    = _poolInfo.auctionStatus(address(_pool), borrower_);
+        (uint256 kickTimeBefore, , , , uint256 auctionPrice, , , uint256 kickThresholdPrice, )    = _poolInfo.auctionStatus(address(_pool), borrower_);
         uint256 auctionBucketIndex     = auctionPrice < MIN_PRICE ? 7388 : (auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionPrice));
 
-        LocalTakeVars memory beforeTakeVars = getBucketTakeInfo(auctionBucketIndex, kicker, _actor, auctionBucketIndex, borrower_);
+        LocalTakeVars memory beforeTakeVars = getTakeInfo(auctionBucketIndex, kicker, _actor, auctionBucketIndex, borrower_);
 
         // ensure actor always has the amount to take collateral
         _ensureQuoteAmount(taker_, 1e45);
@@ -146,7 +146,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             uint256 totalBalanceAfterTake = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
 
-            LocalTakeVars memory afterTakeVars = getBucketTakeInfo(auctionBucketIndex, kicker, _actor, auctionBucketIndex, borrower_);
+            LocalTakeVars memory afterTakeVars = getTakeInfo(auctionBucketIndex, kicker, _actor, auctionBucketIndex, borrower_);
 
             // **RE7**: Reserves decrease with debt covered by take.
             decreaseInReserves += beforeTakeVars.borrowerDebt - afterTakeVars.borrowerDebt;
@@ -178,8 +178,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // **RE7**: Reserves increase with the quote token paid by taker.
             increaseInReserves += totalBalanceAfterTake - totalBalanceBeforeTake;
 
-            // **RE9**: Reserves are unchanged by take below tp
-            if (auctionPrice < Maths.wdiv(beforeTakeVars.borrowerDebt, beforeTakeVars.borrowerCollateral)) {
+            // **RE9**: Reserves unchanged by takes and bucket takes below TP(at the time of kick)
+            if (auctionPrice < kickThresholdPrice) {
                 increaseInReserves = 0;
                 decreaseInReserves = 0;
             }
@@ -207,17 +207,17 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         numberOfCalls['UBLiquidationHandler.bucketTake']++;
 
         (address kicker, , , , , , , , , )  = _pool.auctionInfo(borrower_);
-        ( , , , , uint256 auctionPrice, , , , ) = _poolInfo.auctionStatus(address(_pool), borrower_);
+        ( , , , , uint256 auctionPrice, , , uint256 kickThresholdPrice, ) = _poolInfo.auctionStatus(address(_pool), borrower_);
         uint256 auctionBucketIndex        = auctionPrice < MIN_PRICE ? 7388 : (auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionPrice));
         
-        LocalTakeVars memory beforeTakeVars = getBucketTakeInfo(bucketIndex_, kicker, _actor, auctionBucketIndex, borrower_);
+        LocalTakeVars memory beforeTakeVars = getTakeInfo(bucketIndex_, kicker, _actor, auctionBucketIndex, borrower_);
 
         vm.recordLogs();
 
         try _pool.bucketTake(borrower_, depositTake_, bucketIndex_) {
             numberOfActions['bucketTake']++;
 
-            LocalTakeVars memory afterTakeVars = getBucketTakeInfo(bucketIndex_, kicker, _actor, auctionBucketIndex, borrower_);
+            LocalTakeVars memory afterTakeVars = getTakeInfo(bucketIndex_, kicker, _actor, auctionBucketIndex, borrower_);
 
             // **B7**: when awarded bucket take LP : taker deposit time = timestamp of block when award happened
             if (afterTakeVars.takerLps > beforeTakeVars.takerLps) lenderDepositTime[taker_][bucketIndex_] = block.timestamp;
@@ -261,8 +261,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // In case of bucket take, collateral is taken at bucket price.
             uint256 takePrice = _priceAt(bucketIndex_);
 
-            // **RE9**: Reserves are unchanged by take below tp
-            if (takePrice < Maths.wdiv(beforeTakeVars.borrowerDebt, beforeTakeVars.borrowerCollateral)) {
+            // **RE9**: Reserves unchanged by takes and bucket takes below TP(at the time of kick)
+            if (takePrice < kickThresholdPrice) {
                 increaseInReserves = 0;
                 decreaseInReserves = 0;
             }
@@ -395,7 +395,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         }
     }
 
-    function getBucketTakeInfo(uint256 bucketIndex_, address kicker_, address taker_, uint256 auctionBucketIndex_, address borrower_) internal view returns(LocalTakeVars memory takeVars) {
+    function getTakeInfo(uint256 bucketIndex_, address kicker_, address taker_, uint256 auctionBucketIndex_, address borrower_) internal view returns(LocalTakeVars memory takeVars) {
         (takeVars.kickerLps, )      = _pool.lenderInfo(bucketIndex_, kicker_);
         (takeVars.takerLps, )       = _pool.lenderInfo(bucketIndex_, taker_);
         ( , , , takeVars.deposit, ) = _pool.bucketInfo(bucketIndex_);
