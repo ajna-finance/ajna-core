@@ -1419,15 +1419,15 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
         _assertBucket({
             index:        _i9_81,
-            lpBalance:    0, // bucket is bankrupt
+            lpBalance:    4_999.771689497716895000 * 1e18,
             collateral:   0,
-            deposit:      0,
-            exchangeRate: 1 * 1e18
+            deposit:      11.556640377957587523 * 1e18,
+            exchangeRate: 0.002311433620505696 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       _i9_81,
-            lpBalance:   0, // bucket is bankrupt
+            lpBalance:   4_999.771689497716895000 * 1e18,
             depositTime: _startTime
         });
         _assertBucket({
@@ -1448,7 +1448,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             lpBalance:    24_998.858447488584475000 * 1e18,
             collateral:   0,
             deposit:      24_998.858447488584475000 * 1e18,
-            exchangeRate: 0.002311433620505696 * 1e18
+            exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
@@ -1461,7 +1461,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             lpBalance:    29_998.630136986301370000 * 1e18,
             collateral:   0,
             deposit:      29_998.630136986301370000 * 1e18,
-            exchangeRate: 0.002311433620505696 * 1e18
+            exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
