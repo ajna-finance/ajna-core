@@ -700,8 +700,8 @@ contract RewardsManagerTest is RewardsHelperContract {
             from:            _minterTwo,
             borrower:        _borrower2,
             maxCollateral:   1_000 * 1e18,
-            bondChange:      41.385920226943447750 * 1e18,
-            givenAmount:     3_701.669237553163064000 * 1e18,
+            bondChange:      43.041357036021185676 * 1e18,
+            givenAmount:     3_849.736007055289588000 * 1e18,
             collateralTaken: 1_000 * 1e18,
             isReward:        true
         });
@@ -710,7 +710,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             from:        _minterTwo,
             borrower:    _borrower2,
             maxDepth:    10,
-            settledDebt: 5_757.196206294532254049 * 1e18
+            settledDebt: 5_610.784873601483468048 * 1e18
         });
 
         // bucket is insolvent, balances are reset
@@ -727,8 +727,8 @@ contract RewardsManagerTest is RewardsHelperContract {
             index:        _i9_81,
             lpBalance:    5999.726027397260274000 * 1e18,
             collateral:   0,
-            deposit:      2_293.073810430020836872 * 1e18,
-            exchangeRate: 0.382196420296341206 * 1e18
+            deposit:      2_439.485143123069622873 * 1e18,
+            exchangeRate: 0.406599423370893837 * 1e18
         });
 
         /***********************/
@@ -764,6 +764,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         /*********************/
         /*** Claim Rewards ***/
         /*********************/
+
         // _minterOne withdraws and claims rewards, rewards should be 0 as bucket is bankrupt
         _unstakeToken({
             owner:                     _minterOne,
@@ -1091,7 +1092,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             borrower:                  _borrower,
             borrowerDebt:              25656.385808102176964640 * 1e18,
             borrowerCollateral:        26.718621074838651764  * 1e18,
-            borrowert0Np:              1_031.248175364251467082 * 1e18,
+            borrowert0Np:              1_072.498102378821525765 * 1e18,
             borrowerCollateralization: 0.981559226203156422 * 1e18
         });
 
@@ -1112,8 +1113,8 @@ contract RewardsManagerTest is RewardsHelperContract {
             from:            _minterTwo,
             borrower:        _borrower,
             maxCollateral:   100.0  * 1e18,
-            bondChange:      56,
-            givenAmount:     5317,
+            bondChange:      58,
+            givenAmount:     5531,
             collateralTaken: 26.718621074838651764 * 1e18,
             isReward:        true
         });
@@ -1122,7 +1123,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             from:        _minterTwo,
             borrower:    _borrower,
             maxDepth:    10,
-            settledDebt: 25_665.876911373608528229 * 1e18
+            settledDebt: 25_665.876911373608528014 * 1e18
         });
 
         // bucket is insolvent, balances are reset
