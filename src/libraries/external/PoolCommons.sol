@@ -467,10 +467,7 @@ library PoolCommons {
         return (
             Maths.ceilWmul(
                 t0Debt,
-                Maths.wmul(
-                    inflator,
-                    PRBMathUD60x18.exp((interestState_.interestRate * (block.timestamp - inflatorState_.inflatorUpdate)) / 365 days)
-                )
+                pendingInflator(inflator, inflatorState_.inflatorUpdate, interestState_.interestRate)
             ),
             Maths.ceilWmul(t0Debt, inflator),
             Maths.ceilWmul(poolBalances_.t0DebtInAuction, inflator),
@@ -502,7 +499,7 @@ library PoolCommons {
         uint256 inflator_,
         uint256 inflatorUpdate,
         uint256 interestRate_
-    ) external view returns (uint256) {
+    ) public view returns (uint256) {
         return Maths.wmul(
             inflator_,
             PRBMathUD60x18.exp((interestRate_ * (block.timestamp - inflatorUpdate)) / 365 days)
