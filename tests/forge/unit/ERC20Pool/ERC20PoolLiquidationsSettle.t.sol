@@ -1217,7 +1217,7 @@ contract ERC20PoolLiquidationSettleFuzzyTest is ERC20FuzzyHelperContract {
             borrower:                  _borrower,
             borrowerDebt:              280_269.230769230769360000 * 1e18,
             borrowerCollateral:        100 * 1e18,
-            borrowert0Np:              3_116.042833693095528324 * 1e18,
+            borrowert0Np:              3_240.684547040819349457 * 1e18,
             borrowerCollateralization: 1.022714224915763456 * 1e18
         });
 
