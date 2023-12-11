@@ -350,7 +350,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 encumberedCollateral: 1_932.130809921545253875 * 1e18,
                 poolDebt:             18_060.399281914251158513 * 1e18,
                 actualUtilization:    0.175481652108616020 * 1e18,
-                targetUtilization:    0.925786822077092381 * 1e18,
+                targetUtilization:    0.976637155179804437 * 1e18,
                 minDebtAmount:        1_806.039928191425115851 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower),
@@ -919,7 +919,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 encumberedCollateral: 876.210891963733856748 * 1e18,
                 poolDebt:             8_190.293577829666641930 * 1e18,
                 actualUtilization:    0.539415570795639499 * 1e18,
-                targetUtilization:    0.958414005019059000 * 1e18,
+                targetUtilization:    0.958434775952929820 * 1e18,
                 minDebtAmount:        819.029357782966664193 * 1e18,
                 loans:                1,  // TODO: is this test still relevant like this?
                 maxBorrower:          address(_borrower),
