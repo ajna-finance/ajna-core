@@ -317,7 +317,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             // assign value to fenwick tree to mitigate rounding error that could be created in a _fenwickRemove call
             fenwickDeposits[bucketIndex_] = afterTakeVars.deposit;
-
         } catch (bytes memory err) {
             // Reset event Logs
             vm.getRecordedLogs();
@@ -470,8 +469,13 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     }
 
     // Helper function to calculate borrower penalty and kicker reward in bucket take through events emitted.
-    function _getBorrowerPenaltyAndKickerReward(Vm.Log[] memory entries, uint256 bucketIndex_, uint256 borrowerDebtRepaid_, bool depositTake_, uint256 auctionPrice_) internal view returns(uint256 borrowerPenalty_, uint256 kickerReward_) {
-        
+    function _getBorrowerPenaltyAndKickerReward(
+        Vm.Log[] memory entries,
+        uint256 bucketIndex_,
+        uint256 borrowerDebtRepaid_,
+        bool depositTake_,
+        uint256 auctionPrice_
+    ) internal view returns(uint256 borrowerPenalty_, uint256 kickerReward_) {
         // Kicker lp reward read from `BucketTakeLPAwarded(taker, kicker, lpAwardedTaker, lpAwardedKicker)` event.
         (, uint256 kickerLpAward) = abi.decode(entries[0].data, (uint256, uint256));
         kickerReward_ = _rewardedLpToQuoteToken(kickerLpAward, bucketIndex_);
@@ -490,7 +494,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
     // Helper function to calculate quote tokens from lps in a bucket irrespective of deposit available.
     // LP rewarded -> quote token rounded up (as LP rewarded are calculated as rewarded quote token -> LP rounded down)
-    function _rewardedLpToQuoteToken(uint256 lps_, uint256 bucketIndex_) internal view returns(uint256 quoteTokens_) {
+    function _rewardedLpToQuoteToken(
+        uint256 lps_,
+        uint256 bucketIndex_
+    ) internal view returns(uint256 quoteTokens_) {
         BucketInfo memory bucketInfo = _getBucketInfo(bucketIndex_);
         quoteTokens_ = Buckets.lpToQuoteTokens(
             bucketInfo.collateral,

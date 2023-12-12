@@ -70,7 +70,10 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         numberOfCalls['BBasicHandler.mergeCollateral']++;
 
         // Prepare test phase
-        (uint256 NFTAmount, uint256[] memory bucketIndexes) = _preMergeCollateral();
+        (
+            uint256 NFTAmount,
+            uint256[] memory bucketIndexes
+        ) = _preMergeCollateral();
 
         // Action phase
         _mergeCollateral(NFTAmount, bucketIndexes);
@@ -255,7 +258,10 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
             borrowerInfo = _getBorrowerInfo(_actor);
             _pullCollateral(borrowerInfo.collateral);
 
-            require(borrowerInfo.debt == 0, "borrower has debt");
+            require(
+                borrowerInfo.debt == 0,
+                "borrower has debt"
+            );
         }
     }
 

@@ -191,10 +191,11 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
         boundedAmount_ = constrictToRange(amountToMove_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
 
         // ensure actor has LP to move
-        (uint256 lpBalance, ) = _pool.lenderInfo(fromIndex_, _actor);
-        if (lpBalance == 0) _addQuoteToken(boundedAmount_, toIndex_);
+        if (_getLenderInfo(fromIndex_, _actor).lpBalance == 0) {
+            _addQuoteToken(boundedAmount_, toIndex_); // TODO: shouldn't be fromIndex_ instead toIndex_ ?
+        }
 
-        (uint256 lps, ) = _pool.lenderInfo(fromIndex_, _actor);
+        uint256 lps = _getLenderInfo(fromIndex_, _actor).lpBalance;
         // restrict amount to move by available deposit inside bucket
         uint256 availableDeposit = _poolInfo.lpToQuoteTokens(address(_pool), lps, fromIndex_);
         boundedAmount_ = Maths.min(boundedAmount_, availableDeposit);

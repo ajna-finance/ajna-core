@@ -56,7 +56,9 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
         uint256 borrowerIndex_,
         uint256 skippedTime_
     ) external useTimestamps skipTime(skippedTime_) writeLogs {
-        borrowerIndex_ = constrictToRange(borrowerIndex_, 0, _activeBorrowers.values().length - 1);
+        borrowerIndex_ = constrictToRange(
+            borrowerIndex_, 0, _activeBorrowers.values().length - 1
+        );
 
         _actor = _borrowers[borrowerIndex_];
 
@@ -99,6 +101,7 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
 
         if (takeAuction_) {
             vm.warp(block.timestamp + 61 minutes);
+
             uint256 auctionedCollateral = _getBorrowerInfo(borrower).collateral;
             _takeAuction(borrower, auctionedCollateral, _actor);
             _resetSettledAuction(borrower, borrowerIndex_);

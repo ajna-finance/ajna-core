@@ -40,7 +40,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.addCollateral']++;
 
-        (uint256 lpBalanceBeforeAction, ) = _erc721Pool.lenderInfo(bucketIndex_, _actor);
+        uint256 lpBalanceBeforeAction = _getLenderInfo(bucketIndex_, _actor).lpBalance;
 
         _ensureCollateralAmount(_actor, amount_);
         uint256[] memory tokenIds = new uint256[](amount_);
@@ -48,15 +48,22 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
             tokenIds[i] = _collateral.tokenOfOwnerByIndex(_actor, i);
         }
 
-        try _erc721Pool.addCollateral(tokenIds, bucketIndex_, block.timestamp + 1 minutes) {
+        try _erc721Pool.addCollateral(
+            tokenIds,
+            bucketIndex_,
+            block.timestamp + 1 minutes
+        ) {
             // **B5**: when adding collateral: lender deposit time = timestamp of block when deposit happened
             lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
             // **R5**: Exchange rates are unchanged by adding collateral token into a bucket
             exchangeRateShouldNotChange[bucketIndex_] = true;
 
             // Post action condition
-            (uint256 lpBalanceAfterAction, ) = _erc721Pool.lenderInfo(bucketIndex_, _actor);
-            require(lpBalanceAfterAction > lpBalanceBeforeAction, "LP balance should increase");
+            uint256 lpBalanceAfterAction = _getLenderInfo(bucketIndex_, _actor).lpBalance;
+            require(
+                lpBalanceAfterAction > lpBalanceBeforeAction,
+                "LP balance should increase"
+            );
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -70,15 +77,19 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
 
         uint256 lpBalanceBeforeAction = _getLenderInfo(bucketIndex_, _actor).lpBalance;
 
-        try _erc721Pool.removeCollateral(amount_, bucketIndex_) {
-
+        try _erc721Pool.removeCollateral(
+            amount_,
+            bucketIndex_
+        ) {
             // **R6**: Exchange rates are unchanged by removing collateral token from a bucket
             exchangeRateShouldNotChange[bucketIndex_] = true;
 
             // Post action condition
             uint256 lpBalanceAfterAction = _getLenderInfo(bucketIndex_, _actor).lpBalance;
-            require(lpBalanceAfterAction < lpBalanceBeforeAction, "LP balance should decrease");
-
+            require(
+                lpBalanceAfterAction < lpBalanceBeforeAction,
+                "LP balance should decrease"
+            );
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -90,14 +101,16 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.mergeCollateral']++;
 
-        try _erc721Pool.mergeOrRemoveCollateral(bucketIndexes_, amount_, 7388) {
-            
+        try _erc721Pool.mergeOrRemoveCollateral(
+            bucketIndexes_,
+            amount_,
+            7388
+        ) {    
             for(uint256 i; i < bucketIndexes_.length; i++) {
                 uint256 bucketIndex = bucketIndexes_[i]; 
                 // **R6**: Exchange rates are unchanged by removing collateral token from a bucket
                 exchangeRateShouldNotChange[bucketIndex] = true;
             }
-
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -126,8 +139,12 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
             tokenIds[i] = _collateral.tokenOfOwnerByIndex(_actor, i);
         }
 
-        try _erc721Pool.drawDebt(_actor, 0, 0, tokenIds) {
-
+        try _erc721Pool.drawDebt(
+            _actor,
+            0,
+            0,
+            tokenIds
+        ) {
             _recordSettleBucket(
                 _actor,
                 borrowerCollateralBefore,
@@ -149,8 +166,13 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
             exchangeRateShouldNotChange[bucketIndex] = true;
         }
 
-        try _erc721Pool.repayDebt(_actor, 0, amount_, _actor, 7388) {
-
+        try _erc721Pool.repayDebt(
+            _actor,
+            0,
+            amount_,
+            _actor,
+            7388
+        ) {
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -190,7 +212,12 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         uint256 borrowerCollateralBefore = _getBorrowerInfo(_actor).collateral;
         (uint256 kickTimeBefore, , , , uint256 auctionPrice, , , , ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
 
-        try _erc721Pool.drawDebt(_actor, amount_, 7388, tokenIds) {
+        try _erc721Pool.drawDebt(
+            _actor,
+            amount_,
+            7388,
+            tokenIds
+        ) {
             // amount is rounded by pool to token scale
             amount_ = _roundToScale(amount_, _pool.quoteTokenScale());
 
@@ -205,7 +232,6 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
                 kickTimeBefore,
                 auctionPrice
             );
-
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -222,15 +248,19 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         // ensure actor always has amount of quote to repay
         _ensureQuoteAmount(_actor, borrowerInfoBeforeAction.debt + 10 * 1e18);
 
-        try _erc721Pool.repayDebt(_actor, amountToRepay_, 0, _actor, 7388) {
-
+        try _erc721Pool.repayDebt(
+            _actor,
+            amountToRepay_,
+            0,
+            _actor,
+            7388
+        ) {
             _recordSettleBucket(
                 _actor,
                 borrowerInfoBeforeAction.collateral,
                 kickTimeBefore,
                 auctionPrice
             );
-
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }

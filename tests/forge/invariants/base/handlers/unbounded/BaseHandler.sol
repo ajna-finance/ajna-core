@@ -43,6 +43,7 @@ abstract contract BaseHandler is Test {
         uint256 deposit;
         uint256 scale;
         uint256 bankruptcyTime;
+        uint256 exchangeRate;
     }
 
     struct AuctionInfo {
@@ -365,6 +366,8 @@ abstract contract BaseHandler is Test {
             bucketInfo_.deposit,
             bucketInfo_.scale
         ) = _pool.bucketInfo(index_);
+
+        bucketInfo_.exchangeRate = _pool.bucketExchangeRate(index_);
     }
 
     function _getLenderInfo(

@@ -22,6 +22,7 @@ abstract contract RewardsPoolHandler is BaseRewardsPoolHandler, PositionPoolHand
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.stake']++;
+
         // Pre action
         (uint256 tokenId, uint256[] memory indexes) = _preStake(_lenderBucketIndex, amountToAdd_);
 
@@ -40,6 +41,7 @@ abstract contract RewardsPoolHandler is BaseRewardsPoolHandler, PositionPoolHand
         uint256 numberOfEpochs_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs writeRewardsLogs {
         numberOfCalls['BRewardsHandler.unstake']++;
+
         // Pre action
         (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
             _lenderBucketIndex,
