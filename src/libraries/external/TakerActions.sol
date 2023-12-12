@@ -84,7 +84,6 @@ library TakerActions {
         uint256 bucketScale;                 // [WAD] The bucket scale.
         uint256 collateralAmount;            // [WAD] The amount of collateral taken.
         uint256 excessQuoteToken;            // [WAD] Difference of quote token that borrower receives after take (for fractional NFT only)
-        uint256 factor;                      // The take factor, calculated based on bond penalty factor.
         bool    isRewarded;                  // True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
         address kicker;                      // Address of auction kicker.
         uint256 quoteTokenAmount;            // [WAD] Scaled quantity in Fenwick tree and before 1-bpf factor, paid for collateral
@@ -370,14 +369,6 @@ library TakerActions {
 
         _rewardTake(auctions_, liquidation, vars_);
 
-        emit Take(
-            params_.borrower,
-            vars_.quoteTokenAmount,
-            vars_.collateralAmount,
-            vars_.bondChange,
-            vars_.isRewarded
-        );
-
         if (params_.poolType == uint8(PoolType.ERC721)) {
             // slither-disable-next-line divide-before-multiply
             uint256 collateralTaken = (vars_.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
@@ -398,6 +389,14 @@ library TakerActions {
                 }
             }
         }
+
+        emit Take(
+            params_.borrower,
+            vars_.quoteTokenAmount,
+            vars_.collateralAmount,
+            vars_.bondChange,
+            vars_.isRewarded
+        );
     }
 
     /**
@@ -705,7 +704,6 @@ library TakerActions {
             liquidation_.bondFactor,
             bucketPrice_ == 0 ? vars.auctionPrice : bucketPrice_
         );
-        vars.factor       = uint256(1e18 - Maths.maxInt(0, vars.bpf));
         vars.kicker       = liquidation_.kicker;
         vars.isRewarded   = (vars.bpf  >= 0);
     }

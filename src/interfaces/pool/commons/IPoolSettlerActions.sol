@@ -12,7 +12,7 @@ interface IPoolSettlerActions {
      *  @param  borrowerAddress_   Address of the auctioned borrower.
      *  @param  maxDepth_          Measured from `HPB`, maximum number of buckets deep to settle debt.
      *  @return collateralSettled_ Amount of collateral settled.
-     *  @return isBorrowerSettled_ Is all borrower's debt is settled.
+     *  @return isBorrowerSettled_ True if all borrower's debt is settled.
      *  @dev    `maxDepth_` is used to prevent unbounded iteration clearing large liquidations.
      */
     function settle(
