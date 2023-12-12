@@ -583,7 +583,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             borrowerCollateralization: 0.801361613336061264 * 1e18
         });
 
-  //      _assertCollateralInvariants();
+       _assertCollateralInvariants();
 
         assertEq(_quote.balanceOf(_borrower),      5_100 * 1e18);
         assertEq(_quote.balanceOf(address(_pool)), 4_225.052380000077218250 * 1e18);
@@ -595,7 +595,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             maxCollateral:   2,
             bondChange:      101.346184596990929201 * 1e18,
             givenAmount:     9_236.603649496932503519 * 1e18,
-            collateralTaken: 0.793692659015096363 * 1e18,
+            collateralTaken: 1.000000000000000000 * 1e18,
             isReward:        false
         });
 
@@ -627,7 +627,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             })
         );
 
-   //     _assertCollateralInvariants();
+       _assertCollateralInvariants();
 
         // remaining token is moved to pool claimable array
         assertEq(ERC721Pool(address(_pool)).bucketTokenIds(0), 1);
@@ -650,8 +650,9 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
 
         // the 2 NFTs (one taken, one claimed) are owned by lender
         assertEq(_collateral.ownerOf(3), _lender);
+        assertEq(_collateral.ownerOf(1),address(_pool));
 
-  //      _assertCollateralInvariants();
+       _assertCollateralInvariants();
 
         // borrower2 exits from auction by deposit take
         skip(3.2 hours);
@@ -675,7 +676,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             lpAwardTaker:     0,
             lpAwardKicker:    2.032141649575679123 * 1e18
         });
-//        _assertCollateralInvariants();
+        _assertCollateralInvariants();
         _assertBorrower({
             borrower:                  _borrower2,
             borrowerDebt:              0,
@@ -712,6 +713,12 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             amount:  40_000 * 1e18,
             index:   2000
         });
+
+        // pool owns borrower2's collateral pre-merge and remove
+        assertEq(_collateral.ownerOf(51), address(_pool));
+        assertEq(_collateral.ownerOf(53), address(_pool));
+        assertEq(_collateral.ownerOf(73), address(_pool));
+
         uint256[] memory removalIndexes = new uint256[](3);
         removalIndexes[0] = 2000;
         removalIndexes[1] = 2278;
@@ -769,6 +776,11 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             removeCollateralAtIndex: removalIndexes,
             toIndexLps:              0 * 1e18
         });
+
+        // lender owns collateral post-merge and remove
+        assertEq(_collateral.ownerOf(51), _lender);
+        assertEq(_collateral.ownerOf(53), _lender);
+        assertEq(_collateral.ownerOf(73), _lender);
 
         _removeAllLiquidity({
             from:     _lender,
