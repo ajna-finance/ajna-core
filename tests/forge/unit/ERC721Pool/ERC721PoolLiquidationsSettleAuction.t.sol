@@ -652,7 +652,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(3), _lender);
         assertEq(_collateral.ownerOf(1),address(_pool));
 
-  //      _assertCollateralInvariants();
+       _assertCollateralInvariants();
 
         // borrower2 exits from auction by deposit take
         skip(3.2 hours);
@@ -676,7 +676,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             lpAwardTaker:     0,
             lpAwardKicker:    2.032141649575679123 * 1e18
         });
-//        _assertCollateralInvariants();
+        _assertCollateralInvariants();
         _assertBorrower({
             borrower:                  _borrower2,
             borrowerDebt:              0,
@@ -719,7 +719,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(53), address(_pool));
         assertEq(_collateral.ownerOf(73), address(_pool));
 
-        uint256[] memory removalIndexes = new uint256[](2);
+        uint256[] memory removalIndexes = new uint256[](3);
         removalIndexes[0] = 2000;
         removalIndexes[1] = 2278;
         removalIndexes[2] = 2501;
