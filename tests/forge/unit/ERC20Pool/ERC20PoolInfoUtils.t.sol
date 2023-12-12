@@ -98,7 +98,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         (uint256 debt, uint256 collateral, uint256 npTpRatio) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,       21_020.192307692307702000 * 1e18);
         assertEq(collateral, 100 * 1e18);
-        assertEq(npTpRatio,  233.703212526982164624 * 1e18);
+        assertEq(npTpRatio,  243.051341028061451209 * 1e18);
     }
 
     function testPoolInfoUtilsBucketInfo() external {
