@@ -50,6 +50,7 @@ import {
 }                                   from '../interfaces/pool/commons/IPoolInternals.sol';
 
 import {
+    COLLATERALIZATION_FACTOR,
     _determineInflatorState,
     _htp,
     _priceAt,

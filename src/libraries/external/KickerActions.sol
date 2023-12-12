@@ -26,6 +26,7 @@ import {
 
 import {
     MAX_INFLATED_PRICE,
+    COLLATERALIZATION_FACTOR,
     _bondParams,
     _borrowFeeRate,
     _claimableReserves,
