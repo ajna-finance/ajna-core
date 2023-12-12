@@ -24,8 +24,7 @@ import {
     _htp,
     _indexOf,
     MAX_FENWICK_INDEX,
-    MIN_PRICE, MAX_PRICE,
-    COLLATERALIZATION_FACTOR 
+    MIN_PRICE, MAX_PRICE
 } from '../helpers/PoolHelper.sol';
 
 import { Deposits } from '../internal/Deposits.sol';
