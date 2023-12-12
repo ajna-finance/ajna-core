@@ -36,7 +36,7 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
         // ensure actor always has amount of collateral to add
         _ensureCollateralAmount(_actor, amount_);
 
-        (uint256 lpBalanceBeforeAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);
+        uint256 lpBalanceBeforeAction = _getLenderInfo(bucketIndex_, _actor).lpBalance;
 
         try _erc20Pool.addCollateral(amount_, bucketIndex_, block.timestamp + 1 minutes) {
             // **B5**: when adding collateral: lender deposit time = timestamp of block when deposit happened
@@ -45,7 +45,7 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
             exchangeRateShouldNotChange[bucketIndex_] = true;
 
             // Post action condition
-            (uint256 lpBalanceAfterAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);
+            uint256 lpBalanceAfterAction = _getLenderInfo(bucketIndex_, _actor).lpBalance;
             require(lpBalanceAfterAction > lpBalanceBeforeAction, "LP balance should increase");
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -58,7 +58,7 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.removeCollateral']++;
 
-        (uint256 lpBalanceBeforeAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);
+        uint256 lpBalanceBeforeAction = _getLenderInfo(bucketIndex_, _actor).lpBalance;
 
         try _erc20Pool.removeCollateral(amount_, bucketIndex_) {
 
@@ -66,7 +66,7 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
             exchangeRateShouldNotChange[bucketIndex_] = true;
 
             // Post action condition
-            (uint256 lpBalanceAfterAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);
+            uint256 lpBalanceAfterAction = _getLenderInfo(bucketIndex_, _actor).lpBalance;
             require(lpBalanceAfterAction < lpBalanceBeforeAction, "LP balance should decrease");
 
         } catch (bytes memory err) {
@@ -153,7 +153,7 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
-        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+        uint256 borrowerDebt = _getBorrowerInfo(_actor).debt;
 
         // ensure actor always has amount of quote to repay
         _ensureQuoteAmount(_actor, borrowerDebt + 10 * 1e18);

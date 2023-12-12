@@ -183,8 +183,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         );
 
         //  borrower cannot make any action when in auction
-        (uint256 kickTime, uint256 collateral,,,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
-        if (kickTime != 0) return boundedAmount_;
+        if (_getAuctionInfo(_actor).kickTime != 0) return boundedAmount_;
 
         // Pre Condition
         // 1. borrower's debt should exceed minDebt
@@ -192,7 +191,6 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         // 3. drawDebt should not make borrower under collateralized
 
         // 1. borrower's debt should exceed minDebt
-        (uint256 debt,, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
         (uint256 minDebt, , , ) = _poolInfo.poolUtilizationInfo(address(_pool));
 
         if (boundedAmount_ < minDebt && minDebt < MAX_DEBT_AMOUNT) boundedAmount_ = minDebt + 1;
@@ -209,16 +207,17 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         (uint256 currentPoolDebt, , , ) = _pool.debtInfo();
         uint256 nextPoolDebt = currentPoolDebt + boundedAmount_;
         uint256 newLup = _priceAt(_pool.depositIndex(nextPoolDebt));
-        (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+
+        BorrowerInfo memory borrowerInfo = _getBorrowerInfo(_actor);
 
         // repay debt if borrower becomes undercollateralized with new debt at new lup
-        if (!_isCollateralized(debt + boundedAmount_, collateral, newLup, _pool.poolType())) {
+        if (!_isCollateralized(borrowerInfo.debt + boundedAmount_, borrowerInfo.collateral, newLup, _pool.poolType())) {
             _repayDebt(type(uint256).max);
 
-            (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
-            _pullCollateral(collateral);
+            borrowerInfo = _getBorrowerInfo(_actor);
+            _pullCollateral(borrowerInfo.collateral);
 
-            require(debt == 0, "borrower has debt");
+            require(borrowerInfo.debt == 0, "borrower has debt");
         }
     }
 

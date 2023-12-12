@@ -69,6 +69,12 @@ abstract contract BaseHandler is Test {
         uint256 depositTime;
     }
 
+    struct LoansInfo {
+        address maxBorrower;
+        uint256 maxThresholdPrice;
+        uint256 noOfLoans;
+    }
+
     struct ReservesInfo {
         uint256 reserves;
         uint256 claimableReserves;
@@ -213,7 +219,7 @@ abstract contract BaseHandler is Test {
             uint256 maxLoansRepayments = 5;
 
             while (maxPoolDebt < poolDebt && maxLoansRepayments > 0) {
-                (address borrower, , ) = _pool.loansInfo();
+                address borrower = _getLoansInfo().maxBorrower;
 
                 if (borrower != address(0)) {
                     uint256 debt = _getBorrowerInfo(borrower).debt;
@@ -369,6 +375,14 @@ abstract contract BaseHandler is Test {
             lenderInfo_.lpBalance,
             lenderInfo_.depositTime
         ) = _pool.lenderInfo(index_, lender_);
+    }
+
+    function _getLoansInfo() internal view returns (LoansInfo memory loansInfo_) {
+        (
+            loansInfo_.maxBorrower,
+            loansInfo_.maxThresholdPrice,
+            loansInfo_.noOfLoans
+        ) = _pool.loansInfo();
     }
 
     function _getKickerInfo(address kicker_) internal view returns (KickerInfo memory kickerInfo_) {
@@ -529,7 +543,7 @@ abstract contract BaseHandler is Test {
         if (pendingFactor == 1e18) return;
 
         // get TP of worst loan
-        (, uint256 htp,) = _pool.loansInfo();
+        uint256 htp = _getLoansInfo().maxThresholdPrice;
 
         uint256 accrualIndex;
 

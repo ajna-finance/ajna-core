@@ -66,7 +66,7 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
         _setupLendersAndDeposits(LENDERS);
         _setupBorrowersAndLoans(LOANS_COUNT);
 
-        ( , , uint256 totalLoans) = _pool.loansInfo();
+        uint256 totalLoans = _getLoansInfo().noOfLoans;
         require(totalLoans == LOANS_COUNT, "loans setup failed");
 
         vm.warp(block.timestamp + 1_000 days);
@@ -255,8 +255,7 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
     /*******************************/
 
     function _resetSettledAuction(address borrower_, uint256 borrowerIndex_) internal {
-        (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(borrower_);
-        if (kickTime == 0) {
+        if (_getAuctionInfo(borrower_).kickTime == 0) {
             if (borrowerIndex_ != 0) _activeBorrowers.remove(borrowerIndex_);
         }
     }

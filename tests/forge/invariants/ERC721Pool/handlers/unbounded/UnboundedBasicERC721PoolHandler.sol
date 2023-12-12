@@ -68,7 +68,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.removeCollateral']++;
 
-        (uint256 lpBalanceBeforeAction, ) = _erc721Pool.lenderInfo(bucketIndex_, _actor);
+        uint256 lpBalanceBeforeAction = _getLenderInfo(bucketIndex_, _actor).lpBalance;
 
         try _erc721Pool.removeCollateral(amount_, bucketIndex_) {
 
@@ -76,7 +76,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
             exchangeRateShouldNotChange[bucketIndex_] = true;
 
             // Post action condition
-            (uint256 lpBalanceAfterAction, ) = _erc721Pool.lenderInfo(bucketIndex_, _actor);
+            uint256 lpBalanceAfterAction = _getLenderInfo(bucketIndex_, _actor).lpBalance;
             require(lpBalanceAfterAction < lpBalanceBeforeAction, "LP balance should decrease");
 
         } catch (bytes memory err) {

@@ -63,7 +63,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.lenderKickAuction']++;
         
-        (address maxBorrower, , )        = _pool.loansInfo();
+        address maxBorrower = _getLoansInfo().maxBorrower;
+
         BorrowerInfo memory borrowerInfo = _getBorrowerInfo(maxBorrower);
         if (borrowerInfo.debt == 0) return;
 
