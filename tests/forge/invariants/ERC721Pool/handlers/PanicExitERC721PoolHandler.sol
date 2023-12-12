@@ -149,14 +149,12 @@ contract PanicExitERC721PoolHandler is UnboundedLiquidationPoolHandler, Unbounde
     ) external useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BPanicExitPoolHandler.withdrawBonds']++;
 
-        kickerIndex_    = constrictToRange(kickerIndex_, 0, LENDERS - 1);
-        address kicker  = _lenders[kickerIndex_];
-
-        (uint256 kickerClaimable, ) = _pool.kickerInfo(kicker); 
+        kickerIndex_   = constrictToRange(kickerIndex_, 0, LENDERS - 1);
+        address kicker = _lenders[kickerIndex_];
 
         _actor = kicker;
         changePrank(_actor);
-        _withdrawBonds(kicker, kickerClaimable);
+        _withdrawBonds(kicker, _getKickerInfo(kicker).claimableBond);
     }
 
     function settleHeadAuction(
