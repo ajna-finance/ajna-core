@@ -120,7 +120,7 @@ library Loans {
      */
     function _bubbleUp(LoansState storage loans_, Loan memory loan_, uint index_) private {
         uint256 count = loans_.loans.length;
-        if (index_ == ROOT_INDEX || loan_.thresholdPrice <= loans_.loans[index_ / 2].thresholdPrice){
+        if (index_ == ROOT_INDEX || loan_.unadjustedThresholdPrice <= loans_.loans[index_ / 2].unadjustedThresholdPrice){
           _insert(loans_, loan_, index_, count);
         } else {
           _insert(loans_, loans_.loans[index_ / 2], index_, count);
@@ -144,11 +144,11 @@ library Loans {
         } else {
             Loan memory largestChild = loans_.loans[cIndex];
 
-            if (count > cIndex + 1 && loans_.loans[cIndex + 1].thresholdPrice > largestChild.thresholdPrice) {
+            if (count > cIndex + 1 && loans_.loans[cIndex + 1].unadjustedThresholdPrice > largestChild.unadjustedThresholdPrice) {
                 largestChild = loans_.loans[++cIndex];
             }
 
-            if (largestChild.thresholdPrice <= loan_.thresholdPrice) {
+            if (largestChild.unadjustedThresholdPrice <= loan_.unadjustedThresholdPrice) {
               _insert(loans_, loan_, index_, count);
             } else {
               _insert(loans_, largestChild, index_, count);
@@ -190,31 +190,31 @@ library Loans {
 
     /**
      *  @notice Performs an insert or an update dependent on borrowers existance.
-     *  @param loans_          Holds loans heap data.
-     *  @param borrower_       Borrower address that is being updated or inserted.
-     *  @param index_          Index of `Loan` to be upserted.
-     *  @param thresholdPrice_ `Threshold Price` that is updated or inserted.
+     *  @param loans_                    Holds loans heap data.
+     *  @param borrower_                 Borrower address that is being updated or inserted.
+     *  @param index_                    Index of `Loan` to be upserted.
+     *  @param unadjustedThresholdPrice_ `Unadjusted Threshold Price` that is updated or inserted.
      */
     function _upsert(
         LoansState storage loans_,
         address borrower_,
         uint256 index_,
-        uint96 thresholdPrice_
+        uint96 unadjustedThresholdPrice_
     ) internal {
         // Loan exists, update in place.
         if (index_ != 0) {
             Loan memory currentLoan = loans_.loans[index_];
-            if (currentLoan.thresholdPrice > thresholdPrice_) {
-                currentLoan.thresholdPrice = thresholdPrice_;
+            if (currentLoan.unadjustedThresholdPrice > unadjustedThresholdPrice_) {
+                currentLoan.unadjustedThresholdPrice = unadjustedThresholdPrice_;
                 _bubbleDown(loans_, currentLoan, index_);
             } else {
-                currentLoan.thresholdPrice = thresholdPrice_;
+                currentLoan.unadjustedThresholdPrice = unadjustedThresholdPrice_;
                 _bubbleUp(loans_, currentLoan, index_);
             }
 
         // New loan, insert it
         } else {
-            _bubbleUp(loans_, Loan(borrower_, thresholdPrice_), loans_.loans.length);
+            _bubbleUp(loans_, Loan(borrower_, unadjustedThresholdPrice_), loans_.loans.length);
         }
     }
 

@@ -9,17 +9,17 @@ interface IPoolState {
 
     /**
      *  @notice Returns details of an auction for a given borrower address.
-     *  @param  borrower_       Address of the borrower that is liquidated.
-     *  @return kicker_         Address of the kicker that is kicking the auction.
-     *  @return bondFactor_     The factor used for calculating bond size.
-     *  @return bondSize_       The bond amount in quote token terms.
-     *  @return kickTime_       Time the liquidation was initiated.
-     *  @return referencePrice_ Price used to determine auction start price.
-     *  @return neutralPrice_   `Neutral Price` of auction.
-     *  @return thresholdPrice_ Threshold Price when liquidation was started.
-     *  @return head_           Address of the head auction.
-     *  @return next_           Address of the next auction in queue.
-     *  @return prev_           Address of the prev auction in queue.
+     *  @param  borrower_                 Address of the borrower that is liquidated.
+     *  @return kicker_                   Address of the kicker that is kicking the auction.
+     *  @return bondFactor_               The factor used for calculating bond size.
+     *  @return bondSize_                 The bond amount in quote token terms.
+     *  @return kickTime_                 Time the liquidation was initiated.
+     *  @return referencePrice_           Price used to determine auction start price.
+     *  @return neutralPrice_             `Neutral Price` of auction.
+     *  @return unadjustedThresholdPrice_ Unadjusted threshold Price (`debt / collateral`), which is used in BPF for kicker's reward calculation.
+     *  @return head_                     Address of the head auction.
+     *  @return next_                     Address of the next auction in queue.
+     *  @return prev_                     Address of the prev auction in queue.
      */
     function auctionInfo(address borrower_)
         external
@@ -31,7 +31,7 @@ interface IPoolState {
             uint256 kickTime_,
             uint256 referencePrice_,
             uint256 neutralPrice_,
-            uint256 thresholdPrice_,
+            uint256 unadjustedThresholdPrice_,
             address head_,
             address next_,
             address prev_
@@ -200,9 +200,9 @@ interface IPoolState {
 
     /**
      *  @notice Returns information about a loan in the pool.
-     *  @param  loanId_           Loan's id within loan heap. Max loan is position `1`.
-     *  @return borrower_         Borrower address at the given position.
-     *  @return t0ThresholdPrice_ Borrower t0 threshold price in pool.
+     *  @param  loanId_         Loan's id within loan heap. Max loan is position `1`.
+     *  @return borrower_       Borrower address at the given position.
+     *  @return thresholdPrice_ Borrower threshold price in pool (including the collateralization factor).
      */
     function loanInfo(
         uint256 loanId_
@@ -211,13 +211,13 @@ interface IPoolState {
         view
         returns (
             address borrower_,
-            uint256 t0ThresholdPrice_
+            uint256 thresholdPrice_
     );
 
     /**
      *  @notice Returns information about pool loans.
      *  @return maxBorrower_       Borrower address with highest threshold price.
-     *  @return maxThresholdPrice_ Highest threshold price in pool.
+     *  @return maxThresholdPrice_ Highest threshold price in pool (including the collateralization factor).
      *  @return noOfLoans_         Total number of loans.
      */
     function loansInfo()
@@ -380,8 +380,8 @@ struct LoansState {
 
 /// @dev Struct holding loan state.
 struct Loan {
-    address borrower;       // borrower address
-    uint96  thresholdPrice; // [WAD] Loan's threshold price.
+    address borrower;                 // borrower address
+    uint96  unadjustedThresholdPrice; // [WAD] Loan's unadjusted threshold price (`debt / collateral`).
 }
 
 /// @dev Struct holding borrower state.
@@ -407,16 +407,16 @@ struct AuctionsState {
 
 /// @dev Struct holding liquidation state.
 struct Liquidation {
-    address kicker;                // address that initiated liquidation
-    uint96  bondFactor;            // [WAD] bond factor used to start liquidation
-    uint96  kickTime;              // timestamp when liquidation was started
-    address prev;                  // previous liquidated borrower in auctions queue
-    uint96  referencePrice;        // [WAD] used to calculate auction start price
-    address next;                  // next liquidated borrower in auctions queue
-    uint160 bondSize;              // [WAD] liquidation bond size
-    uint96  neutralPrice;          // [WAD] Neutral Price when liquidation was started
-    uint256 thresholdPrice;        // [WAD] Threshold Price when liquidation was started
-    uint256 t0ReserveSettleAmount; // [WAD] Amount of t0Debt that could be settled via reserves in this auction
+    address kicker;                   // address that initiated liquidation
+    uint96  bondFactor;               // [WAD] bond factor used to start liquidation
+    uint96  kickTime;                 // timestamp when liquidation was started
+    address prev;                     // previous liquidated borrower in auctions queue
+    uint96  referencePrice;           // [WAD] used to calculate auction start price
+    address next;                     // next liquidated borrower in auctions queue
+    uint160 bondSize;                 // [WAD] liquidation bond size
+    uint96  neutralPrice;             // [WAD] Neutral Price when liquidation was started
+    uint256 unadjustedThresholdPrice; // [WAD] Unadjusted threshold Price (`debt / collateral`), which is used in BPF for kicker's reward calculation
+    uint256 t0ReserveSettleAmount;    // [WAD] Amount of t0Debt that could be settled via reserves in this auction
 }
 
 /// @dev Struct holding kicker state.

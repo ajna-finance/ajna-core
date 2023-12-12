@@ -57,16 +57,16 @@ library KickerActions {
 
     /// @dev Struct used for `kick` function local vars.
     struct KickLocalVars {
-        uint256 borrowerDebt;          // [WAD] the accrued debt of kicked borrower
-        uint256 borrowerCollateral;    // [WAD] amount of kicked borrower collateral
-        uint256 t0ReserveSettleAmount; // [WAD] Amount of t0Debt that could be settled via reserves in an auction
-        uint256 borrowerNpTpRatio;     // [WAD] borrower NP to TP ratio
-        uint256 neutralPrice;          // [WAD] neutral price recorded in kick action
-        uint256 htp;                   // [WAD] highest threshold price in pool
-        uint256 referencePrice;        // [WAD] used to calculate auction start price
-        uint256 bondFactor;            // [WAD] bond factor of kicked auction
-        uint256 bondSize;              // [WAD] bond size of kicked auction
-        uint256 thresholdPrice;        // [WAD] borrower threshold price at kick time
+        uint256 borrowerDebt;             // [WAD] the accrued debt of kicked borrower
+        uint256 borrowerCollateral;       // [WAD] amount of kicked borrower collateral
+        uint256 t0ReserveSettleAmount;    // [WAD] Amount of t0Debt that could be settled via reserves in an auction
+        uint256 borrowerNpTpRatio;        // [WAD] borrower NP to TP ratio
+        uint256 neutralPrice;             // [WAD] neutral price recorded in kick action
+        uint256 htp;                      // [WAD] highest threshold price (including the collateralization factor) in pool
+        uint256 referencePrice;           // [WAD] used to calculate auction start price
+        uint256 bondFactor;               // [WAD] bond factor of kicked auction
+        uint256 bondSize;                 // [WAD] bond size of kicked auction
+        uint256 unadjustedThresholdPrice; // [WAD] borrower unadjusted threshold price at kick time
     }
 
     /// @dev Struct used for `lenderKick` function local vars.
@@ -346,7 +346,7 @@ library KickerActions {
         // which will make it harder for kicker to earn a reward and more likely that the kicker is penalized
         _revertIfPriceDroppedBelowLimit(vars.neutralPrice, limitIndex_);
 
-        vars.htp            = _htp(Loans.getMax(loans_).thresholdPrice, poolState_.inflator);
+        vars.htp            = _htp(Loans.getMax(loans_).unadjustedThresholdPrice, poolState_.inflator);
         vars.referencePrice = Maths.min(Maths.max(vars.htp, vars.neutralPrice), MAX_INFLATED_PRICE);
 
         (vars.bondFactor, vars.bondSize) = _bondParams(
@@ -354,7 +354,7 @@ library KickerActions {
             vars.borrowerNpTpRatio
         );
 
-        vars.thresholdPrice = Maths.wdiv(vars.borrowerDebt, vars.borrowerCollateral);
+        vars.unadjustedThresholdPrice = Maths.wdiv(vars.borrowerDebt, vars.borrowerCollateral);
 
         // record liquidation info
         _recordAuction(
@@ -365,7 +365,7 @@ library KickerActions {
             vars.bondFactor,
             vars.referencePrice,
             vars.neutralPrice,
-            vars.thresholdPrice,
+            vars.unadjustedThresholdPrice,
             vars.t0ReserveSettleAmount
         );
 
@@ -420,15 +420,15 @@ library KickerActions {
      *  @dev    `borrower -> liquidation` mapping update
      *  @dev    increment auctions count accumulator
      *  @dev    updates auction queue state
-     *  @param  auctions_              Struct for pool auctions state.
-     *  @param  liquidation_           Struct for current auction state.
-     *  @param  borrowerAddress_       Address of the borrower that is kicked.
-     *  @param  bondSize_              Bond size to cover newly kicked auction.
-     *  @param  bondFactor_            Bond factor of the newly kicked auction.
-     *  @param  referencePrice_        Used to calculate auction start price.
-     *  @param  neutralPrice_          Current pool `Neutral Price`.
-     *  @param  thresholdPrice_        Borrower threshold price.
-     *  @param  t0ReserveSettleAmount_ Amount of t0Debt that could be settled via reserves in auction
+     *  @param  auctions_                 Struct for pool auctions state.
+     *  @param  liquidation_              Struct for current auction state.
+     *  @param  borrowerAddress_          Address of the borrower that is kicked.
+     *  @param  bondSize_                 Bond size to cover newly kicked auction.
+     *  @param  bondFactor_               Bond factor of the newly kicked auction.
+     *  @param  referencePrice_           Used to calculate auction start price.
+     *  @param  neutralPrice_             Current pool `Neutral Price`.
+     *  @param  unadjustedThresholdPrice_ Borrower unadjusted threshold price.
+     *  @param  t0ReserveSettleAmount_    Amount of t0Debt that could be settled via reserves in auction
      */
     function _recordAuction(
         AuctionsState storage auctions_,
@@ -438,17 +438,17 @@ library KickerActions {
         uint256 bondFactor_,
         uint256 referencePrice_,
         uint256 neutralPrice_,
-        uint256 thresholdPrice_,
+        uint256 unadjustedThresholdPrice_,
         uint256 t0ReserveSettleAmount_
     ) internal {
         // record liquidation info
-        liquidation_.kicker                = msg.sender;
-        liquidation_.kickTime              = uint96(block.timestamp);
-        liquidation_.bondSize              = SafeCast.toUint160(bondSize_);
-        liquidation_.bondFactor            = SafeCast.toUint96(bondFactor_);
-        liquidation_.neutralPrice          = SafeCast.toUint96(neutralPrice_);
-        liquidation_.thresholdPrice        = thresholdPrice_;
-        liquidation_.t0ReserveSettleAmount = t0ReserveSettleAmount_;
+        liquidation_.kicker                   = msg.sender;
+        liquidation_.kickTime                 = uint96(block.timestamp);
+        liquidation_.bondSize                 = SafeCast.toUint160(bondSize_);
+        liquidation_.bondFactor               = SafeCast.toUint96(bondFactor_);
+        liquidation_.neutralPrice             = SafeCast.toUint96(neutralPrice_);
+        liquidation_.unadjustedThresholdPrice = unadjustedThresholdPrice_;
+        liquidation_.t0ReserveSettleAmount    = t0ReserveSettleAmount_;
 
         // increment number of active auctions
         ++auctions_.noOfAuctions;

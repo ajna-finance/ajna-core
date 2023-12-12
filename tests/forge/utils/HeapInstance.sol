@@ -40,11 +40,11 @@ contract HeapInstance is DSTestPlus {
     }
 
     function getTp(address borrower_) public view returns (uint256) {
-        return _heap.getByIndex(_heap.indices[borrower_]).thresholdPrice;
+        return _heap.getByIndex(_heap.indices[borrower_]).unadjustedThresholdPrice;
     }
 
     function getMaxTp() external view returns (uint256) {
-        return _heap.getMax().thresholdPrice;
+        return _heap.getMax().unadjustedThresholdPrice;
     }
 
     function getMaxBorrower() external view returns (address) {

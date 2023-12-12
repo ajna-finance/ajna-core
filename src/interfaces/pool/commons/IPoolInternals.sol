@@ -74,17 +74,17 @@ struct AddQuoteParams {
 
 /// @dev Struct used to hold parameters for `LenderAction.moveQuoteToken` action.
 struct MoveQuoteParams {
-    uint256 fromIndex;        // the deposit index from where amount is moved
-    uint256 maxAmountToMove;  // [WAD] max amount to move between deposits
-    uint256 toIndex;          // the deposit index where amount is moved to
-    uint256 thresholdPrice;   // [WAD] max threshold price in pool
+    uint256 fromIndex;                   // the deposit index from where amount is moved
+    uint256 maxAmountToMove;             // [WAD] max amount to move between deposits
+    uint256 toIndex;                     // the deposit index where amount is moved to
+    uint256 maxUnadjustedThresholdPrice; // [WAD] max unadjusted threshold price in pool
 }
 
 /// @dev Struct used to hold parameters for `LenderAction.removeQuoteToken` action.
 struct RemoveQuoteParams {
-    uint256 index;           // the deposit index from where amount is removed
-    uint256 maxAmount;       // [WAD] max amount to be removed
-    uint256 thresholdPrice;  // [WAD] max threshold price in pool
+    uint256 index;                       // the deposit index from where amount is removed
+    uint256 maxAmount;                   // [WAD] max amount to be removed
+    uint256 maxUnadjustedThresholdPrice; // [WAD] max unadjusted threshold price in pool
 }
 
 /*************************************/
