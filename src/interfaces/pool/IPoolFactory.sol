@@ -44,6 +44,7 @@ interface IPoolFactory {
     /**
      *  @notice Emitted when a new pool is created.
      *  @param  pool_ The address of the new pool.
+     *  @param  subsetHash_ The subset hash for the pool lookup
      */
-    event PoolCreated(address pool_);
+    event PoolCreated(address pool_, bytes32 subsetHash_);
 }
