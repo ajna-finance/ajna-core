@@ -227,7 +227,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         AuctionInfo  memory auctionInfo     = _getAuctionInfo(borrower_);
         LocalTakeVars memory beforeTakeVars = _getTakeInfo(
-            auctionInfo.auctionPriceIndex,
+            bucketIndex_,
             auctionInfo.kicker,
             _actor,
             auctionInfo.auctionPriceIndex,
