@@ -37,21 +37,6 @@ interface IERC721PoolState {
     ) external view returns (uint256 tokenId);
 
     /**
-     *  @notice Returns the total `NFT` pledged by a borrower.
-     *  @param  borrower_ The address of borrower that pledged the `NFT`.
-     *  @return Total number of `NFT`s pledged by borrower.
-     */
-    function totalBorrowerTokens(
-        address borrower_
-    ) external view returns (uint256);
-
-    /**
-     *  @notice Returns the total `NFT` added in pool bucket.
-     *  @return Total number of `NFT`s in buckets (claimable from pool).
-     */
-    function totalBucketTokens() external view returns (uint256);
-
-    /**
      *  @notice Returns the list of `NFT` tokenIds pledged by a borrower in a pool.
      *  @param  borrower_ The address of borrower that pledged the `NFT`s.
      *  @return List of `NFT`s pledged by borrower in a bucket.

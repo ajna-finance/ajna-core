@@ -615,16 +615,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /*******************************/
 
     /// @inheritdoc IERC721PoolState
-    function totalBorrowerTokens(address borrower_) external view override returns(uint256) {
-        return borrowerTokenIds[borrower_].length;
-    }
-
-    /// @inheritdoc IERC721PoolState
-    function totalBucketTokens() external view override returns(uint256) {
-        return bucketTokenIds.length;
-    }
-
-    /// @inheritdoc IERC721PoolState
     function getBorrowerTokenIds(address borrower_) external view override returns(uint256[] memory) {
         return borrowerTokenIds[borrower_];
     }
