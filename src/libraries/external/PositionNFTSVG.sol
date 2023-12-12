@@ -21,9 +21,7 @@ library PositionNFTSVG {
         string collateralTokenSymbol; // the symbol of collateral token of the pool
         string quoteTokenSymbol;      // the symbol of quote token of the pool
         uint256 tokenId;              // the ID of positions NFT token
-        address pool;                 // the address of pool tracked in positions NFT token
         address owner;                // the owner of positions NFT token
-        uint256[] indexes;            // the array of price buckets index with LP to be tracked by the NFT
     }
 
     /*******************************/

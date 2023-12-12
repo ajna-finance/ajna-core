@@ -80,14 +80,14 @@ contract ERC721TakeWithExternalLiquidityTest is ERC721HelperContract {
         // call take using taker contract
         bytes memory data = abi.encode(address(_pool));
         vm.expectEmit(true, true, false, true);
-        uint256 quoteTokenPaid = 1_082.785034492073132320 * 1e18;
+        uint256 quoteTokenPaid = 1_126.096435871756057616 * 1e18;
         uint256 collateralPurchased = 2 * 1e18;
-        uint256 bondChange = 12.105904710718649453 * 1e18;
+        uint256 bondChange = 12.590140899147395432 * 1e18;
         emit Take(_borrower, quoteTokenPaid, collateralPurchased, bondChange, true);
         _pool.take(_borrower, 2, address(taker), data);
 
         // confirm we earned some quote token
-        assertEq(_quote.balanceOf(address(taker)), 417.214965507926867680 * 1e18);
+        assertEq(_quote.balanceOf(address(taker)), 373.903564128243942384 * 1e18);
     }
 
     function testTakeNFTCalleeDiffersFromSender() external { 
@@ -110,14 +110,14 @@ contract ERC721TakeWithExternalLiquidityTest is ERC721HelperContract {
         changePrank(_lender);
         bytes memory data = abi.encode(address(_pool));
         vm.expectEmit(true, true, false, true);
-        uint256 quoteTokenPaid = 1_082.785034492073132320 * 1e18;
+        uint256 quoteTokenPaid = 1_126.096435871756057616 * 1e18;
         uint256 collateralPurchased = 2 * 1e18;
-        uint256 bondChange = 12.105904710718649453 * 1e18;
+        uint256 bondChange = 12.590140899147395432 * 1e18;
         emit Take(_borrower, quoteTokenPaid, collateralPurchased, bondChange, true);
         _pool.take(_borrower, 2, address(taker), data);
 
         // _lender is msg.sender, QT & CT balances post take
-        assertEq(_quote.balanceOf(_lender), 48_895.437905421641180379 * 1e18);
+        assertEq(_quote.balanceOf(_lender), 48_852.126504041958255083 * 1e18);
         assertEq(_quote.balanceOf(address(taker)), 1_500.0 * 1e18); // QT is increased as NFTTakeExample contract sells the NFT
     }
 }

@@ -99,14 +99,14 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              5_004.807692307692310000 * 1e18,
             borrowerCollateral:        2 * 1e18,
-            borrowert0Np:              2_782.181101511692436004 * 1e18,
+            borrowert0Np:              2_893.468345572160133444 * 1e18,
             borrowerCollateralization: 1.484593417432191870 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower2,
             borrowerDebt:              5_004.807692307692310000 * 1e18,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              1_854.787401007794957336 * 1e18,
+            borrowert0Np:              1_928.978897048106755629 * 1e18,
             borrowerCollateralization: 2.226890126148287806 * 1e18
         });
 
@@ -161,14 +161,14 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              5_007.093514461301878824 * 1e18,
             borrowerCollateral:        2 * 1e18,
-            borrowert0Np:              2_782.181101511692436004 * 1e18,
+            borrowert0Np:              2_893.468345572160133444 * 1e18,
             borrowerCollateralization: 1.483915675641896080 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower2,
             borrowerDebt:              5_007.093514461301878824 * 1e18,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              1_854.787401007794957336 * 1e18,
+            borrowert0Np:              1_928.978897048106755629 * 1e18,
             borrowerCollateralization: 2.225873513462844121 * 1e18
         });
 
@@ -188,12 +188,12 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 bondSize:          55.955451071569254199 * 1e18,
                 bondFactor:        0.011180339887498948 * 1e18,
                 kickTime:          _startTime,
-                referencePrice:    2_782.181101511692436004 * 1e18,
+                referencePrice:    2_893.468345572160133444 * 1e18,
                 totalBondEscrowed: 111.910902143138508398 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     10_009.615384615384620000 * 1e18,
                 thresholdPrice:    1_668.269230769230770000 * 1e18,
-                neutralPrice:      1_854.787401007794957336 * 1e18
+                neutralPrice:      1_928.978897048106755629 * 1e18
             })
         );
 
