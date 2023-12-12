@@ -60,7 +60,8 @@ import {
     _revertIfAuctionDebtLocked,
     _revertIfAuctionClearable,
     _revertAfterExpiry,
-    _revertIfAuctionPriceBelow
+    _revertIfAuctionPriceBelow,
+    _revertIfActiveAuctions
 }                               from '../libraries/helpers/RevertsHelper.sol';
 
 import { Buckets }  from '../libraries/internal/Buckets.sol';
@@ -160,7 +161,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         _revertIfAuctionClearable(auctions, loans);
 
-        _revertIfAuctionPriceBelow(index_, auctions);
+        _revertIfAuctionPriceBelow(auctions, index_);
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -196,7 +197,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         _revertIfAuctionClearable(auctions, loans);
 
-        _revertIfAuctionPriceBelow(toIndex_, auctions);
+        _revertIfAuctionPriceBelow(auctions, toIndex_);
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -400,7 +401,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @dev    - `KickReserveAuction`
      */
     function kickReserveAuction() external override nonReentrant {
-        _revertIfAuctionClearable(auctions, loans);
+        _revertIfActiveAuctions(auctions);
 
         // start a new claimable reserve auction, passing in relevant parameters such as the current pool size, debt, balance, and inflator value
         KickerActions.kickReserveAuction(

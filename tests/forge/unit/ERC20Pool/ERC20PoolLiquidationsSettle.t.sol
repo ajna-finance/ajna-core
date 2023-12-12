@@ -1151,6 +1151,10 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         (reserves, claimableReserves, , ,) = _poolUtils.poolReservesInfo(address(_pool));
         assertEq(reserves, 294_613_974.051804158154633582 * 1e18);
         assertEq(claimableReserves, 294_613_859.916107852369559136 * 1e18);
+
+        // test reserves auction cannot be kicked until auction settled
+        vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
+        _pool.kickReserveAuction();
  
         // settle auction with reserves
         changePrank(actor6);
@@ -1165,6 +1169,16 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         (reserves, claimableReserves, , ,) = _poolUtils.poolReservesInfo(address(_pool));
         assertEq(reserves, 374_644_181.841827555572267504 * 1e18);
         assertEq(claimableReserves, 374_644_125.812500127979859369 * 1e18);
+
+        // test reserves auction can be kicked after auction settled
+        _pool.kickReserveAuction();
+        _assertReserveAuction({
+            reserves:                   56.029327427592408135 * 1e18,
+            claimableReserves :         0,
+            claimableReservesRemaining: 374_644_125.812500127979859369 * 1e18,
+            auctionPrice:               1_000_000_000 * 1e18,
+            timeRemaining:              3 days
+        });
     }
 }
 
