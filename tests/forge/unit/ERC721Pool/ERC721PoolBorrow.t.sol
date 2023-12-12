@@ -201,6 +201,14 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             borrower: _borrower,
             tokenIds: tokenIdsToAdd
         });
+
+        // check token balances after pledge
+        uint256[] memory pledgedTokens = ERC721Pool(address(_pool)).getBorrowerTokenIds(_borrower);
+        assertEq(pledgedTokens.length, 3);
+        assertEq(pledgedTokens[0], 1);
+        assertEq(pledgedTokens[1], 3);
+        assertEq(pledgedTokens[2], 5);
+
         // borrower borrows from the pool
         uint256 borrowAmount = 3_000 * 1e18;
         _borrow({
