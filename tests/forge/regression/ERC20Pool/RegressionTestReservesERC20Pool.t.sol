@@ -1428,7 +1428,10 @@ contract RegressionTestReserveWith8CollateralPrecisionERC20Pool is ReserveERC20P
         invariant_reserves();
     }
 
-    // FIXME: incorrect reserves change
+    /*
+        Test failed because RE9 was incorrectly implemented that take below tp (at time of take) doesn't change reserves.
+        Fixed by updating RE9 implementation to `Reserves are unchanged by take below tp (at time of kick)`.
+    */
     function test_regression_failure_reserves_on_bucketTake() external {
         _reserveERC20PoolHandler.bucketTake(21318, 17209, false, 7256, 2112895574);
         _reserveERC20PoolHandler.failed();
