@@ -240,8 +240,9 @@ library KickerActions {
 
         if (curUnclaimedAuctionReserve == 0) revert NoReserves();
 
-        reserveAuction_.unclaimed = curUnclaimedAuctionReserve;
-        reserveAuction_.kicked    = block.timestamp;
+        reserveAuction_.unclaimed          = curUnclaimedAuctionReserve;
+        reserveAuction_.kicked             = block.timestamp;
+        reserveAuction_.lastKickedReserves = curUnclaimedAuctionReserve;
 
         // increment latest burn event epoch and update burn event timestamp
         latestBurnEpoch += 1;
@@ -251,7 +252,7 @@ library KickerActions {
 
         emit KickReserveAuction(
             curUnclaimedAuctionReserve,
-            _reserveAuctionPrice(block.timestamp),
+            _reserveAuctionPrice(block.timestamp, curUnclaimedAuctionReserve),
             latestBurnEpoch
         );
     }

@@ -56,7 +56,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
             kickerClaimableBond += claimable;
         }
 
-        (uint256 totalBondEscrowed, , , ) = _pool.reservesInfo();
+        (uint256 totalBondEscrowed, , , , ) = _pool.reservesInfo();
 
         require(totalBondEscrowed == kickerClaimableBond + kickerLockedBond, "A2: total bond escrowed != kicker bonds");
 
@@ -121,7 +121,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
         uint256 previousTotalBondEscrowed        = IBaseHandler(_handler).previousTotalBonds();
         uint256 increaseInBonds                  = IBaseHandler(_handler).increaseInBonds();
         uint256 decreaseInBonds                  = IBaseHandler(_handler).decreaseInBonds();
-        (uint256 currentTotalBondEscrowed, , , ) = _pool.reservesInfo();
+        (uint256 currentTotalBondEscrowed, , , ,) = _pool.reservesInfo();
 
         requireWithinDiff(
             currentTotalBondEscrowed,

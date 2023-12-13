@@ -48,7 +48,7 @@ contract ERC721PoolRewardsHandler is RewardsPoolHandler, ReserveERC721PoolHandle
 
         for (uint256 epoch = 0; epoch <= numberOfEpochs_; epoch ++) {
             // draw some debt and then repay after some times to increase pool earning / reserves 
-            (, uint256 claimableReserves, , ) = _pool.reservesInfo();
+            (, uint256 claimableReserves, , ,) = _pool.reservesInfo();
             if (claimableReserves == 0) {
                 uint256 amountToBorrow = _preDrawDebt(amountToAdd_);
                 _drawDebt(amountToBorrow);
@@ -61,7 +61,7 @@ contract ERC721PoolRewardsHandler is RewardsPoolHandler, ReserveERC721PoolHandle
 
             skip(timeToSkip);
 
-            (, claimableReserves, , ) = _pool.reservesInfo();
+            (, claimableReserves, , ,) = _pool.reservesInfo();
 
             _kickReserveAuction();
 

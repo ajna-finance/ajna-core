@@ -288,7 +288,7 @@ library TakerActions {
 
         if (kicked != 0 && block.timestamp - kicked <= 72 hours) {
             uint256 unclaimed = reserveAuction_.unclaimed;
-            uint256 price     = _reserveAuctionPrice(kicked);
+            uint256 price     = _reserveAuctionPrice(kicked, reserveAuction_.lastKickedReserves);
 
             amount_       = Maths.min(unclaimed, maxAmount_);
             ajnaRequired_ = Maths.ceilWmul(amount_, price);
