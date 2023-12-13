@@ -643,22 +643,22 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
     function testLenderKickAuctionAllBorrowersAndSettle() external tearDown {
         // assert loans positions in heap
         address borrower;
-        uint256 t0ThresholdPrice;
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(1);
+        uint256 t0DebtToCollateral;
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(1);
         assertEq(borrower, _borrower1);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(2);
+        assertEq(t0DebtToCollateral, 20.820000000000000010 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(2);
         assertEq(borrower, _borrower2);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(3);
+        assertEq(t0DebtToCollateral, 20.820000000000000010 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(3);
         assertEq(borrower, _borrower3);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(4);
+        assertEq(t0DebtToCollateral, 20.820000000000000010 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(4);
         assertEq(borrower, _borrower4);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(5);
+        assertEq(t0DebtToCollateral, 20.820000000000000010 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(5);
         assertEq(borrower, _borrower5);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
+        assertEq(t0DebtToCollateral, 20.820000000000000010 * 1e18);
 
         // kick borrower 1
         _lenderKick({
@@ -670,21 +670,21 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             bond:       223.821804286277016796 * 1e18
         });
 
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(1);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(1);
         assertEq(borrower, _borrower5);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(2);
+        assertEq(t0DebtToCollateral, 20.820000000000000010 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(2);
         assertEq(borrower, _borrower2);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(3);
+        assertEq(t0DebtToCollateral, 20.820000000000000010 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(3);
         assertEq(borrower, _borrower3);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(4);
+        assertEq(t0DebtToCollateral, 20.820000000000000010 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(4);
         assertEq(borrower, _borrower4);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(5);
+        assertEq(t0DebtToCollateral, 20.820000000000000010 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(5);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
+        assertEq(t0DebtToCollateral, 0);
 
         address head;
         address next;
@@ -706,21 +706,21 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             bond:       223.821804286277016796 * 1e18
         });
 
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(1);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(1);
         assertEq(borrower, _borrower4);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(2);
+        assertEq(t0DebtToCollateral, 20.820000000000000010 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(2);
         assertEq(borrower, _borrower2);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(3);
+        assertEq(t0DebtToCollateral, 20.820000000000000010 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(3);
         assertEq(borrower, _borrower3);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(4);
+        assertEq(t0DebtToCollateral, 20.820000000000000010 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(4);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(5);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(5);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
+        assertEq(t0DebtToCollateral, 0);
 
         (, , , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower1);
@@ -741,21 +741,21 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             bond:       223.821804286277016796 * 1e18
         });
 
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(1);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(1);
         assertEq(borrower, _borrower3);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(2);
+        assertEq(t0DebtToCollateral, 20.820000000000000010 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(2);
         assertEq(borrower, _borrower2);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(3);
+        assertEq(t0DebtToCollateral, 20.820000000000000010 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(3);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(4);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(4);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(5);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(5);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
+        assertEq(t0DebtToCollateral, 0);
 
         (, , , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower1);
@@ -780,21 +780,21 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             bond:       223.821804286277016796 * 1e18
         });
 
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(1);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(1);
         assertEq(borrower, _borrower2);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(2);
+        assertEq(t0DebtToCollateral, 20.820000000000000010 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(2);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(3);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(3);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(4);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(4);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(5);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(5);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
+        assertEq(t0DebtToCollateral, 0);
 
         (, , , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower1);
@@ -823,21 +823,21 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             bond:       223.821804286277016796 * 1e18
         });
 
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(1);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(1);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(2);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(2);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(3);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(3);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(4);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(4);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(5);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(5);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
+        assertEq(t0DebtToCollateral, 0);
 
         (, , , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower1);

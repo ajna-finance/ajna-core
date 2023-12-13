@@ -699,7 +699,7 @@ library TakerActions {
         vars.bucketPrice = bucketPrice_;
         vars.bondFactor   = liquidation_.bondFactor;
         vars.bpf          = _bpf(
-            liquidation_.unadjustedThresholdPrice,
+            liquidation_.debtToCollateral,
             neutralPrice,
             liquidation_.bondFactor,
             bucketPrice_ == 0 ? vars.auctionPrice : bucketPrice_

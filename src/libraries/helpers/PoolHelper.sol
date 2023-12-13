@@ -169,15 +169,15 @@ import { Maths }   from '../internal/Maths.sol';
 
     /**
      *  @notice Calculates `HTP` price.
-     *  @param  unadjustedThresholdPrice_ Unadjusted Threshold price.
-     *  @param  inflator_                 Pool's inflator.
+     *  @param  maxT0DebtToCollateral_ Max t0 debt to collateral in pool.
+     *  @param  inflator_              Pool's inflator.
      */
     function _htp(
-        uint256 unadjustedThresholdPrice_,
+        uint256 maxT0DebtToCollateral_,
         uint256 inflator_
     ) pure returns (uint256) {
         return Maths.wmul(
-            Maths.wmul(unadjustedThresholdPrice_, inflator_),
+            Maths.wmul(maxT0DebtToCollateral_, inflator_),
             COLLATERALIZATION_FACTOR
         );
     }
@@ -433,28 +433,28 @@ import { Maths }   from '../internal/Maths.sol';
     /**
      *  @notice Calculates bond penalty factor.
      *  @dev    Called in kick and take.
-     *  @param unadjustedThresholdPrice_ Borrower unadjusted threshold price at time of kick.
-     *  @param neutralPrice_             `NP` of auction.
-     *  @param bondFactor_               Factor used to determine bondSize.
-     *  @param auctionPrice_             Auction price at the time of call or, for bucket takes, bucket price.
-     *  @return bpf_                     Factor used in determining bond `reward` (positive) or `penalty` (negative).
+     *  @param debtToCollateral_ Borrower debt to collateral at time of kick.
+     *  @param neutralPrice_     `NP` of auction.
+     *  @param bondFactor_       Factor used to determine bondSize.
+     *  @param auctionPrice_     Auction price at the time of call or, for bucket takes, bucket price.
+     *  @return bpf_             Factor used in determining bond `reward` (positive) or `penalty` (negative).
      */
     function _bpf(
-        uint256 unadjustedThresholdPrice_,
+        uint256 debtToCollateral_,
         uint256 neutralPrice_,
         uint256 bondFactor_,
         uint256 auctionPrice_
     ) pure returns (int256) {
         int256 sign;
-        if (unadjustedThresholdPrice_ < neutralPrice_) {
-            // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - unadjustedThresholdPrice)))
+        if (debtToCollateral_ < neutralPrice_) {
+            // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - debtToCollateral)))
             sign = Maths.minInt(
                 1e18,
                 Maths.maxInt(
                     -1 * 1e18,
                     PRBMathSD59x18.div(
                         int256(neutralPrice_) - int256(auctionPrice_),
-                        int256(neutralPrice_) - int256(unadjustedThresholdPrice_)
+                        int256(neutralPrice_) - int256(debtToCollateral_)
                     )
                 )
             );

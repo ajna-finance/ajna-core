@@ -47,17 +47,17 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Exposes status of a liquidation auction.
-     *  @param  ajnaPool_                 Address of `Ajna` pool.
-     *  @param  borrower_                 Identifies the loan being liquidated.
-     *  @return kickTime_                 Time auction was kicked, implying end time.
-     *  @return collateral_               Remaining collateral available to be purchased.               (`WAD`)
-     *  @return debtToCover_              Borrower debt to be covered.                                  (`WAD`)
-     *  @return isCollateralized_         `True` if loan is collateralized.
-     *  @return price_                    Current price of the auction.                                 (`WAD`)
-     *  @return neutralPrice_             Price at which bond holder is neither rewarded nor penalized. (`WAD`)
-     *  @return referencePrice_           Price used to determine auction start price.                  (`WAD`)
-     *  @return unadjustedThresholdPrice_ Unadjusted threshold Price (`debt / collateral`).             (`WAD`)
-     *  @return bondFactor_               The factor used for calculating bond size.                    (`WAD`)
+     *  @param  ajnaPool_         Address of `Ajna` pool.
+     *  @param  borrower_         Identifies the loan being liquidated.
+     *  @return kickTime_         Time auction was kicked, implying end time.
+     *  @return collateral_       Remaining collateral available to be purchased.               (`WAD`)
+     *  @return debtToCover_      Borrower debt to be covered.                                  (`WAD`)
+     *  @return isCollateralized_ `True` if loan is collateralized.
+     *  @return price_            Current price of the auction.                                 (`WAD`)
+     *  @return neutralPrice_     Price at which bond holder is neither rewarded nor penalized. (`WAD`)
+     *  @return referencePrice_   Price used to determine auction start price.                  (`WAD`)
+     *  @return debtToCollateral_ Borrower debt to collateral at time of kick.                  (`WAD`)
+     *  @return bondFactor_       The factor used for calculating bond size.                    (`WAD`)
      */
     function auctionStatus(address ajnaPool_, address borrower_)
         external
@@ -70,7 +70,7 @@ contract PoolInfoUtils {
             uint256 price_,
             uint256 neutralPrice_,
             uint256 referencePrice_,
-            uint256 unadjustedThresholdPrice_,
+            uint256 debtToCollateral_,
             uint256 bondFactor_
         )
     {
@@ -81,7 +81,7 @@ contract PoolInfoUtils {
             kickTime_,
             referencePrice_,
             neutralPrice_,
-            unadjustedThresholdPrice_, , , ) = IPool(ajnaPool_).auctionInfo(borrower_);
+            debtToCollateral_, , , ) = IPool(ajnaPool_).auctionInfo(borrower_);
 
         if (kickTime_ != 0) {
             (debtToCover_, collateral_, ) = this.borrowerInfo(ajnaPool_, borrower_);
@@ -97,18 +97,18 @@ contract PoolInfoUtils {
     /**
      *  @notice Returns details of an auction for a given borrower address.
      *  @dev    Calls and returns all values from pool.auctionInfo().
-     *  @param  ajnaPool_                 Address of `Ajna` pool.
-     *  @param  borrower_                 Address of the borrower that is liquidated.
-     *  @return kicker_                   Address of the kicker that is kicking the auction.
-     *  @return bondFactor_               The factor used for calculating bond size.
-     *  @return bondSize_                 The bond amount in quote token terms.
-     *  @return kickTime_                 Time the liquidation was initiated.
-     *  @return referencePrice_           Price used to determine auction start price.
-     *  @return neutralPrice_             `Neutral Price` of auction.
-     *  @return unadjustedThresholdPrice_ Unadjusted threshold Price (`debt / collateral`), which is used in BPF for kicker's reward calculation.
-     *  @return head_                     Address of the head auction.
-     *  @return next_                     Address of the next auction in queue.
-     *  @return prev_                     Address of the prev auction in queue.
+     *  @param  ajnaPool_         Address of `Ajna` pool.
+     *  @param  borrower_         Address of the borrower that is liquidated.
+     *  @return kicker_           Address of the kicker that is kicking the auction.
+     *  @return bondFactor_       The factor used for calculating bond size.
+     *  @return bondSize_         The bond amount in quote token terms.
+     *  @return kickTime_         Time the liquidation was initiated.
+     *  @return referencePrice_   Price used to determine auction start price.
+     *  @return neutralPrice_     `Neutral Price` of auction.
+     *  @return debtToCollateral_ Borrower debt to collateral at time of kick, which is used in BPF for kicker's reward calculation.
+     *  @return head_             Address of the head auction.
+     *  @return next_             Address of the next auction in queue.
+     *  @return prev_             Address of the prev auction in queue.
      */
     function auctionInfo(address ajnaPool_, address borrower_) external view returns (
         address kicker_,
@@ -117,7 +117,7 @@ contract PoolInfoUtils {
         uint256 kickTime_,
         uint256 referencePrice_,
         uint256 neutralPrice_,
-        uint256 unadjustedThresholdPrice_,
+        uint256 debtToCollateral_,
         address head_,
         address next_,
         address prev_

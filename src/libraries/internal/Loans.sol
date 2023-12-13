@@ -80,7 +80,7 @@ library Loans {
 
         bool activeBorrower = borrower_.t0Debt != 0 && borrower_.collateral != 0;
 
-        uint256 t0ThresholdPrice = activeBorrower ? Maths.wdiv(borrower_.t0Debt, borrower_.collateral) : 0;
+        uint256 t0DebtToCollateral = activeBorrower ? Maths.wdiv(borrower_.t0Debt, borrower_.collateral) : 0;
 
         // loan not in auction, update threshold price and position in heap
         if (!inAuction_ ) {
@@ -88,10 +88,10 @@ library Loans {
             uint256 loanId = loans_.indices[borrowerAddress_];
             if (activeBorrower) {
                 // revert if threshold price is zero
-                if (t0ThresholdPrice == 0) revert ZeroThresholdPrice();
+                if (t0DebtToCollateral == 0) revert ZeroThresholdPrice();
 
                 // update heap, insert if a new loan, update loan if already in heap
-                _upsert(loans_, borrowerAddress_, loanId, uint96(t0ThresholdPrice));
+                _upsert(loans_, borrowerAddress_, loanId, uint96(t0DebtToCollateral));
 
             // if loan is in heap and borrwer is no longer active (no debt, no collateral) then remove loan from heap
             } else if (loanId != 0) {
@@ -120,7 +120,7 @@ library Loans {
      */
     function _bubbleUp(LoansState storage loans_, Loan memory loan_, uint index_) private {
         uint256 count = loans_.loans.length;
-        if (index_ == ROOT_INDEX || loan_.unadjustedThresholdPrice <= loans_.loans[index_ / 2].unadjustedThresholdPrice){
+        if (index_ == ROOT_INDEX || loan_.t0DebtToCollateral <= loans_.loans[index_ / 2].t0DebtToCollateral){
           _insert(loans_, loan_, index_, count);
         } else {
           _insert(loans_, loans_.loans[index_ / 2], index_, count);
@@ -144,11 +144,11 @@ library Loans {
         } else {
             Loan memory largestChild = loans_.loans[cIndex];
 
-            if (count > cIndex + 1 && loans_.loans[cIndex + 1].unadjustedThresholdPrice > largestChild.unadjustedThresholdPrice) {
+            if (count > cIndex + 1 && loans_.loans[cIndex + 1].t0DebtToCollateral > largestChild.t0DebtToCollateral) {
                 largestChild = loans_.loans[++cIndex];
             }
 
-            if (largestChild.unadjustedThresholdPrice <= loan_.unadjustedThresholdPrice) {
+            if (largestChild.t0DebtToCollateral <= loan_.t0DebtToCollateral) {
               _insert(loans_, loan_, index_, count);
             } else {
               _insert(loans_, largestChild, index_, count);
@@ -190,31 +190,31 @@ library Loans {
 
     /**
      *  @notice Performs an insert or an update dependent on borrowers existance.
-     *  @param loans_                    Holds loans heap data.
-     *  @param borrower_                 Borrower address that is being updated or inserted.
-     *  @param index_                    Index of `Loan` to be upserted.
-     *  @param unadjustedThresholdPrice_ `Unadjusted Threshold Price` that is updated or inserted.
+     *  @param loans_              Holds loans heap data.
+     *  @param borrower_           Borrower address that is being updated or inserted.
+     *  @param index_              Index of `Loan` to be upserted.
+     *  @param t0DebtToCollateral_ Borrower t0 debt to collateral that is updated or inserted.
      */
     function _upsert(
         LoansState storage loans_,
         address borrower_,
         uint256 index_,
-        uint96 unadjustedThresholdPrice_
+        uint96 t0DebtToCollateral_
     ) internal {
         // Loan exists, update in place.
         if (index_ != 0) {
             Loan memory currentLoan = loans_.loans[index_];
-            if (currentLoan.unadjustedThresholdPrice > unadjustedThresholdPrice_) {
-                currentLoan.unadjustedThresholdPrice = unadjustedThresholdPrice_;
+            if (currentLoan.t0DebtToCollateral > t0DebtToCollateral_) {
+                currentLoan.t0DebtToCollateral = t0DebtToCollateral_;
                 _bubbleDown(loans_, currentLoan, index_);
             } else {
-                currentLoan.unadjustedThresholdPrice = unadjustedThresholdPrice_;
+                currentLoan.t0DebtToCollateral = t0DebtToCollateral_;
                 _bubbleUp(loans_, currentLoan, index_);
             }
 
         // New loan, insert it
         } else {
-            _bubbleUp(loans_, Loan(borrower_, unadjustedThresholdPrice_), loans_.loans.length);
+            _bubbleUp(loans_, Loan(borrower_, t0DebtToCollateral_), loans_.loans.length);
         }
     }
 
