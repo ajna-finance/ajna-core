@@ -61,7 +61,7 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         });
     }
 
-    function testStartAndTakeUsdcReserveAuction() external {
+    function testStartAndTakeUsdcReserveAuction() external tearDown {
         // skip time to accumulate interest
         skip(26 weeks);
 
@@ -89,7 +89,7 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         _kickReserveAuction({
             from:              _bidder,
             remainingReserves: 1.471235793861737556 * 1e18,
-            price:             1000000000 * 1e18,
+            price:             679_700_700.711729067726118823 * 1e18,
             epoch:             1
         });
 
@@ -99,7 +99,7 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
             reserves:                   0.000001006397976200 * 1e18,
             claimableReserves :         0,
             claimableReservesRemaining: 1.471235793861737556 * 1e18,
-            auctionPrice:               0.000000000867361737 * 1e18,
+            auctionPrice:               0.000000000589546380 * 1e18,
             timeRemaining:              43200
         });
 
@@ -113,7 +113,7 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         _pool.takeReserves(10 * 1e18);
         assertEq(USDC.balanceOf(address(_pool)),   1_006.397978 * 1e6);
         assertEq(USDC.balanceOf(address(_bidder)), 1.471235 * 1e6);
-        assertEq(AJNA.balanceOf(address(_bidder)), 9.999999998723906366 * 1e18);
+        assertEq(AJNA.balanceOf(address(_bidder)), 9.999999999132638263 * 1e18);
     }
 
     function testZeroBid() external {

@@ -103,6 +103,9 @@ contract AuctionsTest is DSTestPlus {
         assertEq(_reserveAuctionPrice(block.timestamp - 16 hours, lastKickedReserves), 0.000005086263020833 * 1e18);
         assertEq(_reserveAuctionPrice(block.timestamp - 32 hours, lastKickedReserves), 0.000000000077610214 * 1e18);
         assertEq(_reserveAuctionPrice(block.timestamp - 64 hours, lastKickedReserves), 0);
+
+        // ensure it handles zeros properly
+        assertEq(_reserveAuctionPrice(0, 0), 0);
     }
 
     /**

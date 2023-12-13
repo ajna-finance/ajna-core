@@ -313,7 +313,7 @@ contract PoolInfoUtils {
 
         uint256 quoteTokenBalance = IERC20Token(pool.quoteTokenAddress()).balanceOf(ajnaPool_) * pool.quoteTokenScale();
 
-        (uint256 bondEscrowed, uint256 unclaimedReserve, uint256 lastKickedReserves, uint256 auctionKickTime, ) = pool.reservesInfo();
+        (uint256 bondEscrowed, uint256 unclaimedReserve, uint256 auctionKickTime, uint256 lastKickedReserves, ) = pool.reservesInfo();
 
         // due to rounding issues, especially in Auction.settle, this can be slighly negative
         if (poolDebt + quoteTokenBalance >= poolSize + bondEscrowed + unclaimedReserve) {
