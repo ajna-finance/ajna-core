@@ -895,7 +895,7 @@ contract ERC721PoolLiquidationsHighTakeTest is ERC721HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              974_735_101.867470788027259956 * 1e18,
             borrowerCollateral:        1 * 1e18,
-            borrowert0Np:              1_068_969_622.822822467761458386 * 1e18,
+            borrowert0Np:              1_111_728_407.735735366471916722 * 1e18,
             borrowerCollateralization: 0.986430865620282143 * 1e18
         });
     }
@@ -939,12 +939,12 @@ contract ERC721PoolLiquidationsHighTakeTest is ERC721HelperContract {
                 bondSize:          10_897_869.739154233968795067 * 1e18,
                 bondFactor:        0.011180339887498948 * 1e18,
                 kickTime:          block.timestamp - 1 minutes,
-                referencePrice:    1_083_713_799.259013131614151035 * 1e18,
+                referencePrice:    1_127_062_351.229373656878717077 * 1e18,
                 totalBondEscrowed: 10_897_869.739154233968795067 * 1e18,
-                auctionPrice:      267_980_423_388.530726670632743680 * 1e18, // auction price exceeds top bucket
+                auctionPrice:      278_699_640_324.071955737458053632 * 1e18, // auction price exceeds top bucket
                 debtInAuction:     974_735_101.867470788027259956 * 1e18,
                 thresholdPrice:    974_735_101.867470788027259955 * 1e18,
-                neutralPrice:      1_083_713_799.259013131614151035 * 1e18
+                neutralPrice:      1_127_062_351.229373656878717077 * 1e18
             })
         );
 
@@ -957,7 +957,7 @@ contract ERC721PoolLiquidationsHighTakeTest is ERC721HelperContract {
             maxCollateral:   2 * 1e18,
             bondChange:      10_897_869.739154233968795067 * 1e18,
             givenAmount:     991_360_820.988112808697327591 * 1e18,
-            collateralTaken: 0.003699377769661894 * 1e18,
+            collateralTaken: 1.0 * 1e18,
             isReward:        false
         });
 
@@ -989,7 +989,7 @@ contract ERC721PoolLiquidationsHighTakeTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(1), address(_lender));
     }
 
-    function testTakeMultipleNFTHighPrice() external tearDown{
+    function testTakeMultipleNFTHighPrice() external tearDown {
 
         _addLiquidity({
             from:    _lender,
@@ -1020,7 +1020,7 @@ contract ERC721PoolLiquidationsHighTakeTest is ERC721HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              1_922_945_967.252086173079859956 * 1e18,
             borrowerCollateral:        2.000000000000000000 * 1e18,
-            borrowert0Np:              1_054_425_362.020877753266911023 * 1e18,
+            borrowert0Np:              1_096_602_376.501712863397587463 * 1e18,
             borrowerCollateralization: 1.000037241461975329 * 1e18
         });
 
@@ -1078,18 +1078,17 @@ contract ERC721PoolLiquidationsHighTakeTest is ERC721HelperContract {
                 bondSize:          21_502_134.795353695767188920 * 1e18,
                 bondFactor:        0.011180339887498948 * 1e18,
                 kickTime:          block.timestamp - 1 minutes,
-                referencePrice:    1_069_115_375.252256382445035266 * 1e18,
+                referencePrice:    1_111_879_990.262346637742836677 * 1e18,
                 totalBondEscrowed: 21_502_134.795353695767188920 * 1e18,
-                auctionPrice:      264_370_529_476.677939732804056320 * 1e18, // auction price exceeds top bucket
+                auctionPrice:      274_945_350_655.745057322116218624 * 1e18, // auction price exceeds top bucket
                 debtInAuction:     1_923_209_402.550975799525343721 * 1e18,
                 thresholdPrice:    961_604_701.275487899762671860 * 1e18,
-                neutralPrice:      1_069_115_375.252256382445035266 * 1e18
+                neutralPrice:      1_111_879_990.262346637742836677 * 1e18
             })
         );
 
         // top bucket price
         assertEq(1_004_968_987.606512354182109771 * 1e18, _priceAt(0));
-
 
         _take({
             from:            _lender,
@@ -1097,7 +1096,7 @@ contract ERC721PoolLiquidationsHighTakeTest is ERC721HelperContract {
             maxCollateral:   1 * 1e18,
             bondChange:      21_502_134.795353695767188920 * 1e18,
             givenAmount:     1_956_012_919.399533593528919134 * 1e18,
-            collateralTaken: 0.007398755539323788 * 1e18,
+            collateralTaken: 1.0 * 1e18,
             isReward:        false
         });
 
@@ -1169,7 +1168,7 @@ contract ERC721PoolLiquidationsHighTakeTest is ERC721HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              1_922_945_967.252086173079859956 * 1e18,
             borrowerCollateral:        2.000000000000000000 * 1e18,
-            borrowert0Np:              1_054_425_362.020877753266911023 * 1e18,
+            borrowert0Np:              1_096_602_376.501712863397587463 * 1e18,
             borrowerCollateralization: 1.000037241461975329 * 1e18
         });
 
@@ -1235,7 +1234,7 @@ contract ERC721PoolLiquidationsHighTakeTest is ERC721HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              1_923_209_402.550975799525343721 * 1e18,
             borrowerCollateral:        2.0 * 1e18,
-            borrowert0Np:              1_054_425_362.020877753266911023 * 1e18,
+            borrowert0Np:              1_096_602_376.501712863397587463 * 1e18,
             borrowerCollateralization: 0.999900259441579706 * 1e18
         });
 
@@ -1247,12 +1246,12 @@ contract ERC721PoolLiquidationsHighTakeTest is ERC721HelperContract {
                 bondSize:          21_502_134.795353695767188920 * 1e18,
                 bondFactor:        0.011180339887498948 * 1e18,
                 kickTime:          block.timestamp,
-                referencePrice:    1_069_115_375.252256382445035266 * 1e18,
+                referencePrice:    1111879990.262346637742836677 * 1e18,
                 totalBondEscrowed: 21_502_134.795353695767188920 * 1e18,
-                auctionPrice:      273_693_536_064.577633905929028096 * 1e18, // auction price exceeds top bucket
+                auctionPrice:      284_641_277_507.160739262166189312 * 1e18, // auction price exceeds top bucket
                 debtInAuction:     1_923_209_402.550975799525343721 * 1e18,
                 thresholdPrice:    961_604_701.275487899762671860 * 1e18,
-                neutralPrice:      1_069_115_375.252256382445035266 * 1e18
+                neutralPrice:      1111879990.262346637742836677 * 1e18
             })
         );
 
@@ -1267,7 +1266,7 @@ contract ERC721PoolLiquidationsHighTakeTest is ERC721HelperContract {
             maxCollateral:   2 * 1e18,
             bondChange:      21_502_134.795353695767188920 * 1e18,
             givenAmount:     1_956_012_919.399533593528919134 * 1e18,
-            collateralTaken: 0.007398755539323788 * 1e18,
+            collateralTaken: 1.0 * 1e18,
             isReward:        false
         });
 
