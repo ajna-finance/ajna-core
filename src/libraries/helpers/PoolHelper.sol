@@ -395,7 +395,6 @@ import { Maths }   from '../internal/Maths.sol';
             uint256 minutesComponent = Maths.rpow(MINUTE_HALF_LIFE, secondsElapsed % 3600 / 60);
             uint256 initialPrice     = lastKickedReserves_ == 0 ? 0 : Maths.wdiv(1_000_000_000 * 1e18, lastKickedReserves_);
 
-            // TODO: clean up rounding by implementing appropriate Math library method
             price_ = initialPrice * Maths.rmul(hoursComponent, minutesComponent) / 1e27;
         }
     }
