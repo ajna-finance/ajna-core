@@ -793,7 +793,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     }
 
     function _assertReserveAuctionUnsettledLiquidation() internal {
-        vm.expectRevert(IPoolErrors.AuctionNotCleared.selector);
+        vm.expectRevert(IPoolErrors.AuctionActive.selector);
         _pool.kickReserveAuction();
     }
     

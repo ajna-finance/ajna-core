@@ -1153,9 +1153,8 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         assertEq(claimableReserves, 294_613_859.916107852369559136 * 1e18);
 
         // test reserves auction cannot be kicked until auction settled
-        vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
-        _pool.kickReserveAuction();
- 
+        _assertReserveAuctionUnsettledLiquidation();
+
         // settle auction with reserves
         changePrank(actor6);
         _settle({
