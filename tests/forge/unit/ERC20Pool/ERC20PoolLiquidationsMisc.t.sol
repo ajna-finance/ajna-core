@@ -185,7 +185,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    0,
+                debtToCollateral:  0,
                 neutralPrice:      0
             })
         );
@@ -225,7 +225,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
                 totalBondEscrowed: 0.209172983065585793 * 1e18,
                 auctionPrice:      2_768.993203997475837952 * 1e18,
                 debtInAuction:     18.709000367642488138 * 1e18,
-                thresholdPrice:    9.354500183821244069 * 1e18,
+                debtToCollateral:  9.354500183821244069 * 1e18,
                 neutralPrice:      10.816379703115139992 * 1e18
             })
         );
@@ -277,7 +277,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
                 totalBondEscrowed: 0.209172983065585793 * 1e18,
                 auctionPrice:      30.593341743845004656 * 1e18,
                 debtInAuction:     18.709000367642488138 * 1e18,
-                thresholdPrice:    9.354500183821244069 * 1e18,
+                debtToCollateral:  9.354500183821244069 * 1e18,
                 neutralPrice:      10.816379703115139992 * 1e18
             })
         );
@@ -312,7 +312,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    0,
+                debtToCollateral:  0,
                 neutralPrice:      0
             })
         );
@@ -478,7 +478,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
                 totalBondEscrowed: 90.564949726435836850 * 1e18,
                 auctionPrice:      2.341566462547213020 * 1e18,
                 debtInAuction:     8_100.375358686460903420 * 1e18,
-                thresholdPrice:    8.100375358686460903 * 1e18,
+                debtToCollateral:  8.100375358686460903 * 1e18,
                 neutralPrice:      9.366265850188852076 * 1e18
             })
         );

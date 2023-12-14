@@ -82,7 +82,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 totalBondEscrowed;
         uint256 auctionPrice;
         uint256 debtInAuction;
-        uint256 thresholdPrice;
+        uint256 debtToCollateral;
         uint256 neutralPrice;
     }
 
@@ -449,7 +449,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 auctionNeutralPrice;
         uint256 auctionTotalBondEscrowed;
         uint256 auctionDebtInAuction;
-        uint256 borrowerThresholdPrice;
+        uint256 borrowerDebtToCollateral;
     }
 
     function _assertAuction(AuctionParams memory state_) internal {
@@ -461,7 +461,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             vars.auctionKickTime,
             vars.auctionReferencePrice,
             vars.auctionNeutralPrice,
-            vars.borrowerThresholdPrice,
+            vars.borrowerDebtToCollateral,
             ,
             ,
         ) = _pool.auctionInfo(state_.borrower);
@@ -484,7 +484,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             vars.auctionKickTime),              state_.auctionPrice);
         assertEq(vars.auctionDebtInAuction,     state_.debtInAuction);
         assertEq(vars.auctionNeutralPrice,      state_.neutralPrice);
-        assertEq(vars.borrowerThresholdPrice,   state_.thresholdPrice);
+        assertEq(vars.borrowerDebtToCollateral,   state_.debtToCollateral);
 
         (
             uint256 kickTime, 

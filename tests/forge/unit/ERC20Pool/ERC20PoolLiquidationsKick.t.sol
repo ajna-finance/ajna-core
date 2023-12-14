@@ -149,7 +149,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    0,
+                debtToCollateral:  0,
                 neutralPrice:      0
             })
         );
@@ -226,7 +226,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0.211592598652049829 * 1e18,
                 auctionPrice:      2_801.023626937442916608 * 1e18,
                 debtInAuction:     18.925417364872552389 * 1e18,
-                thresholdPrice:    9.462708682436276194 * 1e18,
+                debtToCollateral:  9.462708682436276194 * 1e18,
                 neutralPrice:      10.941498542724386393 * 1e18
             })
         );
@@ -286,7 +286,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    0,
+                debtToCollateral:  0,
                 neutralPrice:      0
             })
         );
@@ -319,7 +319,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0.211592598652049829 * 1e18,
                 auctionPrice:      2_801.023626937442916608 * 1e18,
                 debtInAuction:     18.925417364872552389 * 1e18,
-                thresholdPrice:    9.462708682436276194 * 1e18,
+                debtToCollateral:  9.462708682436276194 * 1e18,
                 neutralPrice:      10.941498542724386393 * 1e18
             })
         );
@@ -353,7 +353,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    0,
+                debtToCollateral:  0,
                 neutralPrice:      0
             })
         );
