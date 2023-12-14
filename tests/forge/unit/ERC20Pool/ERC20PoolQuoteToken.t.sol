@@ -1545,7 +1545,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  0.000000031102107386 * 1e18,
+                htp:                  0.000000031966000026 * 1e18,
                 lup:                  14_343_926.246295999585280544 * 1e18,
                 poolSize:             0.000000059751560420 * 1e18,
                 pledgedCollateral:    1 * 1e18,

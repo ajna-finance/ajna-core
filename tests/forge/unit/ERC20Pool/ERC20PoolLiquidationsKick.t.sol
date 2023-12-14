@@ -430,7 +430,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         _assertLoans({
             noOfLoans:         2,
             maxBorrower:       _borrower,
-            maxThresholdPrice: 9.707325000000000004 * 1e18
+            maxThresholdPrice: 9.333966346153846158 * 1e18
         });
 
         // kick first loan
@@ -446,7 +446,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         _assertLoans({
             noOfLoans:         1,
             maxBorrower:       _borrower,
-            maxThresholdPrice: 9.841217029733727242 * 1e18
+            maxThresholdPrice: 9.333966346153846158 * 1e18
         });
 
         // kick 2nd loan

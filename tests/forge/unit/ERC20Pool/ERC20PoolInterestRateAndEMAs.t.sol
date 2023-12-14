@@ -510,7 +510,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         // ensure pendingInflator increases as time passes
         _assertPool(
             PoolParams({
-                htp:                  312.300000000000000144 * 1e18,
+                htp:                  312.301782539333725867 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             29_998.63013698630137 * 1e18,
                 pledgedCollateral:    50 * 1e18,
@@ -913,7 +913,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  986_210_526.315789474138947369 * 1e18,
+                htp:                  999_813_215.945856302275851081 * 1e18,
                 lup:                  999969141.897027226245329498 * 1e18,
                 poolSize:             99_995_433_789_954_337.9 * 1e18,
                 pledgedCollateral:    95_000_000 * 1e18,

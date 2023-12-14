@@ -382,7 +382,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  8.325570479144230295 * 1e18,
+                htp:                  8.326532822441837927 * 1e18,
                 lup:                  9.529276179422528643 * 1e18,
                 poolSize:             8_998.990799733397644463 * 1e18,
                 pledgedCollateral:    1_001.378022329922220102 * 1e18,

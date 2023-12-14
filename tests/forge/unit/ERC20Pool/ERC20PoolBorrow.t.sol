@@ -490,7 +490,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         expectedDebt = 21_179.004767688830766408 * 1e18;
         _assertPool(
             PoolParams({
-                htp:                  439.728847704586373630 * 1e18,
+                htp:                  440.523299167927679941 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             50_102.605614470717226695 * 1e18,
                 pledgedCollateral:    50 * 1e18,

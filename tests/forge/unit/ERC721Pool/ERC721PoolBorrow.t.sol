@@ -491,7 +491,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         _assertLoans({
             noOfLoans: 1,
             maxBorrower: _borrower,
-            maxThresholdPrice: 347.000000000000000160 * 1e18
+            maxThresholdPrice: 333.653846153846154000 * 1e18
         });
 
         // should revert if LUP is below the limit
@@ -525,7 +525,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         _assertLoans({
             noOfLoans: 2,
             maxBorrower: _borrower2,
-            maxThresholdPrice: 2_966.850000000000001368 * 1e18
+            maxThresholdPrice: 2_852.740384615384616700 * 1e18
         });
 
         // should be able to repay loan if properly specified

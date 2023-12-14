@@ -664,7 +664,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         skip(10_000 days);
         _assertPool(
             PoolParams({
-                htp:                  78.075000000000000036 * 1e18,
+                htp:                  307.210419047238320914 * 1e18,
                 lup:                  0.000000099836282890 * 1e18,
                 poolSize:             199.990867579908675800 * 1e18,
                 pledgedCollateral:    2 * 1e18,
