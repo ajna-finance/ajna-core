@@ -1273,7 +1273,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         _updateInterest();
     }
 
-    function testUpdateInterestZeroThresholdPrice() external {
+    function testUpdateInterestZeroDebtToCollateral() external {
         _mintQuoteAndApproveTokens(_lender, 1_000_000_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower, 1_000_000_000 * 1e18);
 
@@ -1325,7 +1325,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 uint256 collateralToPledge = requiredCollateral - collateralPledged;
                 _mintCollateralAndApproveTokens(_borrower, collateralToPledge);
 
-                // Pledge collateral reverts with `ZeroThresholdPrice()`
+                // Pledge collateral reverts with `ZeroDebtToCollateral()`
                 if (i == 103) {
                     vm.expectRevert();
                 }

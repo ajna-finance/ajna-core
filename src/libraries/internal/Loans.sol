@@ -35,7 +35,7 @@ library Loans {
     /**************/
 
     // See `IPoolErrors` for descriptions
-    error ZeroThresholdPrice();
+    error ZeroDebtToCollateral();
 
     /***********************/
     /***  Initialization ***/
@@ -88,7 +88,7 @@ library Loans {
             uint256 loanId = loans_.indices[borrowerAddress_];
             if (activeBorrower) {
                 // revert if t0 threshold price is zero
-                if (t0DebtToCollateral == 0) revert ZeroThresholdPrice();
+                if (t0DebtToCollateral == 0) revert ZeroDebtToCollateral();
 
                 // update heap, insert if a new loan, update loan if already in heap
                 _upsert(loans_, borrowerAddress_, loanId, uint96(t0DebtToCollateral));
