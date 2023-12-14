@@ -216,7 +216,7 @@ interface IPoolState {
 
     /**
      *  @notice Returns information about pool loans.
-     *  @return maxBorrower_           Borrower address with highest threshold price.
+     *  @return maxBorrower_           Borrower address with highest t0 debt to collateral.
      *  @return maxT0DebtToCollateral_ Highest t0 debt to collateral in pool.
      *  @return noOfLoans_             Total number of loans.
      */

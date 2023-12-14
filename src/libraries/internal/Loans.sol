@@ -20,10 +20,10 @@ import { Maths }    from './Maths.sol';
 /**
     @title  Loans library
     @notice Internal library containing common logic for loans management.
-    @dev    The `Loans` heap is a `Max Heap` data structure (complete binary tree), the root node is the loan with the highest threshold price (`TP`)
+    @dev    The `Loans` heap is a `Max Heap` data structure (complete binary tree), the root node is the loan with the highest t0 threshold price (`TP`)
             at a given time. The heap is represented as an array, where the first element is a dummy element (`Loan(address(0), 0)`) and the first
-            value of the heap starts at index `1`, `ROOT_INDEX`. The threshold price of a loan's parent is always greater than or equal to the
-            threshold price of the loan.
+            value of the heap starts at index `1`, `ROOT_INDEX`. The t0 threshold price of a loan's parent is always greater than or equal to the
+            t0 threshold price of the loan.
     @dev    This code was modified from the following source: https://github.com/zmitton/eth-heap/blob/master/contracts/Heap.sol
  */
 library Loans {
@@ -43,7 +43,7 @@ library Loans {
 
     /**
      *  @notice Initializes Loans Max Heap.
-     *  @dev    Organizes loans so `Highest Threshold Price` can be retrieved easily.
+     *  @dev    Organizes loans so `Highest t0 threshold price` can be retrieved easily.
      *  @param  loans_ Holds Loan heap data.
      */
     function init(LoansState storage loans_) internal {
@@ -82,12 +82,12 @@ library Loans {
 
         uint256 t0DebtToCollateral = activeBorrower ? Maths.wdiv(borrower_.t0Debt, borrower_.collateral) : 0;
 
-        // loan not in auction, update threshold price and position in heap
+        // loan not in auction, update t0 threshold price and position in heap
         if (!inAuction_ ) {
             // get the loan id inside the heap
             uint256 loanId = loans_.indices[borrowerAddress_];
             if (activeBorrower) {
-                // revert if threshold price is zero
+                // revert if t0 threshold price is zero
                 if (t0DebtToCollateral == 0) revert ZeroThresholdPrice();
 
                 // update heap, insert if a new loan, update loan if already in heap
@@ -234,7 +234,7 @@ library Loans {
     }
 
     /**
-     *  @notice Retreives `Loan` with the highest threshold price value.
+     *  @notice Retreives `Loan` with the highest t0 threshold price value.
      *  @param loans_ Holds loans heap data.
      *  @return `Max Loan` in the heap.
      */
