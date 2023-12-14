@@ -200,9 +200,9 @@ interface IPoolState {
 
     /**
      *  @notice Returns information about a loan in the pool.
-     *  @param  loanId_         Loan's id within loan heap. Max loan is position `1`.
-     *  @return borrower_       Borrower address at the given position.
-     *  @return thresholdPrice_ Borrower threshold price in pool (including the collateralization factor).
+     *  @param  loanId_             Loan's id within loan heap. Max loan is position `1`.
+     *  @return borrower_           Borrower address at the given position.
+     *  @return t0DebtToCollateral_ Borrower t0 debt to collateral.
      */
     function loanInfo(
         uint256 loanId_
@@ -211,21 +211,21 @@ interface IPoolState {
         view
         returns (
             address borrower_,
-            uint256 thresholdPrice_
+            uint256 t0DebtToCollateral_
     );
 
     /**
      *  @notice Returns information about pool loans.
-     *  @return maxBorrower_       Borrower address with highest threshold price.
-     *  @return maxThresholdPrice_ Highest threshold price in pool (including the collateralization factor).
-     *  @return noOfLoans_         Total number of loans.
+     *  @return maxBorrower_           Borrower address with highest threshold price.
+     *  @return maxT0DebtToCollateral_ Highest t0 debt to collateral in pool.
+     *  @return noOfLoans_             Total number of loans.
      */
     function loansInfo()
         external
         view
         returns (
             address maxBorrower_,
-            uint256 maxThresholdPrice_,
+            uint256 maxT0DebtToCollateral_,
             uint256 noOfLoans_
     );
 

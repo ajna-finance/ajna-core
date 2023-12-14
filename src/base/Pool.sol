@@ -911,7 +911,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         Loan memory loan = Loans.getByIndex(loans, loanId_);
         return (
             loan.borrower,
-            Maths.wmul(loan.t0DebtToCollateral, COLLATERALIZATION_FACTOR)
+            loan.t0DebtToCollateral
         );
     }
 
@@ -920,7 +920,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         Loan memory maxLoan = Loans.getMax(loans);
         return (
             maxLoan.borrower,
-            _htp(maxLoan.t0DebtToCollateral, inflatorState.inflator),
+            maxLoan.t0DebtToCollateral,
             Loans.noOfLoans(loans)
         );
     }

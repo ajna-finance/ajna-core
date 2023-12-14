@@ -18,6 +18,7 @@ import {
     _minDebtAmount,
     _priceAt,
     _reserveAuctionPrice,
+    _htp,
     MAX_FENWICK_INDEX,
     MIN_PRICE,
     COLLATERALIZATION_FACTOR
@@ -258,9 +259,18 @@ contract PoolInfoUtils {
         hpbIndex_ = pool.depositIndex(1);
         hpb_      = _priceAt(hpbIndex_);
 
-        (, uint256 maxThresholdPrice,) = pool.loansInfo();
+        (, uint256 maxT0DebtToCollateral,) = pool.loansInfo();
 
-        htp_      = maxThresholdPrice;
+        (
+            uint256 inflator,
+            uint256 inflatorUpdate
+        ) = pool.inflatorInfo();
+
+        (uint256 interestRate, ) = pool.interestRateInfo();
+
+        uint256 pendingInflator = PoolCommons.pendingInflator(inflator, inflatorUpdate, interestRate);
+
+        htp_      = _htp(maxT0DebtToCollateral, pendingInflator);
         htpIndex_ = htp_ >= MIN_PRICE ? _indexOf(htp_) : MAX_FENWICK_INDEX;
         lupIndex_ = pool.depositIndex(debt);
         lup_      = _priceAt(lupIndex_);
@@ -463,7 +473,19 @@ contract PoolInfoUtils {
     function htp(
         address ajnaPool_
     ) external view returns (uint256 htp_) {
-        (, htp_, ) = IPool(ajnaPool_).loansInfo();
+        IPool pool = IPool(ajnaPool_);
+        
+        (, uint256 maxT0DebtToCollateral,) = pool.loansInfo();
+
+        (
+            uint256 inflator,
+            uint256 inflatorUpdate
+        ) = pool.inflatorInfo();
+
+        (uint256 interestRate, ) = pool.interestRateInfo();
+        uint256 pendingInflator  = PoolCommons.pendingInflator(inflator, inflatorUpdate, interestRate);
+
+        htp_ = _htp(maxT0DebtToCollateral, pendingInflator);
     }
 
     /**
