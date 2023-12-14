@@ -373,14 +373,6 @@ library TakerActions {
 
         _rewardTake(auctions_, liquidation, vars_);
 
-        emit Take(
-            params_.borrower,
-            vars_.quoteTokenAmount,
-            vars_.collateralAmount,
-            vars_.bondChange,
-            vars_.isRewarded
-        );
-
         if (params_.poolType == uint8(PoolType.ERC721)) {
             // slither-disable-next-line divide-before-multiply
             uint256 collateralTaken = (vars_.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
@@ -401,6 +393,14 @@ library TakerActions {
                 }
             }
         }
+
+        emit Take(
+            params_.borrower,
+            vars_.quoteTokenAmount,
+            vars_.collateralAmount,
+            vars_.bondChange,
+            vars_.isRewarded
+        );
     }
 
     /**

@@ -33,6 +33,8 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         _factory = new ERC721PoolFactory(_ajna);
 
         // deploy NFT collection pool
+        vm.expectEmit(true, true, false, true);
+        emit PoolCreated(0x8a2be84c82956B6DdA0c4D647Ae9357d845a086B, _factory.getNFTSubsetHash(tokenIds));
         _NFTCollectionPoolAddress = _factory.deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
         _NFTCollectionPool        = ERC721Pool(_NFTCollectionPoolAddress);
 
@@ -43,6 +45,8 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         _tokenIdsSubsetOne[2] = 50;
         _tokenIdsSubsetOne[3] = 61;
 
+        vm.expectEmit(true, true, false, true);
+        emit PoolCreated(0x18D11C8Cf8dc292E647F0b324d10637a3A63F678, _factory.getNFTSubsetHash(_tokenIdsSubsetOne));
         _NFTSubsetOnePoolAddress = _factory.deployPool(address(_collateral), address(_quote), _tokenIdsSubsetOne, 0.05 * 10**18);
         _NFTSubsetOnePool        = ERC721Pool(_NFTSubsetOnePoolAddress);
 
@@ -56,6 +60,8 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         _tokenIdsSubsetTwo[5] = 61;
         _tokenIdsSubsetTwo[6] = 180;
 
+        vm.expectEmit(true, true, false, true);
+        emit PoolCreated(0xf80F47F84F20d8aF58cC8e93634348491357323c, _factory.getNFTSubsetHash(_tokenIdsSubsetTwo));
         _NFTSubsetTwoPoolAddress = _factory.deployPool(address(_collateral), address(_quote), _tokenIdsSubsetTwo, 0.05 * 10**18);
         _NFTSubsetTwoPool        = ERC721Pool(_NFTSubsetTwoPoolAddress);
 
@@ -304,6 +310,8 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         tokenIdsTestSubset[1] = 2;
         tokenIdsTestSubset[2] = 3;
 
+        vm.expectEmit(true, true, false, true);
+        emit PoolCreated(0xA8FBA534d7ebefEBB270cDC4814A1A25916A94d3, _factory.getNFTSubsetHash(tokenIdsTestSubset));
         address poolAddress = _factory.deployPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.05 * 10**18);
 
         // check tracking of deployed pools
