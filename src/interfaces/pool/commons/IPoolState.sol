@@ -200,9 +200,9 @@ interface IPoolState {
 
     /**
      *  @notice Returns information about a loan in the pool.
-     *  @param  loanId_         Loan's id within loan heap. Max loan is position `1`.
-     *  @return borrower_       Borrower address at the given position.
-     *  @return thresholdPrice_ Borrower threshold price in pool.
+     *  @param  loanId_           Loan's id within loan heap. Max loan is position `1`.
+     *  @return borrower_         Borrower address at the given position.
+     *  @return t0ThresholdPrice_ Borrower t0 threshold price in pool.
      */
     function loanInfo(
         uint256 loanId_
@@ -211,7 +211,7 @@ interface IPoolState {
         view
         returns (
             address borrower_,
-            uint256 thresholdPrice_
+            uint256 t0ThresholdPrice_
     );
 
     /**
@@ -386,9 +386,9 @@ struct Loan {
 
 /// @dev Struct holding borrower state.
 struct Borrower {
-    uint256 t0Debt;     // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
-    uint256 collateral; // [WAD] Collateral deposited by borrower.
-    uint256 npTpRatio;  // [WAD] Np to Tp ratio at the time of last borrow or pull collateral.
+    uint256 t0Debt;                    // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
+    uint256 collateral;                // [WAD] Collateral deposited by borrower.
+    uint256 npTpRatio;                 // [WAD] Np to Tp ratio at the time of last borrow or pull collateral.
 }
 
 /**********************/

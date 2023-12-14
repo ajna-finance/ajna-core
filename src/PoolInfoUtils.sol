@@ -159,7 +159,7 @@ contract PoolInfoUtils {
         uint256 npTpRatio;
         (t0Debt, collateral_, npTpRatio)  = pool.borrowerInfo(borrower_);
 
-        t0Np_ = collateral_ == 0 ? 0 : Math.mulDiv(t0Debt, npTpRatio, collateral_);
+        t0Np_ = collateral_ == 0 ? 0 : Math.mulDiv(Maths.wmul(t0Debt, COLLATERALIZATION_FACTOR), npTpRatio, collateral_);
         t0ThresholdPrice_ = collateral_ == 0 ? 0 : Maths.wdiv(t0Debt, collateral_);
 
         debt_ = Maths.ceilWmul(t0Debt, pendingInflator);
