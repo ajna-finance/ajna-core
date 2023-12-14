@@ -52,7 +52,6 @@ import {
 import {
     COLLATERALIZATION_FACTOR,
     _determineInflatorState,
-    _htp,
     _priceAt,
     _roundToScale
 }                               from '../libraries/helpers/PoolHelper.sol';
