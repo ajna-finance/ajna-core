@@ -727,12 +727,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     function _assertLoans(
         uint256 noOfLoans,
         address maxBorrower,
-        uint256 maxThresholdPrice
+        uint256 maxT0DebtToCollateral
     ) internal {
         (address curMaxBorrower, uint256 curTpPrice, uint256 curNoOfLoans) = _pool.loansInfo();
         assertEq(curNoOfLoans,   noOfLoans);
         assertEq(curMaxBorrower, maxBorrower);
-        assertEq(curTpPrice,     maxThresholdPrice);
+        assertEq(curTpPrice,     maxT0DebtToCollateral);
     }
 
     function _assertPoolPrices(

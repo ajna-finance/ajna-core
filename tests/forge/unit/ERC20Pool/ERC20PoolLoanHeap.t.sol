@@ -116,9 +116,9 @@ contract ERC20PoolLoanHeapTest is ERC20HelperContract {
         });
 
         _assertLoans({
-            noOfLoans:         6,
-            maxBorrower:       _borrower6,
-            maxThresholdPrice: 6.005769230769230772 * 1e18
+            noOfLoans:             6,
+            maxBorrower:           _borrower6,
+            maxT0DebtToCollateral: 6.005769230769230772 * 1e18
         });
 
         // borrower 4 draws debt and becomes loan with highest threshold price in heap
@@ -132,9 +132,9 @@ contract ERC20PoolLoanHeapTest is ERC20HelperContract {
         });
 
         _assertLoans({
-            noOfLoans:         6,
-            maxBorrower:       _borrower4,
-            maxThresholdPrice: 14.013461538461538468 * 1e18
+            noOfLoans:             6,
+            maxBorrower:           _borrower4,
+            maxT0DebtToCollateral: 14.013461538461538468 * 1e18
         });
 
         // borrower 4 repays debt, borrower 6 becomes loan with highest threshold price in heap
@@ -148,9 +148,9 @@ contract ERC20PoolLoanHeapTest is ERC20HelperContract {
         });
 
         _assertLoans({
-            noOfLoans:         6,
-            maxBorrower:       _borrower6,
-            maxThresholdPrice: 6.005769230769230772 * 1e18
+            noOfLoans:             6,
+            maxBorrower:           _borrower6,
+            maxT0DebtToCollateral: 6.005769230769230772 * 1e18
         });
 
         // borrower 6 repays debt, borrower 5 becomes loan with highest threshold price in heap
@@ -164,9 +164,9 @@ contract ERC20PoolLoanHeapTest is ERC20HelperContract {
         });
 
         _assertLoans({
-            noOfLoans:         6,
-            maxBorrower:       _borrower5,
-            maxThresholdPrice: 5.004807692307692310 * 1e18
+            noOfLoans:             6,
+            maxBorrower:           _borrower5,
+            maxT0DebtToCollateral: 5.004807692307692310 * 1e18
         });
 
         // borrower 6 draws more debt and becomes loan with highest threshold price in heap
@@ -180,9 +180,9 @@ contract ERC20PoolLoanHeapTest is ERC20HelperContract {
         });
 
         _assertLoans({
-            noOfLoans:         6,
-            maxBorrower:       _borrower6,
-            maxThresholdPrice: 12.016346153846153854 * 1e18
+            noOfLoans:             6,
+            maxBorrower:           _borrower6,
+            maxT0DebtToCollateral: 12.016346153846153854 * 1e18
         });
     }
 }

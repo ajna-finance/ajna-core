@@ -428,9 +428,9 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             borrowerCollateralization: 0.992604445165255887 * 1e18
         });
         _assertLoans({
-            noOfLoans:         2,
-            maxBorrower:       _borrower,
-            maxThresholdPrice: 9.333966346153846158 * 1e18
+            noOfLoans:             2,
+            maxBorrower:           _borrower,
+            maxT0DebtToCollateral: 9.333966346153846158 * 1e18
         });
 
         // kick first loan
@@ -444,9 +444,9 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         });
 
         _assertLoans({
-            noOfLoans:         1,
-            maxBorrower:       _borrower,
-            maxThresholdPrice: 9.333966346153846158 * 1e18
+            noOfLoans:             1,
+            maxBorrower:           _borrower,
+            maxT0DebtToCollateral: 9.333966346153846158 * 1e18
         });
 
         // kick 2nd loan
@@ -460,9 +460,9 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         });
 
         _assertLoans({
-            noOfLoans:         0,
-            maxBorrower:       address(0),
-            maxThresholdPrice: 0
+            noOfLoans:             0,
+            maxBorrower:           address(0),
+            maxT0DebtToCollateral: 0
         });
         _assertPool(
             PoolParams({
