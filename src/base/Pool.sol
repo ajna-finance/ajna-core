@@ -427,7 +427,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 ajnaRequired;
         (amount_, ajnaRequired) = TakerActions.takeReserves(
             reserveAuction,
-            maxAmount_
+            maxAmount_,
+            _getArgUint256(QUOTE_SCALE)
         );
 
         // burn required number of ajna tokens to take quote from reserves

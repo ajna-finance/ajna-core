@@ -280,11 +280,9 @@ library TakerActions {
      */
     function takeReserves(
         ReserveAuctionState storage reserveAuction_,
-        uint256 maxAmount_
+        uint256 maxAmount_,
+        uint256 quoteScale_
     ) external returns (uint256 amount_, uint256 ajnaRequired_) {
-        // revert if no amount to be taken
-        if (maxAmount_ == 0) revert InvalidAmount();
-
         uint256 kicked = reserveAuction_.kicked;
 
         if (kicked != 0 && block.timestamp - kicked <= 72 hours) {
@@ -292,6 +290,9 @@ library TakerActions {
             uint256 price     = _reserveAuctionPrice(kicked, reserveAuction_.lastKickedReserves);
 
             amount_       = Maths.min(unclaimed, maxAmount_);
+            // revert if no amount to be taken
+            if (amount_ / quoteScale_ == 0) revert InvalidAmount();
+
             ajnaRequired_ = Maths.ceilWmul(amount_, price);
             // prevent 0-bid; must burn at least 1 wei of AJNA
             if (ajnaRequired_ == 0) revert InvalidAmount();
