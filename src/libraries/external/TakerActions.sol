@@ -274,6 +274,7 @@ library TakerActions {
      *  @dev    decrement `reserveAuction.unclaimed` accumulator
      *  @dev    === Reverts on ===
      *  @dev    not kicked or `72` hours didn't pass `NoReservesAuction()`
+     *  @dev    0 take amount or 0 AJNA burned `InvalidAmount()`
      *  @dev    === Emit events ===
      *  @dev    - `ReserveAuction`
      */
@@ -292,6 +293,8 @@ library TakerActions {
 
             amount_       = Maths.min(unclaimed, maxAmount_);
             ajnaRequired_ = Maths.ceilWmul(amount_, price);
+            // prevent 0-bid; must burn at least 1 wei of AJNA
+            if (ajnaRequired_ == 0) revert InvalidAmount();
 
             unclaimed -= amount_;
 

@@ -131,18 +131,18 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         _kickReserveAuction({
             from:              _bidder,
             remainingReserves: 999_300.334122638963821700 * 1e18,
-            price:             1_000_000_000 * 1e18,
+            price:             1_000.700155752449863388 * 1e18,
             epoch:             1
         });
 
-        // price cannot hit zero, but wait for it to be reasonably small
-        skip(71 hours);
+        // wait for price to be reasonably small
+        skip(64 hours);
         _assertReserveAuction({
             reserves:                   0.000000999954337900 * 1e18,
             claimableReserves :         0,
             claimableReservesRemaining: 999_300.334122638963821700 * 1e18,
-            auctionPrice:               0.000000000000423516 * 1e18,
-            timeRemaining:              1 hours
+            auctionPrice:               0.000000000000000054 * 1e18,
+            timeRemaining:              72 hours - 64 hours
         });
 
         // try to take the smallest amount of USDC possible
@@ -164,7 +164,27 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         _pool.takeReserves(100 * 1e18);
         // bidder burned some AJNA
         assertEq(USDC.balanceOf(address(_bidder)), 100 * 1e6);
-        assertEq(AJNA.balanceOf(address(_bidder)), 9.999999999957648398 * 1e18);
+        assertEq(AJNA.balanceOf(address(_bidder)), 9.999999999999994598 * 1e18);
+
+        // wait for price to be 0
+        skip(7 hours);
+        // FIXME: claimableReserves 0.000000000001000001 * 1e18 here,
+        // possibly due to the takeReserves(1) above
+        _assertReserveAuction({
+            reserves:                   0.000000999955337901 * 1e18,
+            claimableReserves :         0,
+            claimableReservesRemaining: 999_200.334122638962821699 * 1e18,
+            auctionPrice:               0,
+            timeRemaining:              1 hours
+        });
+
+        // take 1 USDC should revert, because no AJNA would be burned
+        assertEq(USDC.balanceOf(address(_bidder)), 100 * 1e6);
+        vm.expectRevert(IPoolErrors.InvalidAmount.selector);
+        _pool.takeReserves(1 * 1e18);
+        // bidder balances unchanged
+        assertEq(USDC.balanceOf(address(_bidder)), 100 * 1e6);
+        assertEq(AJNA.balanceOf(address(_bidder)), 9.999999999999994598 * 1e18);
     }
 }
 
