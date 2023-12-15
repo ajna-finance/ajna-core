@@ -622,7 +622,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
                 totalBondEscrowed: 112.526190000038609125 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     10_064.901171882309537906 * 1e18,
-                thresholdPrice:    0,
+                debtToCollateral:  0,
                 neutralPrice:      0
             })
         );
@@ -697,7 +697,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
                 totalBondEscrowed: 112.526190000038609125 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    0,
+                debtToCollateral:  0,
                 neutralPrice:      0
             })
         );
@@ -918,7 +918,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
                 totalBondEscrowed: 148.374406222773030669 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     10_066.670727855240484714 * 1e18,
-                thresholdPrice:    0,
+                debtToCollateral:  0,
                 neutralPrice:      0
             })
         );
@@ -963,7 +963,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
                 totalBondEscrowed: 35.848216222734421544 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    0,
+                debtToCollateral:  0,
                 neutralPrice:      0
             })
         );
