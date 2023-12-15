@@ -167,10 +167,10 @@ library TakerActions {
 
         // update borrower after take
         borrower.collateral -= vars.collateralAmount;
-        borrower.t0Debt     = vars.t0BorrowerDebt - vars.t0RepayAmount;
+        borrower.t0Debt     =  vars.t0BorrowerDebt - Maths.min(vars.t0RepayAmount, vars.t0BorrowerDebt);
         // update pool params after take
         poolState_.t0Debt -= vars.t0RepayAmount;
-        poolState_.debt   = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
+        poolState_.debt   =  Maths.wmul(poolState_.t0Debt, poolState_.inflator);
 
         // update loan after take
         (
@@ -239,10 +239,10 @@ library TakerActions {
 
         // update borrower after take
         borrower.collateral -= vars.collateralAmount;
-        borrower.t0Debt     = vars.t0BorrowerDebt - vars.t0RepayAmount;
+        borrower.t0Debt     =  vars.t0BorrowerDebt - vars.t0RepayAmount;
         // update pool params after take
         poolState_.t0Debt -= vars.t0RepayAmount;
-        poolState_.debt   = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
+        poolState_.debt   =  Maths.wmul(poolState_.t0Debt, poolState_.inflator);
 
         // update loan after take
         (
