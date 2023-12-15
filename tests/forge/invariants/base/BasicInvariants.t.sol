@@ -252,7 +252,7 @@ abstract contract BasicInvariants is BaseInvariants {
         for (uint256 loanId = 1; loanId < totalLoans; loanId++) {
             (borrower, t0Tp) = _pool.loanInfo(loanId);
 
-            // borrower address and threshold price should not 0
+            // borrower address and t0 threshold price should not 0
             require(borrower != address(0), "Loan Invariant L1");
             require(t0Tp != 0,              "Loan Invariant L1");
 

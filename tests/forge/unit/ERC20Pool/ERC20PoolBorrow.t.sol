@@ -490,7 +490,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         expectedDebt = 21_179.004767688830766408 * 1e18;
         _assertPool(
             PoolParams({
-                htp:                  439.728847704586373630 * 1e18,
+                htp:                  440.523299167927679941 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             50_102.605614470717226695 * 1e18,
                 pledgedCollateral:    50 * 1e18,
@@ -838,7 +838,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
      *          Reverts:
      *              Attempts to borrow with a TP of 0.
      */
-    function testZeroThresholdPriceLoanBeforeRepay() external tearDown {
+    function testZeroDebtToCollateralLoanBeforeRepay() external tearDown {
         // borrower 1 initiates a highly overcollateralized loan with a TP of 0 that won't be inserted into the Queue
         _pledgeCollateral({
             from:     _borrower,
@@ -846,7 +846,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             amount:   50 * 1e18
         });
 
-        vm.expectRevert(abi.encodeWithSignature('ZeroThresholdPrice()'));
+        vm.expectRevert(abi.encodeWithSignature('ZeroDebtToCollateral()'));
         IERC20Pool(address(_pool)).drawDebt(_borrower, 0.00000000000000001 * 1e18, 3000, 0);
 
         // borrower 1 borrows 500 quote from the pool after using a non 0 TP
@@ -883,7 +883,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
      *          Reverts:
      *              Attempts to repay with a subsequent TP of 0.
      */
-    function testZeroThresholdPriceLoanAfterRepay() external tearDown {
+    function testZeroDebtToCollateralLoanAfterRepay() external tearDown {
 
         // borrower 1 borrows 500 quote from the pool
         _drawDebt({
@@ -924,7 +924,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
 
         // should revert if borrower repays most, but not all of their debt resulting in a 0 tp loan remaining on the book
-        vm.expectRevert(abi.encodeWithSignature('ZeroThresholdPrice()'));
+        vm.expectRevert(abi.encodeWithSignature('ZeroDebtToCollateral()'));
         IERC20Pool(address(_pool)).repayDebt(_borrower, 500.480769230769231000 * 1e18 - 1, 0, _borrower, MAX_FENWICK_INDEX);
 
         // should be able to pay back all pendingDebt
