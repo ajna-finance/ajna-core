@@ -90,9 +90,10 @@ library TakerActions {
         uint256 t0RepayAmount;               // [WAD] The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
         uint256 t0BorrowerDebt;              // [WAD] Borrower's t0 debt.
         uint256 unscaledDeposit;             // [WAD] Unscaled bucket quantity
-        uint256 unscaledQuoteTokenAmount;    // [WAD] The unscaled token amount that taker should pay for collateral taken.
         uint256 depositCollateralConstraint; // [WAD] Constraint on bucket take from deposit present in bucket
         uint256 debtCollateralConstraint;    // [WAD] Constraint on take due to debt.
+        bool    isTakeAction;                // True if action is a regular take action, false for bucket take action.
+        uint256 netRewardedPrice;            // [WAD] Net rewarded take price.
    }
 
     /**************/
@@ -348,6 +349,7 @@ library TakerActions {
 
         // These are placeholder max values passed to calculateTakeFlows because there is no explicit bound on the
         // quote token amount in take calls (as opposed to bucketTake)
+        vars_.isTakeAction    = true;
         vars_.unscaledDeposit = type(uint256).max;
         vars_.bucketScale     = Maths.WAD;
 
@@ -652,7 +654,14 @@ library TakerActions {
         }
 
         // remove quote tokens from bucket’s deposit
-        Deposits.unscaledRemove(deposits_, bucketIndex_, vars.unscaledQuoteTokenAmount);
+        Deposits.unscaledRemove(
+            deposits_,
+            bucketIndex_,
+            Maths.min(
+                vars.unscaledDeposit,
+                Math.mulDiv(vars.collateralAmount, vars.netRewardedPrice, vars.bucketScale)
+            )
+        );
 
         // total rewarded LP are added to the bucket LP balance
         if (totalLPReward != 0) bucket.lps += totalLPReward;
@@ -725,47 +734,71 @@ library TakerActions {
         // price is the current auction price, which is the price paid by the LENDER for collateral
         // from the borrower point of view, there is a take penalty of  (1.25 * bondFactor - 0.25 * bpf)
         // Therefore the price is actually price * (1.0 - 1.25 * bondFactor + 0.25 * bpf)
-        uint256 takePenaltyFactor    = uint256(5 * int256(vars.bondFactor) - vars.bpf + 3) / 4;  // Round up
-        uint256 borrowerPrice        = Maths.floorWmul(vars.auctionPrice, Maths.WAD - takePenaltyFactor);
+        uint256 takePenaltyFactor = uint256(5 * int256(vars.bondFactor) - vars.bpf + 3) / 4;  // Round up
+        uint256 borrowerPrice     = Maths.floorWmul(vars.auctionPrice, Maths.WAD - takePenaltyFactor);
 
         // To determine the value of quote token removed from a bucket in a bucket take call, we need to account for whether the bond is
         // rewarded or not.  If the bond is rewarded, we need to remove the bond reward amount from the amount removed, else it's simply the 
         // collateral times auction price.
-        uint256 netRewardedPrice     = (vars.isRewarded) ? Maths.wmul(Maths.WAD - uint256(vars.bpf), vars.auctionPrice) : vars.auctionPrice;
+        if (vars.isRewarded) {
+            vars.netRewardedPrice = Maths.wmul(Maths.WAD - uint256(vars.bpf), vars.auctionPrice);
+        } else {
+            vars.netRewardedPrice = vars.auctionPrice;
+        }
 
         // auctions may not be zero-bid; prevent divide-by-zero in constraint calculations
         if (vars.auctionPrice == 0) revert InvalidAmount();
 
-        // Collateral taken in bucket takes is constrained by the deposit available at the price including the reward.  This is moot in the case of takes.
-        vars.depositCollateralConstraint = (vars.unscaledDeposit != type(uint256).max) ? _roundToScale(Math.mulDiv(vars.unscaledDeposit, vars.bucketScale, netRewardedPrice), collateralScale_) : type(uint256).max;
-
-        // Collateral taken is also constained by the borrower's debt, at the price they receive.
-        vars.debtCollateralConstraint = borrowerPrice != 0 ? _roundUpToScale(Maths.ceilWdiv(vars.borrowerDebt, borrowerPrice), collateralScale_) : type(uint256).max;
-        
-        if (vars.depositCollateralConstraint <= vars.debtCollateralConstraint && vars.depositCollateralConstraint <= totalCollateral_) {
-            // quote token used to purchase is constraining factor
-            vars.collateralAmount         = vars.depositCollateralConstraint;
-            vars.quoteTokenAmount         = Maths.wmul(vars.collateralAmount, vars.auctionPrice);
-            vars.t0RepayAmount            = Math.mulDiv(vars.collateralAmount, borrowerPrice, inflator_);
-            vars.unscaledQuoteTokenAmount = Maths.min(
-                vars.unscaledDeposit,
-                Math.mulDiv(vars.collateralAmount, netRewardedPrice, vars.bucketScale)
+        // Collateral taken in bucket takes is constrained by the deposit available at the price including the reward.
+        // This is moot in the case of takes.
+        if (!vars.isTakeAction) {
+            // in bucket takes round down to scale the collateral to be added in bucket and calculated from available deposit
+            vars.depositCollateralConstraint = _roundToScale(
+                Math.mulDiv(vars.unscaledDeposit, vars.bucketScale, vars.netRewardedPrice),
+                collateralScale_
             );
+        } else {
+            vars.depositCollateralConstraint = type(uint256).max;
+        }
+
+        // Collateral taken is also constrained by the borrower's debt, at the price they receive.
+        if (borrowerPrice != 0) {
+            vars.debtCollateralConstraint = Maths.ceilWdiv(vars.borrowerDebt, borrowerPrice);
+
+            // in regular take round up to scale the collateral to be taken calculated from borrower's debt
+            // rounding is not performed for bucket take as there's no collateral leaving the pool
+            if (vars.isTakeAction) {
+                vars.debtCollateralConstraint = _roundUpToScale(vars.debtCollateralConstraint, collateralScale_);
+            }
+        } else {
+            vars.debtCollateralConstraint = type(uint256).max;
+        }
+        
+        if (
+            vars.depositCollateralConstraint <= vars.debtCollateralConstraint
+            &&
+            vars.depositCollateralConstraint <= totalCollateral_
+        ) {
+            // quote token used to purchase is constraining factor
+            vars.collateralAmount = vars.depositCollateralConstraint;
+            vars.quoteTokenAmount = Maths.wmul(vars.collateralAmount, vars.auctionPrice);
+
         } else if (vars.debtCollateralConstraint <= totalCollateral_) {
             // borrower debt is constraining factor
-            vars.collateralAmount         = vars.debtCollateralConstraint;
-            vars.t0RepayAmount            = vars.t0BorrowerDebt;
-            vars.unscaledQuoteTokenAmount = Math.mulDiv(vars.collateralAmount, netRewardedPrice, vars.bucketScale);
+            vars.collateralAmount = vars.debtCollateralConstraint;
+            vars.quoteTokenAmount = Maths.wdiv(vars.borrowerDebt, Maths.WAD - takePenaltyFactor);
 
-            vars.quoteTokenAmount         = Maths.wdiv(vars.borrowerDebt, Maths.WAD - takePenaltyFactor);
         } else {
             // collateral available is constraint
-            vars.collateralAmount         = totalCollateral_;
-            vars.t0RepayAmount            = Math.mulDiv(totalCollateral_, borrowerPrice, inflator_);
-            vars.unscaledQuoteTokenAmount = Math.mulDiv(totalCollateral_, netRewardedPrice, vars.bucketScale);
-
-            vars.quoteTokenAmount         = Maths.wmul(vars.collateralAmount, vars.auctionPrice);
+            vars.collateralAmount = totalCollateral_;
+            vars.quoteTokenAmount = Maths.wmul(vars.collateralAmount, vars.auctionPrice);
         }
+
+        // repaid amount cannot exceed borrower debt (prevent happening due to roundings)
+        vars.t0RepayAmount = Maths.min(
+            Math.mulDiv(vars.collateralAmount, borrowerPrice, inflator_),
+            vars.t0BorrowerDebt
+        );
 
         if (vars.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
