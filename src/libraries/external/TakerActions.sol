@@ -93,6 +93,7 @@ library TakerActions {
         uint256 unscaledQuoteTokenAmount;    // [WAD] The unscaled token amount that taker should pay for collateral taken.
         uint256 depositCollateralConstraint; // [WAD] Constraint on bucket take from deposit present in bucket
         uint256 debtCollateralConstraint;    // [WAD] Constraint on take due to debt.
+        bool    isTakeAction;                // True if action is a regular take action, false for bucket take action.
    }
 
     /**************/
@@ -165,7 +166,9 @@ library TakerActions {
             })
         );
 
-        // update borrower after take
+        // update borrower after take, make sure the repaid amount and collateral taken doesn't exceed user balance (due to roundings)
+        vars.t0RepayAmount    = Maths.min(vars.t0BorrowerDebt, vars.t0RepayAmount);
+        vars.collateralAmount = Maths.min(vars.collateralAmount, borrower.collateral);
         borrower.collateral -= vars.collateralAmount;
         borrower.t0Debt     = vars.t0BorrowerDebt - vars.t0RepayAmount;
         // update pool params after take
@@ -237,7 +240,9 @@ library TakerActions {
             })
         );
 
-        // update borrower after take
+        // update borrower after take, make sure the repaid amount and collateral taken doesn't exceed user balance (due to roundings)
+        vars.t0RepayAmount    = Maths.min(vars.t0BorrowerDebt, vars.t0RepayAmount);
+        vars.collateralAmount = Maths.min(vars.collateralAmount, borrower.collateral);
         borrower.collateral -= vars.collateralAmount;
         borrower.t0Debt     = vars.t0BorrowerDebt - vars.t0RepayAmount;
         // update pool params after take
@@ -348,6 +353,7 @@ library TakerActions {
 
         // These are placeholder max values passed to calculateTakeFlows because there is no explicit bound on the
         // quote token amount in take calls (as opposed to bucketTake)
+        vars_.isTakeAction    = true;
         vars_.unscaledDeposit = type(uint256).max;
         vars_.bucketScale     = Maths.WAD;
 
@@ -736,11 +742,31 @@ library TakerActions {
         // auctions may not be zero-bid; prevent divide-by-zero in constraint calculations
         if (vars.auctionPrice == 0) revert InvalidAmount();
 
-        // Collateral taken in bucket takes is constrained by the deposit available at the price including the reward.  This is moot in the case of takes.
-        vars.depositCollateralConstraint = (vars.unscaledDeposit != type(uint256).max) ? _roundToScale(Math.mulDiv(vars.unscaledDeposit, vars.bucketScale, netRewardedPrice), collateralScale_) : type(uint256).max;
 
-        // Collateral taken is also constained by the borrower's debt, at the price they receive.
-        vars.debtCollateralConstraint = borrowerPrice != 0 ? _roundUpToScale(Maths.ceilWdiv(vars.borrowerDebt, borrowerPrice), collateralScale_) : type(uint256).max;
+        // Collateral taken in bucket takes is constrained by the deposit available at the price including the reward.
+        // This is moot in the case of takes.
+        if (!vars.isTakeAction) {
+            // in bucket takes round down to scale the collateral to be added in bucket and calculated from available deposit
+            vars.depositCollateralConstraint = _roundToScale(
+                Math.mulDiv(vars.unscaledDeposit, vars.bucketScale, netRewardedPrice),
+                collateralScale_
+            );
+        } else {
+            vars.depositCollateralConstraint = type(uint256).max;
+        }
+
+        // Collateral taken is also constrained by the borrower's debt, at the price they receive.
+        if (borrowerPrice != 0) {
+            vars.debtCollateralConstraint = Maths.ceilWdiv(vars.borrowerDebt, borrowerPrice);
+
+            // in regular take round up to scale the collateral to be taken calculated from borrower's debt
+            // rounding is not performed for bucket take as there's no collateral leaving the pool
+            if (vars.isTakeAction) {
+                vars.debtCollateralConstraint = _roundUpToScale(vars.debtCollateralConstraint, collateralScale_);
+            }
+        } else {
+            vars.debtCollateralConstraint = type(uint256).max;
+        }
         
         if (vars.depositCollateralConstraint <= vars.debtCollateralConstraint && vars.depositCollateralConstraint <= totalCollateral_) {
             // quote token used to purchase is constraining factor
