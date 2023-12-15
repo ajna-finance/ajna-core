@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.18;
 
+import { SafeCast }       from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
 import {
@@ -91,7 +92,7 @@ library Loans {
                 if (t0DebtToCollateral == 0) revert ZeroDebtToCollateral();
 
                 // update heap, insert if a new loan, update loan if already in heap
-                _upsert(loans_, borrowerAddress_, loanId, uint96(t0DebtToCollateral));
+                _upsert(loans_, borrowerAddress_, loanId, SafeCast.toUint96(t0DebtToCollateral));
 
             // if loan is in heap and borrwer is no longer active (no debt, no collateral) then remove loan from heap
             } else if (loanId != 0) {
