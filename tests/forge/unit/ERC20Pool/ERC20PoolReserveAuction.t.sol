@@ -116,7 +116,7 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         assertEq(AJNA.balanceOf(address(_bidder)), 9.999999999132638263 * 1e18);
     }
 
-    function testZeroBid() external {
+    function testZeroBid() external tearDown {
         // mint into the pool to simulate reserves
         deal(address(USDC), address(_pool), 1_000_000 * 1e6);
         _assertReserveAuction({
