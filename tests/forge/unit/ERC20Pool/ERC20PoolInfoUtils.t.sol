@@ -137,9 +137,9 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(collateral,      100 * 1e18);
         assertEq(debtToCover,     21_020.912189618561131155 * 1e18);
         assertEq(isCollateralized, true);
-        assertEq(price,           233.703212526982164624 * 1e18);
-        assertEq(neutralPrice,    233.703212526982164624 * 1e18);
-        assertEq(referencePrice,  233.703212526982164624 * 1e18);
+        assertEq(price,           243.051341028061451208 * 1e18);
+        assertEq(neutralPrice,    243.051341028061451209 * 1e18);
+        assertEq(referencePrice,  243.051341028061451209 * 1e18);
         assertEq(thresholdPrice,  210.201923076923077020 * 1e18);
         assertEq(bondFactor,      0.011180339887498948 * 1e18);
     }
@@ -189,8 +189,8 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(bondFactor,      0.011180339887498948 * 1e18);
         assertEq(bondSize,        235.012894500590867635 * 1e18);
         assertEq(kickTime,        _startTime);
-        assertEq(referencePrice,  233.703212526982164624 * 1e18);
-        assertEq(neutralPrice,    233.703212526982164624 * 1e18);
+        assertEq(referencePrice,  243.051341028061451209 * 1e18);
+        assertEq(neutralPrice,    243.051341028061451209 * 1e18);
         assertEq(thresholdPrice,  210.201923076923077020 * 1e18);
         assertEq(head,            _borrower);
         assertEq(next,            address(0));
@@ -201,7 +201,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         (uint256 debt, uint256 collateral, uint256 npTpRatio, uint256 thresholdPrice) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,       21_020.192307692307702000 * 1e18);
         assertEq(collateral, 100 * 1e18);
-=        assertEq(thresholdPrice, 210.201923076923077020 * 1e18);
+        assertEq(thresholdPrice, 218.610000000000000101 * 1e18);
         assertEq(npTpRatio,  243.051341028061451209 * 1e18);
     }
 

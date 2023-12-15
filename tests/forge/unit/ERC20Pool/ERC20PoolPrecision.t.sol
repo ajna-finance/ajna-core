@@ -123,9 +123,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             lupIndex: 0
         });
         _assertLoans({
-            noOfLoans:         0,
-            maxBorrower:       address(0),
-            maxThresholdPrice: 0
+            noOfLoans:             0,
+            maxBorrower:           address(0),
+            maxT0DebtToCollateral: 0
         });
         assertEq(_pool.depositSize(), 149_993.150684931506850000 * 1e18);
 
@@ -167,9 +167,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             lupIndex: 0
         });
         _assertLoans({
-            noOfLoans:         0,
-            maxBorrower:       address(0),
-            maxThresholdPrice: 0
+            noOfLoans:             0,
+            maxBorrower:           address(0),
+            maxT0DebtToCollateral: 0
         });
         assertEq(_pool.depositSize(), 124_993.150684931506850000 * 1e18);
 
@@ -289,9 +289,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             lupIndex: 0
         });
         _assertLoans({
-            noOfLoans:         0,
-            maxBorrower:       address(0),
-            maxThresholdPrice: 0
+            noOfLoans:             0,
+            maxBorrower:           address(0),
+            maxT0DebtToCollateral: 0
         });
         assertEq(_pool.depositSize(), 149_993.150684931506850000 * 1e18);
 
@@ -346,9 +346,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             lupIndex: 2549
         });
         _assertLoans({
-            noOfLoans:         1,
-            maxBorrower:       _borrower,
-            maxThresholdPrice: 208.200000000000000096 * 1e18
+            noOfLoans:             1,
+            maxBorrower:           _borrower,
+            maxT0DebtToCollateral: 200.192307692307692400 * 1e18
         });
 
         (uint256 poolDebt,,,) = _pool.debtInfo();
@@ -407,9 +407,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             lupIndex: 2549
         });
         _assertLoans({
-            noOfLoans:         1,
-            maxBorrower:       _borrower,
-            maxThresholdPrice: 104.200000000000000096 * 1e18
+            noOfLoans:             1,
+            maxBorrower:           _borrower,
+            maxT0DebtToCollateral: 100.192307692307692400 * 1e18
         });
 
         (poolDebt,,,) = _pool.debtInfo();
