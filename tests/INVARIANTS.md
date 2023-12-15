@@ -79,18 +79,6 @@
 - **RE12**: Reserves decrease by amount of reserve used to settle a auction
 - **RE13**: Reserves are unchanged by kick
 
-## Rewards
-- **RW1**: Staking rewards must be less than reward cap percentage multiplied by ajna burned (`newRewards < REWARD_CAP * totalBurnedInPeriod`) for any given time period (`epoch`)
-- **RW2**: Updating (recording) rewards must be less than reward cap percentage multiplied by ajna burned (`newRewards < UPDATE_CAP * totalBurned`) for any given time period (`epoch`)
-- **RW3**: If a bucket has had it's exchange rate updated bucketExchangeRates mapping should be non-zero (`bucketExchangeRates[pool_][bucketIndex_][burnEpoch_] != 0`)
-- **RW4**: After staking, for each bucket in the staked position `lpsAtStakeTime` should equal the position's LP (`position.lps`) in the bucket and `rateAtStakeTime` should equal the bucket's exchange rate (`Buckets.getExchangeRate()`)
-- **RW5**: After staking, the Reward's manager contract should be the new owner of the position (`ERC721.ownerOf()`). Upon unstaking, The caller of unstake should be the new owner of the position (`ERC721.ownerOf()`)
-- **RW6**: After claiming rewards, `stakeInfo_.lastClaimedEpoch` should be equal to the epoch this position was staked in or the last epoch they claimed rewards for. After claiming or unstaking, `isEpochClaimed` should be equal to `true` for all epochs that the staker has claimed rewards for.
-- **RW7**: Each time the bucket rate is updated the `updateRewardsClaimed` accumulator should be updated. Each time a user claims rewards from staking the `rewardsClaimed` accumulator should be updated.
-- **RW8**: After unstaking or claiming rewards, if ajna has been burned over an epoch while the staker was staked they should have an increased amount in ajna balance `_ajna.balanceOf()` that matches the amount of ajna balance deducted from the contract `_ajna.balanceOf()`.
-- **RW9**: After unstaking, stakeInfo's tokenId mapping should be deleted and all corrosponding values should therefore be zero'd out (`StakeInfo.owner`,`StakeInfo.ajnaPool`, `StakeInfo.lastClaimedEpoch`)
-- **RW10**: a Staker can never claim rewards for the same epoch twice
-
 ## Position Manager
 - **PM1**: LP balance of PositionManager in a Pool for a Bucket should be the sum of the positions[...][index].lps for all tokens/users
 - **PM2**: Sum of the LP balance of the PositionManager in a Pool across all buckets should be the sum of the positions[...].[...].lps across all indexes and tokens/users

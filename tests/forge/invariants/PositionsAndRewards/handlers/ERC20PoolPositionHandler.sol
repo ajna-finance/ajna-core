@@ -5,13 +5,23 @@ pragma solidity 0.8.18;
 import { PositionManager } from 'src/PositionManager.sol';
 import { Pool }            from 'src/base/Pool.sol';
 import { ERC20Pool }       from 'src/ERC20Pool.sol';
+import { Maths }           from 'src/libraries/internal/Maths.sol';
 
 import { TokenWithNDecimals }          from '../../../utils/Tokens.sol';
 
-import { PositionPoolHandler }  from  './PositionPoolHandler.sol';
-import { BaseERC20PoolHandler } from '../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
+import { PositionPoolHandler }            from  './PositionPoolHandler.sol';
+import { BaseERC20PoolHandler }           from '../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
+import { UnboundedBasicPoolHandler }      from '../../base/handlers/unbounded/UnboundedBasicPoolHandler.sol';
+import { UnboundedBasicERC20PoolHandler } from '../../ERC20Pool/handlers/unbounded/UnboundedBasicERC20PoolHandler.sol';
+import { UnboundedLiquidationPoolHandler } from '../../base/handlers/unbounded/UnboundedLiquidationPoolHandler.sol';
 
-contract ERC20PoolPositionHandler is PositionPoolHandler, BaseERC20PoolHandler {
+contract ERC20PoolPositionHandler is PositionPoolHandler, BaseERC20PoolHandler, UnboundedBasicERC20PoolHandler, UnboundedLiquidationPoolHandler {
+
+    address[] internal _lenders;
+    address[] internal _borrowers;
+
+    uint16 internal constant LENDERS = 200;
+    uint256 numberOfBuckets;
 
     constructor(
         address positions_,
@@ -46,5 +56,88 @@ contract ERC20PoolPositionHandler is PositionPoolHandler, BaseERC20PoolHandler {
 
         _quote = TokenWithNDecimals(_pool.quoteTokenAddress());
         _collateral = TokenWithNDecimals(_pool.collateralAddress());
+    }
+
+    function lenderKickAuction(
+        uint256 kickerIndex_,
+        uint256 bucketIndex_,
+        uint256 skippedTime_
+    ) external useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
+        numberOfCalls['BPriceFall.lenderKickAuction']++;
+
+        kickerIndex_   = constrictToRange(kickerIndex_, 0, LENDERS - 1);
+        address kicker  = _lenders[kickerIndex_];
+
+        _actor = kicker;
+        changePrank(_actor);
+        _lenderKickAuction(_lenderBucketIndex);
+    }
+
+    function moveQuoteTokenToLowerBucket(
+        uint256 fromBucketIndex_,
+        uint256 toBucketIndex_,
+        uint256 amountToMove_,
+        uint256 skippedTime_
+    ) external useRandomLenderBucket(fromBucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
+        numberOfCalls['BPriceFall.moveQuoteTokenToLowerBucket']++;
+
+        toBucketIndex_ = constrictToRange(toBucketIndex_, _lenderBucketIndex, 7388);
+
+        uint256 boundedAmount = _preMoveQuoteToken(amountToMove_, _lenderBucketIndex, toBucketIndex_);
+
+        _moveQuoteToken(boundedAmount, _lenderBucketIndex, toBucketIndex_);
+    }
+
+    function takeOrSettleAuction(
+        uint256 borrowerIndex_,
+        uint256 takerIndex_,
+        uint256 skippedTime_
+    ) external useTimestamps useRandomActor(takerIndex_) skipTime(skippedTime_) writeLogs {
+        address borrower = _borrowers[constrictToRange(borrowerIndex_, 0, _borrowers.length - 1)];
+
+        (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
+
+        // Kick borrower if not already kicked
+        if (kickTime == 0) {
+            // skip some time to make borrower undercollateralized
+            skip(200 days);
+
+            _kickAuction(borrower);
+            kickTime = block.timestamp;
+        }
+
+        // skip time to atleast 64 hours such that auction price is very low and less debt is settled through takeAuction
+        uint256 timeAfterKick = block.timestamp - kickTime;
+        if (timeAfterKick < 64 hours ) {
+            skip(64 hours - timeAfterKick);
+        }
+
+        // if auction takeable, take all collateral or settle otherwise
+        if (block.timestamp - kickTime <= 72 hours) {
+            _takeAuction(borrower, type(uint256).max, _actor);
+        } else {
+            _settleAuction(borrower, numberOfBuckets);
+        }
+    }
+
+    /*******************************/
+    /*** Prepare Tests Functions ***/
+    /*******************************/
+
+    function _preMoveQuoteToken(
+        uint256 amountToMove_,
+        uint256 fromIndex_,
+        uint256 toIndex_
+    ) internal returns (uint256 boundedAmount_) {
+        boundedAmount_ = constrictToRange(amountToMove_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
+
+        // ensure actor has LP to move
+        (uint256 lpBalance, ) = _pool.lenderInfo(fromIndex_, _actor);
+        if (lpBalance == 0) _addQuoteToken(boundedAmount_, toIndex_);
+
+        (uint256 lps, ) = _pool.lenderInfo(fromIndex_, _actor);
+        // restrict amount to move by available deposit inside bucket
+        uint256 availableDeposit = _poolInfo.lpToQuoteTokens(address(_pool), lps, fromIndex_);
+        boundedAmount_ = Maths.min(boundedAmount_, availableDeposit);
     }
 }

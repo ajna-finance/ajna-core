@@ -707,7 +707,6 @@ contract RegressionTestLiquidationWith10BucketsERC20Pool is LiquidationERC20Pool
 
 }
 
-
 contract RegressionTestLiquidationWith20BucketsERC20Pool is LiquidationERC20PoolInvariants {
 
     function setUp() public override {
@@ -2147,6 +2146,7 @@ contract RegressionTestReserveEvmRevertERC720Pool is LiquidationERC20PoolInvaria
         invariant_auction();
     }
 }
+
 contract RegressionTestLiquidationWith18QuotePrecision4CollateralPrecisionERC20Pool is LiquidationERC20PoolInvariants { 
 
     function setUp() public override { 
