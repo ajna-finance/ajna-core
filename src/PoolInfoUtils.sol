@@ -133,7 +133,7 @@ contract PoolInfoUtils {
      *  @return debt_             Current debt owed by borrower (`WAD`).
      *  @return collateral_       Pledged collateral, including encumbered (`WAD`).
      *  @return t0Np_             `Neutral price` (`WAD`).
-     *  @return t0ThresholdPrice_ Borrower's `Threshold Price` in t0 terms (`WAD`).
+     *  @return thresholdPrice_ Borrower's `Threshold Price` in t0 terms (`WAD`).
      */
     function borrowerInfo(address ajnaPool_, address borrower_)
         external
@@ -142,7 +142,7 @@ contract PoolInfoUtils {
             uint256 debt_,
             uint256 collateral_,
             uint256 t0Np_,
-            uint256 t0ThresholdPrice_
+            uint256 thresholdPrice_
         )
     {
         IPool pool = IPool(ajnaPool_);
@@ -161,9 +161,8 @@ contract PoolInfoUtils {
         (t0Debt, collateral_, npTpRatio)  = pool.borrowerInfo(borrower_);
 
         t0Np_ = collateral_ == 0 ? 0 : Math.mulDiv(Maths.wmul(t0Debt, COLLATERALIZATION_FACTOR), npTpRatio, collateral_);
-        t0ThresholdPrice_ = collateral_ == 0 ? 0 : Maths.wmul(Maths.wdiv(t0Debt, collateral_), COLLATERALIZATION_FACTOR);
-
         debt_ = Maths.ceilWmul(t0Debt, pendingInflator);
+        thresholdPrice_ = collateral_ == 0 ? 0 : Maths.wmul(Maths.wdiv(debt_, collateral_), COLLATERALIZATION_FACTOR);
     }
 
     /**
