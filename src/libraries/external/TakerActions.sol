@@ -167,7 +167,7 @@ library TakerActions {
 
         // update borrower after take
         borrower.collateral -= vars.collateralAmount;
-        borrower.t0Debt     =  vars.t0BorrowerDebt - Maths.min(vars.t0RepayAmount, vars.t0BorrowerDebt);
+        borrower.t0Debt     =  vars.t0BorrowerDebt - vars.t0RepayAmount;
         // update pool params after take
         poolState_.t0Debt -= vars.t0RepayAmount;
         poolState_.debt   =  Maths.wmul(poolState_.t0Debt, poolState_.inflator);
@@ -766,6 +766,9 @@ library TakerActions {
 
             vars.quoteTokenAmount         = Maths.wmul(vars.collateralAmount, vars.auctionPrice);
         }
+
+        // repaid amount cannot exceed the borrower owned debt
+        vars.t0RepayAmount = Maths.min(vars.t0RepayAmount, vars.t0BorrowerDebt);
 
         if (vars.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
