@@ -740,7 +740,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         // lender removes all quote token, including interest, from the bucket
         skip(1 days);
 
-        assertGt(_priceAt(1606), _htp());
+        assertGt(_priceAt(1606), _getHtp());
 
         uint256 expectedWithdrawal2 = 1_699.976461135759488146 * 1e18;
         _removeAllLiquidity({

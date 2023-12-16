@@ -1409,7 +1409,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         ( , , , , , lupIndex_ ) = _poolUtils.poolPricesInfo(address(_pool));
     }
 
-    function _htp() internal view returns (uint256 htp_) {
+    function _getHtp() internal view returns (uint256 htp_) {
         ( , , htp_, , , ) = _poolUtils.poolPricesInfo(address(_pool));
     }
 

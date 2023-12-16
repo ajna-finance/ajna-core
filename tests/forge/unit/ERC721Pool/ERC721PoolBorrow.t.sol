@@ -1151,7 +1151,7 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
                 interestRateUpdate:   _startTime
             })
         );
-        assertLt(_htp(), _poolUtils.lup(address(_pool)));
+        assertLt(_getHtp(), _poolUtils.lup(address(_pool)));
         assertGt(minDebt, 0);
         assertEq(_poolUtils.lup(address(_pool)), _calculateLup(address(_pool), debt));
 
@@ -1200,7 +1200,7 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
         assertEq(debt, 0);
 
         // check pool state
-        assertEq(_htp(), 0);
+        assertEq(_getHtp(), 0);
         assertEq(_poolUtils.lup(address(_pool)), MAX_PRICE);
     }
 
