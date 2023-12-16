@@ -241,27 +241,27 @@ abstract contract BasicInvariants is BaseInvariants {
     /************************/
 
     function _invariant_L1_L2_L3() internal view {
-        (address borrower, uint256 tp) = _pool.loanInfo(0);
+        (address borrower, uint256 t0Tp) = _pool.loanInfo(0);
 
         // first loan in loan heap should be 0
         require(borrower == address(0), "Loan Invariant L2");
-        require(tp == 0,                "Loan Invariant L2");
+        require(t0Tp == 0,              "Loan Invariant L2");
 
         ( , , uint256 totalLoans) = _pool.loansInfo();
 
         for (uint256 loanId = 1; loanId < totalLoans; loanId++) {
-            (borrower, tp) = _pool.loanInfo(loanId);
+            (borrower, t0Tp) = _pool.loanInfo(loanId);
 
-            // borrower address and threshold price should not 0
+            // borrower address and t0 threshold price should not 0
             require(borrower != address(0), "Loan Invariant L1");
-            require(tp != 0,                "Loan Invariant L1");
+            require(t0Tp != 0,              "Loan Invariant L1");
 
-            // tp of a loan at index 'i' in loan array should be greater than equals to loans at index '2i' and '2i+1'
-            (, uint256 tp1) = _pool.loanInfo(2 * loanId);
-            (, uint256 tp2) = _pool.loanInfo(2 * loanId + 1);
+            // t0Tp of a loan at index 'i' in loan array should be greater than equals to loans at index '2i' and '2i+1'
+            (, uint256 t0Tp1) = _pool.loanInfo(2 * loanId);
+            (, uint256 t0Tp2) = _pool.loanInfo(2 * loanId + 1);
 
-            require(tp >= tp1, "Loan Invariant L3");
-            require(tp >= tp2, "Loan Invariant L3");
+            require(t0Tp >= t0Tp1, "Loan Invariant L3");
+            require(t0Tp >= t0Tp2, "Loan Invariant L3");
         }
     }
 

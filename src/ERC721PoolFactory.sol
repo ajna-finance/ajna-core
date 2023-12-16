@@ -85,7 +85,7 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
         deployedPools[subsetHash][collateral_][quote_] = pool_;
         deployedPoolsList.push(pool_);
 
-        emit PoolCreated(pool_);
+        emit PoolCreated(pool_, subsetHash);
 
         pool.initialize(tokenIds_, interestRate_);
     }

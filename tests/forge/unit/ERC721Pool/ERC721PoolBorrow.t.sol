@@ -248,7 +248,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             borrower:                  _borrower,
             borrowerDebt:              3_002.884615384615386000 * 1e18,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              1_112.872440604676974401 * 1e18,
+            borrowert0Np:              1_157.387338228864053377 * 1e18,
             borrowerCollateralization: 2.892307418057523109 * 1e18
         });
         // pass time to allow interest to accumulate
@@ -302,7 +302,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             borrower:                  _borrower,
             borrowerDebt:              1_507.000974734143274062 * 1e18,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              557.731729000949159306 * 1e18,
+            borrowert0Np:              580.040998160987125679 * 1e18,
             borrowerCollateralization: 5.763277923678809473 * 1e18
         });
 
@@ -314,7 +314,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             borrower:                  _borrower,
             borrowerDebt:              1_508.860066921599065132 * 1e18,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              557.731729000949159306 * 1e18,
+            borrowert0Np:              580.040998160987125679 * 1e18,
             borrowerCollateralization: 5.756176890788524601 * 1e18
         });
 
@@ -489,9 +489,9 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         });
 
         _assertLoans({
-            noOfLoans: 1,
-            maxBorrower: _borrower,
-            maxThresholdPrice: 347.000000000000000160 * 1e18
+            noOfLoans:             1,
+            maxBorrower:           _borrower,
+            maxT0DebtToCollateral: 333.653846153846154000 * 1e18
         });
 
         // should revert if LUP is below the limit
@@ -523,9 +523,9 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         });
 
         _assertLoans({
-            noOfLoans: 2,
-            maxBorrower: _borrower2,
-            maxThresholdPrice: 2_966.850000000000001368 * 1e18
+            noOfLoans:             2,
+            maxBorrower:           _borrower2,
+            maxT0DebtToCollateral: 2_852.740384615384616700 * 1e18
         });
 
         // should be able to repay loan if properly specified
@@ -884,7 +884,7 @@ contract ERC721ScaledQuoteTokenBorrowAndRepayTest is ERC721NDecimalsHelperContra
             borrower:                  _borrower,
             borrowerDebt:              3_002.884615384615386000 * 1e18,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              1_112.872440604676974401 * 1e18,
+            borrowert0Np:              1_157.387338228864053377 * 1e18,
             borrowerCollateralization: 2.892307418057523109 * 1e18
         });
         // pass time to allow interest to accumulate
@@ -938,7 +938,7 @@ contract ERC721ScaledQuoteTokenBorrowAndRepayTest is ERC721NDecimalsHelperContra
             borrower:                  _borrower,
             borrowerDebt:              1_507.000974734143274062 * 1e18,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              557.731729000949159306 * 1e18,
+            borrowert0Np:              580.040998160987125679 * 1e18,
             borrowerCollateralization: 5.763277923678809473 * 1e18
         });
 
@@ -950,7 +950,7 @@ contract ERC721ScaledQuoteTokenBorrowAndRepayTest is ERC721NDecimalsHelperContra
             borrower:                  _borrower,
             borrowerDebt:              1_508.860066921599065132 * 1e18,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              557.731729000949159306 * 1e18,
+            borrowert0Np:              580.040998160987125679 * 1e18,
             borrowerCollateralization: 5.756176890788524601 * 1e18
         });
 

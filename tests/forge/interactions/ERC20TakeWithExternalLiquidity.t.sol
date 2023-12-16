@@ -105,7 +105,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
             })
         );
         vm.expectEmit(true, true, false, true);
-        emit Take(_borrower, 18.025641486856350208 * 1e18, 2.0 * 1e18, 0.201532798513255896 * 1e18, true);
+        emit Take(_borrower, 18.746667146330604216 * 1e18, 2.0 * 1e18, 0.209594110453786132 * 1e18, true);
         taker.take(tokens, amounts, data);
 
         assertGt(usdc.balanceOf(address(this)), 0); // could vary
@@ -126,7 +126,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         // call take using taker contract
         bytes memory data = abi.encode(address(_ajnaPool));
         vm.expectEmit(true, true, false, true);
-        emit Take(_borrower, 18.025641486856350208 * 1e18, 2.0 * 1e18, 0.201532798513255896 * 1e18, true);
+        emit Take(_borrower, 18.746667146330604216 * 1e18, 2.0 * 1e18, 0.209594110453786132 * 1e18, true);
         _ajnaPool.take(_borrower, takeAmount, address(taker), data);
 
         // confirm we earned some quote token
@@ -148,7 +148,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         _ajnaPool.take(_borrower, 1_001 * 1e18, _lender1, new bytes(0));
 
         // _lender is has QT deducted from balance
-        assertEq(usdc.balanceOf(_lender), 119_999.999999926981758794 * 1e18);
+        assertEq(usdc.balanceOf(_lender), 119_999.999999926981037768 * 1e18);
         assertEq(weth.balanceOf(_lender), 0);
 
         // callee, _lender1 receives CT from take

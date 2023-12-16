@@ -153,8 +153,8 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
             from:            testMinter,
             borrower:        testBorrowerTwo,
             maxCollateral:   1_000 * 1e18,
-            bondChange:      41.385920226943447750 * 1e18,
-            givenAmount:     3_701.669237553163064000 * 1e18,
+            bondChange:      43.041357036021185676 * 1e18,
+            givenAmount:     3_849.736007055289588000 * 1e18,
             collateralTaken: 1_000 * 1e18,
             isReward:        true
         });
@@ -163,7 +163,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
             from:        testMinter,
             borrower:    testBorrowerTwo,
             maxDepth:    10,
-            settledDebt: 5_757.196206294532254049 * 1e18
+            settledDebt: 5_610.784873601483468048 * 1e18
         });
 
         // bucket is insolvent, balances are reset
