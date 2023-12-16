@@ -558,12 +558,12 @@ abstract contract BaseHandler is Test {
         for (uint256 i = 0; i < actors.length; i++) {
             printLine("");
             printLog("Actor ", i + 1);
-            (uint256 debt, uint256 pledgedCollateral, uint256 t0NeutralPrice, uint256 t0ThresholdPrice) = _poolInfo.borrowerInfo(address(_pool), actors[i]);
+            (uint256 debt, uint256 pledgedCollateral, uint256 t0NeutralPrice, uint256 thresholdPrice) = _poolInfo.borrowerInfo(address(_pool), actors[i]);
             if (debt != 0 || pledgedCollateral != 0) {
                 printLog("Debt               = ", debt);
                 printLog("Pledged collateral = ", pledgedCollateral);
                 printLog("t0 Neutral Price   = ", t0NeutralPrice);
-                printLog("t0 Threshold Price = ", t0ThresholdPrice);
+                printLog("t0 Threshold Price = ", thresholdPrice);
 
             }
         }

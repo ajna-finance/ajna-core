@@ -112,7 +112,7 @@ class PoolHelper:
         return quoteBalance - reserves;
 
     def borrowerInfo(self, borrower_address):
-        # returns (debt, collateral, t0NeutralPrice, t0ThresholdPrice)
+        # returns (debt, collateral, t0NeutralPrice, thresholdPrice)
         return self.pool_info_utils.borrowerInfo(self.pool.address, borrower_address)
 
     def bucketInfo(self, index):
