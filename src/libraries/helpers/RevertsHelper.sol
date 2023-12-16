@@ -18,6 +18,7 @@ import { Maths }    from '../internal/Maths.sol';
 
     // See `IPoolErrors` for descriptions
     error AuctionNotCleared();
+    error AuctionActive();
     error AmountLTMinDebt();
     error DustAmountNotExceeded();
     error LimitIndexExceeded();
@@ -97,13 +98,13 @@ import { Maths }    from '../internal/Maths.sol';
     /**
      *  @notice  Check if there are still active / non settled auctions in pool.
      *  @notice  Prevents kicking reserves auctions until all pending auctions are fully settled.
-     *  @dev     Reverts with `AuctionNotCleared`.
+     *  @dev     Reverts with `AuctionActive`.
      *  @param auctions_ Auctions data.
      */
     function _revertIfActiveAuctions(
         AuctionsState storage auctions_
     ) view {
-        if (auctions_.noOfAuctions != 0) revert AuctionNotCleared();
+        if (auctions_.noOfAuctions != 0) revert AuctionActive();
     }
 
     /**
