@@ -167,10 +167,10 @@ library TakerActions {
 
         // update borrower after take
         borrower.collateral -= vars.collateralAmount;
-        borrower.t0Debt     = vars.t0BorrowerDebt - vars.t0RepayAmount;
+        borrower.t0Debt     =  vars.t0BorrowerDebt - vars.t0RepayAmount;
         // update pool params after take
         poolState_.t0Debt -= vars.t0RepayAmount;
-        poolState_.debt   = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
+        poolState_.debt   =  Maths.wmul(poolState_.t0Debt, poolState_.inflator);
 
         // update loan after take
         (
@@ -239,10 +239,10 @@ library TakerActions {
 
         // update borrower after take
         borrower.collateral -= vars.collateralAmount;
-        borrower.t0Debt     = vars.t0BorrowerDebt - vars.t0RepayAmount;
+        borrower.t0Debt     =  vars.t0BorrowerDebt - vars.t0RepayAmount;
         // update pool params after take
         poolState_.t0Debt -= vars.t0RepayAmount;
-        poolState_.debt   = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
+        poolState_.debt   =  Maths.wmul(poolState_.t0Debt, poolState_.inflator);
 
         // update loan after take
         (
@@ -369,14 +369,6 @@ library TakerActions {
 
         _rewardTake(auctions_, liquidation, vars_);
 
-        emit Take(
-            params_.borrower,
-            vars_.quoteTokenAmount,
-            vars_.collateralAmount,
-            vars_.bondChange,
-            vars_.isRewarded
-        );
-
         if (params_.poolType == uint8(PoolType.ERC721)) {
             // slither-disable-next-line divide-before-multiply
             uint256 collateralTaken = (vars_.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
@@ -397,6 +389,14 @@ library TakerActions {
                 }
             }
         }
+
+        emit Take(
+            params_.borrower,
+            vars_.quoteTokenAmount,
+            vars_.collateralAmount,
+            vars_.bondChange,
+            vars_.isRewarded
+        );
     }
 
     /**
@@ -699,7 +699,7 @@ library TakerActions {
         vars.bucketPrice = bucketPrice_;
         vars.bondFactor   = liquidation_.bondFactor;
         vars.bpf          = _bpf(
-            liquidation_.thresholdPrice,
+            liquidation_.debtToCollateral,
             neutralPrice,
             liquidation_.bondFactor,
             bucketPrice_ == 0 ? vars.auctionPrice : bucketPrice_
@@ -766,6 +766,9 @@ library TakerActions {
 
             vars.quoteTokenAmount         = Maths.wmul(vars.collateralAmount, vars.auctionPrice);
         }
+
+        // repaid amount cannot exceed the borrower owned debt
+        vars.t0RepayAmount = Maths.min(vars.t0RepayAmount, vars.t0BorrowerDebt);
 
         if (vars.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded

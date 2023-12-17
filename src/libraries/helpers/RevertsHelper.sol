@@ -18,6 +18,7 @@ import { Maths }    from '../internal/Maths.sol';
 
     // See `IPoolErrors` for descriptions
     error AuctionNotCleared();
+    error AuctionActive();
     error AmountLTMinDebt();
     error DustAmountNotExceeded();
     error LimitIndexExceeded();
@@ -76,22 +77,34 @@ import { Maths }    from '../internal/Maths.sol';
         if (newPrice_ < _priceAt(limitIndex_)) revert LimitIndexExceeded();
     }
 
-/**
+    /**
      *  @notice  Check if provided price is above current auction price.
      *  @notice  Prevents manipulative deposits and arbTakes.
      *  @dev     Reverts with `AddAboveAuctionPrice` if price is above head of auction queue.
-     *  @param index_    Identifies bucket price to be compared with current auction price.
      *  @param auctions_ Auctions data.
+     *  @param index_    Identifies bucket price to be compared with current auction price.
      */
     function _revertIfAuctionPriceBelow(
-        uint256 index_,
-        AuctionsState storage auctions_
+        AuctionsState storage auctions_,
+        uint256 index_
     ) view {
         address head = auctions_.head;
         if (head != address(0)) {
             uint256 auctionPrice = _auctionPrice(auctions_.liquidations[head].referencePrice, auctions_.liquidations[head].kickTime);
             if (_priceAt(index_) >= auctionPrice) revert AddAboveAuctionPrice();
         }
+    }
+
+    /**
+     *  @notice  Check if there are still active / non settled auctions in pool.
+     *  @notice  Prevents kicking reserves auctions until all pending auctions are fully settled.
+     *  @dev     Reverts with `AuctionActive`.
+     *  @param auctions_ Auctions data.
+     */
+    function _revertIfActiveAuctions(
+        AuctionsState storage auctions_
+    ) view {
+        if (auctions_.noOfAuctions != 0) revert AuctionActive();
     }
 
     /**

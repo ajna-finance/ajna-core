@@ -484,7 +484,7 @@ abstract contract BaseHandler is Test {
             err == keccak256(abi.encodeWithSignature("AuctionNotClearable()")) ||
             err == keccak256(abi.encodeWithSignature("ReserveAuctionTooSoon()")) ||
             err == keccak256(abi.encodeWithSignature("NoReserves()")) ||
-            err == keccak256(abi.encodeWithSignature("ZeroThresholdPrice()")) ||
+            err == keccak256(abi.encodeWithSignature("ZeroDebtToCollateral()")) ||
             err == keccak256(abi.encodeWithSignature("NoReservesAuction()")) ||
             err == keccak256(abi.encodeWithSignature("AddAboveAuctionPrice()")),
             "Unexpected revert error"
@@ -546,8 +546,8 @@ abstract contract BaseHandler is Test {
         if (pendingFactor == 1e18) return;
 
         // get TP of worst loan
-        uint256 htp = _getLoansInfo().maxThresholdPrice;
-
+        uint256 htp = _poolInfo.htp(address(_pool));
+        
         uint256 accrualIndex;
 
         if (htp > MAX_PRICE)      accrualIndex = 1;                          // if HTP is over the highest price bucket then no buckets earn interest

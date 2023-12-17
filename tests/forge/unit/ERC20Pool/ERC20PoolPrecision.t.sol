@@ -123,9 +123,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             lupIndex: 0
         });
         _assertLoans({
-            noOfLoans:         0,
-            maxBorrower:       address(0),
-            maxThresholdPrice: 0
+            noOfLoans:             0,
+            maxBorrower:           address(0),
+            maxT0DebtToCollateral: 0
         });
         assertEq(_pool.depositSize(), 149_993.150684931506850000 * 1e18);
 
@@ -167,9 +167,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             lupIndex: 0
         });
         _assertLoans({
-            noOfLoans:         0,
-            maxBorrower:       address(0),
-            maxThresholdPrice: 0
+            noOfLoans:             0,
+            maxBorrower:           address(0),
+            maxT0DebtToCollateral: 0
         });
         assertEq(_pool.depositSize(), 124_993.150684931506850000 * 1e18);
 
@@ -289,9 +289,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             lupIndex: 0
         });
         _assertLoans({
-            noOfLoans:         0,
-            maxBorrower:       address(0),
-            maxThresholdPrice: 0
+            noOfLoans:             0,
+            maxBorrower:           address(0),
+            maxT0DebtToCollateral: 0
         });
         assertEq(_pool.depositSize(), 149_993.150684931506850000 * 1e18);
 
@@ -334,7 +334,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             borrower:                  _borrower,
             borrowerDebt:              debt,
             borrowerCollateral:        col,
-            borrowert0Np:              222.574488120935394880 * 1e18,
+            borrowert0Np:              231.477467645772810675 * 1e18,
             borrowerCollateralization: 14.533844775739053504 * 1e18
         });
         _assertPoolPrices({
@@ -346,9 +346,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             lupIndex: 2549
         });
         _assertLoans({
-            noOfLoans:         1,
-            maxBorrower:       _borrower,
-            maxThresholdPrice: 208.200000000000000096 * 1e18
+            noOfLoans:             1,
+            maxBorrower:           _borrower,
+            maxT0DebtToCollateral: 200.192307692307692400 * 1e18
         });
 
         (uint256 poolDebt,,,) = _pool.debtInfo();
@@ -395,7 +395,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             borrower:                  _borrower,
             borrowerDebt:              debt,
             borrowerCollateral:        col,
-            borrowert0Np:              111.394148233436446480 * 1e18,
+            borrowert0Np:              115.849914162773904339 * 1e18,
             borrowerCollateralization: 29.039793496246362170 * 1e18
         });
         _assertPoolPrices({
@@ -407,9 +407,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             lupIndex: 2549
         });
         _assertLoans({
-            noOfLoans:         1,
-            maxBorrower:       _borrower,
-            maxThresholdPrice: 104.200000000000000096 * 1e18
+            noOfLoans:             1,
+            maxBorrower:           _borrower,
+            maxT0DebtToCollateral: 100.192307692307692400 * 1e18
         });
 
         (poolDebt,,,) = _pool.debtInfo();
@@ -803,7 +803,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         // setup fuzzy bounds and initialize the pool
         uint256 collateralDecimals = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 quoteDecimals      = bound(uint256(quotePrecisionDecimals_),      1, 18);
-        uint256 bucketId           = bound(uint256(bucketId_),                    1, 7388);
+        uint256 bucketId           = bound(uint256(bucketId_),                    1, 7387);
         init(collateralDecimals, quoteDecimals);
         uint256 collateralScale = 10 ** (18 - collateralDecimals);
 
