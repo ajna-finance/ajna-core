@@ -28,8 +28,8 @@
 - **A9**: reference prices in liquidation queue shall not decrease
 
 ## Loans
-- **L1**: for each `Loan` in loans array (`LoansState.loans`) starting from index 1, the corresponding address (`Loan.borrower`) is not `0x`, the threshold price (`Loan.thresholdPrice`) is different than 0 and the id mapped in indices mapping (`LoansState.indices`) equals index of loan in loans array.  
-- **L2**: `Loan` in loans array (`LoansState.loans`) at index 0 has the corresponding address (`Loan.borrower`) equal with `0x` address and the threshold price (`Loan.thresholdPrice`) equal with 0
+- **L1**: for each `Loan` in loans array (`LoansState.loans`) starting from index 1, the corresponding address (`Loan.borrower`) is not `0x`, the borrower t0 debt to collateral (`Loan.t0DebtToCollateral`) is different than 0 and the id mapped in indices mapping (`LoansState.indices`) equals index of loan in loans array.
+- **L2**: `Loan` in loans array (`LoansState.loans`) at index 0 has the corresponding address (`Loan.borrower`) equal with `0x` address and the borrower t0 debt to collateral (`Loan.t0DebtToCollateral`) equal with 0
 - **L3**: Loans array (`LoansState.loans`) is a max-heap with respect to t0-threshold price: the t0TP of loan at index `i` is >= the t0-threshold price of the loans at index `2*i` and `2*i+1`
 
 ## Buckets

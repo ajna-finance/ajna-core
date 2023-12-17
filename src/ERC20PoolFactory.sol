@@ -75,7 +75,7 @@ contract ERC20PoolFactory is PoolDeployer, IERC20PoolFactory {
         deployedPools[ERC20_NON_SUBSET_HASH][collateral_][quote_] = pool_;
         deployedPoolsList.push(pool_);
 
-        emit PoolCreated(pool_);
+        emit PoolCreated(pool_, ERC20_NON_SUBSET_HASH);
 
         pool.initialize(interestRate_);
     }

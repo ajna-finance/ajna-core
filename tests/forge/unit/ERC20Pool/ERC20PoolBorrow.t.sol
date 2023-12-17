@@ -344,7 +344,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              467.406425053964329248 * 1e18,
+            borrowert0Np:              486.102682056122902418 * 1e18,
             borrowerCollateralization: 6.818094832771756370 * 1e18
         });
 
@@ -378,7 +378,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        60 * 1e18,
-            borrowert0Np:              389.505354211636941040 * 1e18,
+            borrowert0Np:              405.085568380102418682 * 1e18,
             borrowerCollateralization: 8.171632970402482385 * 1e18
         });
         _assertLenderInterest(liquidityAdded, 22.041594239314643404 * 1e18);
@@ -415,7 +415,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              467.170821671076429268 * 1e18,
+            borrowert0Np:              485.857654537919486439 * 1e18,
             borrowerCollateralization: 6.800465336646754158 * 1e18
         });
         _assertLenderInterest(liquidityAdded, 47.030993626904794487 * 1e18);
@@ -449,7 +449,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              469.453463878474116266 * 1e18,
+            borrowert0Np:              488.231602433613080917 * 1e18,
             borrowerCollateralization: 6.790328096027958520 * 1e18
         });
         _assertLenderInterest(liquidityAdded, 74.559258911307822676 * 1e18);
@@ -480,7 +480,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              469.453463878474116266 * 1e18,
+            borrowert0Np:              488.231602433613080917 * 1e18,
             borrowerCollateralization: 6.779194583993119727 * 1e18
         });
         _assertLenderInterest(liquidityAdded, 104.888719493548276695 * 1e18);
@@ -490,7 +490,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         expectedDebt = 21_179.004767688830766408 * 1e18;
         _assertPool(
             PoolParams({
-                htp:                  439.728847704586373630 * 1e18,
+                htp:                  440.523299167927679941 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             50_102.605614470717226695 * 1e18,
                 pledgedCollateral:    50 * 1e18,
@@ -509,7 +509,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              469.453463878474116266 * 1e18,
+            borrowert0Np:              488.231602433613080917 * 1e18,
             borrowerCollateralization: 6.766968803727464027 * 1e18
         });
     }
@@ -838,7 +838,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
      *          Reverts:
      *              Attempts to borrow with a TP of 0.
      */
-    function testZeroThresholdPriceLoanBeforeRepay() external tearDown {
+    function testZeroDebtToCollateralLoanBeforeRepay() external tearDown {
         // borrower 1 initiates a highly overcollateralized loan with a TP of 0 that won't be inserted into the Queue
         _pledgeCollateral({
             from:     _borrower,
@@ -846,7 +846,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             amount:   50 * 1e18
         });
 
-        vm.expectRevert(abi.encodeWithSignature('ZeroThresholdPrice()'));
+        vm.expectRevert(abi.encodeWithSignature('ZeroDebtToCollateral()'));
         IERC20Pool(address(_pool)).drawDebt(_borrower, 0.00000000000000001 * 1e18, 3000, 0);
 
         // borrower 1 borrows 500 quote from the pool after using a non 0 TP
@@ -883,7 +883,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
      *          Reverts:
      *              Attempts to repay with a subsequent TP of 0.
      */
-    function testZeroThresholdPriceLoanAfterRepay() external tearDown {
+    function testZeroDebtToCollateralLoanAfterRepay() external tearDown {
 
         // borrower 1 borrows 500 quote from the pool
         _drawDebt({
@@ -917,14 +917,14 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              500.480769230769231 * 1e18,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              11.128724406046769744 * 1e18,
+            borrowert0Np:              11.573873382288640533 * 1e18,
             borrowerCollateralization: 289.230741805752310899 * 1e18
         });
 
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
 
         // should revert if borrower repays most, but not all of their debt resulting in a 0 tp loan remaining on the book
-        vm.expectRevert(abi.encodeWithSignature('ZeroThresholdPrice()'));
+        vm.expectRevert(abi.encodeWithSignature('ZeroDebtToCollateral()'));
         IERC20Pool(address(_pool)).repayDebt(_borrower, 500.480769230769231000 * 1e18 - 1, 0, _borrower, MAX_FENWICK_INDEX);
 
         // should be able to pay back all pendingDebt
@@ -1330,7 +1330,7 @@ contract ERC20PoolBorrowFuzzyTest is ERC20FuzzyHelperContract {
             })
         );
 
-        assertLt(_htp(), _poolUtils.lup(address(_pool)));
+        assertLt(_getHtp(), _poolUtils.lup(address(_pool)));
         assertGt(minDebt, 0);
         assertEq(_poolUtils.lup(address(_pool)), _calculateLup(address(_pool), debt));
 
@@ -1380,7 +1380,7 @@ contract ERC20PoolBorrowFuzzyTest is ERC20FuzzyHelperContract {
         assertEq(debt, 0);
 
         // check pool state
-        assertEq(_htp(), 0);
+        assertEq(_getHtp(), 0);
         assertEq(_poolUtils.lup(address(_pool)), MAX_PRICE);
     }
 }

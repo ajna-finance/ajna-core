@@ -52,7 +52,6 @@ import {
 import {
     COLLATERALIZATION_FACTOR,
     _determineInflatorState,
-    _htp,
     _priceAt,
     _roundToScale
 }                               from '../libraries/helpers/PoolHelper.sol';
@@ -60,7 +59,8 @@ import {
     _revertIfAuctionDebtLocked,
     _revertIfAuctionClearable,
     _revertAfterExpiry,
-    _revertIfAuctionPriceBelow
+    _revertIfAuctionPriceBelow,
+    _revertIfActiveAuctions
 }                               from '../libraries/helpers/RevertsHelper.sol';
 
 import { Buckets }  from '../libraries/internal/Buckets.sol';
@@ -160,7 +160,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         _revertIfAuctionClearable(auctions, loans);
 
-        _revertIfAuctionPriceBelow(index_, auctions);
+        _revertIfAuctionPriceBelow(auctions, index_);
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -196,17 +196,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         _revertIfAuctionClearable(auctions, loans);
 
-        _revertIfAuctionPriceBelow(toIndex_, auctions);
+        _revertIfAuctionPriceBelow(auctions, toIndex_);
 
         PoolState memory poolState = _accruePoolInterest();
 
         _revertIfAuctionDebtLocked(deposits, poolState.t0DebtInAuction, fromIndex_, poolState.inflator);
 
         MoveQuoteParams memory moveParams;
-        moveParams.maxAmountToMove  = maxAmount_;
-        moveParams.fromIndex        = fromIndex_;
-        moveParams.toIndex          = toIndex_;
-        moveParams.thresholdPrice   = Loans.getMax(loans).thresholdPrice;
+        moveParams.maxAmountToMove       = maxAmount_;
+        moveParams.fromIndex             = fromIndex_;
+        moveParams.toIndex               = toIndex_;
+        moveParams.maxT0DebtToCollateral = Loans.getMax(loans).t0DebtToCollateral;
 
         uint256 newLup;
         (
@@ -246,9 +246,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             poolState,
             RemoveQuoteParams({
-                maxAmount:      Maths.min(maxAmount_, _availableQuoteToken()),
-                index:          index_,
-                thresholdPrice: Loans.getMax(loans).thresholdPrice
+                maxAmount:             Maths.min(maxAmount_, _availableQuoteToken()),
+                index:                 index_,
+                maxT0DebtToCollateral: Loans.getMax(loans).t0DebtToCollateral
             })
         );
 
@@ -395,12 +395,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @dev    update `reserveAuction.latestBurnEventEpoch` and burn event `timestamp` state
      *  @dev    === Reverts on ===
      *  @dev    2 weeks not passed `ReserveAuctionTooSoon()`
-     *  @dev    unsettled liquidation `AuctionNotCleared()`
+     *  @dev    unsettled liquidation `AuctionActive()`
      *  @dev    === Emit events ===
      *  @dev    - `KickReserveAuction`
      */
     function kickReserveAuction() external override nonReentrant {
-        _revertIfAuctionClearable(auctions, loans);
+        _revertIfActiveAuctions(auctions);
 
         // start a new claimable reserve auction, passing in relevant parameters such as the current pool size, debt, balance, and inflator value
         KickerActions.kickReserveAuction(
@@ -558,7 +558,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                     emaState,
                     deposits,
                     poolState_,
-                    Loans.getMax(loans).thresholdPrice,
+                    Loans.getMax(loans).t0DebtToCollateral,
                     elapsed
                 ) returns (uint256 newInflator, uint256 newInterest) {
                     poolState_.inflator = newInflator;
@@ -738,7 +738,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 kickTime_,
         uint256 referencePrice_,
         uint256 neutralPrice_,
-        uint256 thresholdPrice_,
+        uint256 debtToCollateral_,
         address head_,
         address next_,
         address prev_
@@ -751,7 +751,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             liquidation.kickTime,
             liquidation.referencePrice,
             liquidation.neutralPrice,
-            liquidation.thresholdPrice,
+            liquidation.debtToCollateral,
             auctions.head,
             liquidation.next,
             liquidation.prev
@@ -910,7 +910,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         Loan memory loan = Loans.getByIndex(loans, loanId_);
         return (
             loan.borrower,
-            loan.thresholdPrice
+            loan.t0DebtToCollateral
         );
     }
 
@@ -919,7 +919,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         Loan memory maxLoan = Loans.getMax(loans);
         return (
             maxLoan.borrower,
-            _htp(maxLoan.thresholdPrice, inflatorState.inflator),
+            maxLoan.t0DebtToCollateral,
             Loans.noOfLoans(loans)
         );
     }
