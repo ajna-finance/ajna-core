@@ -67,10 +67,6 @@ library Maths {
         }
     }
 
-    function rayToWad(uint256 x) internal pure returns (uint256) {
-        return (x + 10**9 / 2) / 10**9;
-    }
-
     /*************************/
     /*** Integer Functions ***/
     /*************************/

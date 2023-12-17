@@ -49,7 +49,7 @@ contract ERC20PoolRewardsHandler is RewardsPoolHandler, ReserveERC20PoolHandler 
 
         for (uint256 epoch = 0; epoch <= numberOfEpochs_; epoch ++) {
             // draw some debt and then repay after some times to increase pool earning / reserves 
-            (, uint256 claimableReserves, , ) = _pool.reservesInfo();
+            (, uint256 claimableReserves, , ,) = _pool.reservesInfo();
             if (claimableReserves == 0) {
                 uint256 amountToBorrow = _preDrawDebt(amountToAdd_);
                 _drawDebt(amountToBorrow);
@@ -69,7 +69,7 @@ contract ERC20PoolRewardsHandler is RewardsPoolHandler, ReserveERC20PoolHandler 
             // skip time for price to decrease, large price decrease reduces chances of rewards exceeding rewards contract balance
             skip(30 hours);
 
-            (, claimableReserves, , ) = _pool.reservesInfo();
+            (, claimableReserves, , ,) = _pool.reservesInfo();
             uint256 boundedTakeAmount = constrictToRange(amountToAdd_, claimableReserves / 2, claimableReserves);
             _takeReserves(boundedTakeAmount);
 

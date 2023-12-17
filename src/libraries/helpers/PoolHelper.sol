@@ -382,17 +382,20 @@ import { Maths }   from '../internal/Maths.sol';
     /**
      *  @notice Calculates reserves auction price.
      *  @param  reserveAuctionKicked_ Time when reserve auction was started (kicked).
+     *  @param  lastKickedReserves_   Reserves to be auctioned when started (kicked).
      *  @return price_                Calculated auction price.
      */     
     function _reserveAuctionPrice(
-        uint256 reserveAuctionKicked_
+        uint256 reserveAuctionKicked_,
+        uint256 lastKickedReserves_
     ) view returns (uint256 price_) {
         if (reserveAuctionKicked_ != 0) {
             uint256 secondsElapsed   = block.timestamp - reserveAuctionKicked_;
             uint256 hoursComponent   = 1e27 >> secondsElapsed / 3600;
             uint256 minutesComponent = Maths.rpow(MINUTE_HALF_LIFE, secondsElapsed % 3600 / 60);
+            uint256 initialPrice     = lastKickedReserves_ == 0 ? 0 : Maths.wdiv(1_000_000_000 * 1e18, lastKickedReserves_);
 
-            price_ = Maths.rayToWad(1_000_000_000 * Maths.rmul(hoursComponent, minutesComponent));
+            price_ = initialPrice * Maths.rmul(hoursComponent, minutesComponent) / 1e27;
         }
     }
 
