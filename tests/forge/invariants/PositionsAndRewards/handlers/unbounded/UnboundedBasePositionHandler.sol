@@ -18,8 +18,6 @@ abstract contract UnboundedBasePositionHandler is Test {
 
     bytes32 internal _poolHash;
 
-    uint256 MAX_AJNA_AMOUNT = vm.envOr("MAX_AJNA_AMOUNT_ERC20", uint256(100_000_000 * 1e18));
-
     address[] internal _pools;
 
     // positionManager
