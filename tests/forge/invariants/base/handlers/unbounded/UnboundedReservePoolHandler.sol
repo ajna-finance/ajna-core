@@ -41,11 +41,11 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
         // ensure actor always has the amount to take reserves
         _ensureAjnaAmount(_actor, 1e45);
 
-        (, uint256 claimableReservesBeforeAction, ,) = _pool.reservesInfo();
+        (, uint256 claimableReservesBeforeAction, , , ) = _pool.reservesInfo();
 
         try _pool.takeReserves(amount_) {
 
-            (, uint256 claimableReservesAfterAction, ,) = _pool.reservesInfo();
+            (, uint256 claimableReservesAfterAction, , ,) = _pool.reservesInfo();
             // reserves are guaranteed by the protocol)
             require(
                 claimableReservesAfterAction < claimableReservesBeforeAction,

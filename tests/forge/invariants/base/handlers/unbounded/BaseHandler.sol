@@ -318,7 +318,7 @@ abstract contract BaseHandler is Test {
             err == keccak256(abi.encodeWithSignature("AuctionNotClearable()")) ||
             err == keccak256(abi.encodeWithSignature("ReserveAuctionTooSoon()")) ||
             err == keccak256(abi.encodeWithSignature("NoReserves()")) ||
-            err == keccak256(abi.encodeWithSignature("ZeroThresholdPrice()")) ||
+            err == keccak256(abi.encodeWithSignature("ZeroDebtToCollateral()")) ||
             err == keccak256(abi.encodeWithSignature("NoReservesAuction()")) ||
             err == keccak256(abi.encodeWithSignature("AddAboveAuctionPrice()")),
             "Unexpected revert error"
@@ -357,7 +357,7 @@ abstract contract BaseHandler is Test {
         increaseInBonds = 0;
         decreaseInBonds = 0;
         // record totalBondEscrowed before each action
-        (previousTotalBonds, , , ) = _pool.reservesInfo();
+        (previousTotalBonds, , , , ) = _pool.reservesInfo();
     }
 
     /********************************/
@@ -380,8 +380,8 @@ abstract contract BaseHandler is Test {
         if (pendingFactor == 1e18) return;
 
         // get TP of worst loan
-        (, uint256 htp,) = _pool.loansInfo();
-
+        uint256 htp = _poolInfo.htp(address(_pool));
+        
         uint256 accrualIndex;
 
         if (htp > MAX_PRICE)      accrualIndex = 1;                          // if HTP is over the highest price bucket then no buckets earn interest
@@ -480,7 +480,7 @@ abstract contract BaseHandler is Test {
 
         (
             uint256 totalBond,
-            uint256 reserveUnclaimed, ,
+            uint256 reserveUnclaimed, , ,
             uint256 totalInterest
         ) = _pool.reservesInfo();
 

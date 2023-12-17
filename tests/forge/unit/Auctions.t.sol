@@ -74,13 +74,38 @@ contract AuctionsTest is DSTestPlus {
      */
     function testReserveAuctionPrice() external {
         skip(5 days);
-        assertEq(_reserveAuctionPrice(block.timestamp),            1e27);
-        assertEq(_reserveAuctionPrice(block.timestamp - 1 hours),  500000000 * 1e18);
-        assertEq(_reserveAuctionPrice(block.timestamp - 2 hours),  250000000 * 1e18);
-        assertEq(_reserveAuctionPrice(block.timestamp - 4 hours),  62500000 * 1e18);
-        assertEq(_reserveAuctionPrice(block.timestamp - 16 hours), 15258.789062500000000000 * 1e18);
-        assertEq(_reserveAuctionPrice(block.timestamp - 24 hours), 59.604644775390625000 * 1e18);
-        assertEq(_reserveAuctionPrice(block.timestamp - 90 hours), 0);
+
+        // test a single unit of quote token
+        uint256 lastKickedReserves = 1e18;
+        assertEq(_reserveAuctionPrice(block.timestamp, lastKickedReserves),            1e27);
+        assertEq(_reserveAuctionPrice(block.timestamp - 1 hours, lastKickedReserves),  500000000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 2 hours, lastKickedReserves),  250000000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 4 hours, lastKickedReserves),  62500000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 16 hours, lastKickedReserves), 15258.789062500000000000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 24 hours, lastKickedReserves), 59.604644775390625000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 90 hours, lastKickedReserves), 0);
+
+        // test a reasonable reserve quantity for dollar-pegged stablecoin as quote token
+        lastKickedReserves = 5_000 * 1e18;
+        assertEq(_reserveAuctionPrice(block.timestamp, lastKickedReserves),            200_000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 1 hours, lastKickedReserves),  100_000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 2 hours, lastKickedReserves),  50_000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 4 hours, lastKickedReserves),  12_500 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 8 hours, lastKickedReserves),  781.25 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 16 hours, lastKickedReserves), 3.051757812500000000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 24 hours, lastKickedReserves), 0.011920928955078125 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 90 hours, lastKickedReserves), 0);
+
+        // test a potential reserve quantity for a shitcoin shorting pool
+        lastKickedReserves = 3_000_000_000 * 1e18;
+        assertEq(_reserveAuctionPrice(block.timestamp, lastKickedReserves),            0.333333333333333333 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 4 hours, lastKickedReserves),  0.020833333333333333 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 16 hours, lastKickedReserves), 0.000005086263020833 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 32 hours, lastKickedReserves), 0.000000000077610214 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 64 hours, lastKickedReserves), 0);
+
+        // ensure it handles zeros properly
+        assertEq(_reserveAuctionPrice(0, 0), 0);
     }
 
     /**

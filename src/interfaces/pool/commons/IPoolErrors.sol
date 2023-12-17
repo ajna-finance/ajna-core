@@ -205,8 +205,8 @@ interface IPoolErrors {
     error TransferToSameOwner();
 
     /**
-     *  @notice The threshold price of the loan to be inserted in loans heap is zero.
+     *  @notice The DebtToCollateral of the loan to be inserted in loans heap is zero.
      */
-    error ZeroThresholdPrice();
+    error ZeroDebtToCollateral();
 
 }

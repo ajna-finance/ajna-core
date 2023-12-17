@@ -62,11 +62,11 @@ library KickerActions {
         uint256 t0ReserveSettleAmount; // [WAD] Amount of t0Debt that could be settled via reserves in an auction
         uint256 borrowerNpTpRatio;     // [WAD] borrower NP to TP ratio
         uint256 neutralPrice;          // [WAD] neutral price recorded in kick action
-        uint256 htp;                   // [WAD] highest threshold price in pool
+        uint256 htp;                   // [WAD] highest threshold price (including the collateralization factor) in pool
         uint256 referencePrice;        // [WAD] used to calculate auction start price
         uint256 bondFactor;            // [WAD] bond factor of kicked auction
         uint256 bondSize;              // [WAD] bond size of kicked auction
-        uint256 thresholdPrice;        // [WAD] borrower threshold price at kick time
+        uint256 debtToCollateral;      // [WAD] borrower debt to collateral at kick time
     }
 
     /// @dev Struct used for `lenderKick` function local vars.
@@ -240,8 +240,9 @@ library KickerActions {
 
         if (curUnclaimedAuctionReserve == 0) revert NoReserves();
 
-        reserveAuction_.unclaimed = curUnclaimedAuctionReserve;
-        reserveAuction_.kicked    = block.timestamp;
+        reserveAuction_.unclaimed          = curUnclaimedAuctionReserve;
+        reserveAuction_.kicked             = block.timestamp;
+        reserveAuction_.lastKickedReserves = curUnclaimedAuctionReserve;
 
         // increment latest burn event epoch and update burn event timestamp
         latestBurnEpoch += 1;
@@ -251,7 +252,7 @@ library KickerActions {
 
         emit KickReserveAuction(
             curUnclaimedAuctionReserve,
-            _reserveAuctionPrice(block.timestamp),
+            _reserveAuctionPrice(block.timestamp, curUnclaimedAuctionReserve),
             latestBurnEpoch
         );
     }
@@ -346,7 +347,7 @@ library KickerActions {
         // which will make it harder for kicker to earn a reward and more likely that the kicker is penalized
         _revertIfPriceDroppedBelowLimit(vars.neutralPrice, limitIndex_);
 
-        vars.htp            = _htp(Loans.getMax(loans_).thresholdPrice, poolState_.inflator);
+        vars.htp            = _htp(Loans.getMax(loans_).t0DebtToCollateral, poolState_.inflator);
         vars.referencePrice = Maths.min(Maths.max(vars.htp, vars.neutralPrice), MAX_INFLATED_PRICE);
 
         (vars.bondFactor, vars.bondSize) = _bondParams(
@@ -354,7 +355,7 @@ library KickerActions {
             vars.borrowerNpTpRatio
         );
 
-        vars.thresholdPrice = Maths.wdiv(vars.borrowerDebt, vars.borrowerCollateral);
+        vars.debtToCollateral = Maths.wdiv(vars.borrowerDebt, vars.borrowerCollateral);
 
         // record liquidation info
         _recordAuction(
@@ -365,7 +366,7 @@ library KickerActions {
             vars.bondFactor,
             vars.referencePrice,
             vars.neutralPrice,
-            vars.thresholdPrice,
+            vars.debtToCollateral,
             vars.t0ReserveSettleAmount
         );
 
@@ -427,7 +428,7 @@ library KickerActions {
      *  @param  bondFactor_            Bond factor of the newly kicked auction.
      *  @param  referencePrice_        Used to calculate auction start price.
      *  @param  neutralPrice_          Current pool `Neutral Price`.
-     *  @param  thresholdPrice_        Borrower threshold price.
+     *  @param  debtToCollateral_      Borrower debt to collateral at time of kick.
      *  @param  t0ReserveSettleAmount_ Amount of t0Debt that could be settled via reserves in auction
      */
     function _recordAuction(
@@ -438,7 +439,7 @@ library KickerActions {
         uint256 bondFactor_,
         uint256 referencePrice_,
         uint256 neutralPrice_,
-        uint256 thresholdPrice_,
+        uint256 debtToCollateral_,
         uint256 t0ReserveSettleAmount_
     ) internal {
         // record liquidation info
@@ -447,7 +448,7 @@ library KickerActions {
         liquidation_.bondSize              = SafeCast.toUint160(bondSize_);
         liquidation_.bondFactor            = SafeCast.toUint96(bondFactor_);
         liquidation_.neutralPrice          = SafeCast.toUint96(neutralPrice_);
-        liquidation_.thresholdPrice        = thresholdPrice_;
+        liquidation_.debtToCollateral      = debtToCollateral_;
         liquidation_.t0ReserveSettleAmount = t0ReserveSettleAmount_;
 
         // increment number of active auctions

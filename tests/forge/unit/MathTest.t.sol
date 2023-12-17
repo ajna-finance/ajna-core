@@ -10,19 +10,6 @@ import 'src/libraries/internal/Maths.sol';
 
 contract MathTest is DSTestPlus {
 
-    function testRayToWadRounded() external {
-        uint256 amount = 5_000.00076103507940381999999950 * 1e27;
-        assertEq(Maths.rayToWad(amount), 5_000.000761035079403820 * 1e18);
-
-        assertEq(Maths.rayToWad(4 * 1e27), 4 * 1e18);
-        assertEq(Maths.rayToWad(0.0000000000000000006 * 1e27), 1);
-        assertEq(Maths.rayToWad(0.0000000000000000004 * 1e27), 0);
-    }
-
-    function testZeroStaysZero() external {
-        assertEq(Maths.rayToWad(0), 0);
-    }
-
     function testMultiplication() external {
         uint256 debt     = 10_000.44444444444443999 * 1e18;
         uint256 inflator = 1.02132007 * 1e27;
