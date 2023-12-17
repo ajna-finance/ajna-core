@@ -907,7 +907,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         skip(100 days);
 
-        assertGt(MAX_PRICE, _htp());
+        assertGt(MAX_PRICE, _getHtp());
 
         uint256 expectedPoolDebt = 91329091841208027.611736396814389869 * 1e18;
 
