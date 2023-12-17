@@ -305,7 +305,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         });
 
         // ensure auction cannot be kicked when no reserves are claimable
-        skip(2 weeks);
+        skip(5 days);
         _assertKickReservesNoReservesRevert();
 
         _assertReserveAuction({
