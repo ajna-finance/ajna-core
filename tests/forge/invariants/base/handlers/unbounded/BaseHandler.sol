@@ -523,7 +523,7 @@ abstract contract BaseHandler is Test {
         increaseInBonds = 0;
         decreaseInBonds = 0;
         // record totalBondEscrowed before each action
-        (previousTotalBonds, , , ) = _pool.reservesInfo();
+        (previousTotalBonds, , , , ) = _pool.reservesInfo();
     }
 
     /********************************/
@@ -646,7 +646,7 @@ abstract contract BaseHandler is Test {
 
         (
             uint256 totalBond,
-            uint256 reserveUnclaimed, ,
+            uint256 reserveUnclaimed, , ,
             uint256 totalInterest
         ) = _pool.reservesInfo();
 

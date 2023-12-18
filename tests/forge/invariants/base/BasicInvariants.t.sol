@@ -145,7 +145,7 @@ abstract contract BasicInvariants is BaseInvariants {
         (
             uint256 totalBondEscrowed,
             uint256 unClaimed,
-            ,
+            , ,
         ) = _pool.reservesInfo();
 
         uint256 assets      = poolBalance + poolDebt;
@@ -186,7 +186,7 @@ abstract contract BasicInvariants is BaseInvariants {
         (
             uint256 totalBondEscrowed,
             uint256 unClaimed,
-            ,
+            , ,
         ) = _pool.reservesInfo();
 
         require(
@@ -286,7 +286,7 @@ abstract contract BasicInvariants is BaseInvariants {
 
     /// @dev reserve.totalInterestEarned should only update once per block
     function _invariant_I2() internal {
-        (, , , uint256 totalInterestEarned) = _pool.reservesInfo();
+        (, , , , uint256 totalInterestEarned) = _pool.reservesInfo();
 
         if (previousTotalInterestEarnedUpdate == block.number) {
             require(
