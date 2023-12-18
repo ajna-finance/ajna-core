@@ -39,7 +39,7 @@ interface IERC721PoolState {
     /**
      *  @notice Returns the list of `NFT` tokenIds pledged by a borrower in a pool.
      *  @param  borrower_ The address of borrower that pledged the `NFT`s.
-     *  @return List of `NFT`s pledged by borrower in a bucket.
+     *  @return List of `NFT`s pledged by borrower.
      */
     function getBorrowerTokenIds(address borrower_) external view returns(uint256[] memory);
 
