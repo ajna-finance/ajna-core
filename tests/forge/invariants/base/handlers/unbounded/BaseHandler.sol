@@ -53,7 +53,7 @@ abstract contract BaseHandler is Test {
         uint256 kickTime;
         uint256 referencePrice;
         uint256 neutralPrice;
-        uint256 thresholdPrice;
+        uint256 debtToCollateral;
         uint256 auctionPrice;
         uint256 auctionPriceIndex;
         address head;
@@ -72,7 +72,7 @@ abstract contract BaseHandler is Test {
 
     struct LoansInfo {
         address maxBorrower;
-        uint256 maxThresholdPrice;
+        uint256 maxT0DebtToCollateral;
         uint256 noOfLoans;
     }
 
@@ -334,7 +334,7 @@ abstract contract BaseHandler is Test {
             auctionInfo_.kickTime,
             auctionInfo_.referencePrice,
             auctionInfo_.neutralPrice,
-            auctionInfo_.thresholdPrice,
+            auctionInfo_.debtToCollateral,
             auctionInfo_.head,
             ,
         ) = _pool.auctionInfo(borrower_);
@@ -383,7 +383,7 @@ abstract contract BaseHandler is Test {
     function _getLoansInfo() internal view returns (LoansInfo memory loansInfo_) {
         (
             loansInfo_.maxBorrower,
-            loansInfo_.maxThresholdPrice,
+            loansInfo_.maxT0DebtToCollateral,
             loansInfo_.noOfLoans
         ) = _pool.loansInfo();
     }
