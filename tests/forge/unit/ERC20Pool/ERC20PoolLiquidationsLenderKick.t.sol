@@ -254,7 +254,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
                 totalBondEscrowed: 223.821804286277016796 * 1e18,
                 auctionPrice:      5_925.823171731783953152 * 1e18,
                 debtInAuction:     20_019.230769230769240000 * 1e18,
-                thresholdPrice:    20.019230769230769240 * 1e18,
+                debtToCollateral:  20.019230769230769240 * 1e18,
                 neutralPrice:      23.147746764577281067 * 1e18
             })
         );
@@ -385,7 +385,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
                 totalBondEscrowed: 324.541616215101674353 * 1e18,
                 auctionPrice:      8_592.443599011086732032 * 1e18,
                 debtInAuction:     29_027.884615384615398000 * 1e18,
-                thresholdPrice:    29.027884615384615398 * 1e18,
+                debtToCollateral:  29.027884615384615398 * 1e18,
                 neutralPrice:      33.564232808637057547 * 1e18
             })
         );
@@ -510,7 +510,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
                 totalBondEscrowed: 391.688157500984779392 * 1e18,
                 auctionPrice:      10_370.190550530621918208 * 1e18,
                 debtInAuction:     35_033.653846153846170000 * 1e18,
-                thresholdPrice:    35.033653846153846170 * 1e18,
+                debtToCollateral:  35.033653846153846170 * 1e18,
                 neutralPrice:      40.508556838010241868 * 1e18
             })
         );
@@ -633,7 +633,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
                 totalBondEscrowed: 223.821804286277016796 * 1e18,
                 auctionPrice:      5_925.823171731783953152 * 1e18,
                 debtInAuction:     20_019.230769230769240000 * 1e18,
-                thresholdPrice:    20.019230769230769240 * 1e18,
+                debtToCollateral:  20.019230769230769240 * 1e18,
                 neutralPrice:      23.147746764577281067 * 1e18
             })
         );
@@ -643,22 +643,22 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
     function testLenderKickAuctionAllBorrowersAndSettle() external tearDown {
         // assert loans positions in heap
         address borrower;
-        uint256 t0ThresholdPrice;
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(1);
+        uint256 t0DebtToCollateral;
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(1);
         assertEq(borrower, _borrower1);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(2);
+        assertEq(t0DebtToCollateral, 20.019230769230769240 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(2);
         assertEq(borrower, _borrower2);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(3);
+        assertEq(t0DebtToCollateral, 20.019230769230769240 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(3);
         assertEq(borrower, _borrower3);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(4);
+        assertEq(t0DebtToCollateral, 20.019230769230769240 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(4);
         assertEq(borrower, _borrower4);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(5);
+        assertEq(t0DebtToCollateral, 20.019230769230769240 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(5);
         assertEq(borrower, _borrower5);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
+        assertEq(t0DebtToCollateral, 20.019230769230769240 * 1e18);
 
         // kick borrower 1
         _lenderKick({
@@ -670,21 +670,21 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             bond:       223.821804286277016796 * 1e18
         });
 
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(1);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(1);
         assertEq(borrower, _borrower5);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(2);
+        assertEq(t0DebtToCollateral, 20.019230769230769240 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(2);
         assertEq(borrower, _borrower2);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(3);
+        assertEq(t0DebtToCollateral, 20.019230769230769240 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(3);
         assertEq(borrower, _borrower3);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(4);
+        assertEq(t0DebtToCollateral, 20.019230769230769240 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(4);
         assertEq(borrower, _borrower4);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(5);
+        assertEq(t0DebtToCollateral, 20.019230769230769240 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(5);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
+        assertEq(t0DebtToCollateral, 0);
 
         address head;
         address next;
@@ -706,21 +706,21 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             bond:       223.821804286277016796 * 1e18
         });
 
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(1);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(1);
         assertEq(borrower, _borrower4);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(2);
+        assertEq(t0DebtToCollateral, 20.019230769230769240 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(2);
         assertEq(borrower, _borrower2);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(3);
+        assertEq(t0DebtToCollateral, 20.019230769230769240 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(3);
         assertEq(borrower, _borrower3);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(4);
+        assertEq(t0DebtToCollateral, 20.019230769230769240 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(4);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(5);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(5);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
+        assertEq(t0DebtToCollateral, 0);
 
         (, , , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower1);
@@ -741,21 +741,21 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             bond:       223.821804286277016796 * 1e18
         });
 
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(1);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(1);
         assertEq(borrower, _borrower3);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(2);
+        assertEq(t0DebtToCollateral, 20.019230769230769240 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(2);
         assertEq(borrower, _borrower2);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(3);
+        assertEq(t0DebtToCollateral, 20.019230769230769240 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(3);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(4);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(4);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(5);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(5);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
+        assertEq(t0DebtToCollateral, 0);
 
         (, , , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower1);
@@ -780,21 +780,21 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             bond:       223.821804286277016796 * 1e18
         });
 
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(1);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(1);
         assertEq(borrower, _borrower2);
-        assertEq(t0ThresholdPrice, 20.820000000000000010 * 1e18);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(2);
+        assertEq(t0DebtToCollateral, 20.019230769230769240 * 1e18);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(2);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(3);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(3);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(4);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(4);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(5);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(5);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
+        assertEq(t0DebtToCollateral, 0);
 
         (, , , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower1);
@@ -823,21 +823,21 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
             bond:       223.821804286277016796 * 1e18
         });
 
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(1);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(1);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(2);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(2);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(3);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(3);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(4);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(4);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
-        (borrower, t0ThresholdPrice) = _pool.loanInfo(5);
+        assertEq(t0DebtToCollateral, 0);
+        (borrower, t0DebtToCollateral) = _pool.loanInfo(5);
         assertEq(borrower, address(0));
-        assertEq(t0ThresholdPrice, 0);
+        assertEq(t0DebtToCollateral, 0);
 
         (, , , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower1);
@@ -895,7 +895,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
                 totalBondEscrowed: 1_119.109021431385083980 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     100_096.153846153846200000 * 1e18,
-                thresholdPrice:    20.019230769230769240 * 1e18,
+                debtToCollateral:  20.019230769230769240 * 1e18,
                 neutralPrice:      23.147746764577281067 * 1e18
             })
         );
@@ -919,7 +919,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
                 totalBondEscrowed: 1_119.109021431385083980 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     80_113.496231380830061171 * 1e18,
-                thresholdPrice:    0,
+                debtToCollateral:  0,
                 neutralPrice:      0
             })
         );
@@ -958,7 +958,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
                 totalBondEscrowed: 1_119.109021431385083980 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     80_113.496231380830061171 * 1e18,
-                thresholdPrice:    20.019230769230769240 * 1e18,
+                debtToCollateral:  20.019230769230769240 * 1e18,
                 neutralPrice:      23.147746764577281067 * 1e18
             })
         );
@@ -982,7 +982,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
                 totalBondEscrowed: 1_119.109021431385083980 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     60_085.122173535622545879 * 1e18,
-                thresholdPrice:    0,
+                debtToCollateral:  0,
                 neutralPrice:      0
             })
         );
@@ -1021,7 +1021,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
                 totalBondEscrowed: 1_119.109021431385083980 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     60_085.122173535622545879 * 1e18,
-                thresholdPrice:    20.019230769230769240 * 1e18,
+                debtToCollateral:  20.019230769230769240 * 1e18,
                 neutralPrice:      23.147746764577281067 * 1e18
             })
         );
@@ -1045,7 +1045,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
                 totalBondEscrowed: 1_119.109021431385083980 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     40_056.748115690415030586 * 1e18,
-                thresholdPrice:    0,
+                debtToCollateral:  0,
                 neutralPrice:      0
             })
         );
@@ -1084,7 +1084,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
                 totalBondEscrowed: 1_119.109021431385083980 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     40_056.748115690415030586 * 1e18,
-                thresholdPrice:    20.019230769230769240 * 1e18,
+                debtToCollateral:  20.019230769230769240 * 1e18,
                 neutralPrice:      23.147746764577281067 * 1e18
             })
         );
@@ -1108,7 +1108,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
                 totalBondEscrowed: 1_119.109021431385083980 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     20_028.374057845207515293 * 1e18,
-                thresholdPrice:    0,
+                debtToCollateral:  0,
                 neutralPrice:      0
             })
         );
@@ -1147,7 +1147,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
                 totalBondEscrowed: 1_119.109021431385083980 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     20_028.374057845207515293 * 1e18,
-                thresholdPrice:    20.019230769230769240 * 1e18,
+                debtToCollateral:  20.019230769230769240 * 1e18,
                 neutralPrice:      23.147746764577281067 * 1e18
             })
         );
@@ -1171,7 +1171,7 @@ contract ERC20PoolLiquidationsLenderKickAuctionTest is ERC20HelperContract {
                 totalBondEscrowed: 1_119.109021431385083980 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    0,
+                debtToCollateral:  0,
                 neutralPrice:      0
             })
         );

@@ -147,7 +147,7 @@ class PoolHelper:
 
     def loansInfo(self):
         # returns (poolSize, loansCount, maxBorrower, pendingInflator, pendingInterestFactor)
-        # Not to be confused with pool.loansInfo which returns (maxBorrower, maxThresholdPrice, noOfLoans)
+        # Not to be confused with pool.loansInfo which returns (maxBorrower, maxT0DebtToCollateral, noOfLoans)
         return self.pool_info_utils.poolLoansInfo(self.pool.address)
 
     def lup(self):

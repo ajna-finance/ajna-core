@@ -82,7 +82,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 totalBondEscrowed;
         uint256 auctionPrice;
         uint256 debtInAuction;
-        uint256 thresholdPrice;
+        uint256 debtToCollateral;
         uint256 neutralPrice;
     }
 
@@ -449,7 +449,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 auctionNeutralPrice;
         uint256 auctionTotalBondEscrowed;
         uint256 auctionDebtInAuction;
-        uint256 borrowerThresholdPrice;
+        uint256 borrowerDebtToCollateral;
     }
 
     function _assertAuction(AuctionParams memory state_) internal {
@@ -461,14 +461,14 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             vars.auctionKickTime,
             vars.auctionReferencePrice,
             vars.auctionNeutralPrice,
-            vars.borrowerThresholdPrice,
+            vars.borrowerDebtToCollateral,
             ,
             ,
         ) = _pool.auctionInfo(state_.borrower);
 
         (uint256 borrowerDebt, uint256 borrowerCollateral , ) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
         (, uint256 lockedBonds) = _pool.kickerInfo(state_.kicker);
-        (vars.auctionTotalBondEscrowed,,,) = _pool.reservesInfo();
+        (vars.auctionTotalBondEscrowed,,,,) = _pool.reservesInfo();
         (,, vars.auctionDebtInAuction,)  = _pool.debtInfo();
 
         assertEq(vars.auctionKickTime != 0,     state_.active);
@@ -484,7 +484,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             vars.auctionKickTime),              state_.auctionPrice);
         assertEq(vars.auctionDebtInAuction,     state_.debtInAuction);
         assertEq(vars.auctionNeutralPrice,      state_.neutralPrice);
-        assertEq(vars.borrowerThresholdPrice,   state_.thresholdPrice);
+        assertEq(vars.borrowerDebtToCollateral,   state_.debtToCollateral);
 
         (
             uint256 kickTime,
@@ -727,12 +727,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     function _assertLoans(
         uint256 noOfLoans,
         address maxBorrower,
-        uint256 maxThresholdPrice
+        uint256 maxT0DebtToCollateral
     ) internal {
         (address curMaxBorrower, uint256 curTpPrice, uint256 curNoOfLoans) = _pool.loansInfo();
         assertEq(curNoOfLoans,   noOfLoans);
         assertEq(curMaxBorrower, maxBorrower);
-        assertEq(curTpPrice,     maxThresholdPrice);
+        assertEq(curTpPrice,     maxT0DebtToCollateral);
     }
 
     function _assertPoolPrices(
@@ -793,7 +793,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     }
 
     function _assertReserveAuctionUnsettledLiquidation() internal {
-        vm.expectRevert(IPoolErrors.AuctionNotCleared.selector);
+        vm.expectRevert(IPoolErrors.AuctionActive.selector);
         _pool.kickReserveAuction();
     }
 
@@ -1409,7 +1409,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         ( , , , , , lupIndex_ ) = _poolUtils.poolPricesInfo(address(_pool));
     }
 
-    function _htp() internal view returns (uint256 htp_) {
+    function _getHtp() internal view returns (uint256 htp_) {
         ( , , htp_, , , ) = _poolUtils.poolPricesInfo(address(_pool));
     }
 

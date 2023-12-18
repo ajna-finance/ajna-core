@@ -14,21 +14,23 @@ abstract contract ReserveInvariants is LiquidationInvariants {
 
     function invariant_reserves() public useCurrentTimestamp {
 
-        uint256 previousReserves   = IBaseHandler(_handler).previousReserves();
-        uint256 increaseInReserves = IBaseHandler(_handler).increaseInReserves();
-        uint256 decreaseInReserves = IBaseHandler(_handler).decreaseInReserves();
+        uint256 previousReserves    = IBaseHandler(_handler).previousReserves();
+        uint256 increaseInReserves  = IBaseHandler(_handler).increaseInReserves();
+        uint256 decreaseInReserves  = IBaseHandler(_handler).decreaseInReserves();
+        uint256 reservesErrorMargin = Maths.max(IBaseHandler(_handler).reservesErrorMargin(), 1e13);
         (uint256 currentReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
 
         console.log("Previous Reserves     -->", previousReserves);
         console.log("Increase in Reserves  -->", increaseInReserves);
         console.log("Decrease in Reserves  -->", decreaseInReserves);
         console.log("Current Reserves      -->", currentReserves);
+        console.log("Reserves Error margin -->", reservesErrorMargin);
         console.log("Required Reserves     -->", previousReserves + increaseInReserves - decreaseInReserves);
 
         requireWithinDiff(
             currentReserves,
             previousReserves + increaseInReserves - decreaseInReserves,
-            Maths.max(_pool.quoteTokenScale(), 1e13),
+            Maths.max(_pool.quoteTokenScale(), reservesErrorMargin),
             "Incorrect Reserves change"
         );
     }

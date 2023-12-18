@@ -169,15 +169,15 @@ import { Maths }   from '../internal/Maths.sol';
 
     /**
      *  @notice Calculates `HTP` price.
-     *  @param  thresholdPrice_ Threshold price.
-     *  @param  inflator_       Pool's inflator.
+     *  @param  maxT0DebtToCollateral_ Max t0 debt to collateral in pool.
+     *  @param  inflator_              Pool's inflator.
      */
     function _htp(
-        uint256 thresholdPrice_,
+        uint256 maxT0DebtToCollateral_,
         uint256 inflator_
     ) pure returns (uint256) {
         return Maths.wmul(
-            Maths.wmul(thresholdPrice_, inflator_),
+            Maths.wmul(maxT0DebtToCollateral_, inflator_),
             COLLATERALIZATION_FACTOR
         );
     }
@@ -382,17 +382,20 @@ import { Maths }   from '../internal/Maths.sol';
     /**
      *  @notice Calculates reserves auction price.
      *  @param  reserveAuctionKicked_ Time when reserve auction was started (kicked).
+     *  @param  lastKickedReserves_   Reserves to be auctioned when started (kicked).
      *  @return price_                Calculated auction price.
      */     
     function _reserveAuctionPrice(
-        uint256 reserveAuctionKicked_
+        uint256 reserveAuctionKicked_,
+        uint256 lastKickedReserves_
     ) view returns (uint256 price_) {
         if (reserveAuctionKicked_ != 0) {
             uint256 secondsElapsed   = block.timestamp - reserveAuctionKicked_;
             uint256 hoursComponent   = 1e27 >> secondsElapsed / 3600;
             uint256 minutesComponent = Maths.rpow(MINUTE_HALF_LIFE, secondsElapsed % 3600 / 60);
+            uint256 initialPrice     = lastKickedReserves_ == 0 ? 0 : Maths.wdiv(1_000_000_000 * 1e18, lastKickedReserves_);
 
-            price_ = Maths.rayToWad(1_000_000_000 * Maths.rmul(hoursComponent, minutesComponent));
+            price_ = initialPrice * Maths.rmul(hoursComponent, minutesComponent) / 1e27;
         }
     }
 
@@ -400,10 +403,10 @@ import { Maths }   from '../internal/Maths.sol';
     /*** Auction Utilities ***/
     /*************************/
 
-    /// @dev max bond factor.
+    /// @dev min bond factor.
     uint256 constant MIN_BOND_FACTOR = 0.005 * 1e18;
-    /// @dev max NP / TP ratio.
-    uint256 constant MAX_NP_TP_RATIO = 0.03 * 1e18;
+    /// @dev max bond factor.
+    uint256 constant MAX_BOND_FACTOR = 0.03 * 1e18;
 
     /**
      *  @notice Calculates auction price.
@@ -433,28 +436,28 @@ import { Maths }   from '../internal/Maths.sol';
     /**
      *  @notice Calculates bond penalty factor.
      *  @dev    Called in kick and take.
-     *  @param thresholdPrice_ Borrower tp at time of kick.
-     *  @param neutralPrice_   `NP` of auction.
-     *  @param bondFactor_     Factor used to determine bondSize.
-     *  @param auctionPrice_   Auction price at the time of call or, for bucket takes, bucket price.
-     *  @return bpf_           Factor used in determining bond `reward` (positive) or `penalty` (negative).
+     *  @param debtToCollateral_ Borrower debt to collateral at time of kick.
+     *  @param neutralPrice_     `NP` of auction.
+     *  @param bondFactor_       Factor used to determine bondSize.
+     *  @param auctionPrice_     Auction price at the time of call or, for bucket takes, bucket price.
+     *  @return bpf_             Factor used in determining bond `reward` (positive) or `penalty` (negative).
      */
     function _bpf(
-        uint256 thresholdPrice_,
+        uint256 debtToCollateral_,
         uint256 neutralPrice_,
         uint256 bondFactor_,
         uint256 auctionPrice_
     ) pure returns (int256) {
         int256 sign;
-        if (thresholdPrice_ < neutralPrice_) {
-            // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
+        if (debtToCollateral_ < neutralPrice_) {
+            // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - debtToCollateral)))
             sign = Maths.minInt(
                 1e18,
                 Maths.maxInt(
                     -1 * 1e18,
                     PRBMathSD59x18.div(
                         int256(neutralPrice_) - int256(auctionPrice_),
-                        int256(neutralPrice_) - int256(thresholdPrice_)
+                        int256(neutralPrice_) - int256(debtToCollateral_)
                     )
                 )
             );
@@ -476,10 +479,10 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 borrowerDebt_,
         uint256 npTpRatio_
     ) pure returns (uint256 bondFactor_, uint256 bondSize_) {
-        // bondFactor = max(min(0.03,(((NP/TP_ratio)-1)/10)),0.005)
+        // bondFactor = max(min(MAX_BOND_FACTOR, (NP/TP_ratio - 1) / 10), MIN_BOND_FACTOR)
         bondFactor_ = Maths.max(
             Maths.min(
-                MAX_NP_TP_RATIO,
+                MAX_BOND_FACTOR,
                 (npTpRatio_ - 1e18) / 10
             ),
             MIN_BOND_FACTOR

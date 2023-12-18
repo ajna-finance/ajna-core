@@ -167,10 +167,10 @@ library TakerActions {
 
         // update borrower after take
         borrower.collateral -= vars.collateralAmount;
-        borrower.t0Debt     = vars.t0BorrowerDebt - vars.t0RepayAmount;
+        borrower.t0Debt     =  vars.t0BorrowerDebt - vars.t0RepayAmount;
         // update pool params after take
         poolState_.t0Debt -= vars.t0RepayAmount;
-        poolState_.debt   = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
+        poolState_.debt   =  Maths.wmul(poolState_.t0Debt, poolState_.inflator);
 
         // update loan after take
         (
@@ -239,10 +239,10 @@ library TakerActions {
 
         // update borrower after take
         borrower.collateral -= vars.collateralAmount;
-        borrower.t0Debt     = vars.t0BorrowerDebt - vars.t0RepayAmount;
+        borrower.t0Debt     =  vars.t0BorrowerDebt - vars.t0RepayAmount;
         // update pool params after take
         poolState_.t0Debt -= vars.t0RepayAmount;
-        poolState_.debt   = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
+        poolState_.debt   =  Maths.wmul(poolState_.t0Debt, poolState_.inflator);
 
         // update loan after take
         (
@@ -274,24 +274,28 @@ library TakerActions {
      *  @dev    decrement `reserveAuction.unclaimed` accumulator
      *  @dev    === Reverts on ===
      *  @dev    not kicked or `72` hours didn't pass `NoReservesAuction()`
+     *  @dev    0 take amount or 0 AJNA burned `InvalidAmount()`
      *  @dev    === Emit events ===
      *  @dev    - `ReserveAuction`
      */
     function takeReserves(
         ReserveAuctionState storage reserveAuction_,
-        uint256 maxAmount_
+        uint256 maxAmount_,
+        uint256 quoteScale_
     ) external returns (uint256 amount_, uint256 ajnaRequired_) {
-        // revert if no amount to be taken
-        if (maxAmount_ == 0) revert InvalidAmount();
-
         uint256 kicked = reserveAuction_.kicked;
 
         if (kicked != 0 && block.timestamp - kicked <= 72 hours) {
             uint256 unclaimed = reserveAuction_.unclaimed;
-            uint256 price     = _reserveAuctionPrice(kicked);
+            uint256 price     = _reserveAuctionPrice(kicked, reserveAuction_.lastKickedReserves);
 
             amount_       = Maths.min(unclaimed, maxAmount_);
+            // revert if no amount to be taken
+            if (amount_ / quoteScale_ == 0) revert InvalidAmount();
+
             ajnaRequired_ = Maths.ceilWmul(amount_, price);
+            // prevent 0-bid; must burn at least 1 wei of AJNA
+            if (ajnaRequired_ == 0) revert InvalidAmount();
 
             unclaimed -= amount_;
 
@@ -699,7 +703,7 @@ library TakerActions {
         vars.bucketPrice = bucketPrice_;
         vars.bondFactor   = liquidation_.bondFactor;
         vars.bpf          = _bpf(
-            liquidation_.thresholdPrice,
+            liquidation_.debtToCollateral,
             neutralPrice,
             liquidation_.bondFactor,
             bucketPrice_ == 0 ? vars.auctionPrice : bucketPrice_
@@ -757,7 +761,7 @@ library TakerActions {
             vars.t0RepayAmount            = vars.t0BorrowerDebt;
             vars.unscaledQuoteTokenAmount = Math.mulDiv(vars.collateralAmount, netRewardedPrice, vars.bucketScale);
 
-            vars.quoteTokenAmount         = Maths.wdiv(vars.borrowerDebt, Maths.WAD - takePenaltyFactor);
+            vars.quoteTokenAmount         = Math.mulDiv(vars.collateralAmount, borrowerPrice, Maths.WAD - takePenaltyFactor);
         } else {
             // collateral available is constraint
             vars.collateralAmount         = totalCollateral_;
@@ -766,6 +770,9 @@ library TakerActions {
 
             vars.quoteTokenAmount         = Maths.wmul(vars.collateralAmount, vars.auctionPrice);
         }
+
+        // repaid amount cannot exceed the borrower owned debt
+        vars.t0RepayAmount = Maths.min(vars.t0RepayAmount, vars.t0BorrowerDebt);
 
         if (vars.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded

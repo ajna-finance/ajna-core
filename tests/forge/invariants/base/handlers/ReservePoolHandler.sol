@@ -19,8 +19,7 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
         numberOfCalls['BReserveHandler.kickReserveAuction']++;
 
         // take all reserves if available
-        (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
-        _takeReserves(claimableReservesRemaining);
+        _takeReserves(_getReservesInfo().claimableReservesRemaining);
 
         // Action phase
         _kickReserveAuction();
@@ -34,15 +33,17 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
         numberOfCalls['BReserveHandler.takeReserves']++; 
 
         // kick reserve auction if claimable reserves available
-        (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
-        if (claimableReserves != 0) {
+        if (_getReservesInfo().claimableReserves != 0) {
             _kickReserveAuction();
         }
 
         // take reserve auction if remaining claimable reserves
-        (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
+        uint256 claimableReservesRemaining = _getReservesInfo().claimableReservesRemaining;
         if (claimableReservesRemaining != 0) {
-            uint256 boundedAmount = constrictToRange(amountToTake_, claimableReservesRemaining / 2, claimableReservesRemaining);
+            uint256 boundedAmount = constrictToRange(
+                amountToTake_, claimableReservesRemaining / 2, claimableReservesRemaining
+            );
+
             _takeReserves(boundedAmount);
         }
     }
