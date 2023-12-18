@@ -2176,3 +2176,18 @@ contract RegressionTestLiquidationWith18QuotePrecision4CollateralPrecisionERC20P
     }
 
 }
+
+contract RegressionTestLiquidationWith8CollateralPrecisionERC20Pool is LiquidationERC20PoolInvariants { 
+    function setUp() public override {
+        vm.setEnv("QUOTE_PRECISION", "18");
+        vm.setEnv("COLLATERAL_PRECISION", "8");
+        super.setUp();
+    }
+
+    function test_regression_exchange_rate_failure() external {
+        _liquidationERC20PoolHandler.kickAuction(0, 17104183949941796511, 0, 280417724462859438244277310225109843561163957492078708458152152913172346);
+        _liquidationERC20PoolHandler.pledgeCollateral(0, 140265038788604003138859102577, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
+        _liquidationERC20PoolHandler.bucketTake(5683872789780248582962257270041, 1, true, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 115792089237316195423570985008687907853269984665640564039457584007913129639933);
+        invariant_exchange_rate();
+    }
+}

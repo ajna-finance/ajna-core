@@ -761,7 +761,7 @@ library TakerActions {
             vars.t0RepayAmount            = vars.t0BorrowerDebt;
             vars.unscaledQuoteTokenAmount = Math.mulDiv(vars.collateralAmount, netRewardedPrice, vars.bucketScale);
 
-            vars.quoteTokenAmount         = Maths.wdiv(vars.borrowerDebt, Maths.WAD - takePenaltyFactor);
+            vars.quoteTokenAmount         = Math.mulDiv(vars.collateralAmount, borrowerPrice, Maths.WAD - takePenaltyFactor);
         } else {
             // collateral available is constraint
             vars.collateralAmount         = totalCollateral_;

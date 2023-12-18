@@ -358,7 +358,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             borrower:        _borrower,
             maxCollateral:   2,
             bondChange:      0.243847547737474028 * 1e18,
-            givenAmount:     22.183024574062103585 * 1e18,
+            givenAmount:     22.183024574062103590 * 1e18,
             collateralTaken: 2.0 * 1e18,
             isReward:        false
         });
@@ -416,7 +416,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(1), _lender);
 
         // after take: check quote token balances of taker and borrower
-        assertEq(_quote.balanceOf(_lender), 46_969.765754986974727387 * 1e18);
+        assertEq(_quote.balanceOf(_lender), 46_969.765754986974727382 * 1e18);
         assertEq(_quote.balanceOf(_borrower), 126.807372891225695000 * 1e18); // borrower gets quote tokens from the difference of rounded collateral (2) and needed collateral (1.49) at auction price (15.5) = 7.9 additional tokens
     }
 
@@ -956,7 +956,7 @@ contract ERC721PoolLiquidationsHighTakeTest is ERC721HelperContract {
             borrower:        _borrower,
             maxCollateral:   2 * 1e18,
             bondChange:      10_897_869.739154233968795067 * 1e18,
-            givenAmount:     991_360_820.988112808697327591 * 1e18,
+            givenAmount:     991_360_820.988112939930817798 * 1e18,
             collateralTaken: 1.0 * 1e18,
             isReward:        false
         });
@@ -1095,7 +1095,7 @@ contract ERC721PoolLiquidationsHighTakeTest is ERC721HelperContract {
             borrower:        _borrower,
             maxCollateral:   1 * 1e18,
             bondChange:      21_502_134.795353695767188920 * 1e18,
-            givenAmount:     1_956_012_919.399533593528919134 * 1e18,
+            givenAmount:     1_956_012_919.399533852112525653 * 1e18,
             collateralTaken: 1.0 * 1e18,
             isReward:        false
         });
@@ -1265,7 +1265,7 @@ contract ERC721PoolLiquidationsHighTakeTest is ERC721HelperContract {
             borrower:        _borrower,
             maxCollateral:   2 * 1e18,
             bondChange:      21_502_134.795353695767188920 * 1e18,
-            givenAmount:     1_956_012_919.399533593528919134 * 1e18,
+            givenAmount:     1_956_012_919.399533852112525653 * 1e18,
             collateralTaken: 1.0 * 1e18,
             isReward:        false
         });
