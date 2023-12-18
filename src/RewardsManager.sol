@@ -63,7 +63,7 @@ contract RewardsManager is IRewardsManager {
     /**
      * @notice Time period after a burn event in which buckets exchange rates can be updated.
      */
-    uint256 internal constant UPDATE_PERIOD = 2 weeks;
+    uint256 internal constant UPDATE_PERIOD = 5 days;
 
     /***********************/
     /*** State Variables ***/

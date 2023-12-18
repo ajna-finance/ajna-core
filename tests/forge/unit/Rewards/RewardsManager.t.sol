@@ -1680,7 +1680,6 @@ contract RewardsManagerTest is RewardsHelperContract {
         uint256 rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
         assertEq(rewardsEarned, 226.035173868192232711 * 1e18);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
-        return;
 
         /******************************/
         /*** Second Reserve Auction ***/

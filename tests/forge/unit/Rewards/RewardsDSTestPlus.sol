@@ -473,7 +473,7 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         _ajnaToken.approve(address(pool), type(uint256).max);
         poolContract.kickReserveAuction();
 
-        // Can't trigger reserve auction if less than two weeks have passed since last auction
+        // Can't trigger reserve auction if less than five days have passed since last auction
         vm.expectRevert(IPoolErrors.ReserveAuctionTooSoon.selector);
         poolContract.kickReserveAuction();
 
@@ -524,7 +524,7 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         _ajnaToken.approve(address(pool), type(uint256).max);
         poolContract.kickReserveAuction();
 
-        // Can't trigger reserve auction if less than two weeks have passed since last auction
+        // Can't trigger reserve auction if less than five days have passed since last auction
         vm.expectRevert(IPoolErrors.ReserveAuctionTooSoon.selector);
         poolContract.kickReserveAuction();
 
