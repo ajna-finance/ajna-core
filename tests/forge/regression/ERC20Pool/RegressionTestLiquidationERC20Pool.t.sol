@@ -2233,7 +2233,10 @@ contract RegressionTestLiquidationWith12QuotePrecisionERC20Pool is LiquidationER
         invariant_exchange_rate();
     }
 
-    // FIXME: Test is failing because deposits in bucket 2571 are not as expected.
+    /*
+        Test was failing because invariant logic for interest accrual was using the pending inflator to calculate HTP.
+        Fixed by calculating HTP using current pool inflator.
+    */
     function test_regression_failure_deposits_on_kick_1() external {
         _liquidationERC20PoolHandler.drawDebt(2, 3221259065514816790487893458767898964, 4116413047421407597131232320880820919452009);
         _liquidationERC20PoolHandler.withdrawBonds(1011868801812554352, 787959216853107061817696631727, 787949941098203131552111773821);

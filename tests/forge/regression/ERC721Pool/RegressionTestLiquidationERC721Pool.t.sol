@@ -148,7 +148,10 @@ contract RegressionTestLiquidationERC721Pool is LiquidationERC721PoolInvariants 
         invariant_auction();
     }
 
-    // FIXME: deposit invariant failure upon kick
+    /*
+        Test was failing because invariant logic for interest accrual was using the pending inflator to calculate HTP.
+        Fixed by calculating HTP using current pool inflator.
+    */
     function test_regression_deposit_failure_on_kick() external {
         _liquidationERC721PoolHandler.withdrawBonds(10151, 18965, 1020000000000000001);
         _liquidationERC721PoolHandler.removeQuoteToken(365303, 507275043721539544302939, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 125911375);
@@ -360,7 +363,10 @@ contract RegressionTestLiquidationERC721PoolWith12QuotePrecision is LiquidationE
         invariant_collateral();
     }
 
-    // FIXME: Test is failing because deposits in bucket 850 are not as expected.
+    /*
+        Test was failing because invariant logic for interest accrual was using the pending inflator to calculate HTP.
+        Fixed by calculating HTP using current pool inflator.
+    */
     function test_regression_failure_deposits_on_kick_2() external {
         _liquidationERC721PoolHandler.stampLoan(1101520973663, 340849898329139925023363944281044077674288910705);
         _liquidationERC721PoolHandler.bucketTake(38564, 124, true, 6506, 18478);
