@@ -20,8 +20,7 @@ import {
     _depositFeeRate,
     _htp,
     _priceAt,
-    MAX_FENWICK_INDEX,
-    COLLATERALIZATION_FACTOR 
+    MAX_FENWICK_INDEX
 } from '../helpers/PoolHelper.sol';
 
 import { Deposits } from '../internal/Deposits.sol';
@@ -303,7 +302,7 @@ library LenderActions {
 
         // recalculate LUP and HTP
         lup_ = Deposits.getLup(deposits_, poolState_.debt);
-        vars.htp = _htp(params_.thresholdPrice, poolState_.inflator);
+        vars.htp = _htp(params_.maxT0DebtToCollateral, poolState_.inflator);
 
         // check loan book's htp against new lup, revert if move drives LUP below HTP
         if (
@@ -420,7 +419,7 @@ library LenderActions {
 
         lup_ = Deposits.getLup(deposits_, poolState_.debt);
 
-        uint256 htp = _htp(params_.thresholdPrice, poolState_.inflator);
+        uint256 htp = _htp(params_.maxT0DebtToCollateral, poolState_.inflator);
 
         if (
             // check loan book's htp doesn't exceed new lup

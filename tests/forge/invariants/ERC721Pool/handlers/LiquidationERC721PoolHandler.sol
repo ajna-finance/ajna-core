@@ -18,7 +18,9 @@ contract LiquidationERC721PoolHandler is LiquidationPoolHandler, BasicERC721Pool
     }
 
     function _constrictTakeAmount(uint256 amountToTake_) internal view override returns(uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToTake_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT);
+        boundedAmount_ = constrictToRange(
+            amountToTake_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT
+        );
     }
 
 }

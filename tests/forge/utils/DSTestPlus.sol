@@ -82,7 +82,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 totalBondEscrowed;
         uint256 auctionPrice;
         uint256 debtInAuction;
-        uint256 thresholdPrice;
+        uint256 debtToCollateral;
         uint256 neutralPrice;
     }
 
@@ -417,7 +417,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         address to,
         uint256 amount
     ) internal virtual {
-        // to be overidden by ERC20 helper 
+        // to be overidden by ERC20 helper
     }
 
     function _assertQuoteTokenTransferEventRoundingDown(
@@ -425,7 +425,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         address to,
         uint256 amount
     ) internal virtual {
-        // to be overidden by ERC20 helper 
+        // to be overidden by ERC20 helper
     }
 
     function _assertCollateralTokenTransferEvent(
@@ -433,7 +433,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         address to,
         uint256 amount
     ) internal virtual {
-        // to be overidden by ERC20 helper 
+        // to be overidden by ERC20 helper
     }
 
     /*********************/
@@ -449,7 +449,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 auctionNeutralPrice;
         uint256 auctionTotalBondEscrowed;
         uint256 auctionDebtInAuction;
-        uint256 borrowerThresholdPrice;
+        uint256 borrowerDebtToCollateral;
     }
 
     function _assertAuction(AuctionParams memory state_) internal {
@@ -461,14 +461,14 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             vars.auctionKickTime,
             vars.auctionReferencePrice,
             vars.auctionNeutralPrice,
-            vars.borrowerThresholdPrice,
+            vars.borrowerDebtToCollateral,
             ,
             ,
         ) = _pool.auctionInfo(state_.borrower);
 
         (uint256 borrowerDebt, uint256 borrowerCollateral , ) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
         (, uint256 lockedBonds) = _pool.kickerInfo(state_.kicker);
-        (vars.auctionTotalBondEscrowed,,,) = _pool.reservesInfo();
+        (vars.auctionTotalBondEscrowed,,,,) = _pool.reservesInfo();
         (,, vars.auctionDebtInAuction,)  = _pool.debtInfo();
 
         assertEq(vars.auctionKickTime != 0,     state_.active);
@@ -484,14 +484,14 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             vars.auctionKickTime),              state_.auctionPrice);
         assertEq(vars.auctionDebtInAuction,     state_.debtInAuction);
         assertEq(vars.auctionNeutralPrice,      state_.neutralPrice);
-        assertEq(vars.borrowerThresholdPrice,   state_.thresholdPrice);
+        assertEq(vars.borrowerDebtToCollateral,   state_.debtToCollateral);
 
         (
-            uint256 kickTime, 
-            uint256 collateral, 
-            uint256 debtToCover, 
-            bool    isCollateralized,      
-            uint256 price,          
+            uint256 kickTime,
+            uint256 collateral,
+            uint256 debtToCover,
+            bool    isCollateralized,
+            uint256 price,
             uint256 neutralPrice,
             ,
             ,
@@ -506,9 +506,9 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             assertEq(collateral,       borrowerCollateral);
             assertEq(debtToCover,      borrowerDebt);
             assertEq(isCollateralized, _isCollateralized(
-                borrowerDebt, 
-                borrowerCollateral, 
-                _lup(), 
+                borrowerDebt,
+                borrowerCollateral,
+                _lup(),
                 _pool.poolType())
             );
             assertEq(price,            state_.auctionPrice);
@@ -516,12 +516,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     }
 
     function _assertPool(PoolParams memory state_) internal {
-        ( 
-            , 
-            , 
-            uint256 htp, 
-            , 
-            uint256 lup, 
+        (
+            ,
+            ,
+            uint256 htp,
+            ,
+            uint256 lup,
         ) = _poolUtils.poolPricesInfo(address(_pool));
         (
             uint256 poolSize,
@@ -530,9 +530,9 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             uint256 pendingInflator,
         ) = _poolUtils.poolLoansInfo(address(_pool));
         (
-            uint256 poolMinDebtAmount, 
-            , 
-            uint256 poolActualUtilization, 
+            uint256 poolMinDebtAmount,
+            ,
+            uint256 poolActualUtilization,
             uint256 poolTargetUtilization
         ) = _poolUtils.poolUtilizationInfo(address(_pool));
 
@@ -586,7 +586,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         _assertBucketAssets(index, lpBalance, collateral, deposit, exchangeRate);
 
-        // validate bucket is healthy / LP consistent with assets 
+        // validate bucket is healthy / LP consistent with assets
         _validateBucketLp(index, lpBalance);
         _validateBucketQuantities(index);
     }
@@ -727,12 +727,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     function _assertLoans(
         uint256 noOfLoans,
         address maxBorrower,
-        uint256 maxThresholdPrice
+        uint256 maxT0DebtToCollateral
     ) internal {
         (address curMaxBorrower, uint256 curTpPrice, uint256 curNoOfLoans) = _pool.loansInfo();
         assertEq(curNoOfLoans,   noOfLoans);
         assertEq(curMaxBorrower, maxBorrower);
-        assertEq(curTpPrice,     maxThresholdPrice);
+        assertEq(curTpPrice,     maxT0DebtToCollateral);
     }
 
     function _assertPoolPrices(
@@ -793,10 +793,10 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     }
 
     function _assertReserveAuctionUnsettledLiquidation() internal {
-        vm.expectRevert(IPoolErrors.AuctionNotCleared.selector);
+        vm.expectRevert(IPoolErrors.AuctionActive.selector);
         _pool.kickReserveAuction();
     }
-    
+
     /**********************/
     /*** Revert asserts ***/
     /**********************/
@@ -1012,7 +1012,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256,
         uint256
     ) internal virtual {
-        // to be overidden by ERC20/ERC721DSTestPlus 
+        // to be overidden by ERC20/ERC721DSTestPlus
     }
 
     function _assertBorrowBorrowerNotSenderRevert(
@@ -1021,7 +1021,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256,
         uint256
     ) internal virtual {
-        // to be overidden by ERC20/ERC721DSTestPlus 
+        // to be overidden by ERC20/ERC721DSTestPlus
     }
 
     function _assertBorrowLimitIndexRevert(
@@ -1029,7 +1029,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256,
         uint256
     ) internal virtual {
-        // to be overidden by ERC20/ERC721DSTestPlus 
+        // to be overidden by ERC20/ERC721DSTestPlus
     }
 
     function _assertBorrowBorrowerUnderCollateralizedRevert(
@@ -1037,7 +1037,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256,
         uint256
     ) internal virtual {
-        // to be overidden by ERC20/ERC721DSTestPlus 
+        // to be overidden by ERC20/ERC721DSTestPlus
     }
 
     function _assertBorrowMinDebtRevert(
@@ -1045,7 +1045,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256,
         uint256
     ) internal virtual {
-        // to be overidden by ERC20/ERC721DSTestPlus 
+        // to be overidden by ERC20/ERC721DSTestPlus
     }
 
     function _assertFlashloanFeeRevertsForToken(
@@ -1346,7 +1346,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         address from,
         uint256 maxAmount
     ) internal virtual {
-        // to be overidden by ERC20/ERC721DSTestPlus 
+        // to be overidden by ERC20/ERC721DSTestPlus
     }
 
     function _assertTakeDebtUnderMinPoolDebtRevert(
@@ -1409,7 +1409,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         ( , , , , , lupIndex_ ) = _poolUtils.poolPricesInfo(address(_pool));
     }
 
-    function _htp() internal view returns (uint256 htp_) {
+    function _getHtp() internal view returns (uint256 htp_) {
         ( , , htp_, , , ) = _poolUtils.poolPricesInfo(address(_pool));
     }
 
@@ -1426,7 +1426,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     /********************/
 
     // Pool deployer events
-    event PoolCreated(address pool_);
+    event PoolCreated(address pool_, bytes32 subsetHash_);
 
 
     /************************/
@@ -1449,7 +1449,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         IPool pool = IPool(pool_);
 
         uint256 lupIndex = pool.depositIndex(debtAmount_);
-        lup_ = _priceAt(lupIndex); 
+        lup_ = _priceAt(lupIndex);
     }
 
     function setRandomSeed(uint256 seed) public {

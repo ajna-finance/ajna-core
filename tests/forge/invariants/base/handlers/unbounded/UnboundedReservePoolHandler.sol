@@ -17,11 +17,10 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
     function _kickReserveAuction() internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBReserveHandler.kickReserveAuction']++;
 
-        (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
+        uint256 claimableReserves = _getReservesInfo().claimableReserves;
         if (claimableReserves == 0) return;
 
         try _pool.kickReserveAuction() {
-
             // **RE11**:  Reserves increase by claimableReserves by kickReserveAuction
             decreaseInReserves += claimableReserves;
         } catch (bytes memory err) {
@@ -41,17 +40,17 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
         // ensure actor always has the amount to take reserves
         _ensureAjnaAmount(_actor, 1e45);
 
-        (, uint256 claimableReservesBeforeAction, ,) = _pool.reservesInfo();
+        uint256 claimableReservesBeforeTake = _getReservesInfo().claimableReservesRemaining;
 
-        try _pool.takeReserves(amount_) {
-
-            (, uint256 claimableReservesAfterAction, ,) = _pool.reservesInfo();
+        try _pool.takeReserves(
+            amount_
+        ) {
+            uint256 claimableReservesAfterTake = _getReservesInfo().claimableReservesRemaining;
             // reserves are guaranteed by the protocol)
             require(
-                claimableReservesAfterAction < claimableReservesBeforeAction,
+                claimableReservesAfterTake < claimableReservesBeforeTake,
                 "QT1: claimable reserve not avaialble to take"
             );
-
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }

@@ -27,6 +27,7 @@ interface IBaseHandler {
     function previousReserves() external view returns(uint256);
     function increaseInReserves() external view returns(uint256);
     function decreaseInReserves() external view returns(uint256); 
+    function reservesErrorMargin() external view returns(uint256); 
  
     function borrowerPenalty() external view returns(uint256);
     function kickerReward() external view returns(uint256);

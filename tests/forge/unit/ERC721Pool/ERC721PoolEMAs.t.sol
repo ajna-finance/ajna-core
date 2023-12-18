@@ -104,7 +104,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
         // debtColEma / lupt0DebtEma ~= 8_059_788.6 / 10_467_670.6 ~= 0.77 expected target utilization
         _assertPool(
             PoolParams({
-                htp:                  1_205.367672582122068119 * 1e18,
+                htp:                  1_205.388312616241411607 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             14_999.315068493150685000 * 1e18,
                 pledgedCollateral:    6 * 1e18,

@@ -178,7 +178,7 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
                 totalBondEscrowed: 1.104560604152777078 * 1e18,
                 auctionPrice:      54.920254943840808688 * 1e18,
                 debtInAuction:     98.794903846153846199 * 1e18,
-                thresholdPrice:    94.995099852071005961 * 1e18,
+                debtToCollateral:  94.995099852071005961 * 1e18,
                 neutralPrice:      109.840509887681617373 * 1e18
             })
         );
@@ -364,7 +364,7 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
                 totalBondEscrowed: 11_179.675302295250711919 * 1e18,
                 auctionPrice:      52.467014501698027340 * 1e18,
                 debtInAuction:     999_940.55769230769276876 * 1e18,
-                thresholdPrice:    96.148130547337278151 * 1e18,
+                debtToCollateral:  96.148130547337278151 * 1e18,
                 neutralPrice:      111.173731071526020388 * 1e18
             })
         );

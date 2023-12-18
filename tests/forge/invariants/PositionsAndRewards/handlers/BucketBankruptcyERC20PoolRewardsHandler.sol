@@ -66,7 +66,7 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
         _setupLendersAndDeposits(LENDERS);
         _setupBorrowersAndLoans(LOANS_COUNT);
 
-        ( , , uint256 totalLoans) = _pool.loansInfo();
+        uint256 totalLoans = _getLoansInfo().noOfLoans;
         require(totalLoans == LOANS_COUNT, "loans setup failed");
 
         vm.warp(block.timestamp + 1_000 days);
@@ -191,10 +191,11 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
         boundedAmount_ = constrictToRange(amountToMove_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
 
         // ensure actor has LP to move
-        (uint256 lpBalance, ) = _pool.lenderInfo(fromIndex_, _actor);
-        if (lpBalance == 0) _addQuoteToken(boundedAmount_, toIndex_);
+        if (_getLenderInfo(fromIndex_, _actor).lpBalance == 0) {
+            _addQuoteToken(boundedAmount_, toIndex_); // TODO: shouldn't be fromIndex_ instead toIndex_ ?
+        }
 
-        (uint256 lps, ) = _pool.lenderInfo(fromIndex_, _actor);
+        uint256 lps = _getLenderInfo(fromIndex_, _actor).lpBalance;
         // restrict amount to move by available deposit inside bucket
         uint256 availableDeposit = _poolInfo.lpToQuoteTokens(address(_pool), lps, fromIndex_);
         boundedAmount_ = Maths.min(boundedAmount_, availableDeposit);
@@ -255,8 +256,7 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
     /*******************************/
 
     function _resetSettledAuction(address borrower_, uint256 borrowerIndex_) internal {
-        (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(borrower_);
-        if (kickTime == 0) {
+        if (_getAuctionInfo(borrower_).kickTime == 0) {
             if (borrowerIndex_ != 0) _activeBorrowers.remove(borrowerIndex_);
         }
     }

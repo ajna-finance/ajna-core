@@ -664,7 +664,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         skip(10_000 days);
         _assertPool(
             PoolParams({
-                htp:                  78.075000000000000036 * 1e18,
+                htp:                  307.210419047238320914 * 1e18,
                 lup:                  0.000000099836282890 * 1e18,
                 poolSize:             199.990867579908675800 * 1e18,
                 pledgedCollateral:    2 * 1e18,
@@ -711,7 +711,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 totalBondEscrowed: 6.605224811402125309 * 1e18,
                 auctionPrice:      0.000081433674828178 * 1e18,
                 debtInAuction:     590.789267398535232527 * 1e18,
-                thresholdPrice:    295.394633699267616263 * 1e18,
+                debtToCollateral:  295.394633699267616263 * 1e18,
                 neutralPrice:      341.557588066529373749 * 1e18
             })
         );
@@ -873,7 +873,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 totalBondEscrowed: 6.605224811402125309 * 1e18,
                 auctionPrice:      0.000081433674828178 * 1e18,
                 debtInAuction:     418.513981107458710209 * 1e18,
-                thresholdPrice:    295.394633699267616263 * 1e18,
+                debtToCollateral:  295.394633699267616263 * 1e18,
                 neutralPrice:      341.557588066529373749 * 1e18
             })
         );
@@ -961,7 +961,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 totalBondEscrowed: 6.605225721858288176 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     418.513900584240044901 * 1e18,
-                thresholdPrice:    295.394633699267616263 * 1e18,
+                debtToCollateral:  295.394633699267616263 * 1e18,
                 neutralPrice:      341.557588066529373749 * 1e18
             })
         );
@@ -1005,7 +1005,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 totalBondEscrowed: 6.605225721858288176 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    0,
+                debtToCollateral:  0,
                 neutralPrice:      0
             })
         );

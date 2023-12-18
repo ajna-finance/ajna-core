@@ -57,7 +57,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
 
     function testValidateTakeReservesInput() external tearDown {
         // revert on zero amount
-        vm.expectRevert(IPoolErrors.InvalidAmount.selector);
+        vm.expectRevert(IPoolErrors.NoReservesAuction.selector);
         _pool.takeReserves(0);
     }
 
