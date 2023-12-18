@@ -221,7 +221,7 @@ library KickerActions {
         // retrieve timestamp of latest burn event and last burn timestamp
         uint256 latestBurnEpoch = reserveAuction_.latestBurnEventEpoch;
 
-        // check that at least five days have passed since the last reserve auction completed
+        // check that at least five days have passed since the last reserve auction was kicked
         if (block.timestamp < reserveAuction_.kicked + 120 hours) {
             revert ReserveAuctionTooSoon();
         }
