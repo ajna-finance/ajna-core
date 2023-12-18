@@ -173,19 +173,15 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         // pass time to allow auction to complete
         skip(48 hours);
 
-        // check that you can't start a new auction immediately after the last one finished
-        _assertReserveAuctionTooSoon();
-
-        // check that you can't start a new auction five days after the last start...
-        skip(5 days - 72 hours);
+        // check that you can't start a new auction immediately after the last one finished...
         _assertReserveAuctionTooSoon();
 
         // ...or a day later...
-        skip(1 days);
+        skip(24 hours);
         _assertReserveAuctionTooSoon();
 
-        // ...but you can start another auction five days after the last one completed
-        skip(72 hours - 1 days);
+        // ...but you can start another auction five days after the last one was kicked
+        skip(24 hours);
         _kickReserveAuction({
             from:              _bidder,
             remainingReserves: 420.358577242054894754 * 1e18,
