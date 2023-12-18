@@ -512,8 +512,6 @@ abstract contract BasicInvariants is BaseInvariants {
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.settleAuction") +
             IBaseHandler(_handler).numberOfCalls("BReserveHandler.takeReserves") +
             IBaseHandler(_handler).numberOfCalls("BReserveHandler.kickReserves") +
-            IBaseHandler(_handler).numberOfCalls("BRewardsHandler.stake") + 
-            IBaseHandler(_handler).numberOfCalls("BRewardsHandler.unstake") + 
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.mint") + 
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.burn") +
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.memorialize") +
