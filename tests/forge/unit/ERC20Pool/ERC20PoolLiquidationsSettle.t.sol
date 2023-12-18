@@ -1175,7 +1175,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
             reserves:                   56.029327427592408135 * 1e18,
             claimableReserves :         0,
             claimableReservesRemaining: 374_644_125.812500127979859369 * 1e18,
-            auctionPrice:               1_000_000_000 * 1e18,
+            auctionPrice:               2.669199731428525342 * 1e18,
             timeRemaining:              3 days
         });
     }

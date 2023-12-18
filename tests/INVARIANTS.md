@@ -73,7 +73,7 @@
 - **RE6**:  Reserves are unchanged by removing collateral token from a bucket
 - **RE7**:  Reserves increase by bond penalty/reward plus borrower penalty on take above TP.
 - **RE8**:  Reserves increase by bond penalty/reward plus borrower penalty on bucket takes above TP.
-- **RE9**:  Reserves unchanges by takes and bucket takes below TP.
+- **RE9**:  Reserves unchanged by takes and bucket takes below TP (at the time of kick).
 - **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
 - **RE11**: Reserves decrease by claimableReserves by kickReserveAuction
 - **RE12**: Reserves decrease by amount of reserve used to settle a auction

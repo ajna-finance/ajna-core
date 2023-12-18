@@ -13,7 +13,8 @@ import {
     MAX_FENWICK_INDEX,
     MAX_PRICE,
     MIN_PRICE,
-    _indexOf
+    _indexOf,
+    _isCollateralized
 }                           from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }            from 'src/libraries/internal/Maths.sol';
 
@@ -27,6 +28,62 @@ uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
 abstract contract BaseHandler is Test {
 
     using EnumerableSet for EnumerableSet.UintSet;
+
+    struct BorrowerInfo {
+        uint256 t0Debt;
+        uint256 debt;
+        uint256 collateral;
+        uint256 npTpRatio;
+        uint256 t0Np;
+        uint256 thresholdPrice;
+    }
+
+    struct BucketInfo {
+        uint256 lpBalance;
+        uint256 collateral;
+        uint256 deposit;
+        uint256 scale;
+        uint256 bankruptcyTime;
+        uint256 exchangeRate;
+    }
+
+    struct AuctionInfo {
+        address kicker;
+        uint256 bondFactor;
+        uint256 bondSize;
+        uint256 kickTime;
+        uint256 referencePrice;
+        uint256 neutralPrice;
+        uint256 debtToCollateral;
+        uint256 auctionPrice;
+        uint256 auctionPriceIndex;
+        address head;
+    }
+
+    struct KickerInfo {
+        uint256 claimableBond;
+        uint256 lockedBond;
+        uint256 totalBond;
+    }
+
+    struct LenderInfo {
+        uint256 lpBalance;
+        uint256 depositTime;
+    }
+
+    struct LoansInfo {
+        address maxBorrower;
+        uint256 maxT0DebtToCollateral;
+        uint256 noOfLoans;
+    }
+
+    struct ReservesInfo {
+        uint256 reserves;
+        uint256 claimableReserves;
+        uint256 claimableReservesRemaining;
+        uint256 auctionPrice;
+        uint256 timeRemaining;
+    }
 
     // Tokens
     TokenWithNDecimals internal _quote;
@@ -75,6 +132,7 @@ abstract contract BaseHandler is Test {
     uint256 public previousReserves;    // reserves before action
     uint256 public increaseInReserves;  // amount of reserve increase
     uint256 public decreaseInReserves;  // amount of reserve decrease
+    uint256 public reservesErrorMargin; // change in reserve error acceptance margin
 
     // Auction bond invariant test state
     uint256 public previousTotalBonds; // total bond before action
@@ -135,11 +193,11 @@ abstract contract BaseHandler is Test {
         address currentActor = _actor;
 
         // clear head auction if more than 72 hours passed
-        (, , , , , , , address headAuction, , ) = _pool.auctionInfo(address(0));
+        address headAuction = _getAuctionInfo(address(0)).head;
         if (headAuction != address(0)) {
-            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(headAuction);
+            uint256 kickTime = _getAuctionInfo(headAuction).kickTime;
             if (block.timestamp - kickTime > 72 hours) {
-                (uint256 auctionedDebt, , , ) = _poolInfo.borrowerInfo(address(_pool), headAuction);
+                uint256 auctionedDebt = _getBorrowerInfo(headAuction).debt;
 
                 try vm.startPrank(headAuction) {
                 } catch {
@@ -163,10 +221,10 @@ abstract contract BaseHandler is Test {
             uint256 maxLoansRepayments = 5;
 
             while (maxPoolDebt < poolDebt && maxLoansRepayments > 0) {
-                (address borrower, , ) = _pool.loansInfo();
+                address borrower = _getLoansInfo().maxBorrower;
 
                 if (borrower != address(0)) {
-                    (uint256 debt, , , )     = _poolInfo.borrowerInfo(address(_pool), borrower);
+                    uint256 debt = _getBorrowerInfo(borrower).debt;
 
                     try vm.startPrank(borrower) {
                     } catch {
@@ -223,7 +281,9 @@ abstract contract BaseHandler is Test {
 
         if (lenderBucketIndexes.length < 3) {
             // if actor has touched less than three buckets, add a new bucket
-            _lenderBucketIndex = constrictToRange(bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+            _lenderBucketIndex = constrictToRange(
+                bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX
+            );
 
             lenderBucketIndexes.push(_lenderBucketIndex);
         } else {
@@ -243,7 +303,15 @@ abstract contract BaseHandler is Test {
 
         if (logToFile == true) {
             if (numberOfCalls["Write logs"]++ == 0) vm.writeFile(path, "");
-            printInNextLine(string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " ==================")));
+            printInNextLine(
+                string(
+                    abi.encodePacked(
+                        "================= Handler Call : ",
+                        Strings.toString(numberOfCalls["Write logs"]),
+                        " =================="
+                    )
+                )
+            );
         }
 
         if (logVerbosity > 0) {
@@ -258,6 +326,106 @@ abstract contract BaseHandler is Test {
     /*****************************/
     /*** Pool Helper Functions ***/
     /*****************************/
+
+    function _getAuctionInfo(address borrower_) internal view returns (AuctionInfo memory auctionInfo_) {
+        (
+            auctionInfo_.kicker,
+            auctionInfo_.bondFactor,
+            auctionInfo_.bondSize,
+            auctionInfo_.kickTime,
+            auctionInfo_.referencePrice,
+            auctionInfo_.neutralPrice,
+            auctionInfo_.debtToCollateral,
+            auctionInfo_.head,
+            ,
+        ) = _pool.auctionInfo(borrower_);
+
+        (,,,, auctionInfo_.auctionPrice,,,, ) = _poolInfo.auctionStatus(address(_pool), borrower_);
+
+        auctionInfo_.auctionPriceIndex = auctionInfo_.auctionPrice < MIN_PRICE ? 7388 : (auctionInfo_.auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionInfo_.auctionPrice));
+    }
+
+    function _getBorrowerInfo(address borrower_) internal view returns (BorrowerInfo memory borrowerInfo_) {
+        (
+            borrowerInfo_.debt,
+            borrowerInfo_.collateral,
+            borrowerInfo_.t0Np,
+            borrowerInfo_.thresholdPrice
+        ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+
+        (
+            borrowerInfo_.t0Debt,
+            ,
+            borrowerInfo_.npTpRatio
+        ) = _pool.borrowerInfo(borrower_);     
+    }
+
+    function _getBucketInfo(uint256 index_) internal view returns (BucketInfo memory bucketInfo_) {
+        (
+            bucketInfo_.lpBalance,
+            bucketInfo_.collateral,
+            bucketInfo_.bankruptcyTime,
+            bucketInfo_.deposit,
+            bucketInfo_.scale
+        ) = _pool.bucketInfo(index_);
+
+        bucketInfo_.exchangeRate = _pool.bucketExchangeRate(index_);
+    }
+
+    function _getLenderInfo(
+        uint256 index_,
+        address lender_
+    ) internal view returns (LenderInfo memory lenderInfo_) {
+        (
+            lenderInfo_.lpBalance,
+            lenderInfo_.depositTime
+        ) = _pool.lenderInfo(index_, lender_);
+    }
+
+    function _getLoansInfo() internal view returns (LoansInfo memory loansInfo_) {
+        (
+            loansInfo_.maxBorrower,
+            loansInfo_.maxT0DebtToCollateral,
+            loansInfo_.noOfLoans
+        ) = _pool.loansInfo();
+    }
+
+    function _getKickerInfo(address kicker_) internal view returns (KickerInfo memory kickerInfo_) {
+        (
+            kickerInfo_.claimableBond,
+            kickerInfo_.lockedBond
+        ) = _pool.kickerInfo(kicker_);
+        kickerInfo_.totalBond = kickerInfo_.claimableBond + kickerInfo_.lockedBond;
+    }
+
+    function _getReservesInfo() internal view returns (ReservesInfo memory reservesInfo_) {
+        (
+            reservesInfo_.reserves,
+            reservesInfo_.claimableReserves,
+            reservesInfo_.claimableReservesRemaining,
+            reservesInfo_.auctionPrice,
+            reservesInfo_.timeRemaining
+        ) = _poolInfo.poolReservesInfo(address(_pool));
+    }
+
+    function _getLup() internal view returns (uint256) {
+        return _poolInfo.lup(address(_pool));
+    }
+
+    function _getPoolQuoteBalance() internal view returns (uint256) {
+        return _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
+    }
+
+    function _isBorrowerCollateralized(BorrowerInfo memory borrowerInfo_) internal view returns (bool) {
+        return _isCollateralized(borrowerInfo_.debt, borrowerInfo_.collateral, _getLup(), _pool.poolType());
+    }
+
+    function _lpToQuoteTokens(
+        uint256 lp_,
+        uint256 index_
+    ) internal view returns (uint256) {
+        return _poolInfo.lpToQuoteTokens(address(_pool), lp_, index_);
+    }
 
     function _getKickSkipTime() internal returns (uint256) {
         return vm.envOr("SKIP_TIME_TO_KICK", uint256(200 days));
@@ -347,7 +515,7 @@ abstract contract BaseHandler is Test {
         increaseInReserves = 0;
         decreaseInReserves = 0;
         // record reserves before each action
-        (previousReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
+        previousReserves = _getReservesInfo().reserves;
 
         // reset penalties before each action
         borrowerPenalty = 0;
@@ -357,7 +525,7 @@ abstract contract BaseHandler is Test {
         increaseInBonds = 0;
         decreaseInBonds = 0;
         // record totalBondEscrowed before each action
-        (previousTotalBonds, , , ) = _pool.reservesInfo();
+        (previousTotalBonds, , , , ) = _pool.reservesInfo();
     }
 
     /********************************/
@@ -427,8 +595,7 @@ abstract contract BaseHandler is Test {
     // update local fenwick to pool fenwick before each action
     function _updateLocalFenwick() internal {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            (, , , uint256 deposits, ) = _pool.bucketInfo(bucketIndex);
-            fenwickDeposits[bucketIndex] = deposits;
+            fenwickDeposits[bucketIndex] = _getBucketInfo(bucketIndex).deposit;
         }
     }
 
@@ -436,21 +603,22 @@ abstract contract BaseHandler is Test {
     /*** Auctions Helper Functions ***/
     /*********************************/
 
-    function _getKickerBond(address kicker_) internal view returns (uint256 bond_) {
-        (uint256 claimableBond, uint256 lockedBond) = _pool.kickerInfo(kicker_);
-        bond_ = claimableBond + lockedBond;
-    }
-
     function _recordSettleBucket(
         address borrower_,
         uint256 borrowerCollateralBefore_,
         uint256 kickTimeBefore_,
         uint256 auctionPrice_
     ) internal {
-        (uint256 kickTimeAfter, , , , , , , , ) = _poolInfo.auctionStatus(address(_pool), borrower_);
+        uint256 kickTimeAfter = _getAuctionInfo(borrower_).kickTime;
 
         // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
-        if (kickTimeBefore_ != 0 && kickTimeAfter == 0 && borrowerCollateralBefore_ % 1e18 != 0) {
+        if (
+            kickTimeBefore_ != 0
+            &&
+            kickTimeAfter == 0
+            &&
+            borrowerCollateralBefore_ % 1e18 != 0
+        ) {
             if (auctionPrice_ < MIN_PRICE) {
                 buckets.add(7388);
                 lenderDepositTime[borrower_][7388] = block.timestamp;
@@ -480,7 +648,7 @@ abstract contract BaseHandler is Test {
 
         (
             uint256 totalBond,
-            uint256 reserveUnclaimed, ,
+            uint256 reserveUnclaimed, , ,
             uint256 totalInterest
         ) = _pool.reservesInfo();
 
@@ -545,7 +713,11 @@ abstract contract BaseHandler is Test {
                 uint256 bucketIndex = buckets.at(j);
                 (uint256 lenderLps, ) = _pool.lenderInfo(bucketIndex, actors[i]);
                 if (lenderLps != 0) {
-                    data = string(abi.encodePacked("Lps at ", Strings.toString(bucketIndex), " = ", Strings.toString(lenderLps)));
+                    data = string(
+                        abi.encodePacked(
+                            "Lps at ", Strings.toString(bucketIndex), " = ", Strings.toString(lenderLps)
+                        )
+                    );
                     printLine(data);
                 }
             }
@@ -558,12 +730,13 @@ abstract contract BaseHandler is Test {
         for (uint256 i = 0; i < actors.length; i++) {
             printLine("");
             printLog("Actor ", i + 1);
-            (uint256 debt, uint256 pledgedCollateral, uint256 t0NeutralPrice, uint256 thresholdPrice) = _poolInfo.borrowerInfo(address(_pool), actors[i]);
-            if (debt != 0 || pledgedCollateral != 0) {
-                printLog("Debt               = ", debt);
-                printLog("Pledged collateral = ", pledgedCollateral);
-                printLog("t0 Neutral Price   = ", t0NeutralPrice);
-                printLog("t0 Threshold Price = ", thresholdPrice);
+
+            BorrowerInfo memory borrowerInfo = _getBorrowerInfo(actors[i]);
+            if (borrowerInfo.debt != 0 || borrowerInfo.collateral != 0) {
+                printLog("Debt               = ", borrowerInfo.debt);
+                printLog("Pledged collateral = ", borrowerInfo.collateral);
+                printLog("t0 Neutral Price   = ", borrowerInfo.t0Np);
+                printLog("Threshold Price    = ", borrowerInfo.thresholdPrice);
 
             }
         }

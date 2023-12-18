@@ -234,6 +234,7 @@ interface IPoolState {
      *  @return liquidationBondEscrowed_ Amount of liquidation bond across all liquidators.
      *  @return reserveAuctionUnclaimed_ Amount of claimable reserves which has not been taken in the `Claimable Reserve Auction`.
      *  @return reserveAuctionKicked_    Time a `Claimable Reserve Auction` was last kicked.
+     *  @return lastKickedReserves_      Amount of reserves upon last kick, used to calculate price.
      *  @return totalInterestEarned_     Total interest earned by all lenders in the pool
      */
     function reservesInfo()
@@ -243,6 +244,7 @@ interface IPoolState {
             uint256 liquidationBondEscrowed_,
             uint256 reserveAuctionUnclaimed_,
             uint256 reserveAuctionKicked_,
+            uint256 lastKickedReserves_,
             uint256 totalInterestEarned_
     );
 
@@ -432,6 +434,7 @@ struct Kicker {
 /// @dev Struct holding reserve auction state.
 struct ReserveAuctionState {
     uint256 kicked;                            // Time a Claimable Reserve Auction was last kicked.
+    uint256 lastKickedReserves;                // [WAD] Amount of reserves upon last kick, used to calculate price.
     uint256 unclaimed;                         // [WAD] Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
     uint256 latestBurnEventEpoch;              // Latest burn event epoch.
     uint256 totalAjnaBurned;                   // [WAD] Total ajna burned in the pool.

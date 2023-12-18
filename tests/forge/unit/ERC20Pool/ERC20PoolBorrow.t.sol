@@ -1330,7 +1330,7 @@ contract ERC20PoolBorrowFuzzyTest is ERC20FuzzyHelperContract {
             })
         );
 
-        assertLt(_htp(), _poolUtils.lup(address(_pool)));
+        assertLt(_getHtp(), _poolUtils.lup(address(_pool)));
         assertGt(minDebt, 0);
         assertEq(_poolUtils.lup(address(_pool)), _calculateLup(address(_pool), debt));
 
@@ -1380,7 +1380,7 @@ contract ERC20PoolBorrowFuzzyTest is ERC20FuzzyHelperContract {
         assertEq(debt, 0);
 
         // check pool state
-        assertEq(_htp(), 0);
+        assertEq(_getHtp(), 0);
         assertEq(_poolUtils.lup(address(_pool)), MAX_PRICE);
     }
 }

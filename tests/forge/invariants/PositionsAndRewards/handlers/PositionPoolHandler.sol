@@ -20,6 +20,7 @@ abstract contract PositionPoolHandler is BasePositionPoolHandler {
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) writeLogs writePositionLogs {
         numberOfCalls['BPositionHandler.memorialize']++;
+
         // Pre action //
         (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositions(noOfBuckets_, amountToAdd_);
 
@@ -34,6 +35,7 @@ abstract contract PositionPoolHandler is BasePositionPoolHandler {
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) writeLogs writePositionLogs {
         numberOfCalls['BPositionHandler.redeem']++;
+
         // Pre action //
         (uint256 tokenId, uint256[] memory indexes) = _preRedeemPositions(noOfBuckets_, amountToAdd_);
 
@@ -60,7 +62,8 @@ abstract contract PositionPoolHandler is BasePositionPoolHandler {
         uint256 skippedTime_,
         uint256 amountToAdd_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) writeLogs writePositionLogs {
-        numberOfCalls['BPositionHandler.burn']++;        
+        numberOfCalls['BPositionHandler.burn']++;
+
         // Pre action //
         (uint256 tokenId_) = _preBurn(_lenderBucketIndex, amountToAdd_);
         
@@ -74,7 +77,8 @@ abstract contract PositionPoolHandler is BasePositionPoolHandler {
         uint256 amountToMove_,
         uint256 toIndex_
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) useRandomPool(skippedTime_) writeLogs writePositionLogs {
-        numberOfCalls['BPositionHandler.moveLiquidity']++;        
+        numberOfCalls['BPositionHandler.moveLiquidity']++;
+
         // Pre action //
         (
             uint256 tokenId,
@@ -107,7 +111,8 @@ abstract contract PositionPoolHandler is BasePositionPoolHandler {
         uint256 skippedTime_,
         uint256 amountToAdd_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs writePositionLogs {
-        numberOfCalls['BPositionHandler.transferPosition']++;        
+        numberOfCalls['BPositionHandler.transferPosition']++;
+
         // Pre action //
         (uint256 tokenId_, uint256[] memory indexes) = _getNFTPosition(_lenderBucketIndex, amountToAdd_);
 

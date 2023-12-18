@@ -289,7 +289,7 @@ contract PoolInfoUtils {
         (
             uint256 bondEscrowed,
             uint256 unclaimedReserve,
-            ,
+            , ,
         ) = pool.reservesInfo();
         uint256 escrowedAmounts = bondEscrowed + unclaimedReserve;
 
@@ -325,7 +325,7 @@ contract PoolInfoUtils {
 
         uint256 quoteTokenBalance = IERC20Token(pool.quoteTokenAddress()).balanceOf(ajnaPool_) * pool.quoteTokenScale();
 
-        (uint256 bondEscrowed, uint256 unclaimedReserve, uint256 auctionKickTime, ) = pool.reservesInfo();
+        (uint256 bondEscrowed, uint256 unclaimedReserve, uint256 auctionKickTime, uint256 lastKickedReserves, ) = pool.reservesInfo();
 
         // due to rounding issues, especially in Auction.settle, this can be slighly negative
         if (poolDebt + quoteTokenBalance >= poolSize + bondEscrowed + unclaimedReserve) {
@@ -341,7 +341,7 @@ contract PoolInfoUtils {
         );
 
         claimableReservesRemaining_ = unclaimedReserve;
-        auctionPrice_               = _reserveAuctionPrice(auctionKickTime);
+        auctionPrice_               = _reserveAuctionPrice(auctionKickTime, lastKickedReserves);
         timeRemaining_              = 3 days - Maths.min(3 days, block.timestamp - auctionKickTime);
     }
 
