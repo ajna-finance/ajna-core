@@ -466,7 +466,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             ,
         ) = _pool.auctionInfo(state_.borrower);
 
-        (uint256 borrowerDebt, uint256 borrowerCollateral , ) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
+        (uint256 borrowerDebt, uint256 borrowerCollateral , , ) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
         (, uint256 lockedBonds) = _pool.kickerInfo(state_.kicker);
         (vars.auctionTotalBondEscrowed,,,,) = _pool.reservesInfo();
         (,, vars.auctionDebtInAuction,)  = _pool.debtInfo();
@@ -664,7 +664,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         (
             uint256 debt,
             uint256 col,
-            uint256 t0Np
+            uint256 t0Np,
         ) = _poolUtils.borrowerInfo(address(_pool), borrower);
 
         uint256 lup = _poolUtils.lup(address(_pool));

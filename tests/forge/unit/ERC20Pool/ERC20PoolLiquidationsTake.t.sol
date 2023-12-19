@@ -2168,12 +2168,12 @@ contract ERC20PoolLiquidationTakeFuzzyTest is ERC20FuzzyHelperContract {
 
         uint256 beforeTakerQuoteBalance = _quote.balanceOf(_taker);
 
-        (, uint256 beforeCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        (, uint256 beforeCollateral, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
 
         // taker takes fuzzed amount of collateral
         _pool.take(_borrower, takeAmount, _taker, bytes(""));
 
-        (, uint256 afterCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        (, uint256 afterCollateral, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
 
         // ensure borrower collateral is reduced after take
         assertLt(afterCollateral, beforeCollateral);

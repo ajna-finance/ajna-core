@@ -1144,7 +1144,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
 
         // skip some time to make actor7 undercollateralized
         skip(200 days);
-        (uint256 borrowerDebt, , ) = _poolUtils.borrowerInfo(address(_pool), actor2);
+        (uint256 borrowerDebt, , , ) = _poolUtils.borrowerInfo(address(_pool), actor2);
         assertEq(borrowerDebt, 59_474_936_428.593370593619524964 * 1e18);
 
         // reserves increase slightly due to interest accrual
@@ -1272,12 +1272,12 @@ contract ERC20PoolLiquidationSettleFuzzyTest is ERC20FuzzyHelperContract {
         // skip some time to make auction settleable
         skip(73 hours);
 
-        (uint256 beforeDebt, uint256 beforeCollateral,) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        (uint256 beforeDebt, uint256 beforeCollateral, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
 
         // settle auction with deposits
         _pool.settle(_borrower, 2);
 
-        (uint256 afterDebt, uint256 afterCollateral,) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        (uint256 afterDebt, uint256 afterCollateral, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
 
         // ensure some borrower debt is settled
         assertLt(afterDebt, beforeDebt);

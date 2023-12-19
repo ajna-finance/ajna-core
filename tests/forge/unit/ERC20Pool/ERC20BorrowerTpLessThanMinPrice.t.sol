@@ -41,7 +41,7 @@ contract ERC20PoolBorrowerTPLessThanMinPrice is ERC20HelperContract {
             newLup:     3_010.892022197881557845 * 1e18
         });
 
-        (uint256 debt, uint256 collateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        (uint256 debt, uint256 collateral, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         uint256 debtToCollateral = Maths.wdiv(debt, collateral);
 
         // Ensure borrower tp is less than min price
