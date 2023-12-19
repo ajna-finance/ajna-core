@@ -13,7 +13,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     address internal _borrower;
     address internal _borrower2;
     address internal _lender;
-    address internal _lender2;
 
     function setUp() virtual external {
         _startTest();
@@ -21,7 +20,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
-        _lender2   = makeAddr("lender2");
 
         // deploy collection pool
         _pool = _deployCollectionPool();
@@ -31,6 +29,34 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _mintAndApproveCollateralTokens(_borrower,  52);
         _mintAndApproveCollateralTokens(_borrower2, 53);
+
+        // check initial token balances
+        assertEq(_pool.pledgedCollateral(), 0);
+
+        assertEq(_collateral.balanceOf(_borrower),      52);
+        assertEq(_collateral.balanceOf(_borrower2),     53);
+        assertEq(_collateral.balanceOf(address(_pool)), 0);
+
+        // borrower is owner of NFTs
+        assertEq(_collateral.ownerOf(1), _borrower);
+        assertEq(_collateral.ownerOf(3), _borrower);
+        assertEq(_collateral.ownerOf(5), _borrower);
+
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              0,
+            borrowerCollateral:        0,
+            borrowert0Np:              0,
+            borrowerCollateralization: 1 * 1e18
+        });
+
+        _assertBorrower({
+            borrower:                  _borrower2,
+            borrowerDebt:              0,
+            borrowerCollateral:        0,
+            borrowert0Np:              0,
+            borrowerCollateralization: 1 * 1e18
+        });
     }
 
     /************************************/
@@ -38,12 +64,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     /************************************/
 
     function testPledgeCollateral() external tearDown {
-        // check initial token balances
-        assertEq(_pool.pledgedCollateral(), 0);
-
-        assertEq(_collateral.balanceOf(_borrower),      52);
-        assertEq(_collateral.balanceOf(address(_pool)), 0);
-
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
@@ -62,37 +82,15 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // check token balances after add
         assertEq(_pool.pledgedCollateral(),             Maths.wad(3));
-        assertEq(_collateral.balanceOf(_borrower),            49);
+        assertEq(_collateral.balanceOf(_borrower),      49);
         assertEq(_collateral.balanceOf(address(_pool)), 3);
     }
 
     function testPledgeCollateralFromDifferentActor() external tearDown {
-        // check initial token balances
-        assertEq(_pool.pledgedCollateral(),             0);
-
-        assertEq(_collateral.balanceOf(_borrower),      52);
-        assertEq(_collateral.balanceOf(_borrower2),     53);
-        assertEq(_collateral.balanceOf(address(_pool)), 0);
-
-        _assertBorrower({
-            borrower:                  _borrower,
-            borrowerDebt:              0,
-            borrowerCollateral:        0,
-            borrowert0Np:              0,
-            borrowerCollateralization: 1 * 1e18
-        });
-        _assertBorrower({
-            borrower:                  _borrower2,
-            borrowerDebt:              0,
-            borrowerCollateral:        0,
-            borrowert0Np:              0,
-            borrowerCollateralization: 1 * 1e18
-        });
-
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 53;
 
-        // borrower deposits one NFT into the pool
+        // borrower2 deposits one NFT into the pool
         _pledgeCollateral({
             from:     _borrower2,
             borrower: _borrower,
@@ -123,18 +121,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     }
 
     function testPullCollateral() external tearDown {
-        // check initial token balances
-        assertEq(_pool.pledgedCollateral(), 0);
-
-        assertEq(_collateral.balanceOf(_borrower),      52);
-        assertEq(_collateral.balanceOf(_borrower2),     53);
-        assertEq(_collateral.balanceOf(address(_pool)), 0);
-
-        // borrower is owner of NFTs
-        assertEq(_collateral.ownerOf(1), _borrower);
-        assertEq(_collateral.ownerOf(3), _borrower);
-        assertEq(_collateral.ownerOf(5), _borrower);
-
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
@@ -159,7 +145,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(3), address(_pool));
         assertEq(_collateral.ownerOf(5), address(_pool));
 
-        // should fail if trying to pull collateral by an address without pledged collateral
+        // reverts if trying to pull collateral by an address without pledged collateral
         _assertPullInsufficientCollateralRevert({
             from:   _lender,
             amount: 3
@@ -168,6 +154,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         // borrower2 is owner of NFT
         assertEq(_collateral.ownerOf(53), _borrower2);
 
+        // borrower2 pledges one NFT
         tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 53;
         _pledgeCollateral({
@@ -203,6 +190,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // pool is owner of remaining pledged NFT
         assertEq(_collateral.ownerOf(1), address(_pool));
+
         // borrower is owner of 2 pulled NFTs
         assertEq(_collateral.ownerOf(3), _borrower);
         assertEq(_collateral.ownerOf(5), _borrower);
@@ -216,19 +204,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
     function testPullCollateralToDifferentRecipient() external tearDown {
         address tokensReceiver = makeAddr("tokensReceiver");
-
-        // check initial token balances
-        assertEq(_pool.pledgedCollateral(), 0);
-
-        assertEq(_collateral.balanceOf(_borrower),      52);
-        assertEq(_collateral.balanceOf(_borrower2),     53);
-        assertEq(_collateral.balanceOf(tokensReceiver), 0);
-        assertEq(_collateral.balanceOf(address(_pool)), 0);
-
-        // borrower is owner of NFTs
-        assertEq(_collateral.ownerOf(1), _borrower);
-        assertEq(_collateral.ownerOf(3), _borrower);
-        assertEq(_collateral.ownerOf(5), _borrower);
 
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
@@ -300,11 +275,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     }
 
     function testPullCollateralNotInPool() external tearDown {
-        // borrower is owner of NFTs
-        assertEq(_collateral.ownerOf(1), _borrower);
-        assertEq(_collateral.ownerOf(3), _borrower);
-        assertEq(_collateral.ownerOf(5), _borrower);
-
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
@@ -466,7 +436,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     }
 
     function testPullCollateralOverlyEncumbered() external tearDown {
-        // lender deposits 10000 Quote into 3 buckets
+        // lender deposits 10_000 Quote into 3 buckets
         _addInitialLiquidity({
             from:   _lender,
             amount: 10_000 * 1e18,
@@ -519,6 +489,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     }
 
     function testAddRemoveCollateral() external tearDown {
+
         // lender adds some liquidity
         _addInitialLiquidity({
             from:   _lender,
@@ -535,7 +506,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         tokenIds[0] = 1;
         tokenIds[1] = 5;
 
-        // add two tokens to a single bucket
+        // borrower adds two NFTs to a single bucket
         _addCollateral({
             from:     _borrower,
             tokenIds: tokenIds,
@@ -543,21 +514,21 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             lpAward:  975_232.505322350083963682 * 1e18
         });
 
-        // should revert if the actor does not have any LP to remove a token
+        // reverts when borrower2 does not have any LP to remove a token
         _assertRemoveCollateralInsufficientLPRevert({
             from:   _borrower2,
             amount: 1,
             index:  1530
         });
 
-        // should revert if we try to remove a token from a bucket with no collateral
+        // reverts when borrower trys to remove a token from a bucket with no collateral
         _assertRemoveInsufficientCollateralRevert({
             from:   _borrower,
             amount: 1,
             index:  1692
         });
 
-        // remove one token
+        // borrower removes one NFT
         _removeCollateral({
             from:     _borrower,
             amount:   1,
@@ -579,7 +550,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             depositTime: _startTime
         });
 
-        // remove another token
+        // borrower removes second token
         _removeCollateral({
             from:     _borrower,
             amount:   1,
@@ -630,7 +601,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             });
         }
 
-        // borrower pledge collateral and draws debt
+        // borrower pledges two NFTs and draws debt
         uint256[] memory tokenIdsToAdd = new uint256[](2);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
@@ -646,7 +617,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             newLup:     228.476350374240318479 * 1e18
         });
 
-        // Borrower starts with possession of tokens 1 and 3
+        // Borrower starts with possession of NFTs 1 and 3
         uint256[] memory borrowerTokenIds = new uint256[](2);
         borrowerTokenIds[0] = 1;
         borrowerTokenIds[1] = 3;
@@ -1200,7 +1171,6 @@ contract ERC721SubsetPoolCollateralTest is ERC721PoolCollateralTest {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
-        _lender2   = makeAddr("lender2");
 
         // deploy subset pool
         uint256[] memory subsetTokenIds = new uint256[](5);
