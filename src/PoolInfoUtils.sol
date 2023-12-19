@@ -133,7 +133,7 @@ contract PoolInfoUtils {
      *  @return debt_             Current debt owed by borrower (`WAD`).
      *  @return collateral_       Pledged collateral, including encumbered (`WAD`).
      *  @return t0Np_             `Neutral price` (`WAD`).
-     *  @return thresholdPrice_ Borrower's `Threshold Price` in t0 terms (`WAD`).
+     *  @return thresholdPrice_   Borrower's `Threshold Price` (`WAD`).
      */
     function borrowerInfo(address ajnaPool_, address borrower_)
         external
