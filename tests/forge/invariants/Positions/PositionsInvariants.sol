@@ -13,7 +13,7 @@ import { PositionManager }   from 'src/PositionManager.sol';
 import { Maths }             from 'src/libraries/internal/Maths.sol';
 
 import { IBaseHandler }                from '../interfaces/IBaseHandler.sol';
-import { IPositionsAndRewardsHandler } from '../interfaces/IPositionsAndRewardsHandler.sol';
+import { IPositionsHandler }           from '../interfaces/IPositionsHandler.sol';
 import { BaseInvariants }              from '../base/BaseInvariants.sol';
 import { TokenWithNDecimals }          from '../../utils/Tokens.sol';
 
@@ -32,7 +32,7 @@ abstract contract PositionsInvariants is BaseInvariants {
         for (uint256 poolIndex = 0; poolIndex < _pools.length; poolIndex++) {
             address pool = _pools[poolIndex];
 
-            uint256[] memory bucketIndexes = IPositionsAndRewardsHandler(_handler).getBucketIndexesWithPosition(pool);
+            uint256[] memory bucketIndexes = IPositionsHandler(_handler).getBucketIndexesWithPosition(pool);
 
             // loop over bucket indexes with positions
             for (uint256 i = 0; i < bucketIndexes.length; i++) {
@@ -45,7 +45,7 @@ abstract contract PositionsInvariants is BaseInvariants {
                 poolLpAccum += poolLp;
 
                 // loop over tokenIds in bucket indexes
-                uint256[] memory tokenIds = IPositionsAndRewardsHandler(_handler).getTokenIdsByBucketIndex(pool, bucketIndex);
+                uint256[] memory tokenIds = IPositionsHandler(_handler).getTokenIdsByBucketIndex(pool, bucketIndex);
                 for (uint256 k = 0; k < tokenIds.length; k++) {
                     uint256 tokenId = tokenIds[k];
                     
