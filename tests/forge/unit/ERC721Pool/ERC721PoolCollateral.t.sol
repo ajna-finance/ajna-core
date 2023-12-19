@@ -92,7 +92,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 53;
 
-        // borrower deposits three NFTs into the pool
+        // borrower deposits one NFT into the pool
         _pledgeCollateral({
             from:     _borrower2,
             borrower: _borrower,
@@ -242,7 +242,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             tokenIds: tokenIdsToAdd
         });
 
-        // borrower2 deposits three NFTs into the pool
+        // borrower2 deposits one NFT into the pool
         tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 53;
         _pledgeCollateral({
@@ -535,7 +535,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         tokenIds[0] = 1;
         tokenIds[1] = 5;
 
-        // add three tokens to a single bucket
+        // add two tokens to a single bucket
         _addCollateral({
             from:     _borrower,
             tokenIds: tokenIds,
