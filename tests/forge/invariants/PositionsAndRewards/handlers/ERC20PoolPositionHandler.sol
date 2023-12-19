@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.18;
 
+import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+
 import { PositionManager } from 'src/PositionManager.sol';
 import { Pool }            from 'src/base/Pool.sol';
 import { ERC20Pool }       from 'src/ERC20Pool.sol';
@@ -16,12 +18,17 @@ import { UnboundedBasicERC20PoolHandler } from '../../ERC20Pool/handlers/unbound
 import { UnboundedLiquidationPoolHandler } from '../../base/handlers/unbounded/UnboundedLiquidationPoolHandler.sol';
 
 contract ERC20PoolPositionHandler is PositionPoolHandler, BaseERC20PoolHandler, UnboundedBasicERC20PoolHandler, UnboundedLiquidationPoolHandler {
+    using EnumerableSet for EnumerableSet.UintSet;
 
     address[] internal _lenders;
     address[] internal _borrowers;
 
     uint16 internal constant LENDERS = 200;
+    uint16 internal constant LOANS_COUNT = 500;
+    uint16 nonce;
     uint256 numberOfBuckets;
+
+    EnumerableSet.UintSet internal _activeBorrowers;
 
     constructor(
         address positions_,
@@ -41,6 +48,21 @@ contract ERC20PoolPositionHandler is PositionPoolHandler, BaseERC20PoolHandler, 
 
         // pool hash for mint() call
         _poolHash = bytes32(keccak256("ERC20_NON_SUBSET_HASH"));
+
+        numberOfBuckets = buckets.length();
+        setUp();
+    }
+
+    function setUp() internal useTimestamps {
+        vm.startPrank(address(this));
+
+        _setupLendersAndDeposits(LENDERS);
+        _setupBorrowersAndLoans(LOANS_COUNT);
+
+        uint256 totalLoans = _getLoansInfo().noOfLoans;
+        require(totalLoans == LOANS_COUNT, "loans setup failed");
+
+        vm.warp(block.timestamp + 1_000 days);
     }
 
     modifier useRandomPool(uint256 poolIndex) override {
@@ -139,5 +161,55 @@ contract ERC20PoolPositionHandler is PositionPoolHandler, BaseERC20PoolHandler, 
         // restrict amount to move by available deposit inside bucket
         uint256 availableDeposit = _poolInfo.lpToQuoteTokens(address(_pool), lps, fromIndex_);
         boundedAmount_ = Maths.min(boundedAmount_, availableDeposit);
+    }
+
+    /*******************************/
+    /*** Setup Helper Functions  ***/
+    /*******************************/
+
+    function _setupLendersAndDeposits(uint256 count_) internal virtual {
+        uint256[] memory buckets = buckets.values();
+        for (uint256 i; i < count_;) {
+            address lender = address(uint160(uint256(keccak256(abi.encodePacked(i, 'lender')))));
+
+            _actor = lender;
+            changePrank(_actor);
+            _addQuoteToken(100_000 * 1e18, buckets[_randomBucket()]);
+
+            actors.push(lender);
+            _lenders.push(lender);
+
+            unchecked { ++i; }
+        }
+    }
+
+    function _setupBorrowersAndLoans(uint256 count_) internal {
+        for (uint256 i; i < count_;) {
+            address borrower = address(uint160(uint256(keccak256(abi.encodePacked(i, 'borrower')))));
+
+            _actor = borrower;
+            changePrank(_actor);
+            _drawDebt(_randomDebt() * 1e18);
+
+            actors.push(borrower);
+            _activeBorrowers.add(i);
+            _borrowers.push(borrower);
+
+            unchecked { ++i; }
+        }
+    }
+
+    function _randomBucket() internal returns (uint256 randomBucket_) {
+        randomBucket_ = uint256(
+            keccak256(abi.encodePacked(block.timestamp, msg.sender, nonce))
+        ) % numberOfBuckets;
+        ++ nonce;
+    }
+
+    function _randomDebt() internal returns (uint256 randomDebt_) {
+        randomDebt_ = uint256(
+            keccak256(abi.encodePacked(block.timestamp, msg.sender, nonce))
+        ) % 900 + 100;
+        ++ nonce;
     }
 }
