@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.18;
 
-interface IPositionsAndRewardsHandler {
+interface IPositionsHandler {
     function getBucketIndexesWithPosition(address) external view returns(uint256[] memory);
     function getBucketIndexesByTokenId(uint256) external view returns(uint256[] memory);
 

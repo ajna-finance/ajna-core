@@ -15,7 +15,7 @@ import { PositionManager }   from 'src/PositionManager.sol';
 import { Maths }             from 'src/libraries/internal/Maths.sol';
 
 import { IBaseHandler }                from '../interfaces/IBaseHandler.sol';
-import { IPositionsAndRewardsHandler } from '../interfaces/IPositionsAndRewardsHandler.sol';
+import { IPositionsHandler }           from '../interfaces/IPositionsHandler.sol';
 import { TokenWithNDecimals }          from '../../utils/Tokens.sol';
 
 import { ERC20PoolPositionHandler }    from './handlers/ERC20PoolPositionHandler.sol';
