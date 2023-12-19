@@ -14,6 +14,7 @@ import {
     MAX_PRICE,
     MIN_PRICE,
     _indexOf,
+    _htp,
     _isCollateralized
 }                           from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }            from 'src/libraries/internal/Maths.sol';
@@ -546,7 +547,8 @@ abstract contract BaseHandler is Test {
         if (pendingFactor == 1e18) return;
 
         // get TP of worst loan
-        uint256 htp = _poolInfo.htp(address(_pool));
+        (uint256 inflator, ) = _pool.inflatorInfo();
+        uint256 htp = _htp(_getLoansInfo().maxT0DebtToCollateral, inflator);
         
         uint256 accrualIndex;
 
