@@ -3,6 +3,7 @@
 pragma solidity 0.8.18;
 
 import { Math } from '@openzeppelin/contracts/utils/math/Math.sol';
+import { Multicall } from '@openzeppelin/contracts/utils/Multicall.sol';
 
 import { IPool, IERC20Token } from './interfaces/pool/IPool.sol';
 
@@ -34,7 +35,7 @@ import { PoolCommons } from './libraries/external/PoolCommons.sol';
  *  @notice Contract for providing information for any deployed pool.
  *  @dev    Pool info is calculated using same helper functions / logic as in `Pool` contracts.
  */
-contract PoolInfoUtils {
+contract PoolInfoUtils is Multicall {
 
     /**
      * @notice Struct contianing local variables used in `auctionStatus` to get around stack size limitations.
@@ -503,11 +504,11 @@ contract PoolInfoUtils {
     }
 
     /**
-     *  @notice Calculates unutilized deposit fee rate for a pool.
-     *  @notice Calculated as current annualized rate divided by `365` (`24` hours of interest).
+     *  @notice Calculates deposit fee rate for a pool.
+     *  @notice Calculated as current annualized rate divided by 365 * 3 (8 hours of interest)
      *  @return Fee rate calculated from the pool interest rate.
      */
-    function unutilizedDepositFeeRate(
+    function depositFeeRate(
         address ajnaPool_
     ) external view returns (uint256) {
         (uint256 interestRate,) = IPool(ajnaPool_).interestRateInfo();

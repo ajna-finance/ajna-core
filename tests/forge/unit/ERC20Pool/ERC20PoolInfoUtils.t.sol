@@ -316,8 +316,8 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(_poolUtils.borrowFeeRate(address(_pool)), 0.000961538461538462 * 1e18);
     }
 
-    function testUnutilizedDepositFeeRate() external {
-        assertEq(_poolUtils.unutilizedDepositFeeRate(address(_pool)), 0.000045662100456621 * 1e18);
+    function testDepositFeeRate() external {
+        assertEq(_poolUtils.depositFeeRate(address(_pool)), 0.000045662100456621 * 1e18);
     }
 
     function testPoolInfoUtilsLPToCollateralAndQuote() external {
@@ -369,63 +369,6 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         );
     }
 
-    function testPoolInfoUtilsMulticallPoolAndBucketInfo() external {
-        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
-
-        PoolInfoUtilsMulticall.BucketInfo memory bucketInfo;
-
-        (,,, bucketInfo) = poolUtilsMulticall.poolDetailsAndBucketInfo(address(_pool), high);
-
-        assertEq(bucketInfo.bucketLP, 9_999.54337899543379 * 1e18);
-    }
-
-    function testPoolInfoUtilsMulticall() external {
-        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
-
-        string[] memory functionSignatures = new string[](2);
-        functionSignatures[0] = "hpb(address)";
-        functionSignatures[1] = "htp(address)";
-
-        string[] memory args = new string[](2);
-        args[0] = Strings.toHexString(address(_pool));
-        args[1] = Strings.toHexString(address(_pool));
-
-        bytes[] memory result = poolUtilsMulticall.multicall(functionSignatures, args);
-
-        assertEq(abi.decode(result[0], (uint256)), _poolUtils.hpb(address(_pool)));
-        assertEq(abi.decode(result[1], (uint256)), _poolUtils.htp(address(_pool)));
-    }
-
-    function testPoolInfoMulticallBorrowerInfo() external {
-        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
-
-        string[] memory functionSignatures = new string[](2);
-        functionSignatures[0] = "borrowerInfo(address,address)";
-        functionSignatures[1] = "htp(address)";
-
-        string[] memory args = new string[](3);
-        args[0] = Strings.toHexString(address(_pool));
-        args[1] = Strings.toHexString(_borrower);
-        args[2] = Strings.toHexString(address(_pool));
-
-        bytes[] memory result = poolUtilsMulticall.multicall(functionSignatures, args);
-
-        (uint256 debt,,,) = abi.decode(result[0], (uint256, uint256, uint256, uint256));
-
-        assertEq(debt,       21_020.192307692307702000 * 1e18);
-        assertEq(abi.decode(result[1], (uint256)), _poolUtils.htp(address(_pool)));
-    }
-
-    function testPoolInfoMulticallRatesAndFees() external {
-        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
-
-        (uint256 lenderInterestMargin, uint256 borrowFeeRate, uint256 depositFeeRate) = poolUtilsMulticall.poolRatesAndFees(address(_pool));
-
-        assertEq(lenderInterestMargin, 0.849999999999999999 * 1e18);
-        assertEq(borrowFeeRate,        0.000961538461538462 * 1e18);
-        assertEq(depositFeeRate,       0.000045662100456621 * 1e18);
-    }
-
     // Helps test liquidation functions
     function _removeAndKick() internal {
         uint256 amountLessFee = 9_999.543378995433790000 * 1e18;
@@ -451,5 +394,58 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             collateral: 100 * 1e18, 
             bond:       235.012894500590867635 * 1e18
         });
+    }
+
+    function testPoolInfoUtilsMulticallRatesAndFees() external {
+        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
+
+        (uint256 lim, uint256 bfr, uint256 dfr) = poolUtilsMulticall.poolRatesAndFeesMulticall(address(_pool));
+
+        assertEq(lim, 0.849999999999999999 * 1e18);
+        assertEq(bfr, 0.000961538461538462 * 1e18);
+        assertEq(dfr, 0.000045662100456621* 1e18);
+    }
+
+    function testPoolInfoUtilsMulticallPoolDetails() external {
+        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
+
+        (
+            PoolInfoUtilsMulticall.PoolLoansInfo memory poolLoansInfo,
+            PoolInfoUtilsMulticall.PoolPriceInfo memory poolPriceInfo,
+            PoolInfoUtilsMulticall.PoolRatesAndFees memory poolRatesAndFees,
+            PoolInfoUtilsMulticall.PoolReservesInfo memory poolReservesInfo,
+            PoolInfoUtilsMulticall.PoolUtilizationInfo memory poolUtilizationInfo
+        ) = poolUtilsMulticall.poolDetailsMulticall(address(_pool));
+
+        assertEq(poolLoansInfo.poolSize, 49_997.716894977168950000 * 1e18);
+
+        assertEq(poolPriceInfo.hpb,      3_010.892022197881557845 * 1e18);
+        assertEq(poolPriceInfo.hpbIndex, 2550);
+        assertEq(poolPriceInfo.htp,      218.610000000000000101 * 1e18);
+        assertEq(poolPriceInfo.htpIndex, 3075);
+        assertEq(poolPriceInfo.lup,      2981.007422784467321543 * 1e18);
+        assertEq(poolPriceInfo.lupIndex, 2552);
+
+        assertEq(poolRatesAndFees.lenderInterestMargin, 0.849999999999999999 * 1e18);
+        assertEq(poolRatesAndFees.borrowFeeRate,        0.000961538461538462 * 1e18);
+        assertEq(poolRatesAndFees.depositFeeRate,       0.000045662100456621 * 1e18);
+
+        assertEq(poolReservesInfo.reserves,             22.475412715138752000 * 1e18);
+
+        assertEq(poolUtilizationInfo.poolMinDebtAmount, 2_102.019230769230770200 * 1e18);
+    }
+
+    function testPoolInfoUtilsMulticallPoolBalanceDetails() external {
+        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
+
+        uint256 meaningfulIndex = 5000;
+        address quoteTokenAddress = IPool(_pool).quoteTokenAddress();
+        address collateralTokenAddress = IPool(_pool).collateralAddress();
+
+        PoolInfoUtilsMulticall.PoolBalanceDetails memory poolBalanceDetails = poolUtilsMulticall.poolBalanceDetails(address(_pool), meaningfulIndex, quoteTokenAddress, collateralTokenAddress, false);
+
+        assertEq(poolBalanceDetails.debt,        21_020.192307692307702000 * 1e18);
+        assertEq(poolBalanceDetails.quoteTokenBalance,  29_000 * 1e18);
+        assertEq(poolBalanceDetails.collateralTokenBalance,  100 * 1e18);
     }
 }
