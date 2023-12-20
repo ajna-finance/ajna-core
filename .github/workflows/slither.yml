@@ -38,12 +38,6 @@ jobs:
         continue-on-error: true
         id: position-analyzer
 
-      - name: Analyze RewardsManager Contract
-        run: |
-          slither src/RewardsManager.sol
-        continue-on-error: true
-        id: rewards-analyzer
-
       - name: Analyze PoolInfoUtils Contract
         run: |
           slither src/PoolInfoUtils.sol

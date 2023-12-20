@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.18;
 
-import { ERC721PoolPositionsInvariants } from "../../invariants/PositionsAndRewards/ERC721PoolPositionsInvariants.t.sol";
+import { ERC721PoolPositionsInvariants } from "../../invariants/PositionManager/ERC721PoolPositionsInvariants.t.sol";
 
 contract RegressionTestERC721PoolPositionsManager is ERC721PoolPositionsInvariants {
 
