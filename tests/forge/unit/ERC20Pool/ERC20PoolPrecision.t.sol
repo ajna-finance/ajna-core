@@ -750,7 +750,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         (uint256 minDebtAmount, , , ) = _poolUtils.poolUtilizationInfo(address(_pool));
         assertGt(minDebtAmount, 1);
 
-        (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
+        (uint256 debt, , , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
         uint256 repayAmount = debt - minDebtAmount / 2;
 
         _assertRepayMinDebtRevert({
@@ -821,7 +821,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             newLup:             _priceAt(bucketId)
         });
 
-        (uint256 currentDebt, uint256 pledgedCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        (uint256 currentDebt, uint256 pledgedCollateral, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertGt(currentDebt, debtToDraw);
 
         // round the collateral amount to token precision
@@ -1004,7 +1004,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
     function _repayDebtWithoutPullingCollateral(
         address borrower
     ) internal {
-        (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
+        (uint256 debt, , , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
         _mintAndApproveQuoteToken(borrower, debt);
         _repayDebt({
             from:             _borrower,

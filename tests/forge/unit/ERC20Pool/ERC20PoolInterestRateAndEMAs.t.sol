@@ -1318,7 +1318,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             skip(1 days);
 
             // check borrower collateralization and pledge more collateral if undercollateralized
-            (uint256 debt, uint256 collateralPledged, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+            (uint256 debt, uint256 collateralPledged, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
             uint256 requiredCollateral = _requiredCollateral(debt, _lupIndex());
 
             if (requiredCollateral > collateralPledged ) {
@@ -1387,7 +1387,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             // stop pledging more collateral to avoid t0Tp becoming 0, i = 103 is the limit where t0tp becomes 0
             if (i < 100) {
                 // check borrower collateralization and pledge more collateral if undercollateralized to avoid `(((tu + mau102 - 1e18) / 1e9) ** 2)` overflow
-                (uint256 debt, uint256 collateralPledged, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+                (uint256 debt, uint256 collateralPledged, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
                 (uint256 poolDebt,,,) = _pool.debtInfo();
                 uint256 lupIndex = _pool.depositIndex(poolDebt);
                 uint256 requiredCollateral = _requiredCollateral(debt, lupIndex);

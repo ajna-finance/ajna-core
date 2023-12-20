@@ -105,10 +105,10 @@ contract BasicERC721PoolInvariants is BasicInvariants {
 
         for (uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
-            borrowerTokens   += _erc721pool.totalBorrowerTokens(borrower);
+            borrowerTokens   += _erc721pool.getBorrowerTokenIds(borrower).length;
         }
 
-        uint256 bucketTokens = _erc721pool.totalBucketTokens();
+        uint256 bucketTokens = _erc721pool.getBucketTokenIds().length;
         require(collateralBalance == borrowerTokens + bucketTokens, "Collateral Invariant CT3");
     }
 
@@ -117,7 +117,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
 
         for (uint256 i = 0; i < actorCount; i++) {
             address borrower       = IBaseHandler(_handler).actors(i);
-            uint256 borrowerTokens = _erc721pool.totalBorrowerTokens(borrower);
+            uint256 borrowerTokens = _erc721pool.getBorrowerTokenIds(borrower).length;
 
             (, uint256 borrowerCollateral, ) = _erc721pool.borrowerInfo(borrower);
 
@@ -130,7 +130,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
 
         for (uint256 i = 0; i < actorCount; i++) {
             address borrower       = IBaseHandler(_handler).actors(i);
-            uint256 borrowerTokens = _erc721pool.totalBorrowerTokens(borrower);
+            uint256 borrowerTokens = _erc721pool.getBorrowerTokenIds(borrower).length;
 
             for (uint256 tokenIndex = 0; tokenIndex < borrowerTokens; tokenIndex++) {
                 uint256 borrowerTokenId = _erc721pool.borrowerTokenIds(borrower, tokenIndex);
@@ -139,7 +139,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
             }
         }
 
-        uint256 bucketTokens = _erc721pool.totalBucketTokens();
+        uint256 bucketTokens = _erc721pool.getBucketTokenIds().length;
         for (uint256 tokenIndex = 0; tokenIndex < bucketTokens; tokenIndex++) {
             uint256 bucketTokenId = _erc721pool.bucketTokenIds(tokenIndex);
 
@@ -152,7 +152,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
             uint256 actorCount = IBaseHandler(_handler).getActorsCount();
             for (uint256 i = 0; i < actorCount; i++) {
                 address borrower       = IBaseHandler(_handler).actors(i);
-                uint256 borrowerTokens = _erc721pool.totalBorrowerTokens(borrower);
+                uint256 borrowerTokens = _erc721pool.getBorrowerTokenIds(borrower).length;
 
                 for (uint256 tokenIndex = 0; tokenIndex < borrowerTokens; tokenIndex++) {
                     uint256 borrowerTokenId = _erc721pool.borrowerTokenIds(borrower, tokenIndex);
@@ -161,7 +161,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
                 }
             }
 
-            uint256 bucketTokens = _erc721pool.totalBucketTokens();
+            uint256 bucketTokens = _erc721pool.getBucketTokenIds().length;
             for (uint256 tokenIndex = 0; tokenIndex < bucketTokens; tokenIndex++) {
                 uint256 bucketTokenId = _erc721pool.bucketTokenIds(tokenIndex);
 

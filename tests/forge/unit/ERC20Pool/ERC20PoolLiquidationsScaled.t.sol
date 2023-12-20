@@ -334,20 +334,20 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     }
 
     function _take(uint256 collateralToTake, address bidder) internal {
-        (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertGt(lastAuctionDebt,       0);
         assertGt(lastAuctionCollateral, 0);
 
         changePrank(bidder);
         _pool.take(_borrower, collateralToTake, bidder, new bytes(0));
 
-        (uint256 auctionDebt, uint256 auctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        (uint256 auctionDebt, uint256 auctionCollateral, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertLt(auctionDebt, lastAuctionDebt);
         assertLt(auctionCollateral, lastAuctionCollateral);
     }
 
     function _depositTake(uint256 bucketId) internal {
-        (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertGt(lastAuctionDebt,       0);
         assertGt(lastAuctionCollateral, 0);
         (, uint256 lastBucketDeposit, uint256 lastBucketCollateral, uint256 lastBucketLP, , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
@@ -360,7 +360,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         // confirm auction debt and collateral have decremented
         uint256 bucketLP;
         {
-            (uint256 auctionDebt, uint256 auctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+            (uint256 auctionDebt, uint256 auctionCollateral, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
             assertLt(auctionDebt,       lastAuctionDebt);
             assertLt(auctionCollateral, lastAuctionCollateral);
             uint256 collateralTaken = lastAuctionCollateral - auctionCollateral;
@@ -390,7 +390,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     }
 
     function _arbTake(uint256 bucketId, address bidder) internal {
-        (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertGt(lastAuctionDebt,       0);
         assertGt(lastAuctionCollateral, 0);
         (, uint256 lastBucketDeposit, uint256 lastBucketCollateral, , , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
@@ -401,7 +401,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         _pool.bucketTake(_borrower, false, bucketId);
 
         // confirm auction debt and collateral have decremented
-        (uint256 auctionDebt, uint256 auctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        (uint256 auctionDebt, uint256 auctionCollateral, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertLt(auctionDebt,       lastAuctionDebt);
         assertLt(auctionCollateral, lastAuctionCollateral);
         uint256 collateralTaken = lastAuctionCollateral - auctionCollateral;
@@ -447,11 +447,11 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     ){
         (, , , uint256 kickTime, uint256 referencePrice, , , , , ) = _pool.auctionInfo(_borrower);
         uint256 lastAuctionPrice = _auctionPrice(referencePrice, kickTime);
-        (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         if (secondsToSkip != 0) {
             skip(secondsToSkip);
             auctionPrice_ = _auctionPrice(referencePrice, kickTime);
-            (uint256 auctionDebt, uint256 auctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+            (uint256 auctionDebt, uint256 auctionCollateral, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
             // ensure auction price decreases and auction debt increases as time passes
             assertLt(auctionPrice_,     lastAuctionPrice);
             assertGt(auctionDebt,       lastAuctionDebt);
@@ -466,7 +466,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     }
 
     function _borrowerCollateralization(address borrower) internal view returns (uint256) {
-        (uint256 debt, uint256 collateral, ) = _poolUtils.borrowerInfo(address(_pool), borrower);
+        (uint256 debt, uint256 collateral, , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
         return _collateralization(debt, collateral, _lup());
     }
 

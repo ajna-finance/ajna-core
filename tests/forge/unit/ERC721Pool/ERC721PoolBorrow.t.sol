@@ -201,6 +201,14 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             borrower: _borrower,
             tokenIds: tokenIdsToAdd
         });
+
+        // check token balances after pledge
+        uint256[] memory pledgedTokens = ERC721Pool(address(_pool)).getBorrowerTokenIds(_borrower);
+        assertEq(pledgedTokens.length, 3);
+        assertEq(pledgedTokens[0], 1);
+        assertEq(pledgedTokens[1], 3);
+        assertEq(pledgedTokens[2], 5);
+
         // borrower borrows from the pool
         uint256 borrowAmount = 3_000 * 1e18;
         _borrow({
@@ -1129,7 +1137,7 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
         }
 
         // check borrower info
-        (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
+        (uint256 debt, , , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
         assertGt(debt, borrowAmount); // check that initial fees accrued
 
         // check pool state
@@ -1159,7 +1167,7 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
         skip(1 days);
 
         // repay all debt and withdraw collateral
-        (debt, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
+        (debt, , , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
         deal(address(_quote), _borrower, debt);
 
         _repayDebt({
@@ -1196,7 +1204,7 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
         }
 
         // check borrower state after repayment
-        (debt, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
+        (debt, , , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
         assertEq(debt, 0);
 
         // check pool state

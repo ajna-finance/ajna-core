@@ -85,7 +85,7 @@ contract PoolInfoUtils {
             debtToCollateral_, , , ) = IPool(ajnaPool_).auctionInfo(borrower_);
 
         if (kickTime_ != 0) {
-            (debtToCover_, collateral_, ) = this.borrowerInfo(ajnaPool_, borrower_);
+            (debtToCover_, collateral_, , ) = this.borrowerInfo(ajnaPool_, borrower_);
 
             (vars.poolDebt,,,) = IPool(ajnaPool_).debtInfo();
             vars.lup           = _priceAt(IPool(ajnaPool_).depositIndex(vars.poolDebt));
@@ -128,11 +128,12 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Retrieves info of a given borrower in a given `Ajna` pool.
-     *  @param  ajnaPool_   Address of `Ajna` pool.
-     *  @param  borrower_   Borrower's address.
-     *  @return debt_       Current debt owed by borrower (`WAD`).
-     *  @return collateral_ Pledged collateral, including encumbered (`WAD`).
-     *  @return t0Np_       `Neutral price` (`WAD`).
+     *  @param  ajnaPool_         Address of `Ajna` pool.
+     *  @param  borrower_         Borrower's address.
+     *  @return debt_             Current debt owed by borrower (`WAD`).
+     *  @return collateral_       Pledged collateral, including encumbered (`WAD`).
+     *  @return t0Np_             `Neutral price` (`WAD`).
+     *  @return thresholdPrice_   Borrower's `Threshold Price` (`WAD`).
      */
     function borrowerInfo(address ajnaPool_, address borrower_)
         external
@@ -140,7 +141,8 @@ contract PoolInfoUtils {
         returns (
             uint256 debt_,
             uint256 collateral_,
-            uint256 t0Np_
+            uint256 t0Np_,
+            uint256 thresholdPrice_
         )
     {
         IPool pool = IPool(ajnaPool_);
@@ -159,8 +161,8 @@ contract PoolInfoUtils {
         (t0Debt, collateral_, npTpRatio)  = pool.borrowerInfo(borrower_);
 
         t0Np_ = collateral_ == 0 ? 0 : Math.mulDiv(Maths.wmul(t0Debt, COLLATERALIZATION_FACTOR), npTpRatio, collateral_);
-
         debt_ = Maths.ceilWmul(t0Debt, pendingInflator);
+        thresholdPrice_ = collateral_ == 0 ? 0 : Maths.wmul(Maths.wdiv(debt_, collateral_), COLLATERALIZATION_FACTOR);
     }
 
     /**

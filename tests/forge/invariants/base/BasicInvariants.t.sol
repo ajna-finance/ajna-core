@@ -478,11 +478,6 @@ abstract contract BasicInvariants is BaseInvariants {
         console.log("UBReserveHandler.takeReserves       ",  IBaseHandler(_handler).numberOfCalls("UBReserveHandler.takeReserves"));
         console.log("BReserveHandler.kickReserves        ",  IBaseHandler(_handler).numberOfCalls("BReserveHandler.kickReserves"));
         console.log("UBReserveHandler.kickReserves       ",  IBaseHandler(_handler).numberOfCalls("UBReserveHandler.kickReserves"));
-        console.log("--Rewards--------");
-        console.log("BRewardsHandler.stake               ",  IBaseHandler(_handler).numberOfCalls("BRewardsHandler.stake"));
-        console.log("UBRewardsHandler.stake              ",  IBaseHandler(_handler).numberOfCalls("UBRewardsHandler.stake"));
-        console.log("BRewardsHandler.unstake             ",  IBaseHandler(_handler).numberOfCalls("BRewardsHandler.unstake"));
-        console.log("UBRewardsHandler.unstake            ",  IBaseHandler(_handler).numberOfCalls("UBRewardsHandler.unstake"));
         console.log("--Positions--------");
         console.log("UBPositionHandler.mint              ",  IBaseHandler(_handler).numberOfCalls("UBPositionHandler.mint"));
         console.log("BPositionHandler.mint               ",  IBaseHandler(_handler).numberOfCalls("BPositionHandler.mint"));
@@ -517,8 +512,6 @@ abstract contract BasicInvariants is BaseInvariants {
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.settleAuction") +
             IBaseHandler(_handler).numberOfCalls("BReserveHandler.takeReserves") +
             IBaseHandler(_handler).numberOfCalls("BReserveHandler.kickReserves") +
-            IBaseHandler(_handler).numberOfCalls("BRewardsHandler.stake") + 
-            IBaseHandler(_handler).numberOfCalls("BRewardsHandler.unstake") + 
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.mint") + 
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.burn") +
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.memorialize") +

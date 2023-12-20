@@ -36,6 +36,7 @@ abstract contract BaseHandler is Test {
         uint256 collateral;
         uint256 npTpRatio;
         uint256 t0Np;
+        uint256 thresholdPrice;
     }
 
     struct BucketInfo {
@@ -349,7 +350,8 @@ abstract contract BaseHandler is Test {
         (
             borrowerInfo_.debt,
             borrowerInfo_.collateral,
-            borrowerInfo_.t0Np
+            borrowerInfo_.t0Np,
+            borrowerInfo_.thresholdPrice
         ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
 
         (
@@ -735,6 +737,9 @@ abstract contract BaseHandler is Test {
             if (borrowerInfo.debt != 0 || borrowerInfo.collateral != 0) {
                 printLog("Debt               = ", borrowerInfo.debt);
                 printLog("Pledged collateral = ", borrowerInfo.collateral);
+                printLog("t0 Neutral Price   = ", borrowerInfo.t0Np);
+                printLog("Threshold Price    = ", borrowerInfo.thresholdPrice);
+
             }
         }
         printInNextLine("=======================");
