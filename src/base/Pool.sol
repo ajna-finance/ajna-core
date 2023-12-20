@@ -7,6 +7,8 @@ import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuar
 import { Multicall }       from '@openzeppelin/contracts/utils/Multicall.sol';
 import { SafeERC20 }       from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 }          from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeCast }        from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { Math }            from '@openzeppelin/contracts/utils/math/Math.sol';
 
 import {
     IPool,
@@ -51,7 +53,6 @@ import {
 
 import {
     COLLATERALIZATION_FACTOR,
-    _determineInflatorState,
     _priceAt,
     _roundToScale
 }                               from '../libraries/helpers/PoolHelper.sol';
@@ -681,9 +682,20 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             emit InterestUpdateFailure();
         }
 
-        (uint208 newInflator, bool updateTimestamp) = _determineInflatorState(poolState_, inflatorState);
-        inflatorState.inflator = newInflator;
-        if (updateTimestamp) inflatorState.inflatorUpdate = uint48(block.timestamp);
+        // update pool inflator
+        if (poolState_.isNewInterestAccrued) {
+            inflatorState.inflator       = SafeCast.toUint208(poolState_.inflator);
+            inflatorState.inflatorUpdate = uint48(block.timestamp);
+        // if the debt in the current pool state is 0, also update the inflator and inflatorUpdate fields in inflatorState
+        // slither-disable-next-line incorrect-equality
+        } else if (poolState_.debt == 0) {
+            inflatorState.inflator       = SafeCast.toUint208(Maths.WAD);
+            inflatorState.inflatorUpdate = uint48(block.timestamp);
+        // if the first loan has just been drawn, update the inflator timestamp
+        // slither-disable-next-line incorrect-equality
+        } else if (inflatorState.inflator == Maths.WAD && inflatorState.inflatorUpdate != block.timestamp){
+            inflatorState.inflatorUpdate = uint48(block.timestamp);
+        }
     }
 
     /**

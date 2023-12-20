@@ -2,8 +2,9 @@
 
 pragma solidity 0.8.18;
 
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IERC20 }    from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 }      from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 }         from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
 import { 
     IERC20Pool,
@@ -36,7 +37,6 @@ import { PoolState } from './interfaces/pool/commons/IPoolState.sol';
 import { FlashloanablePool } from './base/FlashloanablePool.sol';
 
 import {
-    _getCollateralDustPricePrecisionAdjustment,
     _roundToScale,
     _roundUpToScale
 }                                               from './libraries/helpers/PoolHelper.sol';
@@ -493,8 +493,19 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
      *  @return Amount of collateral dust amount of the bucket.
      */
     function _bucketCollateralDust(uint256 bucketIndex_) internal pure returns (uint256) {
-        // price precision adjustment will always be 0 for encumbered collateral
-        uint256 pricePrecisionAdjustment = _getCollateralDustPricePrecisionAdjustment(bucketIndex_);
+        // Price precision adjustment used in calculating collateral dust for a bucket.
+        // To ensure the accuracy of the exchange rate calculation, buckets with smaller prices require
+        // larger minimum amounts of collateral.  This formula imposes a lower bound independent of token scale.
+        uint256 pricePrecisionAdjustment;
+
+        // conditional is a gas optimization
+        if (bucketIndex_ > 3900) {
+            int256 bucketOffset = int256(bucketIndex_ - 3900);
+            int256 result = PRBMathSD59x18.sqrt(PRBMathSD59x18.div(bucketOffset * 1e18, int256(36 * 1e18)));
+            // price precision adjustment will always be 0 for encumbered collateral
+            pricePrecisionAdjustment = uint256(result / 1e18);
+        }
+
         // difference between the normalized scale and the collateral token's scale
         return Maths.max(_getArgUint256(COLLATERAL_SCALE), 10 ** pricePrecisionAdjustment);
     } 

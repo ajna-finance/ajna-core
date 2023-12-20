@@ -250,7 +250,7 @@ library Buckets {
         uint256 bucketLP_,
         uint256 bucketDeposit_,
         uint256 bucketPrice_
-    ) internal pure returns (uint256) {
+    ) external pure returns (uint256) {
         return lpToQuoteTokens(
             bucketCollateral_,
             bucketLP_,
