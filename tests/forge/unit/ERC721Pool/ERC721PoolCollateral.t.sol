@@ -163,7 +163,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             tokenIds: tokenIdsToAdd
         });
 
-        // check nFT balances after add
+        // check NFT balances after add
         assertEq(_pool.pledgedCollateral(), Maths.wad(4));
 
         assertEq(_collateral.balanceOf(_borrower),      49);
@@ -522,7 +522,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             index:  1530
         });
 
-        // reverts when borrower trys to remove a NFT from a bucket with no collateral
+        // reverts when borrower tries to remove a NFT from a bucket with no collateral
         _assertRemoveInsufficientCollateralRevert({
             from:   _borrower,
             amount: 1,
