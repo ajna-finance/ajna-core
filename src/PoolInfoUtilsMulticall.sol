@@ -187,55 +187,6 @@ contract PoolInfoUtilsMulticall {
         }
     }
 
-    /**
-     *  @notice Aggregate results from multiple read-only function calls
-     *  @param  functionSignatures_ Array of signatures of read-only functions to be called
-     *  @param  args_               Array of serialized function arguments of all read-only functions to called
-     *  @return results_            Array of result of all read-only function calls in bytes
-     */
-    function multicall(string[] calldata functionSignatures_, string[] calldata args_) external returns (bytes[] memory results_) {
-        uint256 currentIndex = 0;
-        results_ = new bytes[](functionSignatures_.length);
-        for(uint256 i = 0; i < functionSignatures_.length; i++) {
-            string[] memory parameters = _parseFunctionSignature(functionSignatures_[i]);
-            uint256 noOfParams = parameters.length;
-            bytes memory callData;
-            if (noOfParams == 1) {
-                if (keccak256(bytes(parameters[0])) == keccak256(bytes("uint256"))) {
-                    uint256 arg = _stringToUint(args_[currentIndex]);
-                    callData    = abi.encodeWithSignature(functionSignatures_[i], arg);
-                }
-                if (keccak256(bytes(parameters[0])) == keccak256(bytes("address"))) {
-                    address arg = _stringToAddress(args_[currentIndex]);
-                    callData    = abi.encodeWithSignature(functionSignatures_[i], arg);
-                }
-            }
-
-            if (noOfParams == 2) {
-                if (keccak256(bytes(parameters[1])) == keccak256(bytes("uint256"))) {
-                    address arg1 = _stringToAddress(args_[currentIndex]);
-                    uint256 arg2 = _stringToUint(args_[currentIndex + 1]);
-                    callData     = abi.encodeWithSignature(functionSignatures_[i], arg1, arg2);
-                }
-                if (keccak256(bytes(parameters[1])) == keccak256(bytes("address"))) {
-                    address arg1 = _stringToAddress(args_[currentIndex]);
-                    address arg2 = _stringToAddress(args_[currentIndex + 1]);
-                    callData     = abi.encodeWithSignature(functionSignatures_[i], arg1, arg2);
-                }
-            }
-
-            if (noOfParams == 3) {
-                address arg1 = _stringToAddress(args_[currentIndex]);
-                uint256 arg2 = _stringToUint(args_[currentIndex + 1]);
-                uint256 arg3 = _stringToUint(args_[currentIndex + 2]);
-                callData     = abi.encodeWithSignature(functionSignatures_[i], arg1, arg2, arg3);
-            }
-
-            currentIndex += noOfParams;
-            (, results_[i]) = address(poolInfoUtils).call(callData);
-        }
-    }
-
     // Returns all function parameters
     function _parseFunctionSignature(string memory signature_) internal pure returns (string[] memory parameters_) {
         // Remove the function name and parentheses from the signature

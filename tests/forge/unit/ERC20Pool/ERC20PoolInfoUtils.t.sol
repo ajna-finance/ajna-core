@@ -369,43 +369,6 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         );
     }
 
-    function testPoolInfoUtilsMulticall() external {
-        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
-
-        string[] memory functionSignatures = new string[](2);
-        functionSignatures[0] = "hpb(address)";
-        functionSignatures[1] = "htp(address)";
-
-        string[] memory args = new string[](2);
-        args[0] = Strings.toHexString(address(_pool));
-        args[1] = Strings.toHexString(address(_pool));
-
-        bytes[] memory result = poolUtilsMulticall.multicall(functionSignatures, args);
-
-        assertEq(abi.decode(result[0], (uint256)), _poolUtils.hpb(address(_pool)));
-        assertEq(abi.decode(result[1], (uint256)), _poolUtils.htp(address(_pool)));
-    }
-
-    function testPoolInfoMulticallBorrowerInfo() external {
-        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
-
-        string[] memory functionSignatures = new string[](2);
-        functionSignatures[0] = "borrowerInfo(address,address)";
-        functionSignatures[1] = "htp(address)";
-
-        string[] memory args = new string[](3);
-        args[0] = Strings.toHexString(address(_pool));
-        args[1] = Strings.toHexString(_borrower);
-        args[2] = Strings.toHexString(address(_pool));
-
-        bytes[] memory result = poolUtilsMulticall.multicall(functionSignatures, args);
-
-        (uint256 debt,,,) = abi.decode(result[0], (uint256, uint256, uint256, uint256));
-
-        assertEq(debt,       21_020.192307692307702000 * 1e18);
-        assertEq(abi.decode(result[1], (uint256)), _poolUtils.htp(address(_pool)));
-    }
-
     // Helps test liquidation functions
     function _removeAndKick() internal {
         uint256 amountLessFee = 9_999.543378995433790000 * 1e18;
