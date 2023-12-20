@@ -316,8 +316,8 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(_poolUtils.borrowFeeRate(address(_pool)), 0.000961538461538462 * 1e18);
     }
 
-    function testUnutilizedDepositFeeRate() external {
-        assertEq(_poolUtils.unutilizedDepositFeeRate(address(_pool)), 0.000045662100456621 * 1e18);
+    function testDepositFeeRate() external {
+        assertEq(_poolUtils.depositFeeRate(address(_pool)), 0.000045662100456621 * 1e18);
     }
 
     function testPoolInfoUtilsLPToCollateralAndQuote() external {
@@ -369,16 +369,6 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         );
     }
 
-    function testPoolInfoUtilsMulticallPoolAndBucketInfo() external {
-        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
-
-        PoolInfoUtilsMulticall.BucketInfo memory bucketInfo;
-
-        (,,, bucketInfo) = poolUtilsMulticall.poolDetailsAndBucketInfo(address(_pool), high);
-
-        assertEq(bucketInfo.bucketLP, 9_999.54337899543379 * 1e18);
-    }
-
     function testPoolInfoUtilsMulticall() external {
         PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
 
@@ -416,16 +406,6 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(abi.decode(result[1], (uint256)), _poolUtils.htp(address(_pool)));
     }
 
-    function testPoolInfoMulticallRatesAndFees() external {
-        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
-
-        (uint256 lenderInterestMargin, uint256 borrowFeeRate, uint256 depositFeeRate) = poolUtilsMulticall.poolRatesAndFees(address(_pool));
-
-        assertEq(lenderInterestMargin, 0.849999999999999999 * 1e18);
-        assertEq(borrowFeeRate,        0.000961538461538462 * 1e18);
-        assertEq(depositFeeRate,       0.000045662100456621 * 1e18);
-    }
-
     // Helps test liquidation functions
     function _removeAndKick() internal {
         uint256 amountLessFee = 9_999.543378995433790000 * 1e18;
@@ -458,9 +438,9 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
 
         (uint256 lim, uint256 bfr, uint256 dfr) = poolUtilsMulticall.poolRatesAndFeesMulticall(address(_pool));
 
-        assertGe(lim, 0.000136986301369863 * 1e18);
-        assertGe(bfr, 0.000961538461538462 * 1e18);
-        assertGe(dfr, 0.000136986301369863 * 1e18);
+        assertEq(lim, 0.849999999999999999 * 1e18);
+        assertEq(bfr, 0.000961538461538462 * 1e18);
+        assertEq(dfr, 0.000045662100456621* 1e18);
     }
 
     function testPoolInfoUtilsMulticallPoolDetails() external {
@@ -474,22 +454,22 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             PoolInfoUtilsMulticall.PoolUtilizationInfo memory poolUtilizationInfo
         ) = poolUtilsMulticall.poolDetailsMulticall(address(_pool));
 
-        assertEq(poolLoansInfo.poolSize,                   50_000 * 1e18);
+        assertEq(poolLoansInfo.poolSize, 49_997.716894977168950000 * 1e18);
 
         assertEq(poolPriceInfo.hpb,      3_010.892022197881557845 * 1e18);
         assertEq(poolPriceInfo.hpbIndex, 2550);
-        assertEq(poolPriceInfo.htp,      210.201923076923077020 * 1e18);
-        assertEq(poolPriceInfo.htpIndex, 3083);
+        assertEq(poolPriceInfo.htp,      218.610000000000000101 * 1e18);
+        assertEq(poolPriceInfo.htpIndex, 3075);
         assertEq(poolPriceInfo.lup,      2981.007422784467321543 * 1e18);
         assertEq(poolPriceInfo.lupIndex, 2552);
 
-        assertGe(poolRatesAndFees.lenderInterestMargin, 0.000136986301369863 * 1e18);
-        assertGe(poolRatesAndFees.borrowFeeRate, 0.000961538461538462 * 1e18);
-        assertGe(poolRatesAndFees.depositFeeRate, 0.000136986301369863 * 1e18);
+        assertEq(poolRatesAndFees.lenderInterestMargin, 0.849999999999999999 * 1e18);
+        assertEq(poolRatesAndFees.borrowFeeRate,        0.000961538461538462 * 1e18);
+        assertEq(poolRatesAndFees.depositFeeRate,       0.000045662100456621 * 1e18);
 
-        assertEq(poolReservesInfo.reserves,                   20.192307692307702000 * 1e18);
+        assertEq(poolReservesInfo.reserves,             22.475412715138752000 * 1e18);
 
-        assertEq(poolUtilizationInfo.poolMinDebtAmount,     2_102.019230769230770200 * 1e18);
+        assertEq(poolUtilizationInfo.poolMinDebtAmount, 2_102.019230769230770200 * 1e18);
     }
 
     function testPoolInfoUtilsMulticallPoolBalanceDetails() external {

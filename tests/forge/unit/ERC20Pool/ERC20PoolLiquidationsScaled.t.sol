@@ -74,7 +74,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint256 lpBalance;
         for (uint i=0; i<4; ++i) {
 
-            uint256 depositFee = Maths.WAD - _poolUtils.unutilizedDepositFeeRate(address(_pool));
+            uint256 depositFee = Maths.WAD - _poolUtils.depositFeeRate(address(_pool));
 
             _addInitialLiquidity({
                     from:   _lender,

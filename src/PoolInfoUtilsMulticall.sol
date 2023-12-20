@@ -106,7 +106,7 @@ contract PoolInfoUtilsMulticall {
         // retrieve rates and fees
         poolRatesAndFees_.lenderInterestMargin = poolInfoUtils.lenderInterestMargin(ajnaPool_);
         poolRatesAndFees_.borrowFeeRate        = poolInfoUtils.borrowFeeRate(ajnaPool_);
-        poolRatesAndFees_.depositFeeRate       = poolInfoUtils.unutilizedDepositFeeRate(ajnaPool_);
+        poolRatesAndFees_.depositFeeRate       = poolInfoUtils.depositFeeRate(ajnaPool_);
 
         // retrieve reserves info
         (
@@ -130,11 +130,11 @@ contract PoolInfoUtilsMulticall {
      *  @notice Retrieves info of lenderInterestMargin, borrowFeeRate and depositFeeRate
      *  @param  ajnaPool_            Address of `Ajna` pool
      *  @return lenderInterestMargin Lender interest margin in pool
-     *  @return borrowFeeRate        Borrow fee rate calculated from the pool interest ra
+     *  @return borrowFeeRate        Borrow fee rate calculated from the pool interest rate
      *  @return depositFeeRate       Deposit fee rate calculated from the pool interest rate
      */
     function poolRatesAndFeesMulticall(address ajnaPool_)
-        external
+        external view
         returns
         (
             uint256 lenderInterestMargin,
@@ -144,7 +144,7 @@ contract PoolInfoUtilsMulticall {
     {
         lenderInterestMargin = poolInfoUtils.lenderInterestMargin(ajnaPool_);
         borrowFeeRate        = poolInfoUtils.borrowFeeRate(ajnaPool_);
-        depositFeeRate       = poolInfoUtils.unutilizedDepositFeeRate(ajnaPool_);
+        depositFeeRate       = poolInfoUtils.depositFeeRate(ajnaPool_);
     }
 
     /**

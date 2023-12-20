@@ -504,11 +504,11 @@ contract PoolInfoUtils is Multicall {
     }
 
     /**
-     *  @notice Calculates unutilized deposit fee rate for a pool.
-     *  @notice Calculated as current annualized rate divided by `365` (`24` hours of interest).
+     *  @notice Calculates deposit fee rate for a pool.
+     *  @notice Calculated as current annualized rate divided by 365 * 3 (8 hours of interest)
      *  @return Fee rate calculated from the pool interest rate.
      */
-    function unutilizedDepositFeeRate(
+    function depositFeeRate(
         address ajnaPool_
     ) external view returns (uint256) {
         (uint256 interestRate,) = IPool(ajnaPool_).interestRateInfo();
