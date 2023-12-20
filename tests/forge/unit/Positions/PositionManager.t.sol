@@ -1338,7 +1338,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.nonces(5);
 
         // check domain separator matches expectations for the test chain
-        assertEq(_positionManager.DOMAIN_SEPARATOR(), 0x255893ac72554d931c70a8c246ff1216c7122c81a4d4f7f2a2eb5377f2481f12);
+        assertEq(_positionManager.DOMAIN_SEPARATOR(), 0x433817320eb965ca857baacaaaffc14f306708454d94514994a825a8a91200f6);
     }
 
     function testPermitReverts() external {

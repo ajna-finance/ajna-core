@@ -12,7 +12,7 @@ import { IPoolErrors }      from 'src/interfaces/pool/commons/IPoolErrors.sol';
 import { IPoolFactory }     from 'src/interfaces/pool/IPoolFactory.sol';
 
 contract ERC20PoolFactoryTest is ERC20HelperContract {
-    address immutable poolAddress = 0x9Fd7552Da37D2D296CB4a84d507c35Dcc926220a;
+    address immutable poolAddress = 0x22e52d5C273D99547F9Fa44B8034C16d93773B13;
     bytes32 constant ERC20_NON_SUBSET_HASH = keccak256("ERC20_NON_SUBSET_HASH");
 
     function setUp() external {

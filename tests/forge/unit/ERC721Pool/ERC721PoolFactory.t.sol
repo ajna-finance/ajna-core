@@ -34,7 +34,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
         // deploy NFT collection pool
         vm.expectEmit(true, true, false, true);
-        emit PoolCreated(0x8a2be84c82956B6DdA0c4D647Ae9357d845a086B, _factory.getNFTSubsetHash(tokenIds));
+        emit PoolCreated(0x4693faE904804C89B14b1C13d2a53f10D2c4e5E3, _factory.getNFTSubsetHash(tokenIds));
         _NFTCollectionPoolAddress = _factory.deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
         _NFTCollectionPool        = ERC721Pool(_NFTCollectionPoolAddress);
 
