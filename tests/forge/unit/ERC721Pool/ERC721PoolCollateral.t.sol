@@ -30,7 +30,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _mintAndApproveCollateralTokens(_borrower,  52);
         _mintAndApproveCollateralTokens(_borrower2, 53);
 
-        // check initial token balances
+        // check initial NFT balances
         assertEq(_pool.pledgedCollateral(), 0);
 
         assertEq(_collateral.balanceOf(_borrower),      52);
@@ -80,7 +80,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             tokenIds: tokenIdsToAdd
         });
 
-        // check token balances after add
+        // check NFT balances after add
         assertEq(_pool.pledgedCollateral(),             Maths.wad(3));
         assertEq(_collateral.balanceOf(_borrower),      49);
         assertEq(_collateral.balanceOf(address(_pool)), 3);
@@ -97,7 +97,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             tokenIds: tokenIdsToAdd
         });
 
-        // check token balances after add
+        // check NFT balances after add
         assertEq(_pool.pledgedCollateral(), Maths.wad(1));
 
         assertEq(_collateral.balanceOf(_borrower),      52);
@@ -133,7 +133,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             tokenIds: tokenIdsToAdd
         });
 
-        // check token balances after add
+        // check NFT balances after add
         assertEq(_pool.pledgedCollateral(), Maths.wad(3));
 
         assertEq(_collateral.balanceOf(_borrower),      49);
@@ -163,7 +163,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             tokenIds: tokenIdsToAdd
         });
 
-        // check token balances after add
+        // check nFT balances after add
         assertEq(_pool.pledgedCollateral(), Maths.wad(4));
 
         assertEq(_collateral.balanceOf(_borrower),      49);
@@ -182,7 +182,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             collateralToPull: 2
         });
 
-        // check token balances after remove
+        // check NFT balances after remove
         assertEq(_pool.pledgedCollateral(), Maths.wad(2));
 
         assertEq(_collateral.balanceOf(_borrower),      51);
@@ -205,6 +205,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     function testPullCollateralToDifferentRecipient() external tearDown {
         address tokensReceiver = makeAddr("tokensReceiver");
 
+        assertEq(_collateral.balanceOf(tokensReceiver), 0);
+
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
@@ -226,7 +228,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             tokenIds: tokenIdsToAdd
         });
 
-        // check token balances after add
+        // check NFT balances after add
         assertEq(_pool.pledgedCollateral(), Maths.wad(4));
         assertEq(_collateral.balanceOf(address(_pool)), 4);
 
@@ -240,7 +242,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         changePrank(_borrower);
         ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 2, tokensReceiver, MAX_FENWICK_INDEX);
 
-        // check token balances after remove
+        // check NFT balances after remove
         assertEq(_pool.pledgedCollateral(), Maths.wad(2));
 
         assertEq(_collateral.balanceOf(_borrower),      49);
@@ -258,7 +260,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         changePrank(_borrower2);
         ERC721Pool(address(_pool)).repayDebt(_borrower2, 0, 1, tokensReceiver, MAX_FENWICK_INDEX);
 
-        // check token balances after remove
+        // check NFT balances after remove
         assertEq(_pool.pledgedCollateral(), Maths.wad(1));
 
         assertEq(_collateral.balanceOf(_borrower),      49);
@@ -328,7 +330,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             index:  2550
         });
 
-        // check initial token balances
+        // check initial NFT and token balances
         assertEq(_collateral.balanceOf(_borrower),      52);
         assertEq(_collateral.balanceOf(address(_pool)), 0);
 
@@ -372,7 +374,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             newLup:     _priceAt(2550)
         });
 
-        // check token balances after borrow
+        // check NFT and token balances after borrow
         assertEq(_collateral.balanceOf(_borrower),      49);
         assertEq(_collateral.balanceOf(address(_pool)), 3);
 
@@ -407,7 +409,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             collateralToPull: 1
         });
 
-        // check token balances after remove
+        // check NFT and token balances after remove
         assertEq(_collateral.balanceOf(_borrower),      50);
         assertEq(_collateral.balanceOf(address(_pool)), 2);
 
@@ -489,7 +491,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     }
 
     function testAddRemoveCollateral() external tearDown {
-
         // lender adds some liquidity
         _addInitialLiquidity({
             from:   _lender,
@@ -514,14 +515,14 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             lpAward:  975_232.505322350083963682 * 1e18
         });
 
-        // reverts when borrower2 does not have any LP to remove a token
+        // reverts when borrower2 does not have any LP to remove a NFT
         _assertRemoveCollateralInsufficientLPRevert({
             from:   _borrower2,
             amount: 1,
             index:  1530
         });
 
-        // reverts when borrower trys to remove a token from a bucket with no collateral
+        // reverts when borrower trys to remove a NFT from a bucket with no collateral
         _assertRemoveInsufficientCollateralRevert({
             from:   _borrower,
             amount: 1,
@@ -550,7 +551,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             depositTime: _startTime
         });
 
-        // borrower removes second token
+        // borrower removes second NFT
         _removeCollateral({
             from:     _borrower,
             amount:   1,
@@ -1205,7 +1206,7 @@ contract ERC721SubsetPoolCollateralTest is ERC721PoolCollateralTest {
         tokenIdsToAdd[1] = 4;
         tokenIdsToAdd[2] = 6;
 
-        // should revert if borrower attempts to add tokens not in the pool subset
+        // should revert if borrower attempts to add NFTs not in the pool subset
         _assertPledgeCollateralNotInSubsetRevert({
             from:     _borrower,
             tokenIds: tokenIdsToAdd
