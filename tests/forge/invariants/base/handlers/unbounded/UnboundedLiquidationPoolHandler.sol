@@ -200,7 +200,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             increaseInReserves += totalBalanceAfterTake - totalBalanceBeforeTake;
 
             // **RE9**: Reserves unchanged by takes and bucket takes below TP(at the time of kick)
-            if (auctionInfo.auctionPrice < auctionInfo.debtToCollateral) {
+            if (auctionInfo.auctionPrice < Maths.min(auctionInfo.debtToCollateral, auctionInfo.neutralPrice)) {
                 increaseInReserves = 0;
                 decreaseInReserves = 0;
             }
