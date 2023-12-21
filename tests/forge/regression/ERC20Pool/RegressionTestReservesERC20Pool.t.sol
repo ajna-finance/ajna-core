@@ -1511,7 +1511,10 @@ contract RegressionTestReservesWith18QuotePrecision6CollateralPrecisionERC20Pool
         vm.setEnv("NO_OF_ACTORS", "50");
         super.setUp();
     }
-
+    /**
+        Test was failing in moveQuoteToken due to Lps getting added to toBucket without any deposit being added.
+        This situation arises when toBucketScale is large enough to make unscaled amount to move 0. moveQuoteToken did not have unscaledAmount == 0 check.
+     */
     function test_regression_B2_failure_moveQuote() external {
         _reserveERC20PoolHandler.withdrawBonds(115792089237316195423570985008687907853269984665640564039457584007913129639935, 2, 115792089237316195423570985008687907853269984665640564039457584007913129639934);
         _reserveERC20PoolHandler.removeQuoteToken(3, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639933);
