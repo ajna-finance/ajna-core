@@ -293,6 +293,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             if (auctionInfo.auctionPrice != 0 && auctionInfo.auctionPrice < 100) {
                 reservesErrorMargin = (beforeTakeVars.deposit - afterTakeVars.deposit) / auctionInfo.auctionPrice;
             }
+            (uint256 inflator, ) = _pool.inflatorInfo();
+            reservesErrorMargin = Math.max(reservesErrorMargin, inflator/5e17);
 
             // In case of bucket take, collateral is taken at bucket price.
             uint256 takePrice = _priceAt(bucketIndex_);
