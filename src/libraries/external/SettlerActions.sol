@@ -477,8 +477,8 @@ library SettlerActions {
                 // no remaining debt to forgive
                 remainingt0Debt_ = 0;
 
-                uint256 depositUsed = Maths.wdiv(debt, scale);
-                depositRemaining    = unscaledDeposit - Maths.min(depositUsed, unscaledDeposit);
+                uint256 depositUsed = Maths.min(Maths.wdiv(debt, scale), unscaledDeposit);
+                depositRemaining    = unscaledDeposit - depositUsed;
 
                 // Remove deposit used to forgive bad debt from bucket
                 // when unscaledDeposit == 0 the amount of debt is very small and worth forgiving versus having settle revert
