@@ -117,9 +117,7 @@ library TakerActions {
     error InsufficientCollateral();
     error InvalidAmount();
     error NoAuction();
-    error NoReserves();
     error NoReservesAuction();
-    error ReserveAuctionTooSoon();
 
     /***************************/
     /***  External Functions ***/
@@ -273,7 +271,7 @@ library TakerActions {
      *  @dev    === Write state ===
      *  @dev    decrement `reserveAuction.unclaimed` accumulator
      *  @dev    === Reverts on ===
-     *  @dev    not kicked or `72` hours didn't pass `NoReservesAuction()`
+     *  @dev    not kicked or `72` hours passed `NoReservesAuction()`
      *  @dev    0 take amount or 0 AJNA burned `InvalidAmount()`
      *  @dev    === Emit events ===
      *  @dev    - `ReserveAuction`
