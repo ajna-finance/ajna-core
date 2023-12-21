@@ -26,6 +26,7 @@ import {
 import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
 import { Maths }    from '../internal/Maths.sol';
+import "@std/console.sol";
 
 /**
     @title  LenderActions library
@@ -298,7 +299,11 @@ library LenderActions {
         // revert if (due to rounding) the awarded LP in to bucket is 0
         if (toBucketLP_ == 0) revert InsufficientLP();
 
-        Deposits.unscaledAdd(deposits_, params_.toIndex, Maths.wdiv(movedAmount_, vars.toBucketScale));
+        uint256 unscaledMovedAmount = Maths.wdiv(movedAmount_, vars.toBucketScale);
+        // revert if unscaled amount is 0
+        if (unscaledMovedAmount == 0) revert InvalidAmount();
+
+        Deposits.unscaledAdd(deposits_, params_.toIndex, unscaledMovedAmount);
 
         // recalculate LUP and HTP
         lup_ = Deposits.getLup(deposits_, poolState_.debt);
