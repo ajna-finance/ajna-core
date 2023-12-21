@@ -405,6 +405,7 @@ library SettlerActions {
                 vars.hpbUnscaledDeposit -= vars.unscaledDeposit;
 
                 // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
+                // when unscaledDeposit == 0 the amount of debt is very small and worth forgiving versus having settle revert
                 if (vars.unscaledDeposit != 0) Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit);
 
                 // check if bucket healthy - set bankruptcy if collateral is 0 and entire deposit was used to settle and there's still LP
@@ -477,9 +478,10 @@ library SettlerActions {
                 remainingt0Debt_ = 0;
 
                 uint256 depositUsed = Maths.wdiv(debt, scale);
-                depositRemaining = unscaledDeposit - depositUsed;
+                depositRemaining    = unscaledDeposit - Maths.min(depositUsed, unscaledDeposit);
 
                 // Remove deposit used to forgive bad debt from bucket
+                // when unscaledDeposit == 0 the amount of debt is very small and worth forgiving versus having settle revert
                 if (depositUsed != 0) Deposits.unscaledRemove(deposits_, index, depositUsed);
 
             // 2) loan debt to settle exceeds bucket deposit, bucket deposit is the constraint
@@ -488,6 +490,7 @@ library SettlerActions {
                 remainingt0Debt_ -= Maths.floorWdiv(depositToRemove, inflator_);
 
                 // Remove all deposit from bucket
+                // when unscaledDeposit == 0 the amount of debt is very small and worth forgiving versus having settle revert
                 if (unscaledDeposit != 0) Deposits.unscaledRemove(deposits_, index, unscaledDeposit);
             }
 
