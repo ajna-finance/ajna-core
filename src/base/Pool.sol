@@ -394,6 +394,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @dev    increment `latestBurnEpoch` counter
      *  @dev    update `reserveAuction.latestBurnEventEpoch` and burn event `timestamp` state
      *  @dev    === Reverts on ===
+     *  @dev    no reserves to claim `NoReserves()`
      *  @dev    5 days not passed `ReserveAuctionTooSoon()`
      *  @dev    unsettled liquidation `AuctionActive()`
      *  @dev    === Emit events ===
