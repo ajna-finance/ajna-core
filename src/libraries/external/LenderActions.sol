@@ -227,6 +227,7 @@ library LenderActions {
      *  @dev    dust amount `DustAmountNotExceeded()`
      *  @dev    invalid index `InvalidIndex()`
      *  @dev    no LP awarded in to bucket `InsufficientLP()`
+     *  @dev    calculated unscaled amount to move is 0 `InvalidAmount()`
      *  @dev    === Emit events ===
      *  @dev    - `BucketBankruptcy`
      *  @dev    - `MoveQuoteToken`
