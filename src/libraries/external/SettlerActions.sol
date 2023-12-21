@@ -481,7 +481,7 @@ library SettlerActions {
                 depositRemaining    = unscaledDeposit - depositUsed;
 
                 // Remove deposit used to forgive bad debt from bucket
-                // when unscaledDeposit == 0 the amount of debt is very small and worth forgiving versus having settle revert
+                // when depositUsed == 0 the amount of debt is very small and worth forgiving versus having settle revert
                 if (depositUsed != 0) Deposits.unscaledRemove(deposits_, index, depositUsed);
 
             // 2) loan debt to settle exceeds bucket deposit, bucket deposit is the constraint
