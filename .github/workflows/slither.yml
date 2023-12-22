@@ -51,7 +51,7 @@ jobs:
 
       - name: Analyze Libraries
         run: |
-          slither src/libraries/external/.
+          slither src/libraries/external/
         continue-on-error: true
         id: libraries-analyzer
 
