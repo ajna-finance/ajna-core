@@ -8,6 +8,11 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
       - name: Install and set solc version
         run: |
           pip install solc-select && solc-select install 0.8.18 && solc-select use 0.8.18
