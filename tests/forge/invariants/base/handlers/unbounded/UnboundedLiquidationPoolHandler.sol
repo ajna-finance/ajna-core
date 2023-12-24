@@ -196,6 +196,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 kickerReward += afterTakeVars.kickerBond - beforeTakeVars.kickerBond;
             }
 
+            (uint256 inflator, ) = _pool.inflatorInfo();
+            reservesErrorMargin = Math.max(reservesErrorMargin, inflator/5e17);
+
             // **RE7**: Reserves increase with the quote token paid by taker.
             increaseInReserves += totalBalanceAfterTake - totalBalanceBeforeTake;
 
