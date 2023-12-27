@@ -405,7 +405,8 @@ library SettlerActions {
                 vars.hpbUnscaledDeposit -= vars.unscaledDeposit;
 
                 // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
-                Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit);
+                // when unscaledDeposit == 0 the amount of debt is very small and worth forgiving versus having settle revert
+                if (vars.unscaledDeposit != 0) Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit);
 
                 // check if bucket healthy - set bankruptcy if collateral is 0 and entire deposit was used to settle and there's still LP
                 if (vars.hpbCollateral == 0 && vars.hpbUnscaledDeposit == 0 && vars.hpbLP != 0) {
@@ -476,11 +477,12 @@ library SettlerActions {
                 // no remaining debt to forgive
                 remainingt0Debt_ = 0;
 
-                uint256 depositUsed = Maths.wdiv(debt, scale);
-                depositRemaining = unscaledDeposit - depositUsed;
+                uint256 depositUsed = Maths.min(Maths.wdiv(debt, scale), unscaledDeposit);
+                depositRemaining    = unscaledDeposit - depositUsed;
 
                 // Remove deposit used to forgive bad debt from bucket
-                Deposits.unscaledRemove(deposits_, index, depositUsed);
+                // when depositUsed == 0 the amount of debt is very small and worth forgiving versus having settle revert
+                if (depositUsed != 0) Deposits.unscaledRemove(deposits_, index, depositUsed);
 
             // 2) loan debt to settle exceeds bucket deposit, bucket deposit is the constraint
             } else {
@@ -488,7 +490,8 @@ library SettlerActions {
                 remainingt0Debt_ -= Maths.floorWdiv(depositToRemove, inflator_);
 
                 // Remove all deposit from bucket
-                Deposits.unscaledRemove(deposits_, index, unscaledDeposit);
+                // when unscaledDeposit == 0 the amount of debt is very small and worth forgiving versus having settle revert
+                if (unscaledDeposit != 0) Deposits.unscaledRemove(deposits_, index, unscaledDeposit);
             }
 
             Bucket storage hpbBucket = buckets_[index];

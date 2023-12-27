@@ -20,9 +20,18 @@ library Deposits {
     /// @dev Max index supported in the `Fenwick` tree
     uint256 internal constant SIZE = 8192;
 
+    /**************/
+    /*** Errors ***/
+    /**************/
+
+    // See `IPoolErrors` for descriptions
+    error InvalidAmount();
+
     /**
      *  @notice Increase a value in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
+     *  @dev    === Reverts on ===
+     *  @dev    unscaled amount to add is 0 `InvalidAmount()`
      *  @param  deposits_          Deposits state struct.
      *  @param  index_             The deposit index.
      *  @param  unscaledAddAmount_ The unscaled amount to increase deposit by.
@@ -32,6 +41,10 @@ library Deposits {
         uint256 index_,
         uint256 unscaledAddAmount_
     ) internal {
+
+        // revert if 0 amount is added.
+        if (unscaledAddAmount_ == 0) revert InvalidAmount();
+
         // price buckets are indexed starting at 0, Fenwick bit logic is more elegant starting at 1
         ++index_;
 
@@ -289,6 +302,8 @@ library Deposits {
     /**
      *  @notice Decrease a node in the `FenwickTree` at an index.
      *  @dev    Starts at leaf/target and moved up towards root.
+     *  @dev    === Reverts on ===
+     *  @dev    unscaled amount to remove is 0 `InvalidAmount()`
      *  @param  deposits_             Deposits state struct.
      *  @param  index_                The deposit index.
      *  @param  unscaledRemoveAmount_ Unscaled amount to decrease deposit by.
@@ -298,6 +313,10 @@ library Deposits {
         uint256 index_,
         uint256 unscaledRemoveAmount_
     ) internal {
+
+        // revert if 0 amount is removed.
+        if (unscaledRemoveAmount_ == 0) revert InvalidAmount();
+
         // price buckets are indexed starting at 0, Fenwick bit logic is more elegant starting at 1
         ++index_;
 
