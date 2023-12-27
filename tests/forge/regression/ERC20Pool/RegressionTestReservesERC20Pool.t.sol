@@ -1513,7 +1513,8 @@ contract RegressionTestReservesWith18QuotePrecision18CollateralPrecisionERC20Poo
     }
 
     /**
-        FIXME:
+     *  Test was failing due to reserve imprecision due to t0debt rounding.  Fixed by allowing reserve
+     * fluctuation up to ~2e-18th of the current inflator value in test harness bucketTake function.
             Previous Reserves     --> 41560434780897465224488579965
             Increase in Reserves  --> 0
             Decrease in Reserves  --> 0
@@ -2234,7 +2235,8 @@ contract RegressionTestReservesWith18QuotePrecision18CollateralPrecisionERC20Poo
     }
 
     /**
-        FIXME:
+     *  Test was failing due to reserve imprecision due to t0debt rounding.  Fixed by allowing reserve
+     * fluctuation up to ~2e-18th of the current inflator value in test harness auctionTake function.
             Previous Reserves     --> 13918232397922092976654436630
             Increase in Reserves  --> 0
             Decrease in Reserves  --> 0
