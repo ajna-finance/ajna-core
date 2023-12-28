@@ -196,6 +196,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 kickerReward += afterTakeVars.kickerBond - beforeTakeVars.kickerBond;
             }
 
+            // Reserves can increase by up to 2e-18 (1/5e17) due to rounding error in inflator value multiplied with t0Debt
             (uint256 inflator, ) = _pool.inflatorInfo();
             reservesErrorMargin = Math.max(reservesErrorMargin, inflator/5e17);
 
@@ -296,6 +297,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             if (auctionInfo.auctionPrice != 0 && auctionInfo.auctionPrice < 100) {
                 reservesErrorMargin = (beforeTakeVars.deposit - afterTakeVars.deposit) / auctionInfo.auctionPrice;
             }
+
+            // Reserves can increase by up to 2e-18 (1/5e17) due to rounding error in inflator value multiplied with t0Debt
             (uint256 inflator, ) = _pool.inflatorInfo();
             reservesErrorMargin = Math.max(reservesErrorMargin, inflator/5e17);
 
