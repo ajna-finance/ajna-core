@@ -95,10 +95,13 @@ contract FenwickTreeInstance is DSTestPlus {
             amount = insertions_ == 1 ? amount_ : (amount_ % insertions_) * randomInRange(1_000, 1 * 1e10, true);
 
             // Update values
-            add(i, amount);
-            amount_          -= amount;
-            insertions_      -= 1;
-            cumulativeAmount += amount;
+            if (amount != 0) {
+                add(i, amount);
+                amount_          -= amount;
+                cumulativeAmount += amount;
+            }
+
+            insertions_ -= 1;
 
             // Verify tree sum
             assertEq(deposits.treeSum(), cumulativeAmount);

@@ -117,9 +117,7 @@ library TakerActions {
     error InsufficientCollateral();
     error InvalidAmount();
     error NoAuction();
-    error NoReserves();
     error NoReservesAuction();
-    error ReserveAuctionTooSoon();
 
     /***************************/
     /***  External Functions ***/
@@ -273,7 +271,7 @@ library TakerActions {
      *  @dev    === Write state ===
      *  @dev    decrement `reserveAuction.unclaimed` accumulator
      *  @dev    === Reverts on ===
-     *  @dev    not kicked or `72` hours didn't pass `NoReservesAuction()`
+     *  @dev    not kicked or `72` hours passed `NoReservesAuction()`
      *  @dev    0 take amount or 0 AJNA burned `InvalidAmount()`
      *  @dev    === Emit events ===
      *  @dev    - `ReserveAuction`
@@ -592,6 +590,8 @@ library TakerActions {
      *  @dev    - increment `bucket.collateral` and `bucket.lps` accumulator
      *  @dev    === Emit events ===
      *  @dev    - `BucketTakeLPAwarded`
+     *  @dev    === Reverts on ===
+     *  @dev    calculated unscaled amount to remove is 0 `InvalidAmount()`
      *  @param  auctions_     Struct for pool auctions state.
      *  @param  deposits_     Struct for pool deposits state.
      *  @param  buckets_      Struct for pool buckets state.

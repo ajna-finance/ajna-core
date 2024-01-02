@@ -96,8 +96,6 @@ library KickerActions {
     error AuctionActive();
     error BorrowerOk();
     error InsufficientLiquidity();
-    error InsufficientLP();
-    error InvalidAmount();
     error NoReserves();
     error PriceBelowLUP();
     error ReserveAuctionTooSoon();
@@ -210,6 +208,7 @@ library KickerActions {
      *  @dev    update `reserveAuction.kicked` timestamp state
      *  @dev    === Reverts on ===
      *  @dev    no reserves to claim `NoReserves()`
+     *  @dev    5 days not passed `ReserveAuctionTooSoon()`
      *  @dev    === Emit events ===
      *  @dev    - `KickReserveAuction`
      */
