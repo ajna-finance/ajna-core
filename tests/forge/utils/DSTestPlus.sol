@@ -797,6 +797,18 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.kickReserveAuction();
     }
 
+    function _assertBurnInfo(
+        uint256 epoch,
+        uint256 timestamp,
+        uint256 totalInterest,
+        uint256 totalBurned
+    ) internal {
+        (uint256 curTimestamp, uint256 curTotalInterest, uint256 curTotalBurned) = _pool.burnInfo(epoch);
+        assertEq(curTimestamp, timestamp);
+        assertEq(curTotalInterest, totalInterest);
+        assertEq(curTotalBurned, totalBurned);
+    }
+
     /**********************/
     /*** Revert asserts ***/
     /**********************/

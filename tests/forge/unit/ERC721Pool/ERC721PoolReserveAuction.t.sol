@@ -58,6 +58,8 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 
         (poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt - 175_000 * 1e18, 4_590.373946590638353626 * 1e18);  // debt matches develop
+
+        assertEq(_pool.currentBurnEpoch(), 0);
     }
 
     function testClaimableReserveNoAuction() external tearDown {
@@ -104,6 +106,8 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         });
 
         _assertReserveAuctionPrice(1_189_460.682069263974570223 * 1e18);
+
+        assertEq(_pool.currentBurnEpoch(), 1);
 
         // check prices
         skip(37 minutes);
@@ -217,6 +221,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         // kick off a new auction
         uint256 expectedPrice = 1_189_460.682069263974570223 * 1e18;
         uint256 expectedQuoteBalance = _quote.balanceOf(_bidder);
+        uint256 timestamp = block.timestamp;
         _kickReserveAuction({
             from:              _bidder,
             remainingReserves: expectedReserves,
@@ -232,6 +237,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
             timeRemaining:              3 days
         });
         assertEq(_quote.balanceOf(_bidder), expectedQuoteBalance);
+        assertEq(_pool.currentBurnEpoch(), 1);
         
         // bid once the price becomes attractive
         skip(16 hours);
@@ -310,6 +316,13 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
+        });
+
+        _assertBurnInfo({
+            epoch: 1,
+            timestamp: timestamp,
+            totalInterest: 3_758.789008448196373660 * 1e18,
+            totalBurned: 14_707.978854026263800428 * 1e18
         });
     }
 
