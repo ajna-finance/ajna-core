@@ -196,11 +196,15 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 kickerReward += afterTakeVars.kickerBond - beforeTakeVars.kickerBond;
             }
 
+            // Reserves can increase by up to 2e-18 (1/5e17) due to rounding error in inflator value multiplied with t0Debt
+            (uint256 inflator, ) = _pool.inflatorInfo();
+            reservesErrorMargin = Math.max(reservesErrorMargin, inflator/5e17);
+
             // **RE7**: Reserves increase with the quote token paid by taker.
             increaseInReserves += totalBalanceAfterTake - totalBalanceBeforeTake;
 
             // **RE9**: Reserves unchanged by takes and bucket takes below TP(at the time of kick)
-            if (auctionInfo.auctionPrice < auctionInfo.debtToCollateral) {
+            if (auctionInfo.auctionPrice < Maths.min(auctionInfo.debtToCollateral, auctionInfo.neutralPrice)) {
                 increaseInReserves = 0;
                 decreaseInReserves = 0;
             }
@@ -293,6 +297,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             if (auctionInfo.auctionPrice != 0 && auctionInfo.auctionPrice < 100) {
                 reservesErrorMargin = (beforeTakeVars.deposit - afterTakeVars.deposit) / auctionInfo.auctionPrice;
             }
+
+            // Reserves can increase by up to 2e-18 (1/5e17) due to rounding error in inflator value multiplied with t0Debt
+            (uint256 inflator, ) = _pool.inflatorInfo();
+            reservesErrorMargin = Math.max(reservesErrorMargin, inflator/5e17);
 
             // In case of bucket take, collateral is taken at bucket price.
             uint256 takePrice = _priceAt(bucketIndex_);

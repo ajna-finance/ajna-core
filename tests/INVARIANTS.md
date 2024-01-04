@@ -64,7 +64,7 @@
 - **R7**: Exchange rates are unchanged under depositTakes
 - **R8**: Exchange rates are unchanged under arbTakes
 
-## Reserves (margin of 1e15 on comparisons)
+## Reserves (margin of 1e13 on comparisons)
 - **RE1**:  Reserves are unchanged by pledging collateral
 - **RE2**:  Reserves are unchanged by removing collateral
 - **RE3**:  Reserves increase upon every deposit and when moving quote tokens into a lower-priced bucket.
