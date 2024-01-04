@@ -31,27 +31,27 @@ contract HeapInstance is DSTestPlus {
         return inserts[i_];
     }
 
-    function upsertTp(address borrower_, uint256 tp_) public {
+    function upsertT0DebtToCollateral(address borrower_, uint256 tp_) public {
         _heap._upsert(borrower_, _heap.indices[borrower_], uint96(tp_));
     }
 
-    function removeTp(address borrower_) external {
+    function removeT0DebtToCollateral(address borrower_) external {
         _heap.remove(borrower_, _heap.indices[borrower_]);
     }
 
-    function getTp(address borrower_) public view returns (uint256) {
-        return _heap.getByIndex(_heap.indices[borrower_]).thresholdPrice;
+    function getT0DebtToCollateral(address borrower_) public view returns (uint256) {
+        return _heap.getByIndex(_heap.indices[borrower_]).t0DebtToCollateral;
     }
 
-    function getMaxTp() external view returns (uint256) {
-        return _heap.getMax().thresholdPrice;
+    function getMaxT0DebtToCollateral() external view returns (uint256) {
+        return _heap.getMax().t0DebtToCollateral;
     }
 
     function getMaxBorrower() external view returns (address) {
         return _heap.getMax().borrower;
     }
 
-    function getTotalTps() external view returns (uint256) {
+    function getTotalT0DebtToCollaterals() external view returns (uint256) {
         return _heap.loans.length;
     }
 
@@ -81,12 +81,12 @@ contract HeapInstance is DSTestPlus {
             tp = randomInRange(99_836_282_890, 1_004_968_987.606512354182109771 * 10**18, true);
 
             // Insert TP
-            upsertTp(borrower, tp);
+            upsertT0DebtToCollateral(borrower, tp);
             insertsDec  -=  1;
 
             // Verify amount of Heap TPs
             assertEq(_heap.loans.length - 1, totalInserts - insertsDec);
-            assertEq(getTp(borrower), tp);
+            assertEq(getT0DebtToCollateral(borrower), tp);
 
             if (trackInserts_)  inserts.push(borrower);
         }

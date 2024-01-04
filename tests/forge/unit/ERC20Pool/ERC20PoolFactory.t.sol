@@ -12,7 +12,8 @@ import { IPoolErrors }      from 'src/interfaces/pool/commons/IPoolErrors.sol';
 import { IPoolFactory }     from 'src/interfaces/pool/IPoolFactory.sol';
 
 contract ERC20PoolFactoryTest is ERC20HelperContract {
-    address immutable poolAddress = 0x3Cd0C8d97cD0291E178560E5675dD27AeD0A90d1;
+    address immutable poolAddress = 0x9Fd7552Da37D2D296CB4a84d507c35Dcc926220a;
+    bytes32 constant ERC20_NON_SUBSET_HASH = keccak256("ERC20_NON_SUBSET_HASH");
 
     function setUp() external {
         // deploy new pool factory for factory tests
@@ -94,7 +95,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
             quote:        address(_quote),
             interestRate: 2 * 10**18
         });
-        
+
         // check tracking of deployed pools
         assertEq(_poolFactory.getDeployedPoolsList().length, 0);
     }
@@ -144,7 +145,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         skip(333);
 
         vm.expectEmit(true, true, false, true);
-        emit PoolCreated(poolAddress);
+        emit PoolCreated(poolAddress, ERC20_NON_SUBSET_HASH);
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.0543 * 10**18));
 
         assertEq(address(pool),             poolAddress);
@@ -175,7 +176,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         address compAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
         address daiAddress  = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
         vm.expectEmit(true, true, false, true);
-        emit PoolCreated(poolAddress);
+        emit PoolCreated(poolAddress, ERC20_NON_SUBSET_HASH);
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(compAddress, daiAddress, 0.0543 * 10**18));
 
         assertEq(address(pool),             poolAddress);
@@ -200,7 +201,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         address wbtcAddress = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
         address daiAddress  = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
         vm.expectEmit(true, true, false, true);
-        emit PoolCreated(poolAddress);
+        emit PoolCreated(poolAddress, ERC20_NON_SUBSET_HASH);
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(wbtcAddress, daiAddress, 0.0543 * 10**18));
 
         assertEq(address(pool),             poolAddress);
@@ -225,7 +226,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         address wbtcAddress = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
         address usdcAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
         vm.expectEmit(true, true, false, true);
-        emit PoolCreated(poolAddress);
+        emit PoolCreated(poolAddress, ERC20_NON_SUBSET_HASH);
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(wbtcAddress, usdcAddress, 0.0543 * 10**18));
 
         assertEq(address(pool),             poolAddress);
@@ -250,7 +251,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         address compAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
         address usdcAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
         vm.expectEmit(true, true, false, true);
-        emit PoolCreated(poolAddress);
+        emit PoolCreated(poolAddress, ERC20_NON_SUBSET_HASH);
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(compAddress, usdcAddress, 0.0543 * 10**18));
 
         assertEq(address(pool),             poolAddress);
@@ -271,7 +272,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
 
     function testPoolAlreadyInitialized() external {
         vm.expectEmit(true, true, false, true);
-        emit PoolCreated(poolAddress);
+        emit PoolCreated(poolAddress, ERC20_NON_SUBSET_HASH);
         address pool = _poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
 
         vm.expectRevert(IPoolErrors.AlreadyInitialized.selector);

@@ -112,7 +112,7 @@ class PoolHelper:
         return quoteBalance - reserves;
 
     def borrowerInfo(self, borrower_address):
-        # returns (debt, collateral, t0NeutralPrice)
+        # returns (debt, collateral, t0NeutralPrice, thresholdPrice)
         return self.pool_info_utils.borrowerInfo(self.pool.address, borrower_address)
 
     def bucketInfo(self, index):
@@ -123,7 +123,7 @@ class PoolHelper:
         return Contract(self.pool.collateralAddress())
 
     def debt(self):
-        (debt, accruedDebt, debtInAuction) = self.pool.debtInfo()
+        (debt, accruedDebt, debtInAuction, t0Debt2ToCollateral) = self.pool.debtInfo()
         return debt
 
     def hpb(self):
@@ -147,7 +147,7 @@ class PoolHelper:
 
     def loansInfo(self):
         # returns (poolSize, loansCount, maxBorrower, pendingInflator, pendingInterestFactor)
-        # Not to be confused with pool.loansInfo which returns (maxBorrower, maxThresholdPrice, noOfLoans)
+        # Not to be confused with pool.loansInfo which returns (maxBorrower, maxT0DebtToCollateral, noOfLoans)
         return self.pool_info_utils.poolLoansInfo(self.pool.address)
 
     def lup(self):
@@ -375,7 +375,7 @@ class TestUtils:
 
         borrowers_with_debt = 0
         for borrower in borrowers:
-            (debt, _, _) = pool_helper.borrowerInfo(borrower.address)
+            (debt, _, _, _) = pool_helper.borrowerInfo(borrower.address)
             if debt > 0:
                 borrowers_with_debt += 1
         assert borrowers_with_debt == loansCount

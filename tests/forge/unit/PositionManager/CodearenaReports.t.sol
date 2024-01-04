@@ -71,7 +71,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         });
         _borrow({
             from:       testBorrower,
-            amount:     19.25 * 1e18,
+            amount:     18.65 * 1e18,
             indexLimit: _i9_91,
             newLup:     9.917184843435912074 * 1e18
         });
@@ -91,7 +91,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _borrow({
             from:       testBorrowerTwo,
-            amount:     1_730 * 1e18,
+            amount:     1_300 * 1e18,
             indexLimit: _i9_72,
             newLup:     9.721295865031779605 * 1e18
         });
@@ -139,10 +139,10 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         _kick({
             from:           testMinter,
             borrower:       testBorrowerTwo,
-            debt:           9_853.394241979221645666 * 1e18,
+            debt:           9_417.044136515672180410 * 1e18,
             collateral:     1_000 * 1e18,
-            bond:           149.577873638769639523 * 1e18,
-            transferAmount: 149.577873638769639523 * 1e18
+            bond:           105.285754181824258217 * 1e18,
+            transferAmount: 105.285754181824258217 * 1e18
         });
 
         // skip ahead so take can be called on the loan
@@ -153,8 +153,8 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
             from:            testMinter,
             borrower:        testBorrowerTwo,
             maxCollateral:   1_000 * 1e18,
-            bondChange:      60.911699561320164197 * 1e18,
-            givenAmount:     4_012.538586931187076 * 1e18,
+            bondChange:      43.041357036021185676 * 1e18,
+            givenAmount:     3_849.736007055289588000 * 1e18,
             collateralTaken: 1_000 * 1e18,
             isReward:        true
         });
@@ -163,7 +163,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
             from:        testMinter,
             borrower:    testBorrowerTwo,
             maxDepth:    10,
-            settledDebt: 5_821.65265251164695163 * 1e18
+            settledDebt: 5_610.784873601483468048 * 1e18
         });
 
         // bucket is insolvent, balances are reset
@@ -184,19 +184,19 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         // testMinter2 moves liquidity from healthy deposit _i9_52 to bankrupt _i9_91 deposit
         assertEq(_positionManager.getLP(tokenId2, _i9_91), 0);
-        assertEq(_positionManager.getLP(tokenId2, _i9_52), 10_000 * 1e18);
+        assertEq(_positionManager.getLP(tokenId2, _i9_52), 9_999.543378995433790000 * 1e18);
 
         changePrank(testMinter2);
         vm.expectRevert(IPoolErrors.BucketBankruptcyBlock.selector);
-        _positionManager.moveLiquidity(address(_pool), tokenId2, _i9_52, _i9_91, block.timestamp + 5 hours, false);
+        _positionManager.moveLiquidity(address(_pool), tokenId2, _i9_52, _i9_91, block.timestamp + 5 hours);
 
         // skip time to avoid move in same block as bucket bankruptcy
         skip(1 hours);
-        _positionManager.moveLiquidity(address(_pool), tokenId2, _i9_52, _i9_91, block.timestamp + 5 hours, false);
+        _positionManager.moveLiquidity(address(_pool), tokenId2, _i9_52, _i9_91, block.timestamp + 5 hours);
 
         // report 494: testMinter2 position at _i9_91 should not be bankrupt
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId2, _i9_91));
-        assertEq(_positionManager.getLP(tokenId2, _i9_91), 10_000 * 1e18);
+        assertEq(_positionManager.getLP(tokenId2, _i9_91), 9_999.543378995433790000 * 1e18);
 
         /******************/
         /*** Report 179 ***/
@@ -207,23 +207,23 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, _i9_52));
 
         assertEq(_positionManager.getLP(tokenId, _i9_91), 0);
-        assertEq(_positionManager.getLP(tokenId, _i9_52), 30_000 * 1e18);
+        assertEq(_positionManager.getLP(tokenId, _i9_52), 29_998.630136986301370000 * 1e18);
 
         changePrank(testMinter);
 
         // testMinter1 moves liquidity from bankrupt _i9_91 deposit to healthy deposit _i9_52
         // call reverts as cannot move from bankrupt bucket
         vm.expectRevert(IPositionManagerErrors.BucketBankrupt.selector);
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_91, _i9_52, block.timestamp + 5 hours, false);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_91, _i9_52, block.timestamp + 5 hours);
 
         // testMinter1 moves liquidity from healthy deposit _i9_52 to bankrupt _i9_91
-        // _i9_52 should remain with 0 LP, _i9_91 should have 30_000
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_52, _i9_91, block.timestamp + 5 hours, false);
+        // _i9_52 should remain with 0 LP, _i9_91 should have 29_998.630136986301370000
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_52, _i9_91, block.timestamp + 5 hours);
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, _i9_91));
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, _i9_52));
 
         // report 179: testMinter1 position at _i9_91 should contain only moved LP (without LP before bankruptcy)
-        assertEq(_positionManager.getLP(tokenId, _i9_91), 30_000 * 1e18);
+        assertEq(_positionManager.getLP(tokenId, _i9_91), 29_998.630136986301370000 * 1e18);
         assertEq(_positionManager.getLP(tokenId, _i9_52), 0);
     }
 
@@ -257,23 +257,23 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         // check from and to positions before move
         (uint256 fromLp, uint256 fromDepositTime) = _positionManager.getPositionInfo(tokenId1, mintIndex);
         (uint256 toLp,   uint256 toDepositTime)   = _positionManager.getPositionInfo(tokenId1, moveIndex);
-        assertEq(fromLp, 2_500 * 1e18);
+        assertEq(fromLp, 2_499.885844748858447500 * 1e18);
         assertEq(toLp,   0);
         assertEq(fromDepositTime, block.timestamp);
         assertEq(toDepositTime,   0);
 
         // move liquidity called by testAddress1 owner
         vm.expectEmit(true, true, true, true);
-        emit MoveLiquidity(testAddress1, tokenId1, mintIndex, moveIndex, 2_500 * 1e18, 2_500 * 1e18);
+        emit MoveLiquidity(testAddress1, tokenId1, mintIndex, moveIndex, 2_499.885844748858447500 * 1e18, 2_499.771694710285440276 * 1e18);
         changePrank(address(testAddress1));
-        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30, false);
+        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30);
 
         // check from and to positions after move
         // from position should have 0 LP and 0 deposit time (FROM Position struct is deleted)
         (fromLp, fromDepositTime) = _positionManager.getPositionInfo(tokenId1, mintIndex);
         (toLp,   toDepositTime)   = _positionManager.getPositionInfo(tokenId1, moveIndex);
         assertEq(fromLp, 0);
-        assertEq(toLp,   2_500 * 1e18);
+        assertEq(toLp,   2_499.771694710285440276 * 1e18);
         assertEq(fromDepositTime, 0);
         assertEq(toDepositTime,   block.timestamp);
     }
@@ -321,25 +321,25 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _removeAllCollateral({
             from:     testAddress2,
-            amount:   66425.497336169705758544 * 1e18,
+            amount:   66_422.464208437460566804 * 1e18,
             index:    2550,
-            lpRedeem: 200000000 * 1e18
+            lpRedeem: 199_990_867.579908675800000000 * 1e18
         });
 
         // check from and to positions before move
         (uint256 fromLp, uint256 fromDepositTime) = _positionManager.getPositionInfo(tokenId1, mintIndex);
         (uint256 toLp,   uint256 toDepositTime)   = _positionManager.getPositionInfo(tokenId1, moveIndex);
-        assertEq(fromLp, 2661558999339261847178.534720637400665211 * 1e18);
+        assertEq(fromLp, 2661558999339261847178.420565386259112711 * 1e18);
         assertEq(toLp,   0);
         assertEq(fromDepositTime, block.timestamp);
         assertEq(toDepositTime,   0);
 
         // move liquidity called by testAddress1 owner
-        // This protects LP owner of losing LP because position manager tried to move 2661558999339261847178.534720637400665211 memorialized LP
+        // This protects LP owner of losing LP because position manager tried to move 2661558999339261847178.420565386259112711 memorialized LP
         // but the amount of LP that can be moved (constrained by available max quote token) is only 200002500
         changePrank(address(testAddress1));
         vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
-        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30, false);
+        _positionManager.moveLiquidity(address(_pool), tokenId1, mintIndex, moveIndex, block.timestamp + 30);
     }
 
     /**
@@ -542,7 +542,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         _positionManager.memorializePositions(address(_pool), tokenIdAlice, indexes);
 
         // check memorialization success for Alice
-        assertEq(_positionManager.getLP(tokenIdAlice, indexes[0]), 3000 * 1e18);
+        assertEq(_positionManager.getLP(tokenIdAlice, indexes[0]), 2_999.863013698630137000 * 1e18);
 
         // Bob
 
@@ -584,8 +584,8 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         console.log("Balance of Alice: ", lpBalanceAliceAfter);
 
         // Bob and Alice LP balances are the same as initial 
-        assertEq(lpBalanceBobAfter,   3_000 * 1e18); 
-        assertEq(lpBalanceAliceAfter, 3_000 * 1e18);
+        assertEq(lpBalanceBobAfter,   2_999.863013698630137000 * 1e18);
+        assertEq(lpBalanceAliceAfter, 2_999.863013698630137000 * 1e18);
     }
 
 
@@ -646,7 +646,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         });
         _borrow({
             from:       testBorrower,
-            amount:     19.25 * 1e18,
+            amount:     15 * 1e18,
             indexLimit: _i9_91,
             newLup:     9.917184843435912074 * 1e18
         });
@@ -666,7 +666,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _borrow({
             from:       testBorrowerTwo,
-            amount:     1_730 * 1e18,
+            amount:     1_300 * 1e18,
             indexLimit: _i9_72,
             newLup:     9.721295865031779605 * 1e18
         });
@@ -707,15 +707,15 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _assertPool(
             PoolParams({
-                htp:                  9.719336538461538466 * 1e18,
+                htp:                  9.660480000000000004 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             83_000.0* 1e18,
+                poolSize:             82_996.210045662100457000 * 1e18,
                 pledgedCollateral:    1_002.0 * 1e18,
-                encumberedCollateral: 1_001.780542767698891702 * 1e18,
-                poolDebt:             9_738.605048076923081414 * 1e18,
+                encumberedCollateral: 995.350325135729028065 * 1e18,
+                poolDebt:             9_303.937500000000004290 * 1e18,
                 actualUtilization:    0,
                 targetUtilization:    1e18,
-                minDebtAmount:        486.930252403846154071 * 1e18,
+                minDebtAmount:        465.196875000000000215 * 1e18,
                 loans:                2,
                 maxBorrower:          address(testBorrowerTwo),
                 interestRate:         0.05 * 1e18,
@@ -725,9 +725,9 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _assertBucketAssets({
             index: _i9_81,
-            lpBalance: 5_000.0 * 1e18,
+            lpBalance: 4_999.771689497716895000 * 1e18,
             collateral: 0,
-            deposit: 5_000.0 * 1e18,
+            deposit: 4_999.771689497716895000 * 1e18,
             exchangeRate: 1e18
         });
 
@@ -735,14 +735,14 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         // Move positiion upwards from _i9_81 to _i9_91
         changePrank(testMinter);
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_81, _i9_91, block.timestamp + 5 hours, false);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_81, _i9_91, block.timestamp + 5 hours);
 
         vm.revertTo(preMoveUpState);
 
         uint256 preMoveDownState = vm.snapshot();
 
         // Move positiion downwards from _i9_91 to _i9_81
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_91, _i9_81, block.timestamp + 5 hours, false);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_91, _i9_81, block.timestamp + 5 hours);
 
         vm.revertTo(preMoveDownState);
 
@@ -750,21 +750,21 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _assertBucketAssets({
             index: _i9_81,
-            lpBalance: 5_000.0 * 1e18,
+            lpBalance: 4_999.771689497716895000 * 1e18,
             collateral: 0,
-            deposit: 5_000.0 * 1e18,
+            deposit: 4_999.771689497716895000 * 1e18,
             exchangeRate: 1e18
         });
 
         _assertBucketAssets({
             index: _i9_52,
-            lpBalance: 40_000.0 * 1e18,
+            lpBalance: 39_998.173515981735160000 * 1e18,
             collateral: 0,
-            deposit: 40_000.0 * 1e18,
+            deposit: 39_998.173515981735160000 * 1e18,
             exchangeRate: 1e18
         });
 
-        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_81, _i9_52, block.timestamp + 5 hours, false);
+        _positionManager.moveLiquidity(address(_pool), tokenId, _i9_81, _i9_52, block.timestamp + 5 hours);
 
         _assertBucketAssets({
             index: _i9_81,
@@ -776,23 +776,23 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _assertBucketAssets({
             index: _i9_52,
-            lpBalance: 44_999.315068493150685000 * 1e18,
+            lpBalance: 44_997.716905402306040553 * 1e18,
             collateral: 0,
-            deposit: 44_999.315068493150685000 * 1e18,
+            deposit: 44_997.716905402306040553 * 1e18,
             exchangeRate: 1e18
         });
 
         _assertPool(
             PoolParams({
-                htp:                  9.719336538461538466 * 1e18,
+                htp:                  9.660480000000000004 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             82_999.315068493150685000 * 1e18,
-                pledgedCollateral:    1_002.0 * 1e18,
-                encumberedCollateral: 1_001.780542767698891702 * 1e18,
-                poolDebt:             9_738.605048076923081414 * 1e18,
+                poolSize:             82_995.981745584954442553 * 1e18,
+                pledgedCollateral:    1_002 * 1e18,
+                encumberedCollateral: 995.350325135729028065 * 1e18,
+                poolDebt:             9_303.937500000000004290 * 1e18,
                 actualUtilization:    0,
                 targetUtilization:    1e18,
-                minDebtAmount:        486.930252403846154071 * 1e18,
+                minDebtAmount:        465.196875000000000215 * 1e18,
                 loans:                2,
                 maxBorrower:          address(testBorrowerTwo),
                 interestRate:         0.05 * 1e18,
@@ -873,7 +873,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         _assertLenderLpBalance({
             lender:      alice,
             index:       2551,
-            lpBalance:   10_000 * 1e18,
+            lpBalance:   9_999.543378995433790000 * 1e18,
             depositTime: _startTime
         });
     }

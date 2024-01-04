@@ -14,7 +14,7 @@ contract HeapTest is DSTestPlus {
     function testHeapInsertAndRandomlyRemoveTps() public {
         // assert initial state
         assertEq(_loans.getMaxBorrower(), address(0));
-        assertEq(_loans.getMaxTp(), 0);
+        assertEq(_loans.getMaxT0DebtToCollateral(), 0);
 
         address b1 = makeAddr("b1");
         address b2 = makeAddr("b2");
@@ -22,46 +22,46 @@ contract HeapTest is DSTestPlus {
         address b4 = makeAddr("b4");
         address b5 = makeAddr("b5");
 
-        _loans.upsertTp(b1, 100 * 1e18);
-        _loans.upsertTp(b5, 500 * 1e18);
-        _loans.upsertTp(b2, 200 * 1e18);
-        _loans.upsertTp(b4, 400 * 1e18);
-        _loans.upsertTp(b3, 300 * 1e18);
+        _loans.upsertT0DebtToCollateral(b1, 100 * 1e18);
+        _loans.upsertT0DebtToCollateral(b5, 500 * 1e18);
+        _loans.upsertT0DebtToCollateral(b2, 200 * 1e18);
+        _loans.upsertT0DebtToCollateral(b4, 400 * 1e18);
+        _loans.upsertT0DebtToCollateral(b3, 300 * 1e18);
 
-        assertEq(_loans.getMaxTp(),       500 * 1e18);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       500 * 1e18);
         assertEq(_loans.getMaxBorrower(), b5);
-        assertEq(_loans.getTotalTps(),    6);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    6);
 
-        _loans.removeTp(b2);
-        assertEq(_loans.getMaxTp(),       500 * 1e18);
+        _loans.removeT0DebtToCollateral(b2);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       500 * 1e18);
         assertEq(_loans.getMaxBorrower(), b5);
-        assertEq(_loans.getTotalTps(),    5);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    5);
 
-        _loans.removeTp(b5);
-        assertEq(_loans.getMaxTp(),       400 * 1e18);
+        _loans.removeT0DebtToCollateral(b5);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       400 * 1e18);
         assertEq(_loans.getMaxBorrower(), b4);
-        assertEq(_loans.getTotalTps(),    4);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    4);
 
-        _loans.removeTp(b4);
+        _loans.removeT0DebtToCollateral(b4);
         assertEq(_loans.getMaxBorrower(), b3);
-        assertEq(_loans.getMaxTp(),       300 * 1e18);
-        assertEq(_loans.getTotalTps(),    3);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       300 * 1e18);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    3);
 
-        _loans.removeTp(b1);
+        _loans.removeT0DebtToCollateral(b1);
         assertEq(_loans.getMaxBorrower(), b3);
-        assertEq(_loans.getMaxTp(),       300 * 1e18);
-        assertEq(_loans.getTotalTps(),    2);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       300 * 1e18);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    2);
 
-        _loans.removeTp(b3);
+        _loans.removeT0DebtToCollateral(b3);
         assertEq(_loans.getMaxBorrower(), address(0));
-        assertEq(_loans.getMaxTp(),       0);
-        assertEq(_loans.getTotalTps(),    1);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       0);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    1);
     }
 
     function testHeapInsertMultipleLoansWithSameTp() public {
         // assert initial state
         assertEq(_loans.getMaxBorrower(), address(0));
-        assertEq(_loans.getMaxTp(), 0);
+        assertEq(_loans.getMaxT0DebtToCollateral(), 0);
 
         address b1 = makeAddr("b1");
         address b2 = makeAddr("b2");
@@ -70,64 +70,64 @@ contract HeapTest is DSTestPlus {
         address b5 = makeAddr("b5");
         address b6 = makeAddr("b6");
 
-        _loans.upsertTp(b1, 100 * 1e18);
-        _loans.upsertTp(b2, 200 * 1e18);
-        _loans.upsertTp(b3, 200 * 1e18);
-        _loans.upsertTp(b4, 300 * 1e18);
-        _loans.upsertTp(b5, 400 * 1e18);
-        _loans.upsertTp(b6, 400 * 1e18);
+        _loans.upsertT0DebtToCollateral(b1, 100 * 1e18);
+        _loans.upsertT0DebtToCollateral(b2, 200 * 1e18);
+        _loans.upsertT0DebtToCollateral(b3, 200 * 1e18);
+        _loans.upsertT0DebtToCollateral(b4, 300 * 1e18);
+        _loans.upsertT0DebtToCollateral(b5, 400 * 1e18);
+        _loans.upsertT0DebtToCollateral(b6, 400 * 1e18);
 
         assertEq(_loans.getMaxBorrower(), b5);
-        assertEq(_loans.getMaxTp(),       400 * 1e18);
-        assertEq(_loans.getTotalTps(),    7);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       400 * 1e18);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    7);
 
-        assertEq(_loans.getTp(b1), 100 * 1e18);
-        assertEq(_loans.getTp(b2), 200 * 1e18);
-        assertEq(_loans.getTp(b3), 200 * 1e18);
-        assertEq(_loans.getTp(b4), 300 * 1e18);
-        assertEq(_loans.getTp(b5), 400 * 1e18);
-        assertEq(_loans.getTp(b6), 400 * 1e18);
+        assertEq(_loans.getT0DebtToCollateral(b1), 100 * 1e18);
+        assertEq(_loans.getT0DebtToCollateral(b2), 200 * 1e18);
+        assertEq(_loans.getT0DebtToCollateral(b3), 200 * 1e18);
+        assertEq(_loans.getT0DebtToCollateral(b4), 300 * 1e18);
+        assertEq(_loans.getT0DebtToCollateral(b5), 400 * 1e18);
+        assertEq(_loans.getT0DebtToCollateral(b6), 400 * 1e18);
 
-        _loans.removeTp(b5);
+        _loans.removeT0DebtToCollateral(b5);
         assertEq(_loans.getMaxBorrower(), b6);
-        assertEq(_loans.getMaxTp(),       400 * 1e18);
-        assertEq(_loans.getTotalTps(),    6);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       400 * 1e18);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    6);
 
-        _loans.removeTp(b6);
+        _loans.removeT0DebtToCollateral(b6);
         assertEq(_loans.getMaxBorrower(), b4);
-        assertEq(_loans.getMaxTp(),       300 * 1e18);
-        assertEq(_loans.getTotalTps(),    5);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       300 * 1e18);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    5);
 
-        _loans.removeTp(b4);
+        _loans.removeT0DebtToCollateral(b4);
         assertEq(_loans.getMaxBorrower(), b2);
-        assertEq(_loans.getMaxTp(),       200 * 1e18);
-        assertEq(_loans.getTotalTps(),    4);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       200 * 1e18);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    4);
 
-        _loans.upsertTp(b1, 200 * 1e18);
+        _loans.upsertT0DebtToCollateral(b1, 200 * 1e18);
         assertEq(_loans.getMaxBorrower(), b2);
-        assertEq(_loans.getMaxTp(),       200 * 1e18);
-        assertEq(_loans.getTotalTps(),    4);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       200 * 1e18);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    4);
 
-        _loans.removeTp(b2);
+        _loans.removeT0DebtToCollateral(b2);
         assertEq(_loans.getMaxBorrower(), b3);
-        assertEq(_loans.getMaxTp(),       200 * 1e18);
-        assertEq(_loans.getTotalTps(),    3);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       200 * 1e18);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    3);
 
-        _loans.removeTp(b3);
+        _loans.removeT0DebtToCollateral(b3);
         assertEq(_loans.getMaxBorrower(), b1);
-        assertEq(_loans.getMaxTp(),       200 * 1e18);
-        assertEq(_loans.getTotalTps(),    2);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       200 * 1e18);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    2);
 
-        _loans.removeTp(b1);
+        _loans.removeT0DebtToCollateral(b1);
         assertEq(_loans.getMaxBorrower(), address(0));
-        assertEq(_loans.getMaxTp(),       0);
-        assertEq(_loans.getTotalTps(),    1);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       0);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    1);
     }
 
     function testHeapInsertAndRemoveHeadByMaxTp() public {
         // assert initial state
         assertEq(_loans.getMaxBorrower(), address(0));
-        assertEq(_loans.getMaxTp(), 0);
+        assertEq(_loans.getMaxT0DebtToCollateral(), 0);
 
         address b1 = makeAddr("b1");
         address b2 = makeAddr("b2");
@@ -135,60 +135,60 @@ contract HeapTest is DSTestPlus {
         address b4 = makeAddr("b4");
         address b5 = makeAddr("b5");
 
-        _loans.upsertTp(b1, 100 * 1e18);
-        _loans.upsertTp(b2, 200 * 1e18);
-        _loans.upsertTp(b3, 300 * 1e18);
-        _loans.upsertTp(b4, 400 * 1e18);
-        _loans.upsertTp(b5, 500 * 1e18);
+        _loans.upsertT0DebtToCollateral(b1, 100 * 1e18);
+        _loans.upsertT0DebtToCollateral(b2, 200 * 1e18);
+        _loans.upsertT0DebtToCollateral(b3, 300 * 1e18);
+        _loans.upsertT0DebtToCollateral(b4, 400 * 1e18);
+        _loans.upsertT0DebtToCollateral(b5, 500 * 1e18);
 
-        assertEq(_loans.getMaxTp(),       500 * 1e18);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       500 * 1e18);
         assertEq(_loans.getMaxBorrower(), b5);
-        assertEq(_loans.getTotalTps(),    6);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    6);
 
-        _loans.removeTp(b5);
-        assertEq(_loans.getMaxTp(),       400 * 1e18);
+        _loans.removeT0DebtToCollateral(b5);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       400 * 1e18);
         assertEq(_loans.getMaxBorrower(), b4);
-        assertEq(_loans.getTotalTps(),    5);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    5);
 
-        _loans.removeTp(b4);
+        _loans.removeT0DebtToCollateral(b4);
         assertEq(_loans.getMaxBorrower(), b3);
-        assertEq(_loans.getMaxTp(),       300 * 1e18);
-        assertEq(_loans.getTotalTps(),    4);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       300 * 1e18);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    4);
 
-        _loans.removeTp(b3);
+        _loans.removeT0DebtToCollateral(b3);
         assertEq(_loans.getMaxBorrower(), b2);
-        assertEq(_loans.getMaxTp(),       200 * 1e18);
-        assertEq(_loans.getTotalTps(),    3);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       200 * 1e18);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    3);
 
-        _loans.removeTp(b2);
+        _loans.removeT0DebtToCollateral(b2);
         assertEq(_loans.getMaxBorrower(), b1);
-        assertEq(_loans.getMaxTp(),       100 * 1e18);
-        assertEq(_loans.getTotalTps(),    2);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       100 * 1e18);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    2);
 
-        _loans.removeTp(b1);
+        _loans.removeT0DebtToCollateral(b1);
         assertEq(_loans.getMaxBorrower(), address(0));
-        assertEq(_loans.getMaxTp(),       0);
-        assertEq(_loans.getTotalTps(),    1);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       0);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    1);
     }
 
     function testHeapRemoveLastTp() public {
         // assert initial state
         assertEq(_loans.getMaxBorrower(), address(0));
-        assertEq(_loans.getMaxTp(),       0);
-        assertEq(_loans.getTotalTps(),    1);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       0);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    1);
 
         address b1 = makeAddr("b1");
-        _loans.upsertTp(b1, 100 * 1e18);
+        _loans.upsertT0DebtToCollateral(b1, 100 * 1e18);
 
         assertEq(_loans.getMaxBorrower(), b1);
-        assertEq(_loans.getMaxTp(),       100 * 1e18);
-        assertEq(_loans.getTotalTps(),    2);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       100 * 1e18);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    2);
 
         // remove last TP
-        _loans.removeTp(b1);
+        _loans.removeT0DebtToCollateral(b1);
         assertEq(_loans.getMaxBorrower(), address(0));
-        assertEq(_loans.getMaxTp(),       0);
-        assertEq(_loans.getTotalTps(),    1);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       0);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    1);
     }
 
     function testHeapUpdateTp() public {
@@ -199,36 +199,72 @@ contract HeapTest is DSTestPlus {
         address b5 = makeAddr("b5");
         address b6 = makeAddr("b6");
 
-        _loans.upsertTp(b1, 100 * 1e18);
-        _loans.upsertTp(b2, 200 * 1e18);
-        _loans.upsertTp(b3, 300 * 1e18);
-        _loans.upsertTp(b4, 400 * 1e18);
-        _loans.upsertTp(b5, 500 * 1e18);
-        _loans.upsertTp(b6, 600 * 1e18);
+        _loans.upsertT0DebtToCollateral(b1, 100 * 1e18);
+        _loans.upsertT0DebtToCollateral(b2, 200 * 1e18);
+        _loans.upsertT0DebtToCollateral(b3, 300 * 1e18);
+        _loans.upsertT0DebtToCollateral(b4, 400 * 1e18);
+        _loans.upsertT0DebtToCollateral(b5, 500 * 1e18);
+        _loans.upsertT0DebtToCollateral(b6, 600 * 1e18);
 
-        assertEq(_loans.getMaxTp(),       600 * 1e18);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       600 * 1e18);
         assertEq(_loans.getMaxBorrower(), b6);
-        assertEq(_loans.getTotalTps(),    7);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    7);
 
-        _loans.upsertTp(b4, 1_000 * 1e18);
-        assertEq(_loans.getMaxTp(),       1_000 * 1e18);
+        _loans.upsertT0DebtToCollateral(b4, 1_000 * 1e18);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       1_000 * 1e18);
         assertEq(_loans.getMaxBorrower(), b4);
-        assertEq(_loans.getTotalTps(),    7);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    7);
 
-        _loans.upsertTp(b4, 10 * 1e18);
-        assertEq(_loans.getMaxTp(),       600 * 1e18);
+        _loans.upsertT0DebtToCollateral(b4, 10 * 1e18);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       600 * 1e18);
         assertEq(_loans.getMaxBorrower(), b6);
-        assertEq(_loans.getTotalTps(),    7);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    7);
 
-        _loans.upsertTp(b6, 100 * 1e18);
-        assertEq(_loans.getMaxTp(),       500 * 1e18);
+        _loans.upsertT0DebtToCollateral(b6, 100 * 1e18);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       500 * 1e18);
         assertEq(_loans.getMaxBorrower(), b5);
-        assertEq(_loans.getTotalTps(),    7);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    7);
 
-        _loans.upsertTp(b6, 3_000 * 1e18);
-        assertEq(_loans.getMaxTp(),       3_000 * 1e18);
+        _loans.upsertT0DebtToCollateral(b6, 3_000 * 1e18);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       3_000 * 1e18);
         assertEq(_loans.getMaxBorrower(), b6);
-        assertEq(_loans.getTotalTps(),    7);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    7);
+    }
+
+    function testHeapZeroInsertion() public {
+        address b1 = makeAddr("b1");
+        address b2 = makeAddr("b2");
+        address b3 = makeAddr("b3");
+
+        _loans.upsertT0DebtToCollateral(b1, 0);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       0);
+        assertEq(_loans.getMaxBorrower(), b1);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    2);
+
+        _loans.upsertT0DebtToCollateral(b2, 153 * 1e18);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       153 * 1e18);
+        assertEq(_loans.getMaxBorrower(), b2);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    3);
+
+        _loans.removeT0DebtToCollateral(b2);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       0);
+        assertEq(_loans.getMaxBorrower(), b1);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    2);
+
+        _loans.upsertT0DebtToCollateral(b3, 2_007 * 1e18);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       2_007 * 1e18);
+        assertEq(_loans.getMaxBorrower(), b3);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    3);
+
+        _loans.removeT0DebtToCollateral(b1);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       2_007 * 1e18);
+        assertEq(_loans.getMaxBorrower(), b3);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    2);
+
+        _loans.removeT0DebtToCollateral(b3);
+        assertEq(_loans.getMaxBorrower(), address(0));
+        assertEq(_loans.getMaxT0DebtToCollateral(),       0);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    1);
     }
 
     function testLoadHeapFuzzy(uint256 inserts_, uint256 seed_) public {
@@ -238,33 +274,33 @@ contract HeapTest is DSTestPlus {
 
         // test adding different TPs
         address removeAddress = _loans.getIdByInsertIndex(randomInRange(1, _loans.numInserts() - 1, true));
-        uint256 tp = _loans.getTp(removeAddress);
+        uint256 tp = _loans.getT0DebtToCollateral(removeAddress);
         uint256 length = _loans.getCount() - 1;
 
-        _loans.removeTp(removeAddress);
+        _loans.removeT0DebtToCollateral(removeAddress);
         
         assertEq(length - 1, _loans.getCount() - 1);
-        assertEq(_loans.getTp(removeAddress), 0);
-        assertTrue(_loans.getTp(removeAddress) != tp);
+        assertEq(_loans.getT0DebtToCollateral(removeAddress), 0);
+        assertTrue(_loans.getT0DebtToCollateral(removeAddress) != tp);
     }
 
     function testHeapBorrowRepayBorrow() public {
         address b1 = makeAddr("b1");
 
-        _loans.upsertTp(b1, 300 * 1e18);
+        _loans.upsertT0DebtToCollateral(b1, 300 * 1e18);
         assertEq(_loans.getMaxBorrower(), b1);
-        assertEq(_loans.getMaxTp(),       300 * 1e18);
-        assertEq(_loans.getTotalTps(),    2);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       300 * 1e18);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    2);
 
-        _loans.removeTp(b1);
+        _loans.removeT0DebtToCollateral(b1);
         assertEq(_loans.getMaxBorrower(), address(0));
-        assertEq(_loans.getMaxTp(),       0);
-        assertEq(_loans.getTotalTps(),    1);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       0);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    1);
 
-        _loans.upsertTp(b1, 400 * 1e18);
+        _loans.upsertT0DebtToCollateral(b1, 400 * 1e18);
         assertEq(_loans.getMaxBorrower(), b1);
-        assertEq(_loans.getMaxTp(),       400 * 1e18);
-        assertEq(_loans.getTotalTps(),    2);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       400 * 1e18);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    2);
     }
 
     function testHeapRemoveMiddleAndHead() public {
@@ -276,31 +312,31 @@ contract HeapTest is DSTestPlus {
         address b6 = makeAddr("b6");
         address b7 = makeAddr("b7");
 
-        _loans.upsertTp(b7, 7);
-        _loans.upsertTp(b4, 4);
-        _loans.upsertTp(b6, 6);
-        _loans.upsertTp(b2, 2);
-        _loans.upsertTp(b3, 3);
-        _loans.upsertTp(b1, 1);
-        _loans.upsertTp(b5, 5);
+        _loans.upsertT0DebtToCollateral(b7, 7);
+        _loans.upsertT0DebtToCollateral(b4, 4);
+        _loans.upsertT0DebtToCollateral(b6, 6);
+        _loans.upsertT0DebtToCollateral(b2, 2);
+        _loans.upsertT0DebtToCollateral(b3, 3);
+        _loans.upsertT0DebtToCollateral(b1, 1);
+        _loans.upsertT0DebtToCollateral(b5, 5);
         assertEq(_loans.getMaxBorrower(), b7);
-        assertEq(_loans.getMaxTp(),       7);
-        assertEq(_loans.getTotalTps(),    8);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       7);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    8);
 
-        _loans.removeTp(b2);
+        _loans.removeT0DebtToCollateral(b2);
         assertEq(_loans.getMaxBorrower(), b7);
-        assertEq(_loans.getMaxTp(),       7);
-        assertEq(_loans.getTotalTps(),    7);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       7);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    7);
 
-        _loans.removeTp(b7);
+        _loans.removeT0DebtToCollateral(b7);
         assertEq(_loans.getMaxBorrower(), b6);
-        assertEq(_loans.getMaxTp(),       6);
-        assertEq(_loans.getTotalTps(),    6);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       6);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    6);
 
-        _loans.removeTp(b6);
+        _loans.removeT0DebtToCollateral(b6);
         assertEq(_loans.getMaxBorrower(), b5);
-        assertEq(_loans.getMaxTp(),       5);
-        assertEq(_loans.getTotalTps(),    5);
+        assertEq(_loans.getMaxT0DebtToCollateral(),       5);
+        assertEq(_loans.getTotalT0DebtToCollaterals(),    5);
     }
 }
 
@@ -313,40 +349,40 @@ contract HeapGasLoadTest is DSTestPlus {
         _loans = new HeapInstance();
         for (uint256 i; i < NODES_COUNT; i++) {
                 address borrower = makeAddr(vm.toString(i));
-            _loans.upsertTp(borrower, 1 * 1e18 + i * 1e18);
+            _loans.upsertT0DebtToCollateral(borrower, 1 * 1e18 + i * 1e18);
             _borrowers.push(borrower);
         }
     }
 
     function testLoadHeapGasExerciseDeleteOnAllNodes() public {
-        assertEq(_loans.getTotalTps(), NODES_COUNT + 1); // account node 0 too
+        assertEq(_loans.getTotalT0DebtToCollaterals(), NODES_COUNT + 1); // account node 0 too
 
         for (uint256 i; i < NODES_COUNT; i++) {
             uint256 snapshot = vm.snapshot();
-            assertEq(_loans.getTotalTps(), NODES_COUNT + 1);
+            assertEq(_loans.getTotalT0DebtToCollaterals(), NODES_COUNT + 1);
 
-            _loans.removeTp(_borrowers[i]);
+            _loans.removeT0DebtToCollateral(_borrowers[i]);
 
-            assertEq(_loans.getTotalTps(), NODES_COUNT);
+            assertEq(_loans.getTotalT0DebtToCollaterals(), NODES_COUNT);
             vm.revertTo(snapshot);
         }
 
-        assertEq(_loans.getTotalTps(), NODES_COUNT + 1);
+        assertEq(_loans.getTotalT0DebtToCollaterals(), NODES_COUNT + 1);
     }
 
     function testLoadHeapGasExerciseUpsertOnAllNodes() public {
-        assertEq(_loans.getTotalTps(), NODES_COUNT + 1); // account node 0 too
+        assertEq(_loans.getTotalT0DebtToCollaterals(), NODES_COUNT + 1); // account node 0 too
 
         for (uint256 i; i < NODES_COUNT; i++) {
             uint256 snapshot = vm.snapshot();
-            assertEq(_loans.getTotalTps(), NODES_COUNT + 1);
+            assertEq(_loans.getTotalT0DebtToCollaterals(), NODES_COUNT + 1);
 
-            _loans.upsertTp(_borrowers[i], 1_000_000 * 1e18 + i * 1e18);
+            _loans.upsertT0DebtToCollateral(_borrowers[i], 1_000_000 * 1e18 + i * 1e18);
 
-            assertEq(_loans.getTotalTps(), NODES_COUNT + 1);
+            assertEq(_loans.getTotalT0DebtToCollaterals(), NODES_COUNT + 1);
             vm.revertTo(snapshot);
         }
 
-        assertEq(_loans.getTotalTps(), NODES_COUNT + 1);
+        assertEq(_loans.getTotalT0DebtToCollaterals(), NODES_COUNT + 1);
     }
 }

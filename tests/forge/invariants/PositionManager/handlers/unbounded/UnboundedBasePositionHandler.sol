@@ -6,7 +6,6 @@ import '@std/Test.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { PositionManager } from 'src/PositionManager.sol';
-import { RewardsManager }  from 'src/RewardsManager.sol';
 
 /**
  *  @dev this contract manages multiple lenders
@@ -16,30 +15,21 @@ import { RewardsManager }  from 'src/RewardsManager.sol';
 abstract contract UnboundedBasePositionHandler is Test {
 
     PositionManager internal _positionManager;
-    RewardsManager  internal _rewardsManager;
 
     bytes32 internal _poolHash;
 
-    uint256 MAX_AJNA_AMOUNT = vm.envOr("MAX_AJNA_AMOUNT_ERC20", uint256(100_000_000 * 1e18));
-
     address[] internal _pools;
 
-    // positionManager & rewardsManager
+    // positionManager
     mapping(address => EnumerableSet.UintSet) internal bucketIndexesWithPosition;
     mapping(uint256 => EnumerableSet.UintSet) internal bucketIndexesByTokenId;
-
-    // positionManager
     mapping(address => mapping(uint256 => EnumerableSet.UintSet)) internal tokenIdsByBucketIndex;
     mapping(address => EnumerableSet.UintSet) internal tokenIdsByActor;
+
     // used to track changes in `_redeemPositions()` and `_memorializePositions()`
     mapping(address => mapping(uint256 => uint256)) internal actorLpsBefore;
     mapping(address => mapping(uint256 => uint256)) internal posManLpsBefore;
     mapping(address => mapping(uint256 => uint256)) internal bucketIndexToDepositTime;
-
-    // rewardsManager
-    mapping(address => EnumerableSet.UintSet) internal stakedTokenIdsByActor;
-    mapping(address => mapping(uint256 => uint256)) public rewardsClaimedPerEpoch;       // staking rewards per epoch
-    mapping(address => mapping(uint256 => uint256)) public updateRewardsClaimedPerEpoch; // updating rewards per epoch
 
     uint256 internal counter = 1;
 
@@ -59,10 +49,6 @@ abstract contract UnboundedBasePositionHandler is Test {
 
     function getTokenIdsByActor(address actor_) public view returns(uint256[] memory) {
         return tokenIdsByActor[actor_].values();
-    }
-
-    function getStakedTokenIdsByActor(address actor_) public view returns(uint256[] memory) {
-        return stakedTokenIdsByActor[actor_].values();
     }
 
     function randomSeed() internal returns (uint256) {
@@ -90,7 +76,8 @@ abstract contract UnboundedBasePositionHandler is Test {
             err == keccak256(abi.encodeWithSignature("InvalidIndex()")) ||
             err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) ||
             err == keccak256(abi.encodeWithSignature("InsufficientLP()")) ||
-            err == keccak256(abi.encodeWithSignature("AuctionNotCleared()")),
+            err == keccak256(abi.encodeWithSignature("AuctionNotCleared()")) ||
+            err == keccak256(abi.encodeWithSignature("AddAboveAuctionPrice()")),
             "Unexpected revert error"
         );
     }

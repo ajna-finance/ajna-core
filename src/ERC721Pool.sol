@@ -236,12 +236,13 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             limitIndex_
         );
 
-        emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, noOfNFTsToPull_, result.newLup);
-
+        amountRepaid_        = result.quoteTokenToRepay;
         // update in memory pool state struct
         poolState.debt       = result.poolDebt;
         poolState.t0Debt     = result.t0PoolDebt;
         poolState.collateral = result.poolCollateral;
+
+        emit RepayDebt(borrowerAddress_, amountRepaid_, noOfNFTsToPull_, result.newLup);
 
         // adjust t0Debt2ToCollateral ratio
         _updateT0Debt2ToCollateral(
@@ -257,19 +258,17 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         // update pool balances pledged collateral state
         poolBalances.pledgedCollateral = poolState.collateral;
 
-        if (result.quoteTokenToRepay != 0) {
+        if (amountRepaid_ != 0) {
             // update pool balances t0 debt state
             poolBalances.t0Debt = poolState.t0Debt;
 
             // move amount to repay from sender to pool
-            _transferQuoteTokenFrom(msg.sender, result.quoteTokenToRepay);
+            _transferQuoteTokenFrom(msg.sender, amountRepaid_);
         }
         if (noOfNFTsToPull_ != 0) {
             // move collateral from pool to address specified as collateral receiver
             _transferFromPoolToAddress(collateralReceiver_, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
         }
-
-        amountRepaid_ = result.quoteTokenToRepay;
     }
 
     /*********************************/
@@ -344,7 +343,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             // Total collateral in buckets meets the requested removal amount, noOfNFTsToRemove_
             _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);
         }
-
     }
 
     /**
@@ -394,7 +392,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     function settle(
         address borrowerAddress_,
         uint256 maxDepth_
-    ) external nonReentrant override {
+    ) external nonReentrant override returns (uint256 collateralSettled_, bool isBorrowerSettled_) {
         PoolState memory poolState = _accruePoolInterest();
 
         SettleParams memory params = SettleParams({
@@ -417,6 +415,9 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         // move token ids from borrower array to pool claimable array if any collateral used to settle bad debt
         _rebalanceTokens(params.borrower, result.collateralRemaining);
+
+        collateralSettled_ = result.collateralSettled;
+        isBorrowerSettled_ = (result.debtPostAction == 0);
     }
 
     /**
@@ -449,10 +450,11 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         _updatePostTakeState(result, poolState);
 
         // transfer rounded collateral from pool to taker
+        collateralTaken_ = result.collateralAmount / 1e18;
         uint256[] memory tokensTaken = _transferFromPoolToAddress(
             callee_,
             borrowerTokenIds[borrowerAddress_],
-            result.collateralAmount / 1e18
+            collateralTaken_
         );
 
         uint256 totalQuoteTokenAmount = result.quoteTokenAmount + result.excessQuoteToken;
@@ -473,8 +475,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
         if (result.excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, result.excessQuoteToken);
-
-        collateralTaken_ = result.collateralAmount / 1e18;
     }
 
     /**
@@ -615,13 +615,13 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /*******************************/
 
     /// @inheritdoc IERC721PoolState
-    function totalBorrowerTokens(address borrower_) external view override returns(uint256) {
-        return borrowerTokenIds[borrower_].length;
+    function getBorrowerTokenIds(address borrower_) external view override returns(uint256[] memory) {
+        return borrowerTokenIds[borrower_];
     }
 
     /// @inheritdoc IERC721PoolState
-    function totalBucketTokens() external view override returns(uint256) {
-        return bucketTokenIds.length;
+    function getBucketTokenIds() external view override returns(uint256[] memory) {
+        return bucketTokenIds;
     }
 
 }

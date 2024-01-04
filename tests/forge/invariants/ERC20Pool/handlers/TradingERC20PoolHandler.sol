@@ -71,13 +71,12 @@ contract TradingERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBa
 
         changePrank(_actor);
 
-        uint256 rateBeforeSwap        = _pool.bucketExchangeRate(_lenderBucketIndex);
-        (uint256 lpBeforeSwap, , , ,) = _pool.bucketInfo(_lenderBucketIndex);
+        BucketInfo memory bucketInfoBeforeSwap = _getBucketInfo(_lenderBucketIndex);
 
         _addQuoteToken(tradeAmount_, _lenderBucketIndex);
         _removeCollateral(type(uint256).max, _lenderBucketIndex);
 
-        (uint256 lpAfterSwap, , , ,)  = _pool.bucketInfo(_lenderBucketIndex);
+        BucketInfo memory bucketInfoAfterSwap = _getBucketInfo(_lenderBucketIndex);
 
         printLine(
             string(
@@ -85,10 +84,13 @@ contract TradingERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBa
             )
         );
         printLog("Trading price             = ", _priceAt(_lenderBucketIndex));
-        printLog("Bucket LP before          = ", lpBeforeSwap);
-        printLog("Bucket LP after           = ", lpAfterSwap);
+        printLog("Bucket LP before          = ", bucketInfoBeforeSwap.lpBalance);
+        printLog("Bucket LP after           = ", bucketInfoAfterSwap.lpBalance);
 
-        require (rateBeforeSwap == _pool.bucketExchangeRate(_lenderBucketIndex), "R1-R8: Exchange Rate Invariant");
+        require (
+            bucketInfoBeforeSwap.exchangeRate == bucketInfoAfterSwap.exchangeRate,
+            "R1-R8: Exchange Rate Invariant"
+        );
     }
 
     function swapCollateralForQuote(
@@ -104,13 +106,12 @@ contract TradingERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBa
 
         changePrank(_actor);
 
-        uint256 rateBeforeSwap        = _pool.bucketExchangeRate(_lenderBucketIndex);
-        (uint256 lpBeforeSwap, , , ,) = _pool.bucketInfo(_lenderBucketIndex);
+         BucketInfo memory bucketInfoBeforeSwap = _getBucketInfo(_lenderBucketIndex);
 
         _addCollateral(tradeAmount_, _lenderBucketIndex);
         _removeQuoteToken(type(uint256).max, _lenderBucketIndex);
 
-        (uint256 lpAfterSwap, , , ,)  = _pool.bucketInfo(_lenderBucketIndex);
+        BucketInfo memory bucketInfoAfterSwap = _getBucketInfo(_lenderBucketIndex);
 
         printLine(
             string(
@@ -118,10 +119,13 @@ contract TradingERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBa
             )
         );
         printLog("Trading price             = ", _priceAt(_lenderBucketIndex));
-        printLog("Bucket LP before          = ", lpBeforeSwap);
-        printLog("Bucket LP after           = ", lpAfterSwap);
+        printLog("Bucket LP before          = ", bucketInfoBeforeSwap.lpBalance);
+        printLog("Bucket LP after           = ", bucketInfoAfterSwap.lpBalance);
 
-        require (rateBeforeSwap == _pool.bucketExchangeRate(_lenderBucketIndex), "R1-R8: Exchange Rate Invariant");
+        require (
+            bucketInfoBeforeSwap.exchangeRate == bucketInfoAfterSwap.exchangeRate,
+            "R1-R8: Exchange Rate Invariant"
+        );
     }
 
     function _setupQuoteDeposits(uint256 count_) internal virtual {
@@ -171,8 +175,7 @@ contract TradingERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBa
     }
 
     function _resetSettledAuction(address borrower_, uint256 borrowerIndex_) internal {
-        (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower_);
-        if (kickTime == 0) {
+        if (_getAuctionInfo(borrower_).kickTime == 0) {
             if (borrowerIndex_ != 0) _activeBorrowers.remove(borrowerIndex_);
         }
     }

@@ -27,43 +27,36 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.addQuoteToken']++;
 
-        (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
-
-        (uint256 inflator, )     = _pool.inflatorInfo();
-        uint256 poolDebt         = Maths.wmul(_pool.totalT0Debt(), inflator);
-        uint256 lupIndex         = _pool.depositIndex(poolDebt);
-        (uint256 interestRate, ) = _pool.interestRateInfo();
-
         // ensure actor always has amount of quote to add
         _ensureQuoteAmount(_actor, amount_);
 
-        try _pool.addQuoteToken(amount_, bucketIndex_, block.timestamp + 1 minutes, false) {
+        LenderInfo memory lenderInfoBeforeAdd = _getLenderInfo(bucketIndex_, _actor);
 
+        try _pool.addQuoteToken(
+            amount_,
+            bucketIndex_,
+            block.timestamp + 1 minutes
+        ) returns (uint256, uint256 addedAmount_) {
             // amount is rounded in pool to token scale
             amount_ = _roundToScale(amount_, _pool.quoteTokenScale());
+
+            // **RE3**: Reserves increase when depositing quote token
+            increaseInReserves += amount_ - addedAmount_;
         
             // **B5**: when adding quote tokens: lender deposit time  = timestamp of block when deposit happened
             lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
+
             // **R3**: Exchange rates are unchanged by depositing quote token into a bucket
             exchangeRateShouldNotChange[bucketIndex_] = true;
 
-            bool depositBelowLup = lupIndex != 0 && bucketIndex_ > lupIndex;
-            if (depositBelowLup) {
-                uint256 intialAmount = amount_;
-                amount_ = Maths.wmul(
-                    amount_,
-                    Maths.WAD - _depositFeeRate(interestRate)
-                );
-                // **RE3**: Reserves increase only when depositing quote token into a bucket below LUP
-                increaseInReserves += intialAmount - amount_;
-            }
+            _fenwickAdd(addedAmount_, bucketIndex_);
 
-            _fenwickAdd(amount_, bucketIndex_);
-
+            LenderInfo memory lenderInfoAfterAdd = _getLenderInfo(bucketIndex_, _actor);
             // Post action condition
-            (uint256 lpBalanceAfterAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
-            require(lpBalanceAfterAction > lpBalanceBeforeAction, "LP balance should increase");
-
+            require(
+                lenderInfoAfterAdd.lpBalance > lenderInfoBeforeAdd.lpBalance,
+                "LP balance should increase"
+            );
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -75,12 +68,15 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.removeQuoteToken']++;
 
-        (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
+        // record fenwick tree state before action
+        fenwickDeposits[bucketIndex_] = _getBucketInfo(bucketIndex_).deposit;
 
-        ( , , , uint256 deposit, ) = _pool.bucketInfo(bucketIndex_);
-        fenwickDeposits[bucketIndex_] = deposit;
+        LenderInfo memory lenderInfoBeforeRemove = _getLenderInfo(bucketIndex_, _actor);
 
-        try _pool.removeQuoteToken(amount_, bucketIndex_) returns (uint256 removedAmount_, uint256) {
+        try _pool.removeQuoteToken(
+            amount_,
+            bucketIndex_
+        ) returns (uint256 removedAmount_, uint256) {
             // **R4**: Exchange rates are unchanged by withdrawing deposit (quote token) from a bucket
             exchangeRateShouldNotChange[bucketIndex_] = true;
 
@@ -89,10 +85,12 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             // rounding in favour of pool goes to reserves
             increaseInReserves += removedAmount_ - _roundToScale(removedAmount_, _pool.quoteTokenScale());
 
+            LenderInfo memory lenderInfoAfterRemove = _getLenderInfo(bucketIndex_, _actor);
             // Post action condition
-            (uint256 lpBalanceAfterAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
-            require(lpBalanceAfterAction < lpBalanceBeforeAction, "LP balance should decrease");
-
+            require(
+                lenderInfoAfterRemove.lpBalance < lenderInfoBeforeRemove.lpBalance,
+                "LP balance should decrease"
+            );
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -105,23 +103,22 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.moveQuoteToken']++;
 
-        ( , , , uint256 fromDeposit, ) = _pool.bucketInfo(fromIndex_);
-        fenwickDeposits[fromIndex_] = fromDeposit;
+        // record fenwick tree state before action
+        fenwickDeposits[fromIndex_] = _getBucketInfo(fromIndex_).deposit;
 
         try _pool.moveQuoteToken(
             amount_,
             fromIndex_,
             toIndex_,
-            block.timestamp + 1 minutes,
-            false
+            block.timestamp + 1 minutes
         ) returns (uint256, uint256, uint256 movedAmount_) {
-
-            (, uint256 fromBucketDepositTime) = _pool.lenderInfo(fromIndex_, _actor);
-            (, uint256 toBucketDepositTime)   = _pool.lenderInfo(toIndex_,    _actor);
-            
             // **B5**: when moving quote tokens: lender deposit time = timestamp of block when move happened
-            lenderDepositTime[_actor][toIndex_] = Maths.max(fromBucketDepositTime, toBucketDepositTime);
-            // **RE3**: Reserves increase only when moving quote tokens into a bucket below LUP.
+            lenderDepositTime[_actor][toIndex_] = Maths.max(
+                _getLenderInfo(fromIndex_, _actor).depositTime,
+                _getLenderInfo(toIndex_, _actor).depositTime
+            );
+
+            // **RE3**: Reserves increase only when moving quote tokens into a lower-priced bucket
             // movedAmount_ can be greater than amount_ in case when bucket gets empty by moveQuoteToken
             if (amount_ > movedAmount_) increaseInReserves += amount_ - movedAmount_;
 
@@ -149,7 +146,12 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         buckets[0] = bucketIndex_;
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = amount_;
-        _pool.increaseLPAllowance(receiver_, buckets, amounts);
+
+        _pool.increaseLPAllowance(
+            receiver_,
+            buckets,
+            amounts
+        );
     }
 
     function _transferLps(
@@ -164,14 +166,16 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         changePrank(receiver_);
 
-        try _pool.transferLP(sender_, receiver_, buckets) {
-
-            (, uint256 senderDepositTime)   = _pool.lenderInfo(bucketIndex_, sender_);
-            (, uint256 receiverDepositTime) = _pool.lenderInfo(bucketIndex_, receiver_);
-
+        try _pool.transferLP(
+            sender_,
+            receiver_,
+            buckets
+        ) {
             // **B6**: when receiving transferred LP : receiver deposit time (`Lender.depositTime`) = max of sender and receiver deposit time
-            lenderDepositTime[receiver_][bucketIndex_] = Maths.max(senderDepositTime, receiverDepositTime);
-
+            lenderDepositTime[receiver_][bucketIndex_] = Maths.max(
+                _getLenderInfo(bucketIndex_, sender_).depositTime,
+                _getLenderInfo(bucketIndex_, receiver_).depositTime
+            );
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -179,6 +183,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
     function _stampLoan() internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.stampLoan']++;
+
         try _pool.stampLoan() {
         } catch (bytes memory err) {
             _ensurePoolError(err);

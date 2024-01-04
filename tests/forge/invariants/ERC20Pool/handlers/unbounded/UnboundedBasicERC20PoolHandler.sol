@@ -8,7 +8,8 @@ import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
 import {
     _borrowFeeRate,
     _depositFeeRate,
-    _roundToScale
+    _roundToScale,
+    COLLATERALIZATION_FACTOR
 }                           from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }            from "src/libraries/internal/Maths.sol";
 
@@ -35,17 +36,24 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
         // ensure actor always has amount of collateral to add
         _ensureCollateralAmount(_actor, amount_);
 
-        (uint256 lpBalanceBeforeAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);
+        uint256 lpBalanceBeforeAction = _getLenderInfo(bucketIndex_, _actor).lpBalance;
 
-        try _erc20Pool.addCollateral(amount_, bucketIndex_, block.timestamp + 1 minutes) {
+        try _erc20Pool.addCollateral(
+            amount_,
+            bucketIndex_,
+            block.timestamp + 1 minutes
+        ) {
             // **B5**: when adding collateral: lender deposit time = timestamp of block when deposit happened
             lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
             // **R5**: Exchange rates are unchanged by adding collateral token into a bucket
             exchangeRateShouldNotChange[bucketIndex_] = true;
 
             // Post action condition
-            (uint256 lpBalanceAfterAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);
-            require(lpBalanceAfterAction > lpBalanceBeforeAction, "LP balance should increase");
+            uint256 lpBalanceAfterAction = _getLenderInfo(bucketIndex_, _actor).lpBalance;
+            require(
+                lpBalanceAfterAction > lpBalanceBeforeAction,
+                "LP balance should increase"
+            );
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -57,17 +65,21 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.removeCollateral']++;
 
-        (uint256 lpBalanceBeforeAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);
+        uint256 lpBalanceBeforeAction = _getLenderInfo(bucketIndex_, _actor).lpBalance;
 
-        try _erc20Pool.removeCollateral(amount_, bucketIndex_) {
-
+        try _erc20Pool.removeCollateral(
+            amount_,
+            bucketIndex_
+        ) {
             // **R6**: Exchange rates are unchanged by removing collateral token from a bucket
             exchangeRateShouldNotChange[bucketIndex_] = true;
 
             // Post action condition
-            (uint256 lpBalanceAfterAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);
-            require(lpBalanceAfterAction < lpBalanceBeforeAction, "LP balance should decrease");
-
+            uint256 lpBalanceAfterAction = _getLenderInfo(bucketIndex_, _actor).lpBalance;
+            require(
+                lpBalanceAfterAction < lpBalanceBeforeAction,
+                "LP balance should decrease"
+            );
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -90,7 +102,12 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
             exchangeRateShouldNotChange[bucketIndex] = true;
         }
 
-        try _erc20Pool.drawDebt(_actor, 0, 0, amount_) {
+        try _erc20Pool.drawDebt(
+            _actor,
+            0,
+            0,
+            amount_
+        ) {
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -106,8 +123,13 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
             exchangeRateShouldNotChange[bucketIndex] = true;
         }
 
-        try _erc20Pool.repayDebt(_actor, 0, amount_, _actor, 7388) {
-
+        try _erc20Pool.repayDebt(
+            _actor,
+            0,
+            amount_,
+            _actor,
+            7388
+        ) {
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -126,14 +148,19 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
 
         uint256 bucket = depositIndex - 1;
         uint256 price = _poolInfo.indexToPrice(bucket);
-        uint256 collateralToPledge = ((amount_ * 1e18 + price / 2) / price) * 101 / 100 + 1;
+        uint256 collateralToPledge = ((COLLATERALIZATION_FACTOR * amount_ + price / 2) / price) * 101 / 100 + 1;
 
         // ensure actor always has amount of collateral to pledge
         _ensureCollateralAmount(_actor, collateralToPledge);
 
         (uint256 interestRate, ) = _erc20Pool.interestRateInfo();
 
-        try _erc20Pool.drawDebt(_actor, amount_, 7388, collateralToPledge) {
+        try _erc20Pool.drawDebt(
+            _actor,
+            amount_,
+            7388,
+            collateralToPledge
+        ) {
             // amount is rounded by pool to token scale
             amount_ = _roundToScale(amount_, _pool.quoteTokenScale());
 
@@ -141,7 +168,6 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
             increaseInReserves += Maths.wmul(
                 amount_, _borrowFeeRate(interestRate)
             );
-
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -152,13 +178,18 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
-        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+        uint256 borrowerDebt = _getBorrowerInfo(_actor).debt;
 
         // ensure actor always has amount of quote to repay
         _ensureQuoteAmount(_actor, borrowerDebt + 10 * 1e18);
 
-        try _erc20Pool.repayDebt(_actor, amountToRepay_, 0, _actor, 7388) {
-
+        try _erc20Pool.repayDebt(
+            _actor,
+            amountToRepay_,
+            0,
+            _actor,
+            7388
+        ) {
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }

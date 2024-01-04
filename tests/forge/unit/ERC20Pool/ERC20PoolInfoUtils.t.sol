@@ -44,45 +44,45 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             from:    _lender,
             amount:  10_000 * 1e18,
             index:   highest,
-            lpAward: 10_000 * 1e18,
+            lpAward: 9_999.54337899543379 * 1e18,
             newLup:  MAX_PRICE
         });
         _addLiquidity({
             from:    _lender,
             amount:  10_000 * 1e18,
             index:   high,
-            lpAward: 10_000 * 1e18,
+            lpAward: 9_999.54337899543379 * 1e18,
             newLup:  MAX_PRICE
         }); 
         _addLiquidity({
             from:    _lender,
             amount:  10_000 * 1e18,
             index:   med,
-            lpAward: 10_000 * 1e18,
+            lpAward: 9_999.54337899543379 * 1e18,
             newLup:  MAX_PRICE
         });
         _addLiquidity({
             from:    _lender,
             amount:  10_000 * 1e18,
             index:   low,
-            lpAward: 10_000 * 1e18,
+            lpAward: 9_999.54337899543379 * 1e18,
             newLup:  MAX_PRICE
         });
         _addLiquidity({
             from:    _lender,
             amount:  10_000 * 1e18,
             index:   lowest,
-            lpAward: 10_000 * 1e18,
+            lpAward: 9_999.54337899543379 * 1e18,
             newLup:  MAX_PRICE
         });
 
         _drawDebt({
-            from: _borrower,
-            borrower: _borrower,
-            amountToBorrow: 21_000 * 1e18,
-            limitIndex: 3_000,
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     21_000 * 1e18,
+            limitIndex:         3_000,
             collateralToPledge: 100 * 1e18,
-            newLup: 2_981.007422784467321543 * 1e18
+            newLup:             2_981.007422784467321543 * 1e18
         });
     }
 
@@ -94,11 +94,115 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(_indexOf(price_), _poolUtils.priceToIndex(price_));
     }
 
+    function testPoolInfoUtilsAuctionStatusNoLiquidation() external {
+        (
+            uint256 kickTime,
+            uint256 collateral,
+            uint256 debtToCover,
+            bool    isCollateralized,
+            uint256 price,
+            uint256 neutralPrice,
+            uint256 referencePrice,
+            uint256 debtToCollateral,
+            uint256 bondFactor
+        ) = _poolUtils.auctionStatus(address(_pool), _borrower);
+        // since loan is not in auction values are 0
+        assertEq(kickTime,         0);
+        assertEq(collateral,       0);
+        assertEq(debtToCover,      0);
+        assertEq(isCollateralized, false);
+        assertEq(price,            0);
+        assertEq(neutralPrice,     0);
+        assertEq(referencePrice,   0);
+        assertEq(debtToCollateral, 0);
+        assertEq(bondFactor,       0);
+    }
+
+    function testPoolInfoUtilsAuctionStatusMatureLiquidation() external {
+        _removeAndKick();
+        skip(6 hours);
+        (
+            uint256 kickTime,
+            uint256 collateral,
+            uint256 debtToCover,
+            bool    isCollateralized,
+            uint256 price,
+            uint256 neutralPrice,
+            uint256 referencePrice,
+            uint256 debtToCollateral,
+            uint256 bondFactor
+        ) = _poolUtils.auctionStatus(address(_pool), _borrower);
+        // at 6 hours, auction price should match reference price
+        assertEq(kickTime,          _startTime);
+        assertEq(collateral,        100 * 1e18);
+        assertEq(debtToCover,       21_020.912189618561131155 * 1e18);
+        assertEq(isCollateralized,  true);
+        assertEq(price,             243.051341028061451208 * 1e18);
+        assertEq(neutralPrice,      243.051341028061451209 * 1e18);
+        assertEq(referencePrice,    243.051341028061451209 * 1e18);
+        assertEq(debtToCollateral,  210.201923076923077020 * 1e18);
+        assertEq(bondFactor,        0.011180339887498948 * 1e18);
+    }
+
+
+    function testPoolInfoUtilsAuctionInfoNoLiquidation() external {
+        (
+            address kicker,
+            uint256 bondFactor,
+            uint256 bondSize,
+            uint256 kickTime,
+            uint256 referencePrice,
+            uint256 neutralPrice,
+            uint256 debtToCollateral,
+            address head,
+            address next,
+            address prev
+        ) = _poolUtils.auctionInfo(address(_pool), _borrower);
+        // since loan is not in auction values are 0
+        assertEq(kicker,            address(0));
+        assertEq(bondFactor,        0);
+        assertEq(bondSize,          0);
+        assertEq(kickTime,          0);
+        assertEq(referencePrice,    0);
+        assertEq(neutralPrice,      0);
+        assertEq(debtToCollateral,  0);
+        assertEq(head,              address(0));
+        assertEq(next,              address(0));
+        assertEq(prev,              address(0));
+    }
+
+    function testPoolInfoUtilsAuctionInfoSingleLiquidation() external {
+        _removeAndKick();
+        (
+            address kicker,
+            uint256 bondFactor,
+            uint256 bondSize,
+            uint256 kickTime,
+            uint256 referencePrice,
+            uint256 neutralPrice,
+            uint256 debtToCollateral,
+            address head,
+            address next,
+            address prev
+        ) = _poolUtils.auctionInfo(address(_pool), _borrower);
+        assertEq(kicker,            _lender);
+        assertEq(bondFactor,        0.011180339887498948 * 1e18);
+        assertEq(bondSize,          235.012894500590867635 * 1e18);
+        assertEq(kickTime,          _startTime);
+        assertEq(referencePrice,    243.051341028061451209 * 1e18);
+        assertEq(neutralPrice,      243.051341028061451209 * 1e18);
+        assertEq(debtToCollateral,  210.201923076923077020 * 1e18);
+        assertEq(head,              _borrower);
+        assertEq(next,              address(0));
+        assertEq(prev,              address(0));
+    }
+
     function testPoolInfoUtilsBorrowerInfo() external {
-        (uint256 debt, uint256 collateral, uint256 npTpRatio) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        (uint256 debt, uint256 collateral, uint256 npTpRatio, uint256 thresholdPrice) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,       21_020.192307692307702000 * 1e18);
         assertEq(collateral, 100 * 1e18);
-        assertEq(npTpRatio,  242.111289450059087705 * 1e18);
+        assertEq(thresholdPrice, 218.610000000000000101 * 1e18);
+        assertEq(npTpRatio,  243.051341028061451209 * 1e18);
     }
 
     function testPoolInfoUtilsBucketInfo() external {
@@ -127,9 +231,9 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             exchangeRate
         ) = _poolUtils.bucketInfo(address(_pool), high);
         assertEq(price,        2_995.912459898389633881 * 1e18);
-        assertEq(quoteTokens,  10_000 * 1e18);
+        assertEq(quoteTokens,  9_999.54337899543379 * 1e18);
         assertEq(collateral,   0);
-        assertEq(bucketLP,     10_000 * 1e18);
+        assertEq(bucketLP,     9_999.54337899543379 * 1e18);
         assertEq(scale,        1 * 1e18);
         assertEq(exchangeRate, 1 * 1e18);
     }
@@ -142,7 +246,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             uint256 pendingInflator,
             uint256 pendingInterestFactor
         ) = _poolUtils.poolLoansInfo(address(_pool));
-        assertEq(poolSize,              50_000 * 1e18);
+        assertEq(poolSize,              49_997.71689497716895 * 1e18);
         assertEq(loansCount,            1);
         assertEq(maxBorrower,           _borrower);
         assertEq(pendingInflator,       1 * 1e18);
@@ -161,8 +265,8 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
 
         assertEq(hpb,      3_010.892022197881557845 * 1e18);
         assertEq(hpbIndex, 2550);
-        assertEq(htp,      210.201923076923077020 * 1e18);
-        assertEq(htpIndex, 3083);
+        assertEq(htp,      218.610000000000000101 * 1e18);
+        assertEq(htpIndex, 3075);
         assertEq(lup,      2981.007422784467321543 * 1e18);
         assertEq(lupIndex, 2552);
 
@@ -182,8 +286,8 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             uint256 timeRemaining
         ) = _poolUtils.poolReservesInfo(address(_pool));
 
-        assertEq(reserves,                   20.192307692307702000 * 1e18);
-        assertEq(claimableReserves,          0);
+        assertEq(reserves,                   22.475412715138752000 * 1e18);
+        assertEq(claimableReserves,          22.475362717421857023 * 1e18);
         assertEq(claimableReservesRemaining, 0);
         assertEq(auctionPrice,               0);
         assertEq(timeRemaining,              0);
@@ -198,7 +302,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         ) = _poolUtils.poolUtilizationInfo(address(_pool));
 
         assertEq(poolMinDebtAmount,     2_102.019230769230770200 * 1e18);
-        assertEq(poolCollateralization, 14.181637252165253251 * 1e18);
+        assertEq(poolCollateralization, 13.636189665543512740 * 1e18);
         assertEq(poolActualUtilization, 0);
         assertEq(poolTargetUtilization, 1 * 1e18);
     }
@@ -212,8 +316,8 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(_poolUtils.borrowFeeRate(address(_pool)), 0.000961538461538462 * 1e18);
     }
 
-    function testUnutilizedDepositFeeRate() external {
-        assertEq(_poolUtils.unutilizedDepositFeeRate(address(_pool)), 0.000136986301369863 * 1e18);
+    function testDepositFeeRate() external {
+        assertEq(_poolUtils.depositFeeRate(address(_pool)), 0.000045662100456621 * 1e18);
     }
 
     function testPoolInfoUtilsLPToCollateralAndQuote() external {
@@ -265,41 +369,31 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         );
     }
 
-    function testPoolInfoUtilsMulticall() external {
-        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
-
-        string[] memory functionSignatures = new string[](2);
-        functionSignatures[0] = "hpb(address)";
-        functionSignatures[1] = "htp(address)";
-
-        string[] memory args = new string[](2);
-        args[0] = Strings.toHexString(address(_pool));
-        args[1] = Strings.toHexString(address(_pool));
-
-        bytes[] memory result = poolUtilsMulticall.multicall(functionSignatures, args);
-
-        assertEq(abi.decode(result[0], (uint256)), _poolUtils.hpb(address(_pool)));
-        assertEq(abi.decode(result[1], (uint256)), _poolUtils.htp(address(_pool)));
-    }
-
-    function testPoolInfoMulticallBorrowerInfo() external {
-        PoolInfoUtilsMulticall poolUtilsMulticall = new PoolInfoUtilsMulticall(_poolUtils);
-
-        string[] memory functionSignatures = new string[](2);
-        functionSignatures[0] = "borrowerInfo(address,address)";
-        functionSignatures[1] = "htp(address)";
-
-        string[] memory args = new string[](3);
-        args[0] = Strings.toHexString(address(_pool));
-        args[1] = Strings.toHexString(_borrower);
-        args[2] = Strings.toHexString(address(_pool));
-
-        bytes[] memory result = poolUtilsMulticall.multicall(functionSignatures, args);
-
-        (uint256 debt,,) = abi.decode(result[0], (uint256, uint256, uint256));
-
-        assertEq(debt,       21_020.192307692307702000 * 1e18);
-        assertEq(abi.decode(result[1], (uint256)), _poolUtils.htp(address(_pool)));
+    // Helps test liquidation functions
+    function _removeAndKick() internal {
+        uint256 amountLessFee = 9_999.543378995433790000 * 1e18;
+        _removeAllLiquidity({
+            from:     _lender, 
+            amount:   amountLessFee,
+            index:    lowest,
+            newLup:   _priceAt(med), 
+            lpRedeem: amountLessFee
+        });
+        _removeAllLiquidity({
+            from:     _lender, 
+            amount:   amountLessFee,
+            index:    low,
+            newLup:   _priceAt(med), 
+            lpRedeem: amountLessFee
+        });
+        _lenderKick({
+            from:       _lender, 
+            index:      med, 
+            borrower:   _borrower, 
+            debt:       21_020.192307692307702000 * 1e18, 
+            collateral: 100 * 1e18, 
+            bond:       235.012894500590867635 * 1e18
+        });
     }
 
     function testPoolInfoUtilsMulticallRatesAndFees() external {
@@ -307,9 +401,9 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
 
         (uint256 lim, uint256 bfr, uint256 dfr) = poolUtilsMulticall.poolRatesAndFeesMulticall(address(_pool));
 
-        assertGe(lim, 0.000136986301369863 * 1e18);
-        assertGe(bfr, 0.000961538461538462 * 1e18);
-        assertGe(dfr, 0.000136986301369863 * 1e18);
+        assertEq(lim, 0.849999999999999999 * 1e18);
+        assertEq(bfr, 0.000961538461538462 * 1e18);
+        assertEq(dfr, 0.000045662100456621* 1e18);
     }
 
     function testPoolInfoUtilsMulticallPoolDetails() external {
@@ -323,22 +417,22 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             PoolInfoUtilsMulticall.PoolUtilizationInfo memory poolUtilizationInfo
         ) = poolUtilsMulticall.poolDetailsMulticall(address(_pool));
 
-        assertEq(poolLoansInfo.poolSize,                   50_000 * 1e18);
+        assertEq(poolLoansInfo.poolSize, 49_997.716894977168950000 * 1e18);
 
         assertEq(poolPriceInfo.hpb,      3_010.892022197881557845 * 1e18);
         assertEq(poolPriceInfo.hpbIndex, 2550);
-        assertEq(poolPriceInfo.htp,      210.201923076923077020 * 1e18);
-        assertEq(poolPriceInfo.htpIndex, 3083);
+        assertEq(poolPriceInfo.htp,      218.610000000000000101 * 1e18);
+        assertEq(poolPriceInfo.htpIndex, 3075);
         assertEq(poolPriceInfo.lup,      2981.007422784467321543 * 1e18);
         assertEq(poolPriceInfo.lupIndex, 2552);
 
-        assertGe(poolRatesAndFees.lenderInterestMargin, 0.000136986301369863 * 1e18);
-        assertGe(poolRatesAndFees.borrowFeeRate, 0.000961538461538462 * 1e18);
-        assertGe(poolRatesAndFees.depositFeeRate, 0.000136986301369863 * 1e18);
+        assertEq(poolRatesAndFees.lenderInterestMargin, 0.849999999999999999 * 1e18);
+        assertEq(poolRatesAndFees.borrowFeeRate,        0.000961538461538462 * 1e18);
+        assertEq(poolRatesAndFees.depositFeeRate,       0.000045662100456621 * 1e18);
 
-        assertEq(poolReservesInfo.reserves,                   20.192307692307702000 * 1e18);
+        assertEq(poolReservesInfo.reserves,             22.475412715138752000 * 1e18);
 
-        assertEq(poolUtilizationInfo.poolMinDebtAmount,     2_102.019230769230770200 * 1e18);
+        assertEq(poolUtilizationInfo.poolMinDebtAmount, 2_102.019230769230770200 * 1e18);
     }
 
     function testPoolInfoUtilsMulticallPoolBalanceDetails() external {

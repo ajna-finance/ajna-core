@@ -2,10 +2,8 @@
 
 pragma solidity 0.8.18;
 
-import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
-import { RewardsManager }  from 'src/RewardsManager.sol';
 import { PositionManager } from 'src/PositionManager.sol';
 import { Pool }            from 'src/base/Pool.sol';
 import { ERC20Pool }       from 'src/ERC20Pool.sol';
@@ -13,20 +11,19 @@ import { Maths }           from 'src/libraries/internal/Maths.sol';
 
 import { TokenWithNDecimals }          from '../../../utils/Tokens.sol';
 
-import { BaseERC20PoolHandler }            from '../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
-import { UnboundedBasicERC20PoolHandler }  from '../../ERC20Pool/handlers/unbounded/UnboundedBasicERC20PoolHandler.sol';
-import { BaseRewardsPoolHandler }          from './BaseRewardsPoolHandler.sol';
+import { PositionPoolHandler }            from  './PositionPoolHandler.sol';
+import { BaseERC20PoolHandler }           from '../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
+import { UnboundedBasicPoolHandler }      from '../../base/handlers/unbounded/UnboundedBasicPoolHandler.sol';
+import { UnboundedBasicERC20PoolHandler } from '../../ERC20Pool/handlers/unbounded/UnboundedBasicERC20PoolHandler.sol';
 import { UnboundedLiquidationPoolHandler } from '../../base/handlers/unbounded/UnboundedLiquidationPoolHandler.sol';
-import { UnboundedReservePoolHandler }     from '../../base/handlers/unbounded/UnboundedReservePoolHandler.sol';
 
-contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandler, UnboundedLiquidationPoolHandler, UnboundedReservePoolHandler, BaseRewardsPoolHandler {
-
+contract ERC20PoolPositionHandler is PositionPoolHandler, BaseERC20PoolHandler, UnboundedBasicERC20PoolHandler, UnboundedLiquidationPoolHandler {
     using EnumerableSet for EnumerableSet.UintSet;
 
     address[] internal _lenders;
     address[] internal _borrowers;
 
-    uint16 internal constant LENDERS     = 200;
+    uint16 internal constant LENDERS = 200;
     uint16 internal constant LOANS_COUNT = 500;
     uint16 nonce;
     uint256 numberOfBuckets;
@@ -34,7 +31,6 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
     EnumerableSet.UintSet internal _activeBorrowers;
 
     constructor(
-        address rewards_,
         address positions_,
         address[] memory pools_,
         address ajna_,
@@ -48,10 +44,7 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
         }
 
         // Position manager
-        _positionManager = PositionManager(positions_); 
-
-        // Rewards manager
-        _rewardsManager = RewardsManager(rewards_);
+        _positionManager = PositionManager(positions_);
 
         // pool hash for mint() call
         _poolHash = bytes32(keccak256("ERC20_NON_SUBSET_HASH"));
@@ -66,10 +59,25 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
         _setupLendersAndDeposits(LENDERS);
         _setupBorrowersAndLoans(LOANS_COUNT);
 
-        ( , , uint256 totalLoans) = _pool.loansInfo();
+        uint256 totalLoans = _getLoansInfo().noOfLoans;
         require(totalLoans == LOANS_COUNT, "loans setup failed");
 
         vm.warp(block.timestamp + 1_000 days);
+    }
+
+    modifier useRandomPool(uint256 poolIndex) override {
+        poolIndex   = bound(poolIndex, 0, _pools.length - 1);
+        updateTokenAndPoolAddress(_pools[poolIndex]);
+
+        _;
+    }
+
+    function updateTokenAndPoolAddress(address pool_) internal override {
+        _pool = Pool(pool_);
+        _erc20Pool = ERC20Pool(pool_);
+
+        _quote = TokenWithNDecimals(_pool.quoteTokenAddress());
+        _collateral = TokenWithNDecimals(_pool.collateralAddress());
     }
 
     function lenderKickAuction(
@@ -102,51 +110,6 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
         _moveQuoteToken(boundedAmount, _lenderBucketIndex, toBucketIndex_);
     }
 
-    function stake(
-        uint256 actorIndex_,
-        uint256 bucketIndex_,
-        uint256 amountToAdd_,
-        uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
-        numberOfCalls['BPriceFall.stake']++;
-        // Pre action
-        (uint256 tokenId, ) = _preStake(_lenderBucketIndex, amountToAdd_);
-
-        // Action phase
-        _stake(tokenId);
-    }
-
-    function moveStakedLiquidity(
-        uint256 actorIndex_,
-        uint256 bucketIndex_,
-        uint256 amountToAdd_,
-        uint256 skippedTime_,
-        uint256 numberOfEpochs_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
-        numberOfCalls['BRewardsHandler.unstake']++;
-        // Pre action
-        (uint256 tokenId, uint256[] memory indexes) = _preUnstake(
-            _lenderBucketIndex,
-            amountToAdd_,
-            numberOfEpochs_
-        );
-        
-        // if rewards exceed contract balance tx will revert, return
-        uint256 reward = _rewardsManager.calculateRewards(tokenId, _pool.currentBurnEpoch());
-        if (reward > _ajna.balanceOf(address(_rewardsManager))) return;
-
-        // Action phase
-        _unstake(tokenId);
-
-        // Move liquidity to lower index
-        uint256 toIndex_ = constrictToRange(_randomBucket(), indexes[0], 7388);
-        _moveLiquidity(tokenId, indexes[0], toIndex_);
-
-        // re-stake Token
-        _positionManager.approve(address(_rewardsManager), tokenId);
-        _stake(tokenId);
-    }
-
     function takeOrSettleAuction(
         uint256 borrowerIndex_,
         uint256 takerIndex_,
@@ -154,7 +117,7 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
     ) external useTimestamps useRandomActor(takerIndex_) skipTime(skippedTime_) writeLogs {
         address borrower = _borrowers[constrictToRange(borrowerIndex_, 0, _borrowers.length - 1)];
 
-        (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
+        (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
         // Kick borrower if not already kicked
         if (kickTime == 0) {
@@ -249,29 +212,4 @@ contract BucketBankruptcyERC20PoolRewardsHandler is UnboundedBasicERC20PoolHandl
         ) % 900 + 100;
         ++ nonce;
     }
-
-    /*******************************/
-    /***     Helper Functions    ***/
-    /*******************************/
-
-    function _resetSettledAuction(address borrower_, uint256 borrowerIndex_) internal {
-        (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower_);
-        if (kickTime == 0) {
-            if (borrowerIndex_ != 0) _activeBorrowers.remove(borrowerIndex_);
-        }
-    }
-
-
-    function _advanceEpochRewardStakers(
-        uint256 amountToAdd_,
-        uint256[] memory indexes_,
-        uint256 numberOfEpochs_
-    ) internal override {}
-
-    modifier useRandomPool(uint256 poolIndex) override {
-        _;
-    }
-
-    function updateTokenAndPoolAddress(address pool_) internal override {}
-
 }

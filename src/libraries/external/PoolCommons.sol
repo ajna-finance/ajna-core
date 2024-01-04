@@ -5,9 +5,27 @@ pragma solidity 0.8.18;
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-import { InterestState, EmaState, PoolState, DepositsState } from '../../interfaces/pool/commons/IPoolState.sol';
+import { IERC20 }    from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { _dwatp, _indexOf, MAX_FENWICK_INDEX, MIN_PRICE, MAX_PRICE } from '../helpers/PoolHelper.sol';
+
+import { 
+    DepositsState, 
+    EmaState, 
+    InflatorState,
+    InterestState, 
+    PoolBalancesState, 
+    PoolState 
+} from '../../interfaces/pool/commons/IPoolState.sol';
+import { IERC3156FlashBorrower }                             from '../../interfaces/pool/IERC3156FlashBorrower.sol';
+
+import { 
+    _dwatp,
+    _htp,
+    _indexOf,
+    MAX_FENWICK_INDEX,
+    MIN_PRICE, MAX_PRICE
+} from '../helpers/PoolHelper.sol';
 
 import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
@@ -21,6 +39,8 @@ import { Maths }    from '../internal/Maths.sol';
             - pool utilization
  */
 library PoolCommons {
+    using SafeERC20 for IERC20;
+
 
     /*****************/
     /*** Constants ***/
@@ -40,8 +60,17 @@ library PoolCommons {
     /**************/
 
     // See `IPoolEvents` for descriptions
+    event Flashloan(address indexed receiver, address indexed token, uint256 amount);
     event ResetInterestRate(uint256 oldRate, uint256 newRate);
     event UpdateInterestRate(uint256 oldRate, uint256 newRate);
+
+    /**************/
+    /*** Errors ***/
+    /**************/
+
+    // See `IPoolErrors` for descriptions
+    error FlashloanCallbackFailed();
+    error FlashloanIncorrectBalance();
 
     /*************************/
     /*** Local Var Structs ***/
@@ -209,19 +238,19 @@ library PoolCommons {
      *  @dev    === Write state ===
      *  @dev    - `Deposits.mult` (scale `Fenwick` tree with new interest accrued):
      *  @dev      update `scaling` array state
-     *  @param  emaParams_      Struct for pool `EMA`s state.
-     *  @param  deposits_       Struct for pool deposits state.
-     *  @param  poolState_      Current state of the pool.
-     *  @param  thresholdPrice_ Current Pool Threshold Price.
-     *  @param  elapsed_        Time elapsed since last inflator update.
-     *  @return newInflator_    The new value of pool inflator.
-     *  @return newInterest_    The new interest accrued.
+     *  @param  emaParams_             Struct for pool `EMA`s state.
+     *  @param  deposits_              Struct for pool deposits state.
+     *  @param  poolState_             Current state of the pool.
+     *  @param  maxT0DebtToCollateral_ Max t0 debt to collateral in Pool.
+     *  @param  elapsed_               Time elapsed since last inflator update.
+     *  @return newInflator_           The new value of pool inflator.
+     *  @return newInterest_           The new interest accrued.
      */
     function accrueInterest(
         EmaState      storage emaParams_,
         DepositsState storage deposits_,
         PoolState calldata poolState_,
-        uint256 thresholdPrice_,
+        uint256 maxT0DebtToCollateral_,
         uint256 elapsed_
     ) external returns (uint256 newInflator_, uint256 newInterest_) {
         // Scale the borrower inflator to update amount of interest owed by borrowers
@@ -229,7 +258,7 @@ library PoolCommons {
 
         // calculate the highest threshold price
         newInflator_ = Maths.wmul(poolState_.inflator, pendingFactor);
-        uint256 htp = Maths.wmul(thresholdPrice_, poolState_.inflator);
+        uint256 htp  = _htp(maxT0DebtToCollateral_, poolState_.inflator);
 
         uint256 accrualIndex;
         if (htp > MAX_PRICE)      accrualIndex = 1;                 // if HTP is over the highest price bucket then no buckets earn interest
@@ -257,6 +286,45 @@ library PoolCommons {
             // Scale the fenwick tree to update amount of debt owed to lenders
             Deposits.mult(deposits_, accrualIndex, lenderFactor);
         }
+    }
+
+    /**
+     *  @notice Executes a flashloan from current pool.
+     *  @dev    === Reverts on ===
+     *  @dev    - `FlashloanCallbackFailed()` if receiver is not an `ERC3156FlashBorrower`
+     *  @dev    - `FlashloanIncorrectBalance()` if pool balance after flashloan is different than initial balance
+     *  @param  receiver_ Address of the contract which implements the appropriate interface to receive tokens.
+     *  @param  token_    Address of the `ERC20` token caller wants to borrow.
+     *  @param  amount_   The denormalized amount (dependent upon token precision) of tokens to borrow.
+     *  @param  data_     User-defined calldata passed to the receiver.
+     */
+    function flashLoan(
+        IERC3156FlashBorrower receiver_,
+        address token_, 
+        uint256 amount_,
+        bytes calldata data_
+    ) external {
+        IERC20 tokenContract = IERC20(token_);
+
+        uint256 initialBalance = tokenContract.balanceOf(address(this));
+
+        tokenContract.safeTransfer(
+            address(receiver_),
+            amount_
+        );
+
+        if (receiver_.onFlashLoan(msg.sender, token_, amount_, 0, data_) != 
+            keccak256("ERC3156FlashBorrower.onFlashLoan")) revert FlashloanCallbackFailed();
+
+        tokenContract.safeTransferFrom(
+            address(receiver_),
+            address(this),
+            amount_
+        );
+
+        if (tokenContract.balanceOf(address(this)) != initialBalance) revert FlashloanIncorrectBalance();
+
+        emit Flashloan(address(receiver_), token_, amount_);
     }
 
     /**************************/
@@ -378,6 +446,35 @@ library PoolCommons {
     /**********************/
 
     /**
+     *  @notice Calculates pool related debt values.
+     *  @param poolBalances_  Pool debt
+     *  @param inflatorState_ Interest inflator and last update time
+     *  @param interestState_ Interest rate and t0Debt2ToCollateral accumulator
+     *  @return Current amount of debt owed by borrowers in pool.
+     *  @return Debt owed by borrowers based on last inflator snapshot.
+     *  @return Total amount of debt in auction.
+     *  @return t0debt accross all borrowers divided by their collateral, used in determining a collateralization weighted debt.  
+     */
+    function debtInfo(
+        PoolBalancesState memory poolBalances_,
+        InflatorState     memory inflatorState_,
+        InterestState     memory interestState_
+    ) external view returns (uint256, uint256, uint256, uint256) {
+        uint256 t0Debt   = poolBalances_.t0Debt;
+        uint256 inflator = inflatorState_.inflator;
+
+        return (
+            Maths.ceilWmul(
+                t0Debt,
+                pendingInflator(inflator, inflatorState_.inflatorUpdate, interestState_.interestRate)
+            ),
+            Maths.ceilWmul(t0Debt, inflator),
+            Maths.ceilWmul(poolBalances_.t0DebtInAuction, inflator),
+            interestState_.t0Debt2ToCollateral
+        );
+    }
+
+    /**
      *  @notice Calculates pool interest factor for a given interest rate and time elapsed since last inflator update.
      *  @param  interestRate_   Current pool interest rate.
      *  @param  elapsed_        Time elapsed since last inflator update.
@@ -401,7 +498,7 @@ library PoolCommons {
         uint256 inflator_,
         uint256 inflatorUpdate,
         uint256 interestRate_
-    ) external view returns (uint256) {
+    ) public view returns (uint256) {
         return Maths.wmul(
             inflator_,
             PRBMathUD60x18.exp((interestRate_ * (block.timestamp - inflatorUpdate)) / 365 days)

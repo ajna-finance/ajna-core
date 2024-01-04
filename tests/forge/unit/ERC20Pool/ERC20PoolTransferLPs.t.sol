@@ -136,18 +136,18 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
             from:      _lender1,
             to:        _lender2,
             indexes:   indexes,
-            lpBalance: 30_000 * 1e18
+            lpBalance: Maths.wmul(30_000 * 1e18, _depositFee())
         });
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[0],
-            lpBalance:   10_000 * 1e18,
+            lpBalance:   Maths.wmul(10_000 * 1e18, _depositFee()),
             depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[1],
-            lpBalance:   20_000 * 1e18,
+            lpBalance:   Maths.wmul(20_000 * 1e18, _depositFee()),
             depositTime: _startTime
         });
     }
@@ -175,7 +175,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       indexes[0],
-            lpBalance:   10_000 * 1e18,
+            lpBalance:   Maths.wmul(10_000 * 1e18, _depositFee()),
             depositTime: _startTime + 1 hours
         });
 
@@ -235,7 +235,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       indexes[0],
-            lpBalance:   10_000 * 1e18,
+            lpBalance:   Maths.wmul(10_000 * 1e18, _depositFee()),
             depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
@@ -247,7 +247,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       indexes[1],
-            lpBalance:   20_000 * 1e18,
+            lpBalance:   Maths.wmul(20_000 * 1e18, _depositFee()),
             depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
@@ -259,7 +259,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       indexes[2],
-            lpBalance:   30_000 * 1e18,
+            lpBalance:   Maths.wmul(30_000 * 1e18, _depositFee()),
             depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
@@ -282,7 +282,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
             from:      _lender1,
             to:        _lender2,
             indexes:   indexes,
-            lpBalance: 60_000 * 1e18
+            lpBalance: Maths.wmul(60_000 * 1e18, _depositFee())
         });
 
         // check that old token ownership was removed - a new transfer should fail
@@ -303,7 +303,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[0],
-            lpBalance:   10_000 * 1e18,
+            lpBalance:   Maths.wmul(10_000 * 1e18, _depositFee()),
             depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
@@ -315,7 +315,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[1],
-            lpBalance:   20_000 * 1e18,
+            lpBalance:   Maths.wmul(20_000 * 1e18, _depositFee()),
             depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
@@ -327,7 +327,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[2],
-            lpBalance:   30_000 * 1e18,
+            lpBalance:   Maths.wmul(30_000 * 1e18, _depositFee()),
             depositTime: _startTime + 1 hours
         });
     }
@@ -362,7 +362,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       depositIndexes[0],
-            lpBalance:   10_000 * 1e18,
+            lpBalance:   Maths.wmul(10_000 * 1e18, _depositFee()),
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -374,7 +374,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       depositIndexes[1],
-            lpBalance:   20_000 * 1e18,
+            lpBalance:   Maths.wmul(20_000 * 1e18, _depositFee()),
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -386,7 +386,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       depositIndexes[2],
-            lpBalance:   30_000 * 1e18,
+            lpBalance:   Maths.wmul(30_000 * 1e18, _depositFee()),
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -408,7 +408,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
             from:      _lender1,
             to:        _lender2,
             indexes:   transferIndexes,
-            lpBalance: 40_000 * 1e18
+            lpBalance: Maths.wmul(40_000 * 1e18, _depositFee())
         });
 
         // check that old token ownership was removed - transfer with same indexes should fail
@@ -429,13 +429,13 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       depositIndexes[0],
-            lpBalance:   10_000 * 1e18,
+            lpBalance:   Maths.wmul(10_000 * 1e18, _depositFee()),
             depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       depositIndexes[1],
-            lpBalance:   20_000 * 1e18,
+            lpBalance:   Maths.wmul(20_000 * 1e18, _depositFee()),
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -453,7 +453,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       depositIndexes[2],
-            lpBalance:   30_000 * 1e18,
+            lpBalance:   Maths.wmul(30_000 * 1e18, _depositFee()),
             depositTime: _startTime
         });
     }
@@ -504,37 +504,37 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       indexes[0],
-            lpBalance:   10_000 * 1e18,
+            lpBalance:   Maths.wmul(10_000 * 1e18, _depositFee()),
             depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[0],
-            lpBalance:   5_000 * 1e18,
+            lpBalance:   Maths.wmul(5_000 * 1e18, _depositFee()),
             depositTime: _startTime + 2 hours
         });
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       indexes[1],
-            lpBalance:   20_000 * 1e18,
+            lpBalance:   Maths.wmul(20_000 * 1e18, _depositFee()),
             depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[1],
-            lpBalance:   10_000 * 1e18,
+            lpBalance:   Maths.wmul(10_000 * 1e18, _depositFee()),
             depositTime: _startTime + 2 hours
         });
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       indexes[2],
-            lpBalance:   30_000 * 1e18,
+            lpBalance:   Maths.wmul(30_000 * 1e18, _depositFee()),
             depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[2],
-            lpBalance:   15_000 * 1e18,
+            lpBalance:   Maths.wmul(15_000 * 1e18, _depositFee()),
             depositTime: _startTime + 2 hours
         });
 
@@ -559,7 +559,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
             from:      _lender1,
             to:        _lender2,
             indexes:   indexes,
-            lpBalance: 60_000 * 1e18
+            lpBalance: Maths.wmul(60_000 * 1e18, _depositFee())
         });
 
         // check that old token ownership was removed - transfer with same indexes should fail
@@ -586,7 +586,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[0],
-            lpBalance:   15_000 * 1e18,
+            lpBalance:   Maths.wmul(15_000 * 1e18, _depositFee()),
             depositTime: _startTime + 2 hours
         });
         _assertLenderLpBalance({
@@ -598,7 +598,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[1],
-            lpBalance:   30_000 * 1e18,
+            lpBalance:   Maths.wmul(30_000 * 1e18, _depositFee()),
             depositTime: _startTime + 2 hours
         });
         _assertLenderLpBalance({
@@ -610,7 +610,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[2],
-            lpBalance:   45_000 * 1e18,
+            lpBalance:   Maths.wmul(45_000 * 1e18, _depositFee()),
             depositTime: _startTime + 2 hours
         });
     }
@@ -676,7 +676,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
             from:      _lender1,
             to:        _lender2,
             indexes:   indexes,
-            lpBalance: 60_000 * 1e18
+            lpBalance: 59_997.260273972602740000 * 1e18
         });
     }
 
@@ -836,7 +836,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       indexes[0],
-            lpBalance:   4_000 * 1e18,
+            lpBalance:   3_999.543378995433790000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -854,7 +854,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       indexes[1],
-            lpBalance:   8_000 * 1e18,
+            lpBalance:   7_999.086757990867580000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({

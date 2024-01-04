@@ -29,23 +29,32 @@ abstract contract BasePositionPoolHandler is UnboundedPositionPoolHandler {
             uint256 bucketIndex = indexes_[i];
 
             // ensure actor has a position
-            (uint256 lpBalanceBefore,) = _pool.lenderInfo(bucketIndex, _actor);
-
             // add quote token if they don't have a position
-            if (lpBalanceBefore == 0) {
+            if (_getLenderInfo(bucketIndex, _actor).lpBalance == 0) {
                 // bound amount
-                uint256 boundedAmount = constrictToRange(amountToAdd_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
+                uint256 boundedAmount = constrictToRange(
+                    amountToAdd_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT
+                );
                 _ensureQuoteAmount(_actor, boundedAmount);
-                try _pool.addQuoteToken(boundedAmount, bucketIndex, block.timestamp + 1 minutes, false) {
+
+                try _pool.addQuoteToken(
+                    boundedAmount,
+                    bucketIndex,
+                    block.timestamp + 1 minutes
+                ) {
                 } catch (bytes memory err) {
                     _ensurePoolError(err);
                 }
             }
 
-            (lpBalances[i], ) = _pool.lenderInfo(bucketIndex, _actor);
+            lpBalances[i] = _getLenderInfo(bucketIndex, _actor).lpBalance;
         }
 
-        _pool.increaseLPAllowance(address(_positionManager), indexes_, lpBalances);
+        _pool.increaseLPAllowance(
+            address(_positionManager),
+            indexes_,
+            lpBalances
+        );
 
         // mint position NFT
         tokenId_ = _mint();
@@ -118,14 +127,19 @@ abstract contract BasePositionPoolHandler is UnboundedPositionPoolHandler {
         uint256 amountToAdd_
     ) internal returns (uint256[] memory indexes_) {
         // ensure actor has a position
-        (uint256 lpBalanceBefore,) = _pool.lenderInfo(bucketIndex_, _actor);
-
         // add quote token if they don't have a position
-        if (lpBalanceBefore == 0) {
+        if (_getLenderInfo(bucketIndex_, _actor).lpBalance == 0) {
             // bound amount
-            uint256 boundedAmount = constrictToRange(amountToAdd_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
+            uint256 boundedAmount = constrictToRange(
+                amountToAdd_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT
+            );
             _ensureQuoteAmount(_actor, boundedAmount);
-            try _pool.addQuoteToken(boundedAmount, bucketIndex_, block.timestamp + 1 minutes, false) {
+
+            try _pool.addQuoteToken(
+                boundedAmount,
+                bucketIndex_,
+                block.timestamp + 1 minutes
+            ) {
             } catch (bytes memory err) {
                 _ensurePoolError(err);
             }
@@ -136,11 +150,19 @@ abstract contract BasePositionPoolHandler is UnboundedPositionPoolHandler {
 
         uint256[] memory lpBalances = new uint256[](1);
 
-        (lpBalances[0], ) = _pool.lenderInfo(bucketIndex_, _actor);
-        _pool.increaseLPAllowance(address(_positionManager), indexes_, lpBalances);
+        lpBalances[0] = _getLenderInfo(bucketIndex_, _actor).lpBalance;
+
+        _pool.increaseLPAllowance(
+            address(_positionManager),
+            indexes_,
+            lpBalances
+        );
     }
 
-    function getRandomElements(uint256 noOfElements, uint256[] memory arr) internal returns (uint256[] memory randomBuckets_) {
+    function getRandomElements(
+        uint256 noOfElements,
+        uint256[] memory arr
+    ) internal returns (uint256[] memory randomBuckets_) {
         randomBuckets_ = new uint256[](noOfElements);
         
         for (uint256 i = 0; i < noOfElements; i++) {

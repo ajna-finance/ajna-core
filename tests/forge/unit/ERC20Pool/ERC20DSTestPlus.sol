@@ -110,7 +110,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
         uint256 pledgedCollateral = 0;
         for (uint i = 0; i < borrowers.length(); i++) {
-            (, uint256 collateral,) = _poolUtils.borrowerInfo(address(_pool), borrowers.at(i));
+            (, uint256 collateral, , ) = _poolUtils.borrowerInfo(address(_pool), borrowers.at(i));
             pledgedCollateral += collateral;
         }
 
@@ -177,13 +177,13 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         // Settle any auctions and then repay debt
         for (uint i = 0; i < borrowers.length(); i++) {
             address borrower = borrowers.at(i);
-            (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower);
+            (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(borrower);
             if (kickTime != 0) {
                 changePrank(borrower);
                 _pool.settle(borrower, bucketsUsed.length() + 1);
 
                 // Settle again if not settled, this can happen when less reserves calculated with DEPOSIT_BUFFER and borrower is not fully settled
-                (,,, kickTime,,,,,) = _pool.auctionInfo(borrower);
+                (,,, kickTime,,,,,,) = _pool.auctionInfo(borrower);
                 if (kickTime != 0) {
                     _pool.settle(borrower, bucketsUsed.length() + 1);
                 }
@@ -212,16 +212,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         uint256 amount
     ) internal override {
         vm.expectEmit(true, true, false, true);
-
         uint256 transferAmount = Maths.ceilDiv(amount, _pool.quoteTokenScale());
         emit Transfer(from, to, transferAmount);
     }
 
-    function _assertQuoteTokenTransferEventDrawDebt(
+    function _assertQuoteTokenTransferEventRoundingDown(
         address from,
         address to,
         uint256 amount
-    ) internal {
+    ) internal override {
         vm.expectEmit(true, true, false, true);
         emit Transfer(from, to, amount / _pool.quoteTokenScale());
     }
@@ -322,7 +321,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
         // borrow quote
         if (amountToBorrow != 0) {
-            _assertQuoteTokenTransferEventDrawDebt(address(_pool), from, amountToBorrow);
+            _assertQuoteTokenTransferEventRoundingDown(address(_pool), from, amountToBorrow);
         }
 
         ERC20Pool(address(_pool)).drawDebt(borrower, amountToBorrow, limitIndex, collateralToPledge);
@@ -390,7 +389,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(from, index, amount, lpRedeem);
         vm.expectEmit(true, true, true, true);
-        emit Transfer(address(_pool), from, amount);
+        emit Transfer(address(_pool), from, amount / ERC20Pool(address(_pool)).collateralScale());
         (uint256 collateralRemoved, uint256 lpAmount) = ERC20Pool(address(_pool)).removeCollateral(type(uint256).max, index);
         assertEq(collateralRemoved, amount);
         assertEq(lpAmount, lpRedeem);
@@ -728,6 +727,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         _pool.removeQuoteToken(amount, index);
     }
 
+    function _assertRemoveQuoteDustRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
+        _pool.removeQuoteToken(amount, index);
+    }
+
     function _assertBorrowAuctionActiveRevert(
         address from,
         uint256 amount,
@@ -797,9 +806,29 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LUPBelowHTP.selector);
-        ERC20Pool(address(_pool)).moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max, false);
+        ERC20Pool(address(_pool)).moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 
+    function _assertMoveQuoteDustRevert(
+        address from,
+        uint256 amount,
+        uint256 toIndex,
+        uint256 fromIndex
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
+    }
+
+    function _assertAddAboveAuctionPriceRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AddAboveAuctionPrice.selector);
+        _pool.addQuoteToken(amount, index, type(uint256).max);
+    }
 }
 
 abstract contract ERC20HelperContract is ERC20DSTestPlus {

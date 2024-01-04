@@ -145,7 +145,7 @@ abstract contract BasicInvariants is BaseInvariants {
         (
             uint256 totalBondEscrowed,
             uint256 unClaimed,
-            ,
+            , ,
         ) = _pool.reservesInfo();
 
         uint256 assets      = poolBalance + poolDebt;
@@ -186,7 +186,7 @@ abstract contract BasicInvariants is BaseInvariants {
         (
             uint256 totalBondEscrowed,
             uint256 unClaimed,
-            ,
+            , ,
         ) = _pool.reservesInfo();
 
         require(
@@ -241,27 +241,27 @@ abstract contract BasicInvariants is BaseInvariants {
     /************************/
 
     function _invariant_L1_L2_L3() internal view {
-        (address borrower, uint256 tp) = _pool.loanInfo(0);
+        (address borrower, uint256 t0Tp) = _pool.loanInfo(0);
 
         // first loan in loan heap should be 0
         require(borrower == address(0), "Loan Invariant L2");
-        require(tp == 0,                "Loan Invariant L2");
+        require(t0Tp == 0,              "Loan Invariant L2");
 
         ( , , uint256 totalLoans) = _pool.loansInfo();
 
         for (uint256 loanId = 1; loanId < totalLoans; loanId++) {
-            (borrower, tp) = _pool.loanInfo(loanId);
+            (borrower, t0Tp) = _pool.loanInfo(loanId);
 
-            // borrower address and threshold price should not 0
+            // borrower address and t0 threshold price should not 0
             require(borrower != address(0), "Loan Invariant L1");
-            require(tp != 0,                "Loan Invariant L1");
+            require(t0Tp != 0,              "Loan Invariant L1");
 
-            // tp of a loan at index 'i' in loan array should be greater than equals to loans at index '2i' and '2i+1'
-            (, uint256 tp1) = _pool.loanInfo(2 * loanId);
-            (, uint256 tp2) = _pool.loanInfo(2 * loanId + 1);
+            // t0Tp of a loan at index 'i' in loan array should be greater than equals to loans at index '2i' and '2i+1'
+            (, uint256 t0Tp1) = _pool.loanInfo(2 * loanId);
+            (, uint256 t0Tp2) = _pool.loanInfo(2 * loanId + 1);
 
-            require(tp >= tp1, "Loan Invariant L3");
-            require(tp >= tp2, "Loan Invariant L3");
+            require(t0Tp >= t0Tp1, "Loan Invariant L3");
+            require(t0Tp >= t0Tp2, "Loan Invariant L3");
         }
     }
 
@@ -286,7 +286,7 @@ abstract contract BasicInvariants is BaseInvariants {
 
     /// @dev reserve.totalInterestEarned should only update once per block
     function _invariant_I2() internal {
-        (, , , uint256 totalInterestEarned) = _pool.reservesInfo();
+        (, , , , uint256 totalInterestEarned) = _pool.reservesInfo();
 
         if (previousTotalInterestEarnedUpdate == block.number) {
             require(
@@ -321,7 +321,7 @@ abstract contract BasicInvariants is BaseInvariants {
         for (uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
 
-            (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
+            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
             if (kickTime == 0) {
                 (uint256 borrowerT0Debt, uint256 borrowerCollateral, ) = _pool.borrowerInfo(borrower);
@@ -478,11 +478,6 @@ abstract contract BasicInvariants is BaseInvariants {
         console.log("UBReserveHandler.takeReserves       ",  IBaseHandler(_handler).numberOfCalls("UBReserveHandler.takeReserves"));
         console.log("BReserveHandler.kickReserves        ",  IBaseHandler(_handler).numberOfCalls("BReserveHandler.kickReserves"));
         console.log("UBReserveHandler.kickReserves       ",  IBaseHandler(_handler).numberOfCalls("UBReserveHandler.kickReserves"));
-        console.log("--Rewards--------");
-        console.log("BRewardsHandler.stake               ",  IBaseHandler(_handler).numberOfCalls("BRewardsHandler.stake"));
-        console.log("UBRewardsHandler.stake              ",  IBaseHandler(_handler).numberOfCalls("UBRewardsHandler.stake"));
-        console.log("BRewardsHandler.unstake             ",  IBaseHandler(_handler).numberOfCalls("BRewardsHandler.unstake"));
-        console.log("UBRewardsHandler.unstake            ",  IBaseHandler(_handler).numberOfCalls("UBRewardsHandler.unstake"));
         console.log("--Positions--------");
         console.log("UBPositionHandler.mint              ",  IBaseHandler(_handler).numberOfCalls("UBPositionHandler.mint"));
         console.log("BPositionHandler.mint               ",  IBaseHandler(_handler).numberOfCalls("BPositionHandler.mint"));
@@ -517,8 +512,6 @@ abstract contract BasicInvariants is BaseInvariants {
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.settleAuction") +
             IBaseHandler(_handler).numberOfCalls("BReserveHandler.takeReserves") +
             IBaseHandler(_handler).numberOfCalls("BReserveHandler.kickReserves") +
-            IBaseHandler(_handler).numberOfCalls("BRewardsHandler.stake") + 
-            IBaseHandler(_handler).numberOfCalls("BRewardsHandler.unstake") + 
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.mint") + 
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.burn") +
             IBaseHandler(_handler).numberOfCalls("BPositionHandler.memorialize") +

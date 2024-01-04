@@ -11,9 +11,9 @@ interface IPoolErrors {
     /**************************/
 
     /**
-     *  @notice `LP` allowance is already set by the owner.
+     *  @notice Adding liquidity above current auction price.
      */
-    error AllowanceAlreadySet();
+    error AddAboveAuctionPrice();
 
     /**
      *  @notice The action cannot be executed on an active auction.
@@ -139,11 +139,6 @@ interface IPoolErrors {
     error LUPBelowHTP();
 
     /**
-     *  @notice Liquidation must result in `LUP` below the borrowers threshold price.
-     */
-    error LUPGreaterThanTP();
-
-    /**
      *  @notice From index and to index arguments to move are the same.
      */
     error MoveToSameIndex();
@@ -180,12 +175,6 @@ interface IPoolErrors {
     error NoDebt();
 
     /**
-     *  @notice Borrower is attempting to borrow an amount of quote tokens that will push the pool into under-collateralization.
-     */
-    error PoolUnderCollateralized();
-
-    /**
-     *  @notice Actor is attempting to add or move quote tokens at a price below the `LUP`.
      *  @notice Actor is attempting to kick with bucket price below the `LUP`.
      */
     error PriceBelowLUP();
@@ -216,8 +205,8 @@ interface IPoolErrors {
     error TransferToSameOwner();
 
     /**
-     *  @notice The threshold price of the loan to be inserted in loans heap is zero.
+     *  @notice The DebtToCollateral of the loan to be inserted in loans heap is zero.
      */
-    error ZeroThresholdPrice();
+    error ZeroDebtToCollateral();
 
 }

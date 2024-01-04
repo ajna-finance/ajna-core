@@ -4,8 +4,10 @@ pragma solidity 0.8.18;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { Math }           from '@openzeppelin/contracts/utils/math/Math.sol';
+import { SafeCast }       from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-import { PoolType } from '../../interfaces/pool/IPool.sol';
+import { PoolType }                 from '../../interfaces/pool/IPool.sol';
+import { InflatorState, PoolState } from '../../interfaces/pool/commons/IPoolState.sol';
 
 import { Buckets } from '../internal/Buckets.sol';
 import { Maths }   from '../internal/Maths.sol';
@@ -32,6 +34,9 @@ import { Maths }   from '../internal/Maths.sol';
 
     /// @dev step amounts in basis points. This is a constant across pools at `0.005`, achieved by dividing `WAD` by `10,000`
     int256 constant FLOAT_STEP_INT = 1.005 * 1e18;
+
+    /// @dev collateralization factor used to calculate borrrower HTP/TP/collateralization.
+    uint256 constant COLLATERALIZATION_FACTOR = 1.04 * 1e18;
 
     /**
      *  @notice Calculates the price (`WAD` precision) for a given `Fenwick` index.
@@ -124,13 +129,57 @@ import { Maths }   from '../internal/Maths.sol';
     /**
      * @notice Calculates the unutilized deposit fee, charged to lenders who deposit below the `LUP`.
      * @param  interestRate_ The current interest rate.
-     * @return Fee rate based upon the given interest rate, capped at 10%.
+     * @return Fee rate based upon the given interest rate
      */
     function _depositFeeRate(
         uint256 interestRate_
     ) pure returns (uint256) {
-        // current annualized rate divided by 365 (24 hours of interest), capped at 10%
-        return Maths.min(Maths.wdiv(interestRate_, 365 * 1e18), 0.1 * 1e18);
+        // current annualized rate divided by 365 * 3 (8 hours of interest)
+        return Maths.wdiv(interestRate_, 365 * 3e18);
+    }
+
+    /**
+     * @notice Determines how the inflator state should be updated
+     * @param  poolState_     State of the pool after updateInterestState was called.
+     * @param  inflatorState_ Old inflator state.
+     * @return newInflator_     New inflator value.
+     * @return updateTimestamp_ `True` if timestamp of last update should be updated.
+     */
+    function _determineInflatorState(
+        PoolState memory poolState_,
+        InflatorState memory inflatorState_
+    ) view returns (uint208 newInflator_, bool updateTimestamp_) {
+        newInflator_ = inflatorState_.inflator;
+
+        // update pool inflator
+        if (poolState_.isNewInterestAccrued) {
+            newInflator_     = SafeCast.toUint208(poolState_.inflator);
+            updateTimestamp_ = true;
+        // if the debt in the current pool state is 0, also update the inflator and inflatorUpdate fields in inflatorState
+        // slither-disable-next-line incorrect-equality
+        } else if (poolState_.debt == 0) {
+            newInflator_     = SafeCast.toUint208(Maths.WAD);
+            updateTimestamp_ = true;
+        // if the first loan has just been drawn, update the inflator timestamp
+        // slither-disable-next-line incorrect-equality
+        } else if (inflatorState_.inflator == Maths.WAD && inflatorState_.inflatorUpdate != block.timestamp){
+            updateTimestamp_ = true;
+        }
+    }
+
+    /**
+     *  @notice Calculates `HTP` price.
+     *  @param  maxT0DebtToCollateral_ Max t0 debt to collateral in pool.
+     *  @param  inflator_              Pool's inflator.
+     */
+    function _htp(
+        uint256 maxT0DebtToCollateral_,
+        uint256 inflator_
+    ) pure returns (uint256) {
+        return Maths.wmul(
+            Maths.wmul(maxT0DebtToCollateral_, inflator_),
+            COLLATERALIZATION_FACTOR
+        );
     }
 
     /**
@@ -144,7 +193,13 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 inflator_,
         uint256 t0Debt2ToCollateral_
     ) pure returns (uint256) {
-        return t0Debt_ == 0 ? 0 : Maths.wdiv(Maths.wmul(inflator_, t0Debt2ToCollateral_), t0Debt_);
+        return t0Debt_ == 0 ? 0 : Maths.wdiv(
+            Maths.wmul(
+                Maths.wmul(inflator_, t0Debt2ToCollateral_),
+                COLLATERALIZATION_FACTOR
+            ),
+            t0Debt_
+        );
     }
 
     /**
@@ -153,7 +208,7 @@ import { Maths }   from '../internal/Maths.sol';
      *  @param collateral_ Collateral to calculate collateralization for.
      *  @param price_      Price to calculate collateralization for.
      *  @param type_       Type of the pool.
-     *  @return `True` if collateralization calculated is equal or greater than `1`.
+     *  @return `True` if value of collateral exceeds or equals debt.
      */
     function _isCollateralized(
         uint256 debt_,
@@ -161,12 +216,16 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 price_,
         uint8 type_
     ) pure returns (bool) {
-        if (type_ == uint8(PoolType.ERC20)) return Maths.wmul(collateral_, price_) >= debt_;
-        else {
+        // `False` if LUP = MIN_PRICE unless there is no debt
+        if (price_ == MIN_PRICE && debt_ != 0) return false;
+
+        // Use collateral floor for NFT pools
+        if (type_ == uint8(PoolType.ERC721)) {
             //slither-disable-next-line divide-before-multiply
             collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
-            return Maths.wmul(collateral_, price_) >= debt_;
         }
+        
+        return Maths.wmul(collateral_, price_) >= Maths.wmul(COLLATERALIZATION_FACTOR, debt_);
     }
 
     /**
@@ -226,7 +285,6 @@ import { Maths }   from '../internal/Maths.sol';
      *  @param  bucketCollateral_ Amount of collateral in bucket.
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
      *  @param  lenderLPBalance_  The amount of `LP` to calculate quote token amount for.
-     *  @param  maxQuoteToken_    The max quote token amount to calculate `LP` for.
      *  @param  bucketPrice_      Bucket's price.
      *  @return quoteTokenAmount_ Amount of quote tokens calculated for the given `LP` amount, capped at available bucket deposit.
      */
@@ -235,7 +293,6 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 bucketCollateral_,
         uint256 deposit_,
         uint256 lenderLPBalance_,
-        uint256 maxQuoteToken_,
         uint256 bucketPrice_
     ) pure returns (uint256 quoteTokenAmount_) {
         quoteTokenAmount_ = Buckets.lpToQuoteTokens(
@@ -247,8 +304,7 @@ import { Maths }   from '../internal/Maths.sol';
             Math.Rounding.Down
         );
 
-        if (quoteTokenAmount_ > deposit_)       quoteTokenAmount_ = deposit_;
-        if (quoteTokenAmount_ > maxQuoteToken_) quoteTokenAmount_ = maxQuoteToken_;
+        if (quoteTokenAmount_ > deposit_) quoteTokenAmount_ = deposit_;
     }
 
     /**
@@ -307,7 +363,7 @@ import { Maths }   from '../internal/Maths.sol';
 
         // calculate claimable reserves if there's quote token excess
         if (quoteTokenBalance_ > guaranteedFunds) {
-            claimable_ = Maths.wmul(0.995 * 1e18, debt_) + quoteTokenBalance_;
+            claimable_ = debt_ + quoteTokenBalance_;
 
             claimable_ -= Maths.min(
                 claimable_,
@@ -326,23 +382,31 @@ import { Maths }   from '../internal/Maths.sol';
     /**
      *  @notice Calculates reserves auction price.
      *  @param  reserveAuctionKicked_ Time when reserve auction was started (kicked).
+     *  @param  lastKickedReserves_   Reserves to be auctioned when started (kicked).
      *  @return price_                Calculated auction price.
      */     
     function _reserveAuctionPrice(
-        uint256 reserveAuctionKicked_
+        uint256 reserveAuctionKicked_,
+        uint256 lastKickedReserves_
     ) view returns (uint256 price_) {
         if (reserveAuctionKicked_ != 0) {
             uint256 secondsElapsed   = block.timestamp - reserveAuctionKicked_;
             uint256 hoursComponent   = 1e27 >> secondsElapsed / 3600;
             uint256 minutesComponent = Maths.rpow(MINUTE_HALF_LIFE, secondsElapsed % 3600 / 60);
+            uint256 initialPrice     = lastKickedReserves_ == 0 ? 0 : Maths.wdiv(1_000_000_000 * 1e18, lastKickedReserves_);
 
-            price_ = Maths.rayToWad(1_000_000_000 * Maths.rmul(hoursComponent, minutesComponent));
+            price_ = initialPrice * Maths.rmul(hoursComponent, minutesComponent) / 1e27;
         }
     }
 
     /*************************/
     /*** Auction Utilities ***/
     /*************************/
+
+    /// @dev min bond factor.
+    uint256 constant MIN_BOND_FACTOR = 0.005 * 1e18;
+    /// @dev max bond factor.
+    uint256 constant MAX_BOND_FACTOR = 0.03 * 1e18;
 
     /**
      *  @notice Calculates auction price.
@@ -372,32 +436,28 @@ import { Maths }   from '../internal/Maths.sol';
     /**
      *  @notice Calculates bond penalty factor.
      *  @dev    Called in kick and take.
-     *  @param debt_         Borrower debt.
-     *  @param collateral_   Borrower collateral.
-     *  @param neutralPrice_ `NP` of auction.
-     *  @param bondFactor_   Factor used to determine bondSize.
-     *  @param auctionPrice_ Auction price at the time of call.
-     *  @return bpf_         Factor used in determining bond `reward` (positive) or `penalty` (negative).
+     *  @param debtToCollateral_ Borrower debt to collateral at time of kick.
+     *  @param neutralPrice_     `NP` of auction.
+     *  @param bondFactor_       Factor used to determine bondSize.
+     *  @param auctionPrice_     Auction price at the time of call or, for bucket takes, bucket price.
+     *  @return bpf_             Factor used in determining bond `reward` (positive) or `penalty` (negative).
      */
     function _bpf(
-        uint256 debt_,
-        uint256 collateral_,
+        uint256 debtToCollateral_,
         uint256 neutralPrice_,
         uint256 bondFactor_,
         uint256 auctionPrice_
     ) pure returns (int256) {
-        int256 thresholdPrice = int256(Maths.wdiv(debt_, collateral_));
-
         int256 sign;
-        if (thresholdPrice < int256(neutralPrice_)) {
-            // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
+        if (debtToCollateral_ < neutralPrice_) {
+            // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - debtToCollateral)))
             sign = Maths.minInt(
                 1e18,
                 Maths.maxInt(
                     -1 * 1e18,
                     PRBMathSD59x18.div(
                         int256(neutralPrice_) - int256(auctionPrice_),
-                        int256(neutralPrice_) - thresholdPrice
+                        int256(neutralPrice_) - int256(debtToCollateral_)
                     )
                 )
             );
@@ -419,10 +479,13 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 borrowerDebt_,
         uint256 npTpRatio_
     ) pure returns (uint256 bondFactor_, uint256 bondSize_) {
-        // bondFactor = min((NP-to-TP-ratio - 1)/10, 0.03)
-        bondFactor_ = Maths.min(
-            0.03 * 1e18,
-            (npTpRatio_ - 1e18) / 10
+        // bondFactor = max(min(MAX_BOND_FACTOR, (NP/TP_ratio - 1) / 10), MIN_BOND_FACTOR)
+        bondFactor_ = Maths.max(
+            Maths.min(
+                MAX_BOND_FACTOR,
+                (npTpRatio_ - 1e18) / 10
+            ),
+            MIN_BOND_FACTOR
         );
 
         bondSize_ = Maths.wmul(bondFactor_,  borrowerDebt_);

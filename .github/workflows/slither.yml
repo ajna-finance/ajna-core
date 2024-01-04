@@ -8,6 +8,11 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
       - name: Install and set solc version
         run: |
           pip install solc-select && solc-select install 0.8.18 && solc-select use 0.8.18
@@ -38,12 +43,6 @@ jobs:
         continue-on-error: true
         id: position-analyzer
 
-      - name: Analyze RewardsManager Contract
-        run: |
-          slither src/RewardsManager.sol
-        continue-on-error: true
-        id: rewards-analyzer
-
       - name: Analyze PoolInfoUtils Contract
         run: |
           slither src/PoolInfoUtils.sol
@@ -52,7 +51,7 @@ jobs:
 
       - name: Analyze Libraries
         run: |
-          slither src/libraries/external/.
+          slither src/libraries/external/
         continue-on-error: true
         id: libraries-analyzer
 

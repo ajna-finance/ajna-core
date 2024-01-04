@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.18;
 
+import { SafeCast }       from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
 import {
@@ -20,10 +21,10 @@ import { Maths }    from './Maths.sol';
 /**
     @title  Loans library
     @notice Internal library containing common logic for loans management.
-    @dev    The `Loans` heap is a `Max Heap` data structure (complete binary tree), the root node is the loan with the highest threshold price (`TP`)
+    @dev    The `Loans` heap is a `Max Heap` data structure (complete binary tree), the root node is the loan with the highest t0 threshold price (`TP`)
             at a given time. The heap is represented as an array, where the first element is a dummy element (`Loan(address(0), 0)`) and the first
-            value of the heap starts at index `1`, `ROOT_INDEX`. The threshold price of a loan's parent is always greater than or equal to the
-            threshold price of the loan.
+            value of the heap starts at index `1`, `ROOT_INDEX`. The t0 threshold price of a loan's parent is always greater than or equal to the
+            t0 threshold price of the loan.
     @dev    This code was modified from the following source: https://github.com/zmitton/eth-heap/blob/master/contracts/Heap.sol
  */
 library Loans {
@@ -35,7 +36,7 @@ library Loans {
     /**************/
 
     // See `IPoolErrors` for descriptions
-    error ZeroThresholdPrice();
+    error ZeroDebtToCollateral();
 
     /***********************/
     /***  Initialization ***/
@@ -43,7 +44,7 @@ library Loans {
 
     /**
      *  @notice Initializes Loans Max Heap.
-     *  @dev    Organizes loans so `Highest Threshold Price` can be retrieved easily.
+     *  @dev    Organizes loans so `Highest t0 threshold price` can be retrieved easily.
      *  @param  loans_ Holds Loan heap data.
      */
     function init(LoansState storage loans_) internal {
@@ -80,18 +81,18 @@ library Loans {
 
         bool activeBorrower = borrower_.t0Debt != 0 && borrower_.collateral != 0;
 
-        uint256 t0ThresholdPrice = activeBorrower ? Maths.wdiv(borrower_.t0Debt, borrower_.collateral) : 0;
+        uint256 t0DebtToCollateral = activeBorrower ? Maths.wdiv(borrower_.t0Debt, borrower_.collateral) : 0;
 
-        // loan not in auction, update threshold price and position in heap
+        // loan not in auction, update t0 threshold price and position in heap
         if (!inAuction_ ) {
             // get the loan id inside the heap
             uint256 loanId = loans_.indices[borrowerAddress_];
             if (activeBorrower) {
-                // revert if threshold price is zero
-                if (t0ThresholdPrice == 0) revert ZeroThresholdPrice();
+                // revert if t0 threshold price is zero
+                if (t0DebtToCollateral == 0) revert ZeroDebtToCollateral();
 
                 // update heap, insert if a new loan, update loan if already in heap
-                _upsert(loans_, borrowerAddress_, loanId, uint96(t0ThresholdPrice));
+                _upsert(loans_, borrowerAddress_, loanId, SafeCast.toUint96(t0DebtToCollateral));
 
             // if loan is in heap and borrwer is no longer active (no debt, no collateral) then remove loan from heap
             } else if (loanId != 0) {
@@ -101,7 +102,7 @@ library Loans {
 
         // update Np to Tp ratio of borrower
         if (npTpRatioUpdate_) {
-            borrower_.npTpRatio = 1.04 * 1e18 + uint256(PRBMathSD59x18.sqrt(int256(poolRate_))) / 2;
+            borrower_.npTpRatio = 1e18 + uint256(PRBMathSD59x18.sqrt(int256(poolRate_))) / 2;
         }
 
         // save borrower state
@@ -120,7 +121,7 @@ library Loans {
      */
     function _bubbleUp(LoansState storage loans_, Loan memory loan_, uint index_) private {
         uint256 count = loans_.loans.length;
-        if (index_ == ROOT_INDEX || loan_.thresholdPrice <= loans_.loans[index_ / 2].thresholdPrice){
+        if (index_ == ROOT_INDEX || loan_.t0DebtToCollateral <= loans_.loans[index_ / 2].t0DebtToCollateral){
           _insert(loans_, loan_, index_, count);
         } else {
           _insert(loans_, loans_.loans[index_ / 2], index_, count);
@@ -144,11 +145,11 @@ library Loans {
         } else {
             Loan memory largestChild = loans_.loans[cIndex];
 
-            if (count > cIndex + 1 && loans_.loans[cIndex + 1].thresholdPrice > largestChild.thresholdPrice) {
+            if (count > cIndex + 1 && loans_.loans[cIndex + 1].t0DebtToCollateral > largestChild.t0DebtToCollateral) {
                 largestChild = loans_.loans[++cIndex];
             }
 
-            if (largestChild.thresholdPrice <= loan_.thresholdPrice) {
+            if (largestChild.t0DebtToCollateral <= loan_.t0DebtToCollateral) {
               _insert(loans_, loan_, index_, count);
             } else {
               _insert(loans_, largestChild, index_, count);
@@ -190,31 +191,31 @@ library Loans {
 
     /**
      *  @notice Performs an insert or an update dependent on borrowers existance.
-     *  @param loans_          Holds loans heap data.
-     *  @param borrower_       Borrower address that is being updated or inserted.
-     *  @param index_          Index of `Loan` to be upserted.
-     *  @param thresholdPrice_ `Threshold Price` that is updated or inserted.
+     *  @param loans_              Holds loans heap data.
+     *  @param borrower_           Borrower address that is being updated or inserted.
+     *  @param index_              Index of `Loan` to be upserted.
+     *  @param t0DebtToCollateral_ Borrower t0 debt to collateral that is updated or inserted.
      */
     function _upsert(
         LoansState storage loans_,
         address borrower_,
         uint256 index_,
-        uint96 thresholdPrice_
+        uint96 t0DebtToCollateral_
     ) internal {
         // Loan exists, update in place.
         if (index_ != 0) {
             Loan memory currentLoan = loans_.loans[index_];
-            if (currentLoan.thresholdPrice > thresholdPrice_) {
-                currentLoan.thresholdPrice = thresholdPrice_;
+            if (currentLoan.t0DebtToCollateral > t0DebtToCollateral_) {
+                currentLoan.t0DebtToCollateral = t0DebtToCollateral_;
                 _bubbleDown(loans_, currentLoan, index_);
             } else {
-                currentLoan.thresholdPrice = thresholdPrice_;
+                currentLoan.t0DebtToCollateral = t0DebtToCollateral_;
                 _bubbleUp(loans_, currentLoan, index_);
             }
 
         // New loan, insert it
         } else {
-            _bubbleUp(loans_, Loan(borrower_, thresholdPrice_), loans_.loans.length);
+            _bubbleUp(loans_, Loan(borrower_, t0DebtToCollateral_), loans_.loans.length);
         }
     }
 
@@ -234,7 +235,7 @@ library Loans {
     }
 
     /**
-     *  @notice Retreives `Loan` with the highest threshold price value.
+     *  @notice Retreives `Loan` with the highest t0 threshold price value.
      *  @param loans_ Holds loans heap data.
      *  @return `Max Loan` in the heap.
      */

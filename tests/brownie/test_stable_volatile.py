@@ -58,7 +58,7 @@ def lenders(ajna_protocol, scaled_pool):
 def borrowers(ajna_protocol, scaled_pool):
     collateral_client = ajna_protocol.get_token(scaled_pool.collateralAddress())
     dai_client = ajna_protocol.get_token(scaled_pool.quoteTokenAddress())
-    amount = int(150_000 * 10**18 / NUM_BORROWERS)
+    amount = int(100_000 * 10**18 / NUM_BORROWERS)
     borrowers = []
     print("Initializing borrowers")
     for _ in range(NUM_BORROWERS):
@@ -96,7 +96,7 @@ def add_initial_liquidity(lenders, pool_helper, chain):
             price_index = price_position + MAX_BUCKET
             log(f" lender {i} depositing {deposit_amount/1e18} into bucket {price_index} "
                 f"({pool_helper.indexToPrice(price_index) / 1e18:.1f})")
-            pool_helper.pool.addQuoteToken(deposit_amount, price_index, chain.time() + 30, False, {"from": lenders[i]})
+            pool_helper.pool.addQuoteToken(deposit_amount, price_index, chain.time() + 30, {"from": lenders[i]})
 
 
 def draw_initial_debt(borrowers, pool_helper, test_utils, chain, target_utilization):
@@ -152,7 +152,7 @@ def aggregate_borrower_debt(borrowers, pool_helper, debug=False):
     total_debt = 0
     for i in range(0, len(borrowers) - 1):
         borrower = borrowers[i]
-        (debt, _, _) = pool_helper.borrowerInfo(borrower.address)
+        (debt, _, _, _) = pool_helper.borrowerInfo(borrower.address)
         if debug and debt > 0:
             log(f"   borrower {i:>4}     debt: {debt/1e18:>15.3f}")
         total_debt += debt
@@ -177,7 +177,7 @@ def pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_depos
     pool = pool_helper.pool
 
     # prevent invalid actions
-    (debt, pledged, _) = pool_helper.borrowerInfo(borrower.address)
+    (debt, pledged, _, _) = pool_helper.borrowerInfo(borrower.address)
     if not ensure_pool_is_funded(pool, borrow_amount, "borrow"):
         # ensure_pool_is_funded logs a message
         return
@@ -294,7 +294,7 @@ def add_quote_token(lender, lender_index, pool_helper, chain):
         return None
 
     log(f" lender   {lender_index:>4} adding {quantity / 10**18:.1f} liquidity at {deposit_price / 10**18:.1f}")
-    tx = pool_helper.pool.addQuoteToken(quantity, deposit_index, chain.time() + 15, False, {"from": lender})
+    tx = pool_helper.pool.addQuoteToken(quantity, deposit_index, chain.time() + 15, {"from": lender})
     return deposit_price
 
 
@@ -320,7 +320,7 @@ def remove_quote_token(lender, lender_index, price, pool_helper) -> bool:
 
 def repay_debt(borrower, borrower_index, pool_helper, test_utils):
     dai = pool_helper.quoteToken()
-    (debt, collateral_deposited, _) = pool_helper.borrowerInfo(borrower)
+    (debt, collateral_deposited, _, _) = pool_helper.borrowerInfo(borrower)
     quote_balance = dai.balanceOf(borrower)
     (_, _, _, min_debt) = pool_helper.utilizationInfo()
 

@@ -3,6 +3,8 @@
 pragma solidity 0.8.18;
 
 import { BasicERC20PoolInvariants } from "../../invariants/ERC20Pool/BasicERC20PoolInvariants.t.sol";
+import { _depositFeeRate } from "src/libraries/helpers/PoolHelper.sol";
+import { Maths } from "src/libraries/internal/Maths.sol";
 
 contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants { 
 
@@ -228,9 +230,13 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.addQuoteToken(1, depositAt2570, 2570, 0);
         _basicERC20PoolHandler.addQuoteToken(1, depositAt2571, 2571, 0);
         _basicERC20PoolHandler.addQuoteToken(1, depositAt2572, 2572, 0);
+        (uint256 interestRate, ) = _pool.interestRateInfo();
+        depositAt2570 = Maths.wmul(depositAt2570, Maths.WAD - _depositFeeRate(interestRate));
+        depositAt2571 = Maths.wmul(depositAt2571, Maths.WAD - _depositFeeRate(interestRate));
+        depositAt2572 = Maths.wmul(depositAt2572, Maths.WAD - _depositFeeRate(interestRate));
         assertEq(_pool.depositIndex(depositAt2570), 2570);
         assertEq(_pool.depositIndex(depositAt2570 + depositAt2571), 2571);
-        if (depositAt2572 != 0) {
+        if (depositAt2572 > scale) {
             assertEq(_pool.depositIndex(depositAt2570 + depositAt2571 + depositAt2572), 2572);
         }
     }

@@ -43,7 +43,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         changePrank(borrower);
 
         // settle borrower if borrower is kicked
-        (uint256 kickTime, , , , , ) = _poolUtils.auctionStatus(address(_pool), borrower);
+        (uint256 kickTime, , , , , , , , ) = _poolUtils.auctionStatus(address(_pool), borrower);
         if (kickTime != 0) {
             _pool.settle(borrower, bucketsUsed.length());
         }
@@ -111,12 +111,13 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                     {
                         uint256 fractionOfNftRemaining = lpsAsCollateral % 1e18;
                         assertLt(fractionOfNftRemaining, 1e18);
-
+ 
                         depositRequired = Maths.wmul(1e18 - fractionOfNftRemaining, price);
+                        depositRequired += Maths.ceilWdiv(1e18, _depositFee());
                     }
                     deal(_pool.quoteTokenAddress(), lender, depositRequired);
                     Token(_pool.quoteTokenAddress()).approve(address(_pool) , depositRequired);
-                    _pool.addQuoteToken(depositRequired, bucketIndex, block.timestamp + 1 minutes, false);
+                    _pool.addQuoteToken(depositRequired, bucketIndex, block.timestamp + 1 minutes);
                     (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
                     lpsAsCollateral = _poolUtils.lpToCollateral(address(_pool), lenderLpBalance, bucketIndex);
                 }
@@ -162,13 +163,13 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         
         for (uint i = 0; i < borrowers.length(); i++) {
             address borrower = borrowers.at(i);
-            (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower);
+            (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(borrower);
             if (kickTime != 0) {
                 changePrank(borrower);
                 _pool.settle(borrower, bucketsUsed.length() + 1);
 
                 // Settle again if not settled, this can happen when less reserves calculated with DEPOSIT_BUFFER and borrower is not fully settled
-                (,,, kickTime,,,,,) = _pool.auctionInfo(borrower);
+                (,,, kickTime,,,,,,) = _pool.auctionInfo(borrower);
                 if (kickTime != 0) {
                     _pool.settle(borrower, bucketsUsed.length() + 1);
                 }
@@ -466,7 +467,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
         uint256 borrowersCollateral;
         for (uint256 i = 0; i < borrowers.length(); i++) {
-            (, uint256 borrowerCollateral, ) = _poolUtils.borrowerInfo(address(_pool), borrowers.at(i));
+            (, uint256 borrowerCollateral, , ) = _poolUtils.borrowerInfo(address(_pool), borrowers.at(i));
             borrowersCollateral += borrowerCollateral;
         }
 

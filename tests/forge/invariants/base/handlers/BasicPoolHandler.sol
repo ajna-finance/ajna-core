@@ -29,7 +29,10 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 boundedAmount = _preAddQuoteToken(amountToAdd_);
 
         // Action phase
-        _addQuoteToken(boundedAmount, _lenderBucketIndex);
+        _addQuoteToken(
+            boundedAmount,
+            _lenderBucketIndex
+        );
     }
 
     function removeQuoteToken(
@@ -44,7 +47,10 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 boundedAmount = _preRemoveQuoteToken(amountToRemove_);
 
         // Action phase
-        _removeQuoteToken(boundedAmount, _lenderBucketIndex);
+        _removeQuoteToken(
+            boundedAmount,
+            _lenderBucketIndex
+        );
     }
 
     function moveQuoteToken(
@@ -64,7 +70,11 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
         ) = _preMoveQuoteToken(amountToMove_, fromIndex_, toIndex_);
 
         // Action phase
-        _moveQuoteToken(boundedAmount, boundedFromIndex, boundedToIndex);
+        _moveQuoteToken(
+            boundedAmount,
+            boundedFromIndex,
+            boundedToIndex
+        );
     }
 
     function transferLps(
@@ -77,11 +87,22 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
         numberOfCalls['BBasicHandler.transferLps']++;
         
         // Prepare test phase
-        (address receiver, uint256 boundedLps) = _preTransferLps(toActorIndex_, lpsToTransfer_);
+        (
+            address receiver,
+            uint256 boundedLps
+        ) = _preTransferLps(toActorIndex_, lpsToTransfer_);
 
         // Action phase
-        _increaseLPAllowance(receiver, _lenderBucketIndex, boundedLps);
-        _transferLps(_actor, receiver, _lenderBucketIndex);
+        _increaseLPAllowance(
+            receiver,
+            _lenderBucketIndex,
+            boundedLps
+        );
+        _transferLps(
+            _actor,
+            receiver,
+            _lenderBucketIndex
+        );
     }
 
     function stampLoan(
@@ -89,6 +110,7 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BBasicHandler.stampLoan']++;
+
         _stampLoan();
     }
 
@@ -99,18 +121,25 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function _preAddQuoteToken(
         uint256 amountToAdd_
     ) internal view returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToAdd_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
+        boundedAmount_ = constrictToRange(
+            amountToAdd_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT
+        );
     }
 
     function _preRemoveQuoteToken(
         uint256 amountToRemove_
     ) internal returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToRemove_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
+        boundedAmount_ = constrictToRange(
+            amountToRemove_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT
+        );
 
         // ensure actor has quote tokens to remove
-        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-        if (lpBalanceBefore == 0) {
-            _addQuoteToken(boundedAmount_, _lenderBucketIndex);
+        LenderInfo memory lenderInfo = _getLenderInfo(_lenderBucketIndex, _actor);
+        if (lenderInfo.lpBalance == 0) {
+            _addQuoteToken(
+                boundedAmount_,
+                _lenderBucketIndex
+            );
         }
     }
 
@@ -119,17 +148,27 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 fromIndex_,
         uint256 toIndex_
     ) internal returns (uint256 boundedFromIndex_, uint256 boundedToIndex_, uint256 boundedAmount_) {
-        boundedFromIndex_ = constrictToRange(fromIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
-        boundedToIndex_   = constrictToRange(toIndex_,   LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
-        boundedAmount_    = constrictToRange(amountToMove_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
+        boundedFromIndex_ = constrictToRange(
+            fromIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX
+        );
+        boundedToIndex_ = constrictToRange(
+            toIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX
+        );
+        boundedAmount_ = constrictToRange(
+            amountToMove_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT
+        );
 
-        // ensure actor has LP to move
-        (uint256 lpBalance, ) = _pool.lenderInfo(boundedFromIndex_, _actor);
-        if (lpBalance == 0) _addQuoteToken(boundedAmount_, boundedToIndex_);
+        LenderInfo memory lenderInfo = _getLenderInfo(boundedFromIndex_, _actor);
+        if (lenderInfo.lpBalance == 0) {
+            _addQuoteToken(
+                boundedAmount_,
+                boundedToIndex_
+            );
+        }
+        lenderInfo = _getLenderInfo(boundedFromIndex_, _actor);
 
-        (uint256 lps, ) = _pool.lenderInfo(boundedFromIndex_, _actor);
         // restrict amount to move by available deposit inside bucket
-        uint256 availableDeposit = _poolInfo.lpToQuoteTokens(address(_pool), lps, boundedFromIndex_);
+        uint256 availableDeposit = _lpToQuoteTokens(lenderInfo.lpBalance, boundedFromIndex_);
         boundedAmount_ = Maths.min(boundedAmount_, availableDeposit);
     }
 
@@ -138,14 +177,17 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 lpsToTransfer_
     ) internal returns (address receiver_, uint256 boundedLps_) {
         // ensure actor has LP to transfer
-        (uint256 senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-        if (senderLpBalance == 0) _addQuoteToken(1e24, _lenderBucketIndex);
+        LenderInfo memory senderInfo = _getLenderInfo(_lenderBucketIndex, _actor);
+        if (senderInfo.lpBalance == 0) {
+            _addQuoteToken(
+                1e24,
+                _lenderBucketIndex
+            );
+        }
+        senderInfo = _getLenderInfo(_lenderBucketIndex, _actor);
 
-        (senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-
-        boundedLps_ = constrictToRange(lpsToTransfer_, 0, senderLpBalance);
-
-        receiver_ = actors[constrictToRange(toActorIndex_, 0, actors.length - 1)];
+        boundedLps_ = constrictToRange(lpsToTransfer_, 0, senderInfo.lpBalance);
+        receiver_   = actors[constrictToRange(toActorIndex_, 0, actors.length - 1)];
     }
 
     function _preDrawDebt(

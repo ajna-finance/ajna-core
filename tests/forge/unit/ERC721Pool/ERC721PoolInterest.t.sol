@@ -103,8 +103,8 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              1_911.763008462438456052 * 1e18,
-            borrowerCollateralization: 1.804973217265326249 * 1e18
+            borrowert0Np:              1_918.840195467602660987 * 1e18,
+            borrowerCollateralization: 1.735551170447429086 * 1e18
         });
 
         _assertLenderInterest(liquidityAdded, 0); 
@@ -127,11 +127,11 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        4 * 1e18,
-            borrowert0Np:              1_433.822256346828842039 * 1e18,
-            borrowerCollateralization: 2.403665705362551645 * 1e18
+            borrowert0Np:              1_439.130146600701995740 * 1e18,
+            borrowerCollateralization: 2.311217024387068890 * 1e18
         });
 
-        _assertLenderInterest(liquidityAdded, 5.247494497896400000 * 1e18);
+        _assertLenderInterest(liquidityAdded, 5.247494497896371966 * 1e18);
 
         // borrower pulls some of their collateral after some time has passed
         skip(10 days);
@@ -152,11 +152,11 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              1_902.683561057818747541 * 1e18,
-            borrowerCollateralization: 1.800750077529217167 * 1e18
+            borrowert0Np:              1_909.397570166798164136 * 1e18,
+            borrowerCollateralization: 1.731490459162708814 * 1e18
         });
 
-        _assertLenderInterest(liquidityAdded, 10.004595693661100000 * 1e18);
+        _assertLenderInterest(liquidityAdded, 10.004597057423574190 * 1e18);
 
         // borrower borrows some additional quote after some time has passed
         skip(10 days);
@@ -176,11 +176,11 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              2_271.558482861789242177 * 1e18,
-            borrowerCollateralization: 1.500002057800446964 * 1e18
+            borrowert0Np:              2_279.197387150401832726 * 1e18,
+            borrowerCollateralization: 1.442309670961968235 * 1e18
         });
 
-        _assertLenderInterest(liquidityAdded, 14.290532556069200000 * 1e18);
+        _assertLenderInterest(liquidityAdded, 14.290535149874139349 * 1e18);
 
         // mint additional quote to borrower to enable repayment
         deal(address(_quote), _borrower, 20_000 * 1e18);
@@ -259,8 +259,8 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrower:                  _borrower,
             borrowerDebt:              expectedBorrower1Debt,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              3_074.429072381702701017 * 1e18,
-            borrowerCollateralization: 1.127999893042434013 * 1e18
+            borrowert0Np:              3_086.366235276970809007 * 1e18,
+            borrowerCollateralization: 1.084615281771571166 * 1e18
         });
 
         skip(4 hours);
@@ -292,18 +292,18 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrower:                  _borrower,
             borrowerDebt:              expectedBorrower1Debt,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              3_074.429072381702701017 * 1e18,
-            borrowerCollateralization: 1.122362328272840838 * 1e18
+            borrowert0Np:              3_086.366235276970809007 * 1e18,
+            borrowerCollateralization: 1.079194546416193113 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower2,
             borrowerDebt:              expectedBorrower2Debt,
             borrowerCollateral:        1 * 1e18,
-            borrowert0Np:              3_170.432595761480458330 * 1e18,
-            borrowerCollateralization: 1.088376197116173336 * 1e18
+            borrowert0Np:              3_182.742513945656986337 * 1e18,
+            borrowerCollateralization: 1.046515574150166669 * 1e18
         });
 
-        _assertLenderInterest(liquidityAdded, 0.155402195487210000 * 1e18);
+        _assertLenderInterest(liquidityAdded, 0.155402195487205849 * 1e18);
 
         skip(4 hours);
 
@@ -336,25 +336,25 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrower:                  _borrower,
             borrowerDebt:              expectedBorrower1Debt,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              3_074.429072381702701017 * 1e18,
-            borrowerCollateralization: 1.122336703854666979 * 1e18
+            borrowert0Np:              3_086.366235276970809007 * 1e18,
+            borrowerCollateralization: 1.079169907552564403 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower2,
             borrowerDebt:              expectedBorrower2Debt,
             borrowerCollateral:        1 * 1e18,
-            borrowert0Np:              3_170.432595761480458330 * 1e18,
-            borrowerCollateralization: 1.088351348628209297 * 1e18
+            borrowert0Np:              3_182.742513945656986337 * 1e18,
+            borrowerCollateralization: 1.046491681373278170 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower3,
             borrowerDebt:              expectedBorrower3Debt,
             borrowerCollateral:        1 * 1e18,
-            borrowert0Np:              2_882.145647529036115605 * 1e18,
-            borrowerCollateralization: 1.197213816827790670 * 1e18
+            borrowert0Np:              2_893.336226746331069131 * 1e18,
+            borrowerCollateralization: 1.151167131565183336 * 1e18
         });
 
-        _assertLenderInterest(liquidityAdded, 0.365554305676230000 * 1e18);
+        _assertLenderInterest(liquidityAdded, 0.365554368557644878 * 1e18);
 
         skip(4 hours);
 
@@ -363,7 +363,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             from:    _lender,
             amount:  1 * 1e18,
             index:   2550,
-            lpAward: 0.999979133938993539 * 1e18,
+            lpAward: 0.999933471831480917 * 1e18,
             newLup:  2995.912459898389633881 * 1e18
         });
         liquidityAdded += 1e18;
@@ -374,7 +374,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         (poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt, expectedPoolDebt);
 
-        _assertLenderInterest(liquidityAdded, 0.625994892241440000 * 1e18);
+        _assertLenderInterest(liquidityAdded, 0.625949442426308567 * 1e18);
 
         expectedBorrower1Debt = 8_008.240798551896146547 * 1e18;
 
@@ -382,8 +382,8 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrower:                  _borrower,
             borrowerDebt:              expectedBorrower1Debt,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              3_074.429072381702701017 * 1e18,
-            borrowerCollateralization: 1.122311080021518821 * 1e18
+            borrowert0Np:              3_086.366235276970809007 * 1e18,
+            borrowerCollateralization: 1.079145269251460405 * 1e18
         });
 
         expectedBorrower2Debt = 2_752.769925156330518053 * 1e18;
@@ -392,8 +392,8 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrower:                  _borrower2,
             borrowerDebt:              expectedBorrower2Debt,
             borrowerCollateral:        1 * 1e18,
-            borrowert0Np:              3_170.432595761480458330 * 1e18,
-            borrowerCollateralization: 1.088326500707555859 * 1e18
+            borrowert0Np:              3_182.742513945656986337 * 1e18,
+            borrowerCollateralization: 1.046467789141880633 * 1e18
         });
 
         expectedBorrower3Debt = 2_502.460979313951751742 * 1e18;
@@ -402,8 +402,8 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrower:                  _borrower3,
             borrowerDebt:              expectedBorrower3Debt,
             borrowerCollateral:        1 * 1e18,
-            borrowert0Np:              2_882.145647529036115605 * 1e18,
-            borrowerCollateralization: 1.197186483491030227 * 1e18
+            borrowert0Np:              2_893.336226746331069131 * 1e18,
+            borrowerCollateralization: 1.151140849510605988 * 1e18
         });
 
         // ensure debt from the three borrowers adds up to the pool debt
@@ -466,8 +466,8 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              1_911.763008462438456052 * 1e18,
-            borrowerCollateralization: 1.804973217265326249 * 1e18
+            borrowert0Np:              1_918.840195467602660987 * 1e18,
+            borrowerCollateralization: 1.735551170447429086 * 1e18
         });
 
         // time passes and interest accrues
@@ -481,8 +481,8 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              1_911.763008462438456052 * 1e18,
-            borrowerCollateralization: 1.798309619615464420 * 1e18
+            borrowert0Np:              1_918.840195467602660987 * 1e18,
+            borrowerCollateralization: 1.729143865014869634 * 1e18
         });
 
         // mint additional quote to borrower to enable repayment
@@ -511,7 +511,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrowerCollateralization: 1 * 1e18
         });
 
-        _assertLenderInterest(liquidityAdded, 21.028850966013750000 * 1e18);
+        _assertLenderInterest(liquidityAdded, 21.028850966013719555 * 1e18);
 
         // borrower borrows again once repayed all debt 
         _borrow({
@@ -529,12 +529,11 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              1_893.159858820699522954 * 1e18,
-            borrowerCollateralization: 1.805129295309881815 * 1e18
+            borrowert0Np:              1_899.840261593407406983 * 1e18,
+            borrowerCollateralization: 1.735701245490270976 * 1e18
         });
 
-        _assertLenderInterest(liquidityAdded, 21.028850966013750000 * 1e18);
-
+        _assertLenderInterest(liquidityAdded, 21.028850966013719555 * 1e18);
 
         // borrower pledge additional collateral after some time has passed
         skip(10 days);
@@ -554,11 +553,11 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        4 * 1e18,
-            borrowert0Np:              1_419.869894115524642215 * 1e18,
-            borrowerCollateralization: 2.404169939255701731 * 1e18
+            borrowert0Np:              1_424.880196195055555237 * 1e18,
+            borrowerCollateralization: 2.311701864668943973 * 1e18
         });
 
-        _assertLenderInterest(liquidityAdded, 25.779680075333500000 * 1e18);
+        _assertLenderInterest(liquidityAdded, 25.779681437299323212 * 1e18);
 
         // borrower pulls some of their collateral after some time has passed
         skip(10 days);
@@ -579,11 +578,11 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              1_884.589452870960229897 * 1e18,
-            borrowerCollateralization: 1.801327695821111558 * 1e18
+            borrowert0Np:              1_890.927039405678542204 * 1e18,
+            borrowerCollateralization: 1.732045861366453421 * 1e18
         });
 
-        _assertLenderInterest(liquidityAdded, 30.059922094508300000 * 1e18);
+        _assertLenderInterest(liquidityAdded, 30.059924682352556770 * 1e18);
 
         // borrower borrows some additional quote after some time has passed
         skip(10 days);
@@ -603,11 +602,11 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              2_250.568493913377606760 * 1e18,
-            borrowerCollateralization: 1.500545633513497515 * 1e18
+            borrowert0Np:              2_257.779541250011702731 * 1e18,
+            borrowerCollateralization: 1.442832339916824534 * 1e18
         });
 
-        _assertLenderInterest(liquidityAdded, 33.915820770203100000 * 1e18);
+        _assertLenderInterest(liquidityAdded, 33.915824463483626210 * 1e18);
 
         // mint additional quote to borrower to enable repayment
         deal(address(_quote), _borrower, 20_000 * 1e18);
@@ -635,6 +634,6 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrowerCollateralization: 1 * 1e18
         });
 
-        _assertLenderInterest(liquidityAdded, 38.081584308182850000 * 1e18);
+        _assertLenderInterest(liquidityAdded, 38.081589196796064735 * 1e18);
     }
 }

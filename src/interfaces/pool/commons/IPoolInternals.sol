@@ -15,7 +15,6 @@ struct KickResult {
     uint256 amountToCoverBond;    // [WAD] amount of bond that needs to be covered
     uint256 t0KickedDebt;         // [WAD] new t0 debt after kick
     uint256 collateralPreAction;  // [WAD] The amount of borrower collateral before kick, same as the one after kick
-    uint256 poolDebt;             // [WAD] current debt in pool after kick
     uint256 lup;                  // [WAD] current LUP in pool after kick
 }
 
@@ -34,6 +33,7 @@ struct SettleResult {
     uint256 collateralRemaining; // [WAD] The amount of borrower collateral left after settle
     uint256 collateralSettled;   // [WAD] The amount of borrower collateral settled
     uint256 t0DebtSettled;       // [WAD] The amount of t0 debt settled
+    uint256 debtSettled;         // [WAD] The amount of actual debt settled
 }
 
 /// @dev Struct used to return result of `TakerAction.take` and `TakerAction.bucketTake` actions.
@@ -70,23 +70,21 @@ struct KickReserveAuctionParams {
 struct AddQuoteParams {
     uint256 amount;           // [WAD] amount to be added
     uint256 index;            // the index in which to deposit
-    bool    revertIfBelowLup; // revert tx if index in which to deposit is below LUP
 }
 
 /// @dev Struct used to hold parameters for `LenderAction.moveQuoteToken` action.
 struct MoveQuoteParams {
-    uint256 fromIndex;        // the deposit index from where amount is moved
-    uint256 maxAmountToMove;  // [WAD] max amount to move between deposits
-    uint256 toIndex;          // the deposit index where amount is moved to
-    uint256 thresholdPrice;   // [WAD] max threshold price in pool
-    bool    revertIfBelowLup; // revert tx if quote token is moved from above the LUP to below the LUP
+    uint256 fromIndex;             // the deposit index from where amount is moved
+    uint256 maxAmountToMove;       // [WAD] max amount to move between deposits
+    uint256 toIndex;               // the deposit index where amount is moved to
+    uint256 maxT0DebtToCollateral; // [WAD] max t0 debt to collateral in pool
 }
 
 /// @dev Struct used to hold parameters for `LenderAction.removeQuoteToken` action.
 struct RemoveQuoteParams {
-    uint256 index;           // the deposit index from where amount is removed
-    uint256 maxAmount;       // [WAD] max amount to be removed
-    uint256 thresholdPrice;  // [WAD] max threshold price in pool
+    uint256 index;                 // the deposit index from where amount is removed
+    uint256 maxAmount;             // [WAD] max amount to be removed
+    uint256 maxT0DebtToCollateral; // [WAD] max t0 debt to collateral in pool
 }
 
 /*************************************/

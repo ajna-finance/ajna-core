@@ -2,9 +2,9 @@
 pragma solidity 0.8.18;
 
 import '../utils/DSTestPlus.sol';
+import '../utils/AuctionQueueInstance.sol';
 
 contract AuctionsTest is DSTestPlus {
-
     /**
      *  @notice Tests bond penalty/reward factor calculation for varying parameters
      */
@@ -15,12 +15,12 @@ contract AuctionsTest is DSTestPlus {
         uint256 neutralPrice = 15 * 1e18;
         uint256 bondFactor = 0.1 *  1e18;
 
-        assertEq(_bpf(debt, collateral, neutralPrice, bondFactor, price),             0.1 * 1e18);
-        assertEq(_bpf(9000 * 1e18, collateral, neutralPrice, bondFactor, price),      0.083333333333333333 * 1e18);
-        assertEq(_bpf(debt, collateral, neutralPrice, bondFactor, 9.5 * 1e18),        0.1 * 1e18);
-        assertEq(_bpf(9000 * 1e18, collateral, neutralPrice, bondFactor, 9.5 * 1e18), 0.091666666666666667 * 1e18);
-        assertEq(_bpf(9000 * 1e18, collateral, 10 * 1e18, bondFactor, 10.5 * 1e18),   -0.05 * 1e18);
-        assertEq(_bpf(debt, collateral, 5 * 1e18, bondFactor, 10.5 * 1e18),           -0.1 * 1e18);
+        assertEq(_bpf(Maths.wdiv(debt, collateral), neutralPrice, bondFactor, price),             0.1 * 1e18);
+        assertEq(_bpf(Maths.wdiv(9000 * 1e18, collateral), neutralPrice, bondFactor, price),      0.083333333333333333 * 1e18);
+        assertEq(_bpf(Maths.wdiv(debt, collateral), neutralPrice, bondFactor, 9.5 * 1e18),        0.1 * 1e18);
+        assertEq(_bpf(Maths.wdiv(9000 * 1e18, collateral), neutralPrice, bondFactor, 9.5 * 1e18), 0.091666666666666667 * 1e18);
+        assertEq(_bpf(Maths.wdiv(9000 * 1e18, collateral), 10 * 1e18, bondFactor, 10.5 * 1e18),   -0.05 * 1e18);
+        assertEq(_bpf(Maths.wdiv(debt, collateral), 5 * 1e18, bondFactor, 10.5 * 1e18),           -0.1 * 1e18);
     }
 
     /**
@@ -74,13 +74,38 @@ contract AuctionsTest is DSTestPlus {
      */
     function testReserveAuctionPrice() external {
         skip(5 days);
-        assertEq(_reserveAuctionPrice(block.timestamp),            1e27);
-        assertEq(_reserveAuctionPrice(block.timestamp - 1 hours),  500000000 * 1e18);
-        assertEq(_reserveAuctionPrice(block.timestamp - 2 hours),  250000000 * 1e18);
-        assertEq(_reserveAuctionPrice(block.timestamp - 4 hours),  62500000 * 1e18);
-        assertEq(_reserveAuctionPrice(block.timestamp - 16 hours), 15258.789062500000000000 * 1e18);
-        assertEq(_reserveAuctionPrice(block.timestamp - 24 hours), 59.604644775390625000 * 1e18);
-        assertEq(_reserveAuctionPrice(block.timestamp - 90 hours), 0);
+
+        // test a single unit of quote token
+        uint256 lastKickedReserves = 1e18;
+        assertEq(_reserveAuctionPrice(block.timestamp, lastKickedReserves),            1e27);
+        assertEq(_reserveAuctionPrice(block.timestamp - 1 hours, lastKickedReserves),  500000000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 2 hours, lastKickedReserves),  250000000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 4 hours, lastKickedReserves),  62500000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 16 hours, lastKickedReserves), 15258.789062500000000000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 24 hours, lastKickedReserves), 59.604644775390625000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 90 hours, lastKickedReserves), 0);
+
+        // test a reasonable reserve quantity for dollar-pegged stablecoin as quote token
+        lastKickedReserves = 5_000 * 1e18;
+        assertEq(_reserveAuctionPrice(block.timestamp, lastKickedReserves),            200_000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 1 hours, lastKickedReserves),  100_000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 2 hours, lastKickedReserves),  50_000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 4 hours, lastKickedReserves),  12_500 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 8 hours, lastKickedReserves),  781.25 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 16 hours, lastKickedReserves), 3.051757812500000000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 24 hours, lastKickedReserves), 0.011920928955078125 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 90 hours, lastKickedReserves), 0);
+
+        // test a potential reserve quantity for a shitcoin shorting pool
+        lastKickedReserves = 3_000_000_000 * 1e18;
+        assertEq(_reserveAuctionPrice(block.timestamp, lastKickedReserves),            0.333333333333333333 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 4 hours, lastKickedReserves),  0.020833333333333333 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 16 hours, lastKickedReserves), 0.000005086263020833 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 32 hours, lastKickedReserves), 0.000000000077610214 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 64 hours, lastKickedReserves), 0);
+
+        // ensure it handles zeros properly
+        assertEq(_reserveAuctionPrice(0, 0), 0);
     }
 
     /**
@@ -103,5 +128,57 @@ contract AuctionsTest is DSTestPlus {
         assertEq(_claimableReserves(debt, 11_000 * 1e18, 11_000 * 1e18, reserveAuctionUnclaimed, 0),                       0);
         assertEq(_claimableReserves(debt, poolSize, 11_000 * 1e18, 10_895 * 1e18, quoteTokenBalance),                      0);
     }
+}
 
+contract AuctionQueueTest is DSTestPlus {
+    AuctionQueueInstance private _auctions;
+
+    function setUp() public {
+       _auctions = new AuctionQueueInstance();
+    }
+
+    function testAuctionsQueueAddRemove() external {
+        address b1 = makeAddr("b1");
+        address b2 = makeAddr("b2");
+        address b3 = makeAddr("b3");
+        assertEq(_auctions.count(), 0);
+
+        _auctions.add(b1);
+        assertEq(_auctions.count(), 1);
+        _auctions.add(b2);
+        assertEq(_auctions.count(), 2);
+        _auctions.add(b3);
+        assertEq(_auctions.count(), 3);
+
+        _auctions.remove(b2);
+        assertEq(_auctions.count(), 2);
+        _auctions.remove(b1);
+        assertEq(_auctions.count(), 1);
+        _auctions.remove(b3);
+        assertEq(_auctions.count(), 0);
+    }
+
+    function testAuctionsQueueRemoveOnlyAuction() external {
+        address b1 = makeAddr("b1");
+        address b2 = makeAddr("b2");
+        address b3 = makeAddr("b3");
+
+        // add and remove the only auction on the queue
+        _auctions.add(b1);
+        assertEq(_auctions.count(), 1);
+        _auctions.remove(b1);
+        assertEq(_auctions.count(), 0);
+
+        // add new auctions
+        _auctions.add(b2);
+        assertEq(_auctions.count(), 1);
+        _auctions.add(b3);
+        assertEq(_auctions.count(), 2);
+
+        // remove new auctions
+        _auctions.remove(b2);
+        assertEq(_auctions.count(), 1);
+        _auctions.remove(b3);
+        assertEq(_auctions.count(), 0);
+    }
 }

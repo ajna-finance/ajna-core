@@ -13,7 +13,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     address internal _borrower;
     address internal _borrower2;
     address internal _lender;
-    address internal _lender2;
 
     function setUp() virtual external {
         _startTest();
@@ -21,7 +20,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
-        _lender2   = makeAddr("lender2");
 
         // deploy collection pool
         _pool = _deployCollectionPool();
@@ -31,6 +29,34 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _mintAndApproveCollateralTokens(_borrower,  52);
         _mintAndApproveCollateralTokens(_borrower2, 53);
+
+        // check initial NFT balances
+        assertEq(_pool.pledgedCollateral(), 0);
+
+        assertEq(_collateral.balanceOf(_borrower),      52);
+        assertEq(_collateral.balanceOf(_borrower2),     53);
+        assertEq(_collateral.balanceOf(address(_pool)), 0);
+
+        // borrower is owner of NFTs
+        assertEq(_collateral.ownerOf(1), _borrower);
+        assertEq(_collateral.ownerOf(3), _borrower);
+        assertEq(_collateral.ownerOf(5), _borrower);
+
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              0,
+            borrowerCollateral:        0,
+            borrowert0Np:              0,
+            borrowerCollateralization: 1 * 1e18
+        });
+
+        _assertBorrower({
+            borrower:                  _borrower2,
+            borrowerDebt:              0,
+            borrowerCollateral:        0,
+            borrowert0Np:              0,
+            borrowerCollateralization: 1 * 1e18
+        });
     }
 
     /************************************/
@@ -38,12 +64,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     /************************************/
 
     function testPledgeCollateral() external tearDown {
-        // check initial token balances
-        assertEq(_pool.pledgedCollateral(), 0);
-
-        assertEq(_collateral.balanceOf(_borrower),      52);
-        assertEq(_collateral.balanceOf(address(_pool)), 0);
-
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
@@ -60,46 +80,24 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             tokenIds: tokenIdsToAdd
         });
 
-        // check token balances after add
+        // check NFT balances after add
         assertEq(_pool.pledgedCollateral(),             Maths.wad(3));
-        assertEq(_collateral.balanceOf(_borrower),            49);
+        assertEq(_collateral.balanceOf(_borrower),      49);
         assertEq(_collateral.balanceOf(address(_pool)), 3);
     }
 
     function testPledgeCollateralFromDifferentActor() external tearDown {
-        // check initial token balances
-        assertEq(_pool.pledgedCollateral(),             0);
-
-        assertEq(_collateral.balanceOf(_borrower),      52);
-        assertEq(_collateral.balanceOf(_borrower2),     53);
-        assertEq(_collateral.balanceOf(address(_pool)), 0);
-
-        _assertBorrower({
-            borrower:                  _borrower,
-            borrowerDebt:              0,
-            borrowerCollateral:        0,
-            borrowert0Np:              0,
-            borrowerCollateralization: 1 * 1e18
-        });
-        _assertBorrower({
-            borrower:                  _borrower2,
-            borrowerDebt:              0,
-            borrowerCollateral:        0,
-            borrowert0Np:              0,
-            borrowerCollateralization: 1 * 1e18
-        });
-
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 53;
 
-        // borrower deposits three NFTs into the pool
+        // borrower2 deposits one NFT into the pool
         _pledgeCollateral({
             from:     _borrower2,
             borrower: _borrower,
             tokenIds: tokenIdsToAdd
         });
 
-        // check token balances after add
+        // check NFT balances after add
         assertEq(_pool.pledgedCollateral(), Maths.wad(1));
 
         assertEq(_collateral.balanceOf(_borrower),      52);
@@ -123,18 +121,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     }
 
     function testPullCollateral() external tearDown {
-        // check initial token balances
-        assertEq(_pool.pledgedCollateral(), 0);
-
-        assertEq(_collateral.balanceOf(_borrower),      52);
-        assertEq(_collateral.balanceOf(_borrower2),     53);
-        assertEq(_collateral.balanceOf(address(_pool)), 0);
-
-        // borrower is owner of NFTs
-        assertEq(_collateral.ownerOf(1), _borrower);
-        assertEq(_collateral.ownerOf(3), _borrower);
-        assertEq(_collateral.ownerOf(5), _borrower);
-
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
@@ -147,7 +133,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             tokenIds: tokenIdsToAdd
         });
 
-        // check token balances after add
+        // check NFT balances after add
         assertEq(_pool.pledgedCollateral(), Maths.wad(3));
 
         assertEq(_collateral.balanceOf(_borrower),      49);
@@ -159,7 +145,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(3), address(_pool));
         assertEq(_collateral.ownerOf(5), address(_pool));
 
-        // should fail if trying to pull collateral by an address without pledged collateral
+        // reverts if trying to pull collateral by an address without pledged collateral
         _assertPullInsufficientCollateralRevert({
             from:   _lender,
             amount: 3
@@ -168,6 +154,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         // borrower2 is owner of NFT
         assertEq(_collateral.ownerOf(53), _borrower2);
 
+        // borrower2 pledges one NFT
         tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 53;
         _pledgeCollateral({
@@ -176,7 +163,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             tokenIds: tokenIdsToAdd
         });
 
-        // check token balances after add
+        // check NFT balances after add
         assertEq(_pool.pledgedCollateral(), Maths.wad(4));
 
         assertEq(_collateral.balanceOf(_borrower),      49);
@@ -195,7 +182,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             collateralToPull: 2
         });
 
-        // check token balances after remove
+        // check NFT balances after remove
         assertEq(_pool.pledgedCollateral(), Maths.wad(2));
 
         assertEq(_collateral.balanceOf(_borrower),      51);
@@ -203,6 +190,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // pool is owner of remaining pledged NFT
         assertEq(_collateral.ownerOf(1), address(_pool));
+
         // borrower is owner of 2 pulled NFTs
         assertEq(_collateral.ownerOf(3), _borrower);
         assertEq(_collateral.ownerOf(5), _borrower);
@@ -217,18 +205,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     function testPullCollateralToDifferentRecipient() external tearDown {
         address tokensReceiver = makeAddr("tokensReceiver");
 
-        // check initial token balances
-        assertEq(_pool.pledgedCollateral(), 0);
-
-        assertEq(_collateral.balanceOf(_borrower),      52);
-        assertEq(_collateral.balanceOf(_borrower2),     53);
         assertEq(_collateral.balanceOf(tokensReceiver), 0);
-        assertEq(_collateral.balanceOf(address(_pool)), 0);
-
-        // borrower is owner of NFTs
-        assertEq(_collateral.ownerOf(1), _borrower);
-        assertEq(_collateral.ownerOf(3), _borrower);
-        assertEq(_collateral.ownerOf(5), _borrower);
 
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
@@ -242,7 +219,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             tokenIds: tokenIdsToAdd
         });
 
-        // borrower2 deposits three NFTs into the pool
+        // borrower2 deposits one NFT into the pool
         tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 53;
         _pledgeCollateral({
@@ -251,7 +228,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             tokenIds: tokenIdsToAdd
         });
 
-        // check token balances after add
+        // check NFT balances after add
         assertEq(_pool.pledgedCollateral(), Maths.wad(4));
         assertEq(_collateral.balanceOf(address(_pool)), 4);
 
@@ -265,7 +242,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         changePrank(_borrower);
         ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 2, tokensReceiver, MAX_FENWICK_INDEX);
 
-        // check token balances after remove
+        // check NFT balances after remove
         assertEq(_pool.pledgedCollateral(), Maths.wad(2));
 
         assertEq(_collateral.balanceOf(_borrower),      49);
@@ -283,7 +260,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         changePrank(_borrower2);
         ERC721Pool(address(_pool)).repayDebt(_borrower2, 0, 1, tokensReceiver, MAX_FENWICK_INDEX);
 
-        // check token balances after remove
+        // check NFT balances after remove
         assertEq(_pool.pledgedCollateral(), Maths.wad(1));
 
         assertEq(_collateral.balanceOf(_borrower),      49);
@@ -300,11 +277,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     }
 
     function testPullCollateralNotInPool() external tearDown {
-        // borrower is owner of NFTs
-        assertEq(_collateral.ownerOf(1), _borrower);
-        assertEq(_collateral.ownerOf(3), _borrower);
-        assertEq(_collateral.ownerOf(5), _borrower);
-
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
@@ -358,7 +330,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             index:  2550
         });
 
-        // check initial token balances
+        // check initial NFT and token balances
         assertEq(_collateral.balanceOf(_borrower),      52);
         assertEq(_collateral.balanceOf(address(_pool)), 0);
 
@@ -370,7 +342,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             30_000 * 1e18,
+                poolSize:             29_998.630136986301370000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
                 poolDebt:             0,
@@ -402,7 +374,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             newLup:     _priceAt(2550)
         });
 
-        // check token balances after borrow
+        // check NFT and token balances after borrow
         assertEq(_collateral.balanceOf(_borrower),      49);
         assertEq(_collateral.balanceOf(address(_pool)), 3);
 
@@ -412,11 +384,11 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         // check pool state
         _assertPool(
             PoolParams({
-                htp:                  1_000.961538461538462 * 1e18,
+                htp:                  1_041.000000000000000480 * 1e18,
                 lup:                  _priceAt(2550),
-                poolSize:             30_000 * 1e18,
+                poolSize:             29_998.630136986301370000 * 1e18,
                 pledgedCollateral:    Maths.wad(3),
-                encumberedCollateral: 0.997340520100278804 * 1e18,
+                encumberedCollateral: 1.037234140904289956 * 1e18,
                 poolDebt:             3_002.884615384615386 * 1e18,
                 actualUtilization:    0.000000000000000000 * 1e18,
                 targetUtilization:    1 * 1e18,
@@ -434,12 +406,12 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             borrower:         _borrower,
             amountToRepay:    0,
             amountRepaid:     0,
-            collateralToPull: 2
+            collateralToPull: 1
         });
 
-        // check token balances after remove
-        assertEq(_collateral.balanceOf(_borrower),      51);
-        assertEq(_collateral.balanceOf(address(_pool)), 1);
+        // check NFT and token balances after remove
+        assertEq(_collateral.balanceOf(_borrower),      50);
+        assertEq(_collateral.balanceOf(address(_pool)), 2);
 
         assertEq(_quote.balanceOf(address(_pool)), 27_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower),      3_100 * 1e18);
@@ -447,12 +419,12 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         // check pool state
         _assertPool(
             PoolParams({
-                htp:                  3_002.884615384615386000 * 1e18,
+                htp:                  1_561.500000000000000720 * 1e18,
                 lup:                  _priceAt(2550),
-                poolSize:             30_000 * 1e18,
-                pledgedCollateral:    Maths.wad(1),
-                encumberedCollateral: 0.997340520100278804 * 1e18,
-                poolDebt:             3_002.884615384615386 * 1e18,
+                poolSize:             29_998.630136986301370000 * 1e18,
+                pledgedCollateral:    Maths.wad(2),
+                encumberedCollateral: 1.037234140904289956 * 1e18,
+                poolDebt:             3_002.884615384615386000 * 1e18,
                 actualUtilization:    0.000000000000000000 * 1e18,
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        300.288461538461538600 * 1e18,
@@ -466,7 +438,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     }
 
     function testPullCollateralOverlyEncumbered() external tearDown {
-        // lender deposits 10000 Quote into 3 buckets
+        // lender deposits 10_000 Quote into 3 buckets
         _addInitialLiquidity({
             from:   _lender,
             amount: 10_000 * 1e18,
@@ -502,14 +474,14 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         // borrower borrows some quote
         _borrow({
             from:       _borrower,
-            amount:     9_000 * 1e18,
+            amount:     8_600 * 1e18,
             indexLimit: 2_551,
             newLup:     _priceAt(2550)
         });
 
         // check collateralization after borrow
         (poolDebt,,,) = _pool.debtInfo();
-        assertEq(_encumberance(poolDebt, _lup()), 2.992021560300836411 * 1e18);
+        assertEq(_encumberance(poolDebt, _lup()), 2.973404537258964540 * 1e18);
 
         // should revert if borrower attempts to pull more collateral than is unencumbered
         _assertPullInsufficientCollateralRevert({
@@ -535,7 +507,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         tokenIds[0] = 1;
         tokenIds[1] = 5;
 
-        // add three tokens to a single bucket
+        // borrower adds two NFTs to a single bucket
         _addCollateral({
             from:     _borrower,
             tokenIds: tokenIds,
@@ -543,21 +515,21 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             lpAward:  975_232.505322350083963682 * 1e18
         });
 
-        // should revert if the actor does not have any LP to remove a token
+        // reverts when borrower2 does not have any LP to remove a NFT
         _assertRemoveCollateralInsufficientLPRevert({
             from:   _borrower2,
             amount: 1,
             index:  1530
         });
 
-        // should revert if we try to remove a token from a bucket with no collateral
+        // reverts when borrower tries to remove a NFT from a bucket with no collateral
         _assertRemoveInsufficientCollateralRevert({
             from:   _borrower,
             amount: 1,
             index:  1692
         });
 
-        // remove one token
+        // borrower removes one NFT
         _removeCollateral({
             from:     _borrower,
             amount:   1,
@@ -567,9 +539,9 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBucket({
             index:        1530,
-            lpBalance:    497_616.252661175041981841 * 1e18,
+            lpBalance:    497_615.796040170475771841 * 1e18,
             collateral:   Maths.wad(1),
-            deposit:      10_000 * 1e18,
+            deposit:      9_999.543378995433790000 * 1e18,
             exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
@@ -579,7 +551,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             depositTime: _startTime
         });
 
-        // remove another token
+        // borrower removes second NFT
         _removeCollateral({
             from:     _borrower,
             amount:   1,
@@ -589,9 +561,9 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBucket({
             index:        1530,
-            lpBalance:    10_000 * 1e18,
+            lpBalance:    9_999.543378995433790000 * 1e18,
             collateral:   0,
-            deposit:      10_000 * 1e18,
+            deposit:      9_999.543378995433790000 * 1e18,
             exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
@@ -606,10 +578,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _removeAllLiquidity({
             from:     _lender,
-            amount:   10_000 * 1e18,
+            amount:   9_999.543378995433790000 * 1e18,
             index:    1530,
             newLup:   MAX_PRICE,
-            lpRedeem: 10_000 * 1e18
+            lpRedeem: 9_999.543378995433790000 * 1e18
         });
 
         _assertBucket({
@@ -623,16 +595,14 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
     function testMergeOrRemoveERC721Collateral() external tearDown {
         for (uint256 i = 3060; i < (3060 + 10); i++) {
-            _addLiquidity({
+            _addInitialLiquidity({
                 from:   _lender,
                 amount: 20 * 1e18,
-                index:  i,
-                newLup: MAX_PRICE,
-                lpAward: 20 * 1e18
+                index:  i
             });
         }
 
-        // borrower pledge collateral and draws debt
+        // borrower pledges two NFTs and draws debt
         uint256[] memory tokenIdsToAdd = new uint256[](2);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
@@ -648,7 +618,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             newLup:     228.476350374240318479 * 1e18
         });
 
-        // Borrower starts with possession of tokens 1 and 3
+        // Borrower starts with possession of NFTs 1 and 3
         uint256[] memory borrowerTokenIds = new uint256[](2);
         borrowerTokenIds[0] = 1;
         borrowerTokenIds[1] = 3;
@@ -657,8 +627,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              150.144230769230769300 * 1e18,
             borrowerCollateral:        2.0 * 1e18,
-            borrowert0Np:              86.468317660735388466 * 1e18,
-            borrowerCollateralization: 3.043424968161510485 * 1e18,
+            borrowert0Np:              86.804050367164804003 * 1e18,
+            borrowerCollateralization: 2.926370161693760082 * 1e18,
             tokenIds:                  borrowerTokenIds
         });
 
@@ -666,11 +636,11 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         skip(10_000 days);
         _assertPool(
             PoolParams({
-                htp:                  75.072115384615384650 * 1e18,
+                htp:                  307.210419047238320914 * 1e18,
                 lup:                  0.000000099836282890 * 1e18,
-                poolSize:             200.0 * 1e18,
+                poolSize:             199.990867579908675800 * 1e18,
                 pledgedCollateral:    2 * 1e18,
-                encumberedCollateral: 5_917_580_766.197687035371154332 * 1e18,
+                encumberedCollateral: 6_154_283_996.845594516785199193 * 1e18,
                 poolDebt:             590.789267398535232527 * 1e18,
                 actualUtilization:    0,
                 targetUtilization:    1.0 * 1e18,
@@ -684,9 +654,9 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBucket({
             index:        3061,
-            lpBalance:    20.0 * 1e18,
+            lpBalance:    19.999086757990867580 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      20.0 * 1e18,
+            deposit:      19.999086757990867580 * 1e18,
             exchangeRate: 1.000000000000000000 * 1e18
         });
 
@@ -695,8 +665,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             borrower:       _borrower,
             debt:           590.789267398535232526 * 1e18,
             collateral:     2.0 * 1e18,
-            bond:           8.968381880996266239 * 1e18,
-            transferAmount: 8.968381880996266239 * 1e18
+            bond:           6.605224811402125309 * 1e18,
+            transferAmount: 6.605224811402125309 * 1e18
         });
 
         skip(32 hours);
@@ -706,15 +676,15 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 borrower:          _borrower,
                 active:            true,
                 kicker:            address(_lender),
-                bondSize:          8.968381880996266239 * 1e18,
-                bondFactor:        0.015180339887498948 * 1e18,
+                bondSize:          6.605224811402125309 * 1e18,
+                bondFactor:        0.011180339887498948 * 1e18,
                 kickTime:          block.timestamp - 32 hours,
-                referencePrice:    340.236543104248948639 * 1e18,
-                totalBondEscrowed: 8.968381880996266239 * 1e18,
-                auctionPrice:      0.000081118713165342 * 1e18,
+                referencePrice:    341.557588066529373749 * 1e18,
+                totalBondEscrowed: 6.605224811402125309 * 1e18,
+                auctionPrice:      0.000081433674828178 * 1e18,
                 debtInAuction:     590.789267398535232527 * 1e18,
-                thresholdPrice:    295.453988355164748340 * 1e18,
-                neutralPrice:      340.236543104248948639 * 1e18
+                debtToCollateral:  295.394633699267616263 * 1e18,
+                neutralPrice:      341.557588066529373749 * 1e18
             })
         );
 
@@ -722,11 +692,11 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  99836282890,
-                poolSize:             574.548281134908793200 * 1e18,
+                poolSize:             574.539148714817468952 * 1e18,
                 pledgedCollateral:    2 * 1e18,
-                encumberedCollateral: 5_918_769_805.977193435161155568 * 1e18,
+                encumberedCollateral: 6_155_520_598.216281172565197855 * 1e18,
                 poolDebt:             590.907976710329496681 * 1e18,
-                actualUtilization:    0.750721153846153847 * 1e18,
+                actualUtilization:    0.750755434916241346 * 1e18,
                 targetUtilization:    0.328577182109433013 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
@@ -740,82 +710,82 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _updateInterest();
         _assertBucket({
             index:        3060,
-            lpBalance:    20 * 1e18,
+            lpBalance:    19.999086757990867580 * 1e18,
             collateral:   0.0000000000000000000 * 1e18,
-            deposit:      57.465578391592604940 * 1e18,
-            exchangeRate: 2.873278919579630247 * 1e18
+            deposit:      57.464665200956929022 * 1e18,
+            exchangeRate: 2.873364463904645750 * 1e18
         });
 
         _assertBucket({
             index:        3061,
-            lpBalance:    20.0 * 1e18,
+            lpBalance:    19.999086757990867580 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      57.465578391592604940 * 1e18,
-            exchangeRate: 2.873278919579630247 * 1e18
+            deposit:      57.464665200956929022 * 1e18,
+            exchangeRate: 2.873364463904645750 * 1e18
         });
 
         _assertBucket({
             index:        3062,
-            lpBalance:    20.0 * 1e18,
+            lpBalance:    19.999086757990867580 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      57.465578391592604940 * 1e18,
-            exchangeRate: 2.873278919579630247 * 1e18
+            deposit:      57.464665200956929022 * 1e18,
+            exchangeRate: 2.873364463904645750 * 1e18
         });
 
         _assertBucket({
             index:        3063,
-            lpBalance:    20.0 * 1e18,
+            lpBalance:    19.999086757990867580 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      57.465578391592604940 * 1e18,
-            exchangeRate: 2.873278919579630247 * 1e18
+            deposit:      57.464665200956929022 * 1e18,
+            exchangeRate: 2.873364463904645750 * 1e18
         });
 
         _assertBucket({
             index:        3064,
-            lpBalance:    20.0 * 1e18,
+            lpBalance:    19.999086757990867580 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      57.465578391592604940 * 1e18,
-            exchangeRate: 2.873278919579630247 * 1e18
+            deposit:      57.464665200956929022 * 1e18,
+            exchangeRate: 2.873364463904645750 * 1e18
         });
 
         _assertBucket({
             index:        3065,
-            lpBalance:    20.0 * 1e18,
+            lpBalance:    19.999086757990867580 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      57.465578391592604940 * 1e18,
-            exchangeRate: 2.873278919579630247 * 1e18
+            deposit:      57.464665200956929022 * 1e18,
+            exchangeRate: 2.873364463904645750 * 1e18
         });
 
         _assertBucket({
             index:        3066,
-            lpBalance:    20.0 * 1e18,
+            lpBalance:    19.999086757990867580 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      57.465578391592604940 * 1e18,
-            exchangeRate: 2.873278919579630247 * 1e18
+            deposit:      57.464665200956929022 * 1e18,
+            exchangeRate: 2.873364463904645750 * 1e18
         });
 
         _assertBucket({
             index:        3067,
-            lpBalance:    20.0 * 1e18,
+            lpBalance:    19.999086757990867580 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      57.465578391592604940 * 1e18,
-            exchangeRate: 2.873278919579630247 * 1e18
+            deposit:      57.464665200956929022 * 1e18,
+            exchangeRate: 2.873364463904645750 * 1e18
         });
 
         _assertBucket({
             index:        3068,
-            lpBalance:    20.0 * 1e18,
+            lpBalance:    19.999086757990867580 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      57.465578391592604940 * 1e18,
-            exchangeRate: 2.873278919579630247 * 1e18
+            deposit:      57.464665200956929022 * 1e18,
+            exchangeRate: 2.873364463904645750 * 1e18
         });
 
         _assertBucket({
             index:        3069,
-            lpBalance:    20.0 * 1e18,
+            lpBalance:    19.999086757990867580 * 1e18,
             collateral:   0.0 * 1e18,
-            deposit:      57.465578391592604940 * 1e18,
-            exchangeRate: 2.873278919579630247 * 1e18
+            deposit:      57.464665200956929022 * 1e18,
+            exchangeRate: 2.873364463904645750 * 1e18
         });
 
         _assertBucket({
@@ -831,7 +801,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(3), address(_pool));
 
         // exchange collateral for lpb 3060 - 3070, going down in price
-        for (uint256 i = _i236_59; i < (3060 + 3); i++) {
+        for (uint256 i = _i236_59; i < (_i236_59 + 3); i++) {
             _depositTake({
                 from:     _lender,
                 borrower: _borrower,
@@ -841,18 +811,18 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBucket({
             index:        3060,
-            lpBalance:    20.308286694556134654 * 1e18,
-            collateral:   0.246630842904997686 * 1e18,
-            deposit:      0.000000000000000144 * 1e18,
-            exchangeRate: 2.873278919579630248 * 1e18
+            lpBalance:    20.225211496821887632 * 1e18,
+            collateral:   0.245629261778504471 * 1e18,
+            deposit:      0.000000000000000149 * 1e18,
+            exchangeRate: 2.873364463904645751 * 1e18
         });
 
         _assertBucket({
             index:        3061,
-            lpBalance:    20.308286694556134655 * 1e18,
-            collateral:   0.247863997119522673 * 1e18,
-            deposit:      0.000000000000000006 * 1e18,
-            exchangeRate: 2.873278919579630248 * 1e18
+            lpBalance:    20.225211496821887631 * 1e18,
+            collateral:   0.246857408087396991 * 1e18,
+            deposit:      0.000000000000000227 * 1e18,
+            exchangeRate: 2.873364463904645751 * 1e18
         });
 
         _assertBucket({
@@ -868,15 +838,15 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 borrower:          _borrower,
                 active:            true,
                 kicker:            address(_lender),
-                bondSize:          8.968381880996266239 * 1e18,
-                bondFactor:        0.015180339887498948 * 1e18,
+                bondSize:          6.605224811402125309 * 1e18,
+                bondFactor:        0.011180339887498948 * 1e18,
                 kickTime:          block.timestamp - 32 hours,
-                referencePrice:    340.236543104248948639 * 1e18,
-                totalBondEscrowed: 8.968381880996266239 * 1e18,
-                auctionPrice:      0.000081118713165342 * 1e18,
-                debtInAuction:     418.511241535551682100 * 1e18,
-                thresholdPrice:    333.103014700636165105 * 1e18,
-                neutralPrice:      340.236543104248948639 * 1e18
+                referencePrice:    341.557588066529373749 * 1e18,
+                totalBondEscrowed: 6.605224811402125309 * 1e18,
+                auctionPrice:      0.000081433674828178 * 1e18,
+                debtInAuction:     418.513981107458710209 * 1e18,
+                debtToCollateral:  295.394633699267616263 * 1e18,
+                neutralPrice:      341.557588066529373749 * 1e18
             })
         );
 
@@ -884,11 +854,11 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  99836282890,
-                poolSize:             402.259048741148234756 * 1e18,
-                pledgedCollateral:    1.256401842870359357 * 1e18,
-                encumberedCollateral: 4_191_975_396.326293274519167147 * 1e18,
-                poolDebt:             418.511241535551682100 * 1e18,
-                actualUtilization:    0.750721153846153847 * 1e18,
+                poolSize:             402.252656406698503718 * 1e18,
+                pledgedCollateral:    1.259421635006264564 * 1e18,
+                encumberedCollateral: 4_359_682_950.449208762774280808 * 1e18,
+                poolDebt:             418.513981107458710209 * 1e18,
+                actualUtilization:    0.750755434916241346 * 1e18,
                 targetUtilization:    0.328577182109433013 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
@@ -904,10 +874,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              418.511241535551682100 * 1e18,
-            borrowerCollateral:        1.256401842870359357 * 1e18,
-            borrowert0Np:              97.486777718699640528 * 1e18,
-            borrowerCollateralization: 0.000000000299715939 * 1e18,
+            borrowerDebt:              418.513981107458710209 * 1e18,
+            borrowerCollateral:        1.259421635006264564 * 1e18,
+            borrowert0Np:              97.631273580933683519 * 1e18,
+            borrowerCollateralization: 0,
             tokenIds:                  borrowerTokenIds
         });
 
@@ -919,8 +889,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             from:            _lender,
             borrower:        _borrower,
             maxCollateral:   2 * 1e18,
-            bondChange:      0.000001231409637086 * 1e18,
-            givenAmount:     0.000081118713165342 * 1e18,
+            bondChange:      0.000000910456162867 * 1e18,
+            givenAmount:     0.000081433674828178 * 1e18,
             collateralTaken: 1 * 1e18,
             isReward:        true
         });
@@ -930,10 +900,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              418.511161648248153847 * 1e18,
-            borrowerCollateral:        0.256401842870359357 * 1e18,
-            borrowert0Np:              477.697595423190347016 * 1e18,
-            borrowerCollateralization: 0.000000000061164932 * 1e18,
+            borrowerDebt:              418.513900584240044901 * 1e18,
+            borrowerCollateral:        0.259421635006264564 * 1e18,
+            borrowert0Np:              473.973246450485386102 * 1e18,
+            borrowerCollateralization: 0,
             tokenIds:                  borrowerTokenIds
         });
 
@@ -956,15 +926,15 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 borrower:          _borrower,
                 active:            true,
                 kicker:            address(_lender),
-                bondSize:          8.968383112405903325 * 1e18,
-                bondFactor:        0.015180339887498948 * 1e18,
+                bondSize:          6.605225721858288176 * 1e18,
+                bondFactor:        0.011180339887498948 * 1e18,
                 kickTime:          block.timestamp - (32 hours + 4210 minutes),
-                referencePrice:    340.236543104248948639 * 1e18,
-                totalBondEscrowed: 8.968383112405903325 * 1e18,
+                referencePrice:    341.557588066529373749 * 1e18,
+                totalBondEscrowed: 6.605225721858288176 * 1e18,
                 auctionPrice:      0,
-                debtInAuction:     418.511161648248153847 * 1e18,
-                thresholdPrice:    1_633.038265299714540882 * 1e18,
-                neutralPrice:      340.236543104248948639 * 1e18
+                debtInAuction:     418.513900584240044901 * 1e18,
+                debtToCollateral:  295.394633699267616263 * 1e18,
+                neutralPrice:      341.557588066529373749 * 1e18
             })
         );
 
@@ -972,7 +942,14 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    11,
-            settledDebt: 106.339800629932799697 * 1e18
+            settledDebt: 402.720595086055444608 * 1e18
+        });
+
+        _settle({
+            from:        _lender,
+            borrower:    _borrower,
+            maxDepth:    11,
+            settledDebt: 15.996165878204144616 * 1e18
         });
 
         _assertBorrower({
@@ -997,20 +974,20 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 referencePrice:    0,
-                totalBondEscrowed: 8.968383112405903325 * 1e18,
+                totalBondEscrowed: 6.605225721858288176 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    0,
+                debtToCollateral:  0,
                 neutralPrice:      0
             })
         );
 
         _assertBucket({
             index:        3060,
-            lpBalance:    20.308286694556134654 * 1e18,
-            collateral:   0.246630842904997687 * 1e18,
+            lpBalance:    20.225211496821887632 * 1e18,
+            collateral:   0.245629261778504472 * 1e18,
             deposit:      0,
-            exchangeRate: 2.873278919579630252 * 1e18
+            exchangeRate: 2.873364463904645755 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _borrower,
@@ -1088,18 +1065,16 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(address(_pool)), 0);
 
         // lender deposit quote tokens in bucket 7388 in order to claim and merge settled collateral and to be able to remove entire NFT
-        _addLiquidity({
+        _addInitialLiquidity({
             from:    _lender,
             amount:  10 * 1e18,
-            index:   7388,
-            lpAward: 10 * 1e18, // LP awarded to lender for depositing quote tokens in bucket 7388
-            newLup:  MAX_PRICE
+            index:   7388
         });
 
         _assertLenderLpBalance({
             lender:      _lender,
             index:       7388,
-            lpBalance:   10 * 1e18, // lender now owns LP in bucket 7388 which can be used to merge bucket collateral
+            lpBalance:   9.999392237442922370 * 1e18, // lender now owns LP in bucket 7388 which can be used to merge bucket collateral
             depositTime: _startTime + 10000 days + (32 hours + 4210 minutes)
         });
 
@@ -1131,15 +1106,15 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         });
         _assertBucket({
             index:        7388,
-            lpBalance:    10 * 1e18, // LP in bucket 7388 diminished when NFT merged and removed
+            lpBalance:    9.999392237442922370 * 1e18, // LP in bucket 7388 diminished when NFT merged and removed
             collateral:   0,         // no collateral remaining as it was merged and removed
-            deposit:      10 * 1e18,
+            deposit:      9.999392237442922370 * 1e18,
             exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       7388,
-            lpBalance:   10 * 1e18, // lender LP decreased with the amount used to merge NFT
+            lpBalance:   9.999392237442922370 * 1e18, // lender LP decreased with the amount used to merge NFT
             depositTime: _startTime + 10000 days + (32 hours + 4210 minutes)
         });
         _assertLenderLpBalance({
@@ -1151,10 +1126,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _removeAllLiquidity({
             from:     _lender,
-            amount:   10 * 1e18,
+            amount:   9.999392237442922370 * 1e18,
             index:    7388,
             newLup:   MAX_PRICE,
-            lpRedeem: 10 * 1e18
+            lpRedeem: 9.999392237442922370 * 1e18
         });
 
         _assertBucket({
@@ -1169,16 +1144,16 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             50.000079544611684526 * 1e18,
+                poolSize:             0,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
                 poolDebt:             0,
-                actualUtilization:    0.750721153846153847 * 1e18,
+                actualUtilization:    0.750755434916241347 * 1e18,
                 targetUtilization:    0.328577182109433013 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.05445 * 1e18,
+                interestRate:         0.066550000000000000 * 1e18,
                 interestRateUpdate:   block.timestamp
             })
         );
@@ -1197,7 +1172,6 @@ contract ERC721SubsetPoolCollateralTest is ERC721PoolCollateralTest {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
-        _lender2   = makeAddr("lender2");
 
         // deploy subset pool
         uint256[] memory subsetTokenIds = new uint256[](5);
@@ -1232,7 +1206,7 @@ contract ERC721SubsetPoolCollateralTest is ERC721PoolCollateralTest {
         tokenIdsToAdd[1] = 4;
         tokenIdsToAdd[2] = 6;
 
-        // should revert if borrower attempts to add tokens not in the pool subset
+        // should revert if borrower attempts to add NFTs not in the pool subset
         _assertPledgeCollateralNotInSubsetRevert({
             from:     _borrower,
             tokenIds: tokenIdsToAdd

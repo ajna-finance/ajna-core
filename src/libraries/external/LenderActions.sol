@@ -16,7 +16,12 @@ import {
     PoolState
 }                     from '../../interfaces/pool/commons/IPoolState.sol';
 
-import { _depositFeeRate, _priceAt, MAX_FENWICK_INDEX } from '../helpers/PoolHelper.sol';
+import { 
+    _depositFeeRate,
+    _htp,
+    _priceAt,
+    MAX_FENWICK_INDEX
+} from '../helpers/PoolHelper.sol';
 
 import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
@@ -89,7 +94,6 @@ library LenderActions {
     error InsufficientLiquidity();
     error InsufficientCollateral();
     error MoveToSameIndex();
-    error PriceBelowLUP();
 
     /***************************/
     /***  External Functions ***/
@@ -142,7 +146,6 @@ library LenderActions {
      *  @dev    same block when bucket becomes insolvent `BucketBankruptcyBlock()`
      *  @dev    no LP awarded in bucket `InsufficientLP()`
      *  @dev    calculated unscaled amount to add is 0 `InvalidAmount()`
-     *  @dev    deposit below `LUP` `PriceBelowLUP()`
      *  @dev    === Emit events ===
      *  @dev    - `AddQuoteToken`
      */
@@ -151,7 +154,7 @@ library LenderActions {
         DepositsState storage deposits_,
         PoolState calldata poolState_,
         AddQuoteParams calldata params_
-    ) external returns (uint256 bucketLP_, uint256 lup_) {
+    ) external returns (uint256 bucketLP_, uint256 addedAmount_, uint256 lup_) {
         // revert if no amount to be added
         if (params_.amount == 0) revert InvalidAmount();
         // revert if adding to an invalid index
@@ -168,23 +171,15 @@ library LenderActions {
         uint256 bucketScale           = Deposits.scale(deposits_, params_.index);
         uint256 bucketDeposit         = Maths.wmul(bucketScale, unscaledBucketDeposit);
         uint256 bucketPrice           = _priceAt(params_.index);
-        uint256 addedAmount           = params_.amount;
 
-        // charge unutilized deposit fee where appropriate
-        uint256 lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
-        bool depositBelowLup = lupIndex != 0 && params_.index > lupIndex;
-
-        if (depositBelowLup) {
-            if (params_.revertIfBelowLup) revert PriceBelowLUP();
-
-            addedAmount = Maths.wmul(addedAmount, Maths.WAD - _depositFeeRate(poolState_.rate));
-        }
+        // calculate added amount charging deposit fee
+        addedAmount_ = Maths.wmul(params_.amount, Maths.WAD - _depositFeeRate(poolState_.rate));
 
         bucketLP_ = Buckets.quoteTokensToLP(
             bucket.collateral,
             bucket.lps,
             bucketDeposit,
-            addedAmount,
+            addedAmount_,
             bucketPrice,
             Math.Rounding.Down
         );
@@ -192,11 +187,7 @@ library LenderActions {
         // revert if (due to rounding) the awarded LP is 0
         if (bucketLP_ == 0) revert InsufficientLP();
 
-        uint256 unscaledAmount = Maths.wdiv(addedAmount, bucketScale);
-        // revert if unscaled amount is 0
-        if (unscaledAmount == 0) revert InvalidAmount();
-
-        Deposits.unscaledAdd(deposits_, params_.index, unscaledAmount);
+        Deposits.unscaledAdd(deposits_, params_.index, Maths.wdiv(addedAmount_, bucketScale));
 
         // update lender LP
         Buckets.addLenderLP(bucket, bankruptcyTime, msg.sender, bucketLP_);
@@ -204,16 +195,14 @@ library LenderActions {
         // update bucket LP
         bucket.lps += bucketLP_;
 
-        // only need to recalculate LUP if the deposit was above it
-        if (!depositBelowLup) {
-            lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
-        }
+        // calculate new LUP
+        uint256 lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
         lup_ = _priceAt(lupIndex);
 
         emit AddQuoteToken(
             msg.sender,
             params_.index,
-            addedAmount,
+            addedAmount_,
             bucketLP_,
             lup_
         );
@@ -234,7 +223,7 @@ library LenderActions {
      *  @dev    dust amount `DustAmountNotExceeded()`
      *  @dev    invalid index `InvalidIndex()`
      *  @dev    no LP awarded in to bucket `InsufficientLP()`
-     *  @dev    move below `LUP` `PriceBelowLUP()`
+     *  @dev    calculated unscaled amount to move is 0 `InvalidAmount()`
      *  @dev    === Emit events ===
      *  @dev    - `BucketBankruptcy`
      *  @dev    - `MoveQuoteToken`
@@ -245,11 +234,9 @@ library LenderActions {
         PoolState calldata poolState_,
         MoveQuoteParams calldata params_
     ) external returns (uint256 fromBucketRedeemedLP_, uint256 toBucketLP_, uint256 movedAmount_, uint256 lup_) {
-        if (params_.maxAmountToMove == 0)
-            revert InvalidAmount();
         if (params_.fromIndex == params_.toIndex)
             revert MoveToSameIndex();
-        if (params_.maxAmountToMove != 0 && params_.maxAmountToMove < poolState_.quoteTokenScale)
+        if (params_.maxAmountToMove < poolState_.quoteTokenScale)
             revert DustAmountNotExceeded();
         if (params_.toIndex == 0 || params_.toIndex > MAX_FENWICK_INDEX) 
             revert InvalidIndex();
@@ -287,11 +274,8 @@ library LenderActions {
             })
         );
 
-        lup_ = Deposits.getLup(deposits_, poolState_.debt);
-        // apply unutilized deposit fee if quote token is moved from above the LUP to below the LUP
-        if (vars.fromBucketPrice >= lup_ && vars.toBucketPrice < lup_) {
-            if (params_.revertIfBelowLup) revert PriceBelowLUP();
-
+        // apply deposit fee if moving to a lower-priced bucket
+        if (params_.fromIndex < params_.toIndex) {
             movedAmount_ = Maths.wmul(movedAmount_, Maths.WAD - _depositFeeRate(poolState_.rate));
         }
 
@@ -313,10 +297,9 @@ library LenderActions {
 
         Deposits.unscaledAdd(deposits_, params_.toIndex, Maths.wdiv(movedAmount_, vars.toBucketScale));
 
-        // recalculate LUP after adding amount in to bucket only if to bucket price is greater than LUP
-        if (vars.toBucketPrice > lup_) lup_ = Deposits.getLup(deposits_, poolState_.debt);
-
-        vars.htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
+        // recalculate LUP and HTP
+        lup_ = Deposits.getLup(deposits_, poolState_.debt);
+        vars.htp = _htp(params_.maxT0DebtToCollateral, poolState_.inflator);
 
         // check loan book's htp against new lup, revert if move drives LUP below HTP
         if (
@@ -433,7 +416,7 @@ library LenderActions {
 
         lup_ = Deposits.getLup(deposits_, poolState_.debt);
 
-        uint256 htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
+        uint256 htp = _htp(params_.maxT0DebtToCollateral, poolState_.inflator);
 
         if (
             // check loan book's htp doesn't exceed new lup
@@ -749,7 +732,7 @@ library LenderActions {
      *  @dev      update `values` array state
      *  @dev    === Reverts on ===
      *  @dev    no `LP` redeemed `InsufficientLP()`
-     *  @dev    no unscaled amount removed` `InvalidAmount()`
+     *  @dev    no unscaled amount removed `InvalidAmount()`
      *  @return removedAmount_     Amount of scaled deposit removed.
      *  @return redeemedLP_        Amount of bucket `LP` corresponding for calculated scaled deposit amount.
      *  @return unscaledRemaining_ Amount of unscaled deposit remaining.
@@ -831,12 +814,13 @@ library LenderActions {
             unscaledRemovedAmount = unscaledDepositAvailable;
         }
 
+        scaledDepositAvailable -= removedAmount_;
+        if (scaledDepositAvailable != 0 && scaledDepositAvailable < params_.dustLimit) revert DustAmountNotExceeded();
+
         unscaledRemaining_ = unscaledDepositAvailable - unscaledRemovedAmount;
 
         // revert if (due to rounding) required LP is 0
         if (redeemedLP_ == 0) revert InsufficientLP();
-        // revert if calculated amount of quote to remove is 0
-        if (unscaledRemovedAmount == 0) revert InvalidAmount();
 
         // update FenwickTree
         Deposits.unscaledRemove(deposits_, params_.index, unscaledRemovedAmount);

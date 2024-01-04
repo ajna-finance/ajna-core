@@ -40,7 +40,7 @@ contract PanicExitERC721PoolHandler is UnboundedLiquidationPoolHandler, Unbounde
         _setupLendersAndDeposits(LENDERS);
         _setupBorrowersAndLoans(LOANS_COUNT);
 
-        ( , , uint256 totalLoans) = _pool.loansInfo();
+        uint256 totalLoans = _getLoansInfo().noOfLoans;
         require(totalLoans == LOANS_COUNT, "loans setup failed");
 
         vm.warp(block.timestamp + 100_000 days);
@@ -54,19 +54,20 @@ contract PanicExitERC721PoolHandler is UnboundedLiquidationPoolHandler, Unbounde
         uint256 borrowerIndex_,
         uint256 skippedTime_
     ) external useTimestamps skipTime(skippedTime_) writeLogs {
-        borrowerIndex_ = constrictToRange(borrowerIndex_, 0, _activeBorrowers.values().length - 1);
+        borrowerIndex_ = constrictToRange(
+            borrowerIndex_, 0, _activeBorrowers.values().length - 1
+        );
 
         _actor = _borrowers[borrowerIndex_];
         changePrank(_actor);
-        (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(_actor);
-        if (block.timestamp > kickTime + 72 hours) {
+        if (block.timestamp > _getAuctionInfo(_actor).kickTime + 72 hours) {
             numberOfCalls['BPanicExitPoolHandler.settleDebt']++;
             _settleAuction(_actor, numberOfBuckets);
         } else {
             numberOfCalls['BPanicExitPoolHandler.repayLoan']++;
             _repayDebt(type(uint256).max);
         }
-        (, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+        uint256 collateral = _getBorrowerInfo(_actor).collateral;
         _pullCollateral(collateral);
 
         _resetSettledAuction(_actor, borrowerIndex_);
@@ -96,7 +97,8 @@ contract PanicExitERC721PoolHandler is UnboundedLiquidationPoolHandler, Unbounde
 
         if (takeAuction_) {
             vm.warp(block.timestamp + 61 minutes);
-            ( , uint256 auctionedCollateral, ) = _pool.borrowerInfo(borrower);
+            uint256 auctionedCollateral = _getBorrowerInfo(borrower).collateral;
+
             _takeAuction(borrower, auctionedCollateral, _actor);
             _resetSettledAuction(borrower, borrowerIndex_);
         }
@@ -149,20 +151,18 @@ contract PanicExitERC721PoolHandler is UnboundedLiquidationPoolHandler, Unbounde
     ) external useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BPanicExitPoolHandler.withdrawBonds']++;
 
-        kickerIndex_    = constrictToRange(kickerIndex_, 0, LENDERS - 1);
-        address kicker  = _lenders[kickerIndex_];
-
-        (uint256 kickerClaimable, ) = _pool.kickerInfo(kicker); 
+        kickerIndex_   = constrictToRange(kickerIndex_, 0, LENDERS - 1);
+        address kicker = _lenders[kickerIndex_];
 
         _actor = kicker;
         changePrank(_actor);
-        _withdrawBonds(kicker, kickerClaimable);
+        _withdrawBonds(kicker, _getKickerInfo(kicker).claimableBond);
     }
 
     function settleHeadAuction(
         uint256 skippedTime_
     ) external useTimestamps skipTime(skippedTime_) writeLogs {
-        (, , , , , , address headAuction, , ) = _pool.auctionInfo(address(0));
+        address headAuction = _getAuctionInfo(address(0)).head;
         if (headAuction != address(0)) {
             _settleAuction(headAuction, 10);
             _resetSettledAuction(headAuction, 0);
@@ -216,8 +216,7 @@ contract PanicExitERC721PoolHandler is UnboundedLiquidationPoolHandler, Unbounde
     }
 
     function _resetSettledAuction(address borrower_, uint256 borrowerIndex_) internal {
-        (,,, uint256 kickTime,,,,,) = _pool.auctionInfo(borrower_);
-        if (kickTime == 0) {
+        if (_getAuctionInfo(borrower_).kickTime == 0) {
             if (borrowerIndex_ != 0) _activeBorrowers.remove(borrowerIndex_);
         }
     }

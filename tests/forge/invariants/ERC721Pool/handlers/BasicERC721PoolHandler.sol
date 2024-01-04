@@ -70,7 +70,10 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         numberOfCalls['BBasicHandler.mergeCollateral']++;
 
         // Prepare test phase
-        (uint256 NFTAmount, uint256[] memory bucketIndexes) = _preMergeCollateral();
+        (
+            uint256 NFTAmount,
+            uint256[] memory bucketIndexes
+        ) = _preMergeCollateral();
 
         // Action phase
         _mergeCollateral(NFTAmount, bucketIndexes);
@@ -88,8 +91,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         numberOfCalls['BBasicHandler.pledgeCollateral']++;
 
         //  borrower cannot make any action when in auction
-        (uint256 kickTime,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
-        if (kickTime != 0) return;
+        if (_getAuctionInfo(_actor).kickTime != 0) return;
 
         // Prepare test phase
         uint256 boundedAmount = _prePledgeCollateral(amountToPledge_);
@@ -106,8 +108,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         numberOfCalls['BBasicHandler.pullCollateral']++;
 
         //  borrower cannot make any action when in auction
-        (uint256 kickTime,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
-        if (kickTime != 0) return;
+        if (_getAuctionInfo(_actor).kickTime != 0) return;
 
         // Prepare test phase
         uint256 boundedAmount = _prePullCollateral(amountToPull_);
@@ -124,8 +125,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         numberOfCalls['BBasicHandler.drawDebt']++;
 
         //  borrower cannot make any action when in auction
-        (uint256 kickTime,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
-        if (kickTime != 0) return;
+        if (_getAuctionInfo(_actor).kickTime != 0) return;
 
         // Prepare test phase
         uint256 boundedAmount = _preDrawDebt(amountToBorrow_);
@@ -142,8 +142,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         numberOfCalls['BBasicHandler.repayDebt']++;
 
         //  borrower cannot make any action when in auction
-        (uint256 kickTime,,,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
-        if (kickTime != 0) return;
+        if (_getAuctionInfo(_actor).kickTime != 0) return;
 
         // Prepare test phase
         uint256 boundedAmount = _preRepayDebt(amountToRepay_);
@@ -159,17 +158,22 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
     function _preAddCollateral(
         uint256 amountToAdd_
     ) internal view returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToAdd_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT);
+        boundedAmount_ = constrictToRange(
+            amountToAdd_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT
+        );
     }
 
     function _preRemoveCollateral(
         uint256 amountToRemove_
     ) internal returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToRemove_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT);
+        boundedAmount_ = constrictToRange(
+            amountToRemove_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT
+        );
 
         // ensure actor has collateral to remove
-        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-        if (lpBalanceBefore == 0) _addCollateral(boundedAmount_, _lenderBucketIndex);
+        if (_getLenderInfo(_lenderBucketIndex, _actor).lpBalance == 0) {
+            _addCollateral(boundedAmount_, _lenderBucketIndex);
+        }
     }
 
     function _preMergeCollateral() internal returns(uint256 NFTAmount_, uint256[] memory bucketIndexes_) {
@@ -179,12 +183,16 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
             uint256 bucketIndex = bucketIndexes_[i];
 
             // Add Quote token in each bucket such that user has enough lps in each bucket to merge collateral
-            uint256 price = _poolInfo.indexToPrice(bucketIndex);
-            _addQuoteToken(price, bucketIndex);
+            _addQuoteToken(
+                _poolInfo.indexToPrice(bucketIndex),
+                bucketIndex
+            );
 
-            (uint256 lenderLps, )    = _erc721Pool.lenderInfo(bucketIndex, _actor);
-            uint256 collateralAmount =_poolInfo.lpToCollateral(address(_erc721Pool), lenderLps, bucketIndex);
-            NFTAmount_               += collateralAmount;
+            uint256 collateralAmount = _poolInfo.lpToCollateral(
+                address(_erc721Pool), _getLenderInfo(bucketIndex, _actor).lpBalance, bucketIndex
+            );
+
+            NFTAmount_ += collateralAmount;
         }
 
         // Round collateral amount
@@ -194,23 +202,28 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
     function _prePledgeCollateral(
         uint256 amountToPledge_
     ) internal view returns (uint256 boundedAmount_) {
-        boundedAmount_ =  constrictToRange(amountToPledge_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT);
+        boundedAmount_ =  constrictToRange(
+            amountToPledge_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT
+        );
     }
 
     function _prePullCollateral(
         uint256 amountToPull_
     ) internal view returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToPull_, 0, MAX_COLLATERAL_AMOUNT);
+        boundedAmount_ = constrictToRange(
+            amountToPull_, 0, MAX_COLLATERAL_AMOUNT
+        );
     }
 
     function _preDrawDebt(
         uint256 amountToBorrow_
     ) internal override returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToBorrow_, MIN_DEBT_AMOUNT, MAX_DEBT_AMOUNT);
+        boundedAmount_ = constrictToRange(
+            amountToBorrow_, MIN_DEBT_AMOUNT, MAX_DEBT_AMOUNT
+        );
 
         //  borrower cannot make any action when in auction
-        (uint256 kickTime, uint256 collateral, uint256 debt,,,) = _poolInfo.auctionStatus(address(_pool), _actor);
-        if (kickTime != 0) return boundedAmount_;
+        if (_getAuctionInfo(_actor).kickTime != 0) return boundedAmount_;
 
         // Pre Condition
         // 1. borrower's debt should exceed minDebt
@@ -218,7 +231,6 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         // 3. drawDebt should not make borrower under collateralized
 
         // 1. borrower's debt should exceed minDebt
-        (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
         (uint256 minDebt, , , ) = _poolInfo.poolUtilizationInfo(address(_pool));
 
         if (boundedAmount_ < minDebt && minDebt < MAX_DEBT_AMOUNT) boundedAmount_ = minDebt + 1;
@@ -235,27 +247,33 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         (uint256 currentPoolDebt, , , ) = _pool.debtInfo();
         uint256 nextPoolDebt = currentPoolDebt + boundedAmount_;
         uint256 newLup = _priceAt(_pool.depositIndex(nextPoolDebt));
-        (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
 
+        BorrowerInfo memory borrowerInfo = _getBorrowerInfo(_actor);
         // repay debt if borrower becomes undercollateralized with new debt at new lup
-        if (!_isCollateralized(debt + boundedAmount_, collateral, newLup, _pool.poolType())) {
+        if (!_isCollateralized(
+            borrowerInfo.debt + boundedAmount_, borrowerInfo.collateral, newLup, _pool.poolType())
+        ) {
             _repayDebt(type(uint256).max);
 
-            (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
-            _pullCollateral(collateral);
+            borrowerInfo = _getBorrowerInfo(_actor);
+            _pullCollateral(borrowerInfo.collateral);
 
-            require(debt == 0, "borrower has debt");
+            require(
+                borrowerInfo.debt == 0,
+                "borrower has debt"
+            );
         }
     }
 
     function _preRepayDebt(
         uint256 amountToRepay_
     ) internal returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToRepay_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
+        boundedAmount_ = constrictToRange(
+            amountToRepay_, Maths.max(_pool.quoteTokenScale(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT
+        );
 
         // ensure actor has debt to repay
-        (uint256 debt, , ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
-        if (debt == 0) {
+        if (_getBorrowerInfo(_actor).debt == 0) {
             boundedAmount_ = _preDrawDebt(boundedAmount_);
             _drawDebt(boundedAmount_);
         }

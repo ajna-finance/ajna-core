@@ -25,10 +25,11 @@
 - **A5**: for each `Liquidation` recorded in liquidation mapping (`AuctionsState.liquidations`) the kicker address (`Liquidation.kicker`) has a locked balance (`Kicker.locked`) equal or greater than liquidation bond size (`Liquidation.bondSize`)  
 - **A7**: total bond escrowed accumulator (`AuctionsState.totalBondEscrowed`) should increase when auction is kicked with the difference needed to cover the bond and should decrease only when kicker bonds withdrawn (`Pool.withdrawBonds`). Claimable bonds should be available for withdrawal from pool at any time.  
 - **A8**: Upon a take/arbtake/deposittake the kicker reward <= borrower penalty
+- **A9**: reference prices in liquidation queue shall not decrease
 
 ## Loans
-- **L1**: for each `Loan` in loans array (`LoansState.loans`) starting from index 1, the corresponding address (`Loan.borrower`) is not `0x`, the threshold price (`Loan.thresholdPrice`) is different than 0 and the id mapped in indices mapping (`LoansState.indices`) equals index of loan in loans array.  
-- **L2**: `Loan` in loans array (`LoansState.loans`) at index 0 has the corresponding address (`Loan.borrower`) equal with `0x` address and the threshold price (`Loan.thresholdPrice`) equal with 0
+- **L1**: for each `Loan` in loans array (`LoansState.loans`) starting from index 1, the corresponding address (`Loan.borrower`) is not `0x`, the borrower t0 debt to collateral (`Loan.t0DebtToCollateral`) is different than 0 and the id mapped in indices mapping (`LoansState.indices`) equals index of loan in loans array.
+- **L2**: `Loan` in loans array (`LoansState.loans`) at index 0 has the corresponding address (`Loan.borrower`) equal with `0x` address and the borrower t0 debt to collateral (`Loan.t0DebtToCollateral`) equal with 0
 - **L3**: Loans array (`LoansState.loans`) is a max-heap with respect to t0-threshold price: the t0TP of loan at index `i` is >= the t0-threshold price of the loans at index `2*i` and `2*i+1`
 
 ## Buckets
@@ -63,32 +64,20 @@
 - **R7**: Exchange rates are unchanged under depositTakes
 - **R8**: Exchange rates are unchanged under arbTakes
 
-## Reserves (margin of 1e15 on comparisons)
+## Reserves (margin of 1e13 on comparisons)
 - **RE1**:  Reserves are unchanged by pledging collateral
 - **RE2**:  Reserves are unchanged by removing collateral
-- **RE3**:  Reserves increase only when depositing quote token into a bucket below LUP. Reserves increase only when moving quote tokens into a bucket below LUP.
+- **RE3**:  Reserves increase upon every deposit and when moving quote tokens into a lower-priced bucket.
 - **RE4**:  Reserves are unchanged by withdrawing deposit (quote token) from a bucket after the penalty period hes expired
 - **RE5**:  Reserves are unchanged by adding collateral token into a bucket
 - **RE6**:  Reserves are unchanged by removing collateral token from a bucket
 - **RE7**:  Reserves increase by bond penalty/reward plus borrower penalty on take above TP.
 - **RE8**:  Reserves increase by bond penalty/reward plus borrower penalty on bucket takes above TP.
-- **RE9**:  Reserves unchanges by takes and bucket takes below TP.
+- **RE9**:  Reserves unchanged by takes and bucket takes below TP (at the time of kick).
 - **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
 - **RE11**: Reserves decrease by claimableReserves by kickReserveAuction
 - **RE12**: Reserves decrease by amount of reserve used to settle a auction
 - **RE13**: Reserves are unchanged by kick
-
-## Rewards
-- **RW1**: Staking rewards must be less than reward cap percentage multiplied by ajna burned (`newRewards < REWARD_CAP * totalBurnedInPeriod`) for any given time period (`epoch`)
-- **RW2**: Updating (recording) rewards must be less than reward cap percentage multiplied by ajna burned (`newRewards < UPDATE_CAP * totalBurned`) for any given time period (`epoch`)
-- **RW3**: If a bucket has had it's exchange rate updated bucketExchangeRates mapping should be non-zero (`bucketExchangeRates[pool_][bucketIndex_][burnEpoch_] != 0`)
-- **RW4**: After staking, for each bucket in the staked position `lpsAtStakeTime` should equal the position's LP (`position.lps`) in the bucket and `rateAtStakeTime` should equal the bucket's exchange rate (`Buckets.getExchangeRate()`)
-- **RW5**: After staking, the Reward's manager contract should be the new owner of the position (`ERC721.ownerOf()`). Upon unstaking, The caller of unstake should be the new owner of the position (`ERC721.ownerOf()`)
-- **RW6**: After claiming rewards, `stakeInfo_.lastClaimedEpoch` should be equal to the epoch this position was staked in or the last epoch they claimed rewards for. After claiming or unstaking, `isEpochClaimed` should be equal to `true` for all epochs that the staker has claimed rewards for.
-- **RW7**: Each time the bucket rate is updated the `updateRewardsClaimed` accumulator should be updated. Each time a user claims rewards from staking the `rewardsClaimed` accumulator should be updated.
-- **RW8**: After unstaking or claiming rewards, if ajna has been burned over an epoch while the staker was staked they should have an increased amount in ajna balance `_ajna.balanceOf()` that matches the amount of ajna balance deducted from the contract `_ajna.balanceOf()`.
-- **RW9**: After unstaking, stakeInfo's tokenId mapping should be deleted and all corrosponding values should therefore be zero'd out (`StakeInfo.owner`,`StakeInfo.ajnaPool`, `StakeInfo.lastClaimedEpoch`)
-- **RW10**: a Staker can never claim rewards for the same epoch twice
 
 ## Position Manager
 - **PM1**: LP balance of PositionManager in a Pool for a Bucket should be the sum of the positions[...][index].lps for all tokens/users

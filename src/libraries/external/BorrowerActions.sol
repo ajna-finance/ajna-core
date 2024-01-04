@@ -46,7 +46,6 @@ library BorrowerActions {
     struct DrawDebtLocalVars {
         bool    borrow;                // true if borrow action
         uint256 borrowerDebt;          // [WAD] borrower's accrued debt
-        uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LP (NFTs only)
         uint256 t0BorrowAmount;        // [WAD] t0 amount to borrow
         uint256 t0DebtChange;          // [WAD] additional t0 debt resulted from draw debt action
         bool    pledge;                // true if pledge action
@@ -56,7 +55,6 @@ library BorrowerActions {
     /// @dev Struct used for `repayDebt` function local vars.
     struct RepayDebtLocalVars {
         uint256 borrowerDebt;          // [WAD] borrower's accrued debt
-        uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LP (NFTs only)
         bool    pull;                  // true if pull action
         bool    repay;                 // true if repay action
         bool    stampNpTpRatio;        // true if loan's Np to Tp ratio should be restamped (when repay settles auction or pull collateral)
@@ -120,7 +118,7 @@ library BorrowerActions {
         if (amountToBorrow_ > maxAvailable_) revert InsufficientLiquidity();
 
         // revert if borrower is in auction
-        if(_inAuction(auctions_, borrowerAddress_)) revert AuctionActive();
+        if (_inAuction(auctions_, borrowerAddress_)) revert AuctionActive();
 
         DrawDebtLocalVars memory vars;
         vars.pledge = collateralToPledge_ != 0;
@@ -238,7 +236,7 @@ library BorrowerActions {
         // revert if no amount to pull or repay
         if (!vars.repay && !vars.pull) revert InvalidAmount();
 
-        if(_inAuction(auctions_, borrowerAddress_)) revert AuctionActive();
+        if (_inAuction(auctions_, borrowerAddress_)) revert AuctionActive();
 
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
@@ -291,17 +289,17 @@ library BorrowerActions {
             // calculate LUP only if it wasn't calculated in repay action
             if (!vars.repay) result_.newLup = Deposits.getLup(deposits_, result_.poolDebt);
 
-            uint256 encumberedCollateral = Maths.wdiv(vars.borrowerDebt, result_.newLup);
-            if (
-                borrower.t0Debt != 0 && encumberedCollateral == 0 || // case when small amount of debt at a high LUP results in encumbered collateral calculated as 0
-                borrower.collateral < encumberedCollateral ||
-                borrower.collateral - encumberedCollateral < collateralAmountToPull_
-            ) revert InsufficientCollateral();
+            // prevent underflow
+            if (collateralAmountToPull_ > borrower.collateral) 
+                revert InsufficientCollateral();
+
+            // check collateralization
+            borrower.collateral -= collateralAmountToPull_;
+            if (!_isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)) 
+                revert InsufficientCollateral();
 
             // stamp borrower Np to Tp ratio when pull collateral action
             vars.stampNpTpRatio = true;
-
-            borrower.collateral -= collateralAmountToPull_;
 
             result_.poolCollateral -= collateralAmountToPull_;
         }

@@ -11,62 +11,65 @@ contract PoolHelperTest is DSTestPlus {
      *  @notice Tests fenwick index calculation from varying bucket prices
      */
     function testPriceToIndex() external {
-        _assertBucketPriceOutOfBoundsRevert(2_000_000_000 * 10**18);
-        _assertBucketPriceOutOfBoundsRevert(1_004_968_987.606512354182109772 * 10**18);
-        assertEq(_indexOf(1_004_968_987.606512354182109771 * 10**18), 0);
-        assertEq(_indexOf(4_669_863.090889329544038534 * 1e18),       1077);
-        assertEq(_indexOf(49_910.043670274810022205 * 1e18),          1987);
-        assertEq(_indexOf(21_699.795273870723549803 * 1e18),          2154);
-        assertEq(_indexOf(2_000.221618840727700609 * 1e18),           2632);
-        assertEq(_indexOf(146.575625611106531706 * 1e18),             3156);
-        assertEq(_indexOf(145.846393642892072537 * 1e18),             3157);
-        assertEq(_indexOf(100.332368143282009890 * 1e18),             3232);
-        assertEq(_indexOf(5.263790124045347667 * 1e18),               3823);
-        assertEq(_indexOf(1.646668492116543299 * 1e18),               4056);
-        assertEq(_indexOf(1.315628874808846999 * 1e18),               4101);
-        assertEq(_indexOf(1.051140132040790557 * 1e18),               4146);
-        assertEq(_indexOf(1 * 1e18),                                  4156);
-        assertEq(_indexOf(0.951347940696068854 * 1e18),               4166);
-        assertEq(_indexOf(0.463902261297398000 * 1e18),               4310);
-        assertEq(_indexOf(0.006856528811048429 * 1e18),               5155);
-        assertEq(_indexOf(0.006822416727411372 * 1e18),               5156);
-        assertEq(_indexOf(0.002144924036174487 * 1e18),               5388);
-        assertEq(_indexOf(0.000046545370002462 * 1e18),               6156);
-        assertEq(_indexOf(0.000009917388865689 * 1e18),               6466);
-        assertEq(_indexOf(99_836_282_890),                            7388);
-        _assertBucketPriceOutOfBoundsRevert(99_836_282_889);
-        _assertBucketPriceOutOfBoundsRevert(1);
-        _assertBucketPriceOutOfBoundsRevert(0);
+        assertEq(_indexOf(4_669_863.090889329544038534 * 1e18), 1077);
+        assertEq(_indexOf(49_910.043670274810022205 * 1e18),    1987);
+        assertEq(_indexOf(21_699.795273870723549803 * 1e18),    2154);
+        assertEq(_indexOf(2_000.221618840727700609 * 1e18),     2632);
+        assertEq(_indexOf(146.575625611106531706 * 1e18),       3156);
+        assertEq(_indexOf(145.846393642892072537 * 1e18),       3157);
+        assertEq(_indexOf(100.332368143282009890 * 1e18),       3232);
+        assertEq(_indexOf(5.263790124045347667 * 1e18),         3823);
+        assertEq(_indexOf(1.646668492116543299 * 1e18),         4056);
+        assertEq(_indexOf(1.315628874808846999 * 1e18),         4101);
+        assertEq(_indexOf(1.051140132040790557 * 1e18),         4146);
+        assertEq(_indexOf(1 * 1e18),                            4156);
+        assertEq(_indexOf(0.951347940696068854 * 1e18),         4166);
+        assertEq(_indexOf(0.463902261297398000 * 1e18),         4310);
+        assertEq(_indexOf(0.006856528811048429 * 1e18),         5155);
+        assertEq(_indexOf(0.006822416727411372 * 1e18),         5156);
+        assertEq(_indexOf(0.002144924036174487 * 1e18),         5388);
+        assertEq(_indexOf(0.000046545370002462 * 1e18),         6156);
+        assertEq(_indexOf(0.000009917388865689 * 1e18),         6466);
+        assertEq(_indexOf(99_836_282_890),                      7388);
+    }
+
+    function testPriceToIndexRevertOnPriceGtMaxPrice() external {
+        _assertBucketPriceOutOfBoundsRevert(MAX_PRICE + 1);
+    }
+
+    function testPriceToIndexRevertOnPriceLtMinPrice() external {
+        _assertBucketPriceOutOfBoundsRevert(MIN_PRICE - 1);
     }
 
     /**
      *  @notice Tests bucket price calculation from varying fenwick index
      */
     function testIndexToPrice() external {
-        assertEq(                  _priceAt(0),    1_004_968_987.606512354182109771 * 10**18);
-        assertEq(                  _priceAt(1077), 4_669_863.090889329544038534 * 1e18);
-        assertEq(                  _priceAt(1987), 49_910.043670274810022205 * 1e18);
-        assertEq(                  _priceAt(2154), 21_699.795273870723549803 * 1e18);
-        assertEq(                  _priceAt(2632), 2_000.221618840727700609 * 1e18);
-        assertEq(                  _priceAt(3156), 146.575625611106531706 * 1e18);
-        assertEq(                  _priceAt(3157), 145.846393642892072537 * 1e18);
-        assertEq(                  _priceAt(3232), 100.332368143282009890 * 1e18);
-        assertEq(                  _priceAt(3823), 5.263790124045347667 * 1e18);
-        assertEq(                  _priceAt(4056), 1.646668492116543299 * 1e18);
-        assertEq(                  _priceAt(4101), 1.315628874808846999 * 1e18);
-        assertEq(                  _priceAt(4146), 1.051140132040790557 * 1e18);
-        assertEq(                  _priceAt(4156), 1 * 1e18);
-        assertEq(                  _priceAt(4166), 0.951347940696068854 * 1e18);
-        assertEq(                  _priceAt(4310), 0.463902261297391185 * 1e18);
-        assertEq(                  _priceAt(5155), 0.006856528811048429 * 1e18);
-        assertEq(                  _priceAt(5156), 0.006822416727411372 * 1e18);
-        assertEq(                  _priceAt(5388), 0.002144924036174487 * 1e18);
-        assertEq(                  _priceAt(6156), 0.000046545370002462 * 1e18);
-        assertEq(                  _priceAt(6466), 0.000009917388865689 * 1e18);
-        assertEq(                  _priceAt(7388), 99_836_282_890);
-        _assertBucketIndexOutOfBoundsRevert(7389);
-        _assertBucketIndexOutOfBoundsRevert(8191);
-        _assertBucketIndexOutOfBoundsRevert(9999);
+        assertEq(_priceAt(0),    1_004_968_987.606512354182109771 * 10**18);
+        assertEq(_priceAt(1077), 4_669_863.090889329544038534 * 1e18);
+        assertEq(_priceAt(1987), 49_910.043670274810022205 * 1e18);
+        assertEq(_priceAt(2154), 21_699.795273870723549803 * 1e18);
+        assertEq(_priceAt(2632), 2_000.221618840727700609 * 1e18);
+        assertEq(_priceAt(3156), 146.575625611106531706 * 1e18);
+        assertEq(_priceAt(3157), 145.846393642892072537 * 1e18);
+        assertEq(_priceAt(3232), 100.332368143282009890 * 1e18);
+        assertEq(_priceAt(3823), 5.263790124045347667 * 1e18);
+        assertEq(_priceAt(4056), 1.646668492116543299 * 1e18);
+        assertEq(_priceAt(4101), 1.315628874808846999 * 1e18);
+        assertEq(_priceAt(4146), 1.051140132040790557 * 1e18);
+        assertEq(_priceAt(4156), 1 * 1e18);
+        assertEq(_priceAt(4166), 0.951347940696068854 * 1e18);
+        assertEq(_priceAt(4310), 0.463902261297391185 * 1e18);
+        assertEq(_priceAt(5155), 0.006856528811048429 * 1e18);
+        assertEq(_priceAt(5156), 0.006822416727411372 * 1e18);
+        assertEq(_priceAt(5388), 0.002144924036174487 * 1e18);
+        assertEq(_priceAt(6156), 0.000046545370002462 * 1e18);
+        assertEq(_priceAt(6466), 0.000009917388865689 * 1e18);
+        assertEq(_priceAt(7388), 99_836_282_890);
+    }
+
+    function testIndexToPriceRevertOnIndexGtMaxIndex() external {
+        _assertBucketIndexOutOfBoundsRevert(MAX_FENWICK_INDEX + 1);
     }
 
     /**
@@ -76,7 +79,7 @@ contract PoolHelperTest is DSTestPlus {
         uint256 debt  = 11_000.143012091382543917 * 1e18;
         uint256 price = 1_001.6501589292607751220 * 1e18;
 
-        assertEq(_encumberance(debt, price),   10.98202093218880245 * 1e18);
+        assertEq(_encumberance(debt, price),   11.421301769476354548 * 1e18);
         assertEq(_encumberance(0, price),      0);
         assertEq(_encumberance(debt, 0),       0);
         assertEq(_encumberance(0, 0),          0);
@@ -86,15 +89,78 @@ contract PoolHelperTest is DSTestPlus {
      *  @notice Tests loan/pool collateralization for varying values of debt, collateral and lup
      */
     function testCollateralization() external {
-        uint256 debt  = 11_000.143012091382543917 * 1e18;
-        uint256 price = 1_001.6501589292607751220 * 1e18;
-        uint256 collateral = 10.98202093218880245 * 1e18;
+        uint8   erc20      = uint8(PoolType.ERC20);
+        uint8   erc721     = uint8(PoolType.ERC721);
 
-        assertEq(_collateralization(debt, collateral, price),   1 * 1e18);
-        assertEq(_collateralization(0, collateral, price),      Maths.WAD);
-        assertEq(_collateralization(debt, collateral, 0),       Maths.WAD);
-        assertEq(_collateralization(0, collateral, 0),          Maths.WAD);
-        assertEq(_collateralization(debt, 0, price),            0);
+        uint256 debt       = 11_000.143012091382543917 * 1e18;
+        uint256 price      = 1_001.6501589292607751220 * 1e18;
+        uint256 collateral = Maths.wmul(10.98202093218880245 * 1e18, 1.04 * 1e18);
+
+        assertEq(_collateralization(debt, collateral, price),        1 * 1e18);
+        // due to rounding error, _collateralization and _isCollateralized do not agree at 100% CR
+        assertEq(_isCollateralized(debt, collateral + 1, price, erc20),  true);
+        assertEq(_isCollateralized(debt, 12 * 1e18, price, erc721), true);
+
+        assertEq(_collateralization(0, collateral, price),        Maths.WAD);
+        assertEq(_isCollateralized(0, collateral, price, erc20),  true);
+        assertEq(_isCollateralized(0, collateral, price, erc721), true);
+
+        // if collateral is not worth anything, no amount of debt can be collateralized
+        assertEq(_collateralization(debt, collateral, 0),        0);
+        assertEq(_isCollateralized(debt, collateral, 0, erc20),  false);
+        assertEq(_isCollateralized(debt, collateral, 0, erc721), false);
+
+        assertEq(_collateralization(0, collateral, 0),        Maths.WAD);
+        assertEq(_isCollateralized(0, collateral, 0, erc20),  true);
+        assertEq(_isCollateralized(0, collateral, 0, erc721), true);
+
+        assertEq(_collateralization(debt, 0, price),        0);
+        assertEq(_isCollateralized(debt, 0, price, erc20),  false);
+        assertEq(_isCollateralized(debt, 0, price, erc721), false);
+
+        // borrower with no debt or collateral is not undercollateralized
+        assertEq(_collateralization(0, 0, price),        Maths.WAD);
+        assertEq(_isCollateralized(0, 0, price, erc20),  true);
+        assertEq(_isCollateralized(0, 0, price, erc721), true);
+
+        // undercollateralized with single unit of collateral at high price
+        debt       = 5_000_000_000 * 1e18;
+        price      = _priceAt(1); // 999969141.897027226245329498
+        collateral = 1 * 1e18;
+        assertEq(_collateralization(debt, collateral, price), 0.192301758057120620 * 1e18);
+        assertEq(_isCollateralized(debt, collateral, price, erc20),  false);
+        assertEq(_isCollateralized(debt, collateral, price, erc721), false);
+
+        // undercollateralized with tiny amount of high-priced collateral
+        debt       = 33_000_000_000 * 1e18;
+        collateral = 6;
+        assertEq(_collateralization(debt, collateral, price), 0 * 1e18);
+        assertEq(_isCollateralized(debt, collateral, price, erc20),  false);
+        assertEq(_isCollateralized(debt, collateral, price, erc721), false);
+
+        // 130% CR at high price
+        debt       = 900 * 1e18;
+        collateral = 0.000001170036105095 * 1e18;
+        assertEq(_collateralization(debt, collateral, price), 1.250000000000413585 * 1e18);
+        assertEq(_isCollateralized(debt, collateral, price, erc20), true);
+        assertEq(_isCollateralized(debt, 1e18, price, erc721),      true);
+
+        // undercollateralized at low price
+        price = _priceAt(7388); // 0.000000099836282890
+        assertEq(_collateralization(debt, collateral, price), 0);
+        assertEq(_isCollateralized(debt, collateral, price, erc20),  false);
+        assertEq(_isCollateralized(debt, collateral, price, erc721), false);
+
+        // 0% CR at MIN_PRICE
+        collateral = 11_719_186_313.147400474096316788 * 1e18;
+        assertEq(_collateralization(debt, collateral, price), 0);
+        assertEq(_isCollateralized(debt, collateral, price, erc20),  false);
+        assertEq(_isCollateralized(debt, collateral, price, erc721), false);
+
+        // borrower with no debt or collateral is still not undercollateralized at MIN_PRICE
+        assertEq(_collateralization(0, 0, price),        Maths.WAD);
+        assertEq(_isCollateralized(0, 0, price, erc20),  true);
+        assertEq(_isCollateralized(0, 0, price, erc721), true);
     }
 
     /**
@@ -126,11 +192,9 @@ contract PoolHelperTest is DSTestPlus {
      */
     function testDepositFeeRate() external {
         uint256 interestRate = 0.07 * 1e18;
-        assertEq(_depositFeeRate(interestRate), 0.000191780821917808 * 1e18);
-        assertEq(_depositFeeRate(0.2 * 1e18),   0.000547945205479452 * 1e18);
-
-        // fee rate should be capped at 10%
-        assertEq(_depositFeeRate(1_000 * 1e18), 0.1 * 1e18);
+        assertEq(_depositFeeRate(interestRate), 0.000063926940639269 * 1e18);
+        assertEq(_depositFeeRate(0.2 * 1e18),   0.000182648401826484 * 1e18);
+        assertEq(_depositFeeRate(4 * 1e18),     0.003652968036529680 * 1e18);
     }
 
     /**
