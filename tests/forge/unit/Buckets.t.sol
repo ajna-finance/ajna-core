@@ -4,11 +4,7 @@ pragma solidity 0.8.18;
 import '../utils/DSTestPlus.sol';
 import '../utils/BucketInstance.sol';
 
-import { Buckets } from 'src/libraries/internal/Buckets.sol';
-
-import 'src/libraries/internal/Maths.sol';
-
-contract FenwickTreeTest is DSTestPlus {
+contract BucketsTest is DSTestPlus {
 
     BucketInstance internal _bucket;
 
@@ -16,6 +12,7 @@ contract FenwickTreeTest is DSTestPlus {
     address internal _lender2;
 
     function setUp() public {
+        _startTest();
 
         _lender  = makeAddr("lender");
         _lender2 = makeAddr("lender");
