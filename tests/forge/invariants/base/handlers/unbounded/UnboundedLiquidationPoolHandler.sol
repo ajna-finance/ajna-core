@@ -441,6 +441,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
                     maxDepth_ -= 1;
                 }
+                reservesErrorMargin = Math.max(reservesErrorMargin, (reservesAfterAction + reservesBeforeAction) / 1e16);
             }
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
             if (
