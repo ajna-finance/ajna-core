@@ -301,7 +301,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // Reserves can increase by up to 2e-18 (1/5e17) due to rounding error in inflator value multiplied with t0Debt
             (uint256 inflator, ) = _pool.inflatorInfo();
             reservesErrorMargin = Math.max(reservesErrorMargin, inflator/5e17);
-            reservesErrorMargin = Math.max(reservesErrorMargin, (inflator * _priceAt(bucketIndex_)) / 5e35);
+            reservesErrorMargin = Math.max(reservesErrorMargin, (increaseInReserves + decreaseInReserves) / 1e16);
 
             // In case of bucket take, collateral is taken at bucket price.
             uint256 takePrice = _priceAt(bucketIndex_);
