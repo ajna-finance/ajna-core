@@ -513,8 +513,9 @@ abstract contract BaseHandler is Test {
         }
 
         // reset the reserves before each action 
-        increaseInReserves = 0;
-        decreaseInReserves = 0;
+        increaseInReserves  = 0;
+        decreaseInReserves  = 0;
+        reservesErrorMargin = 0;
         // record reserves before each action
         previousReserves = _getReservesInfo().reserves;
 
