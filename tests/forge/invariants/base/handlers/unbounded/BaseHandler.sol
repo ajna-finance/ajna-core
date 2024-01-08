@@ -113,7 +113,7 @@ abstract contract BaseHandler is Test {
     address internal _actor;
     uint256 internal _lenderBucketIndex;
     uint256 internal _limitIndex;
-    uint256 internal maxPoolDebt = uint256(vm.envOr("MAX_POOL_DEBT", uint256(1e55)));
+    uint256 internal maxPoolDebt = uint256(vm.envOr("MAX_POOL_DEBT", uint256(1e32)));
 
     // deposits invariant test state
     uint256[7389]                                   internal fenwickDeposits;
@@ -217,6 +217,29 @@ abstract contract BaseHandler is Test {
             time_ = constrictToRange(time_, 0, vm.envOr("SKIP_TIME", uint256(24 hours)));
             vm.warp(block.timestamp + time_);
         } else {
+            // settle kicked loans if pool debt exceeds configured max debt
+            // max loans settlement that can be done to prevent running out of gas
+            uint256 maxLoansSettlement = 5;
+
+            while(maxPoolDebt < poolDebt && maxLoansSettlement > 0) {
+                address kickedBorrower = _getAuctionInfo(address(0)).head;
+
+                if (kickedBorrower != address(0)) {
+                    uint256 kickTime = _getAuctionInfo(kickedBorrower).kickTime;
+
+                    if (kickTime < block.timestamp - 73 hours) {
+                        try _pool.settle(kickedBorrower, buckets.length()) {
+                        } catch (bytes memory err) {
+                            _ensurePoolError(err);
+                        }
+                    }
+                }
+
+                (poolDebt, , ,) = _pool.debtInfo();
+
+                --maxLoansSettlement;
+            }
+
             // repay from loans if pool debt exceeds configured max debt
             // max repayments that can be done to prevent running out of gas
             uint256 maxLoansRepayments = 5;
