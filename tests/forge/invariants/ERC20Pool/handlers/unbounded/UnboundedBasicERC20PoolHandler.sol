@@ -148,7 +148,7 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
 
         uint256 bucket = depositIndex - 1;
         uint256 price = _poolInfo.indexToPrice(bucket);
-        uint256 collateralToPledge = ((COLLATERALIZATION_FACTOR * amount_ + price / 2) / price) * 101 / 100 + 1;
+        uint256 collateralToPledge = ((COLLATERALIZATION_FACTOR * amount_ + price / 2) / price) * 110 / 100 + _erc20Pool.collateralScale();
 
         // ensure actor always has amount of collateral to pledge
         _ensureCollateralAmount(_actor, collateralToPledge);
