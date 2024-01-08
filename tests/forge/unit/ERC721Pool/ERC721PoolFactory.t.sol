@@ -34,7 +34,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
         // deploy NFT collection pool
         vm.expectEmit(true, true, false, true);
-        emit PoolCreated(0x8a2be84c82956B6DdA0c4D647Ae9357d845a086B, _factory.getNFTSubsetHash(tokenIds));
+        emit PoolCreated(0xCF7E26A9FE732063F431b91478E27092AD911162, _factory.getNFTSubsetHash(tokenIds));
         _NFTCollectionPoolAddress = _factory.deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
         _NFTCollectionPool        = ERC721Pool(_NFTCollectionPoolAddress);
 
@@ -46,7 +46,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         _tokenIdsSubsetOne[3] = 61;
 
         vm.expectEmit(true, true, false, true);
-        emit PoolCreated(0x18D11C8Cf8dc292E647F0b324d10637a3A63F678, _factory.getNFTSubsetHash(_tokenIdsSubsetOne));
+        emit PoolCreated(0x4693faE904804C89B14b1C13d2a53f10D2c4e5E3, _factory.getNFTSubsetHash(_tokenIdsSubsetOne));
         _NFTSubsetOnePoolAddress = _factory.deployPool(address(_collateral), address(_quote), _tokenIdsSubsetOne, 0.05 * 10**18);
         _NFTSubsetOnePool        = ERC721Pool(_NFTSubsetOnePoolAddress);
 
@@ -61,7 +61,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         _tokenIdsSubsetTwo[6] = 180;
 
         vm.expectEmit(true, true, false, true);
-        emit PoolCreated(0xf80F47F84F20d8aF58cC8e93634348491357323c, _factory.getNFTSubsetHash(_tokenIdsSubsetTwo));
+        emit PoolCreated(0x0782c1757679ea21E7eFc4af5C7374dFD2388b58, _factory.getNFTSubsetHash(_tokenIdsSubsetTwo));
         _NFTSubsetTwoPoolAddress = _factory.deployPool(address(_collateral), address(_quote), _tokenIdsSubsetTwo, 0.05 * 10**18);
         _NFTSubsetTwoPool        = ERC721Pool(_NFTSubsetTwoPoolAddress);
 
@@ -311,7 +311,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         tokenIdsTestSubset[2] = 3;
 
         vm.expectEmit(true, true, false, true);
-        emit PoolCreated(0xA8FBA534d7ebefEBB270cDC4814A1A25916A94d3, _factory.getNFTSubsetHash(tokenIdsTestSubset));
+        emit PoolCreated(0x993df58454B37994dA5C81F98c33e3857a42dFc2, _factory.getNFTSubsetHash(tokenIdsTestSubset));
         address poolAddress = _factory.deployPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.05 * 10**18);
 
         // check tracking of deployed pools
