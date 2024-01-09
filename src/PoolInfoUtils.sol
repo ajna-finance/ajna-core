@@ -83,7 +83,7 @@ contract PoolInfoUtils is Multicall {
             kickTime_,
             referencePrice_,
             neutralPrice_,
-            debtToCollateral_, , , ) = IPool(ajnaPool_).auctionInfo(borrower_);
+            debtToCollateral_, , , , ) = IPool(ajnaPool_).auctionInfo(borrower_);
 
         if (kickTime_ != 0) {
             (debtToCover_, collateral_, , ) = this.borrowerInfo(ajnaPool_, borrower_);
@@ -99,18 +99,19 @@ contract PoolInfoUtils is Multicall {
     /**
      *  @notice Returns details of an auction for a given borrower address.
      *  @dev    Calls and returns all values from pool.auctionInfo().
-     *  @param  ajnaPool_         Address of `Ajna` pool.
-     *  @param  borrower_         Address of the borrower that is liquidated.
-     *  @return kicker_           Address of the kicker that is kicking the auction.
-     *  @return bondFactor_       The factor used for calculating bond size.
-     *  @return bondSize_         The bond amount in quote token terms.
-     *  @return kickTime_         Time the liquidation was initiated.
-     *  @return referencePrice_   Price used to determine auction start price.
-     *  @return neutralPrice_     `Neutral Price` of auction.
-     *  @return debtToCollateral_ Borrower debt to collateral at time of kick, which is used in BPF for kicker's reward calculation.
-     *  @return head_             Address of the head auction.
-     *  @return next_             Address of the next auction in queue.
-     *  @return prev_             Address of the prev auction in queue.
+     *  @param  ajnaPool_              Address of `Ajna` pool.
+     *  @param  borrower_              Address of the borrower that is liquidated.
+     *  @return kicker_                Address of the kicker that is kicking the auction.
+     *  @return bondFactor_            The factor used for calculating bond size.
+     *  @return bondSize_              The bond amount in quote token terms.
+     *  @return kickTime_              Time the liquidation was initiated.
+     *  @return referencePrice_        Price used to determine auction start price.
+     *  @return neutralPrice_          `Neutral Price` of auction.
+     *  @return debtToCollateral_      Borrower debt to collateral at time of kick, which is used in BPF for kicker's reward calculation.
+     *  @return t0ReserveSettleAmount_ Amount of t0Debt that could be settled via reserves in this auction
+     *  @return head_                  Address of the head auction.
+     *  @return next_                  Address of the next auction in queue.
+     *  @return prev_                  Address of the prev auction in queue.
      */
     function auctionInfo(address ajnaPool_, address borrower_) external view returns (
         address kicker_,
@@ -120,6 +121,7 @@ contract PoolInfoUtils is Multicall {
         uint256 referencePrice_,
         uint256 neutralPrice_,
         uint256 debtToCollateral_,
+        uint256 t0ReserveSettleAmount_,
         address head_,
         address next_,
         address prev_

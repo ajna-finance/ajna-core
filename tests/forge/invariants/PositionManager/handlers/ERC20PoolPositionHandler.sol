@@ -117,7 +117,7 @@ contract ERC20PoolPositionHandler is PositionPoolHandler, BaseERC20PoolHandler, 
     ) external useTimestamps useRandomActor(takerIndex_) skipTime(skippedTime_) writeLogs {
         address borrower = _borrowers[constrictToRange(borrowerIndex_, 0, _borrowers.length - 1)];
 
-        (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
+        (, , , uint256 kickTime, , , , , , , ) = _pool.auctionInfo(borrower);
 
         // Kick borrower if not already kicked
         if (kickTime == 0) {

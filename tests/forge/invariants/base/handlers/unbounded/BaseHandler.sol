@@ -50,12 +50,11 @@ abstract contract BaseHandler is Test {
 
     struct AuctionInfo {
         address kicker;
-        uint256 bondFactor;
-        uint256 bondSize;
         uint256 kickTime;
         uint256 referencePrice;
         uint256 neutralPrice;
         uint256 debtToCollateral;
+        uint256 t0ReserveSettleAmount;
         uint256 auctionPrice;
         uint256 auctionPriceIndex;
         address head;
@@ -331,12 +330,13 @@ abstract contract BaseHandler is Test {
     function _getAuctionInfo(address borrower_) internal view returns (AuctionInfo memory auctionInfo_) {
         (
             auctionInfo_.kicker,
-            auctionInfo_.bondFactor,
-            auctionInfo_.bondSize,
+            ,
+            ,
             auctionInfo_.kickTime,
             auctionInfo_.referencePrice,
             auctionInfo_.neutralPrice,
             auctionInfo_.debtToCollateral,
+            auctionInfo_.t0ReserveSettleAmount,
             auctionInfo_.head,
             ,
         ) = _pool.auctionInfo(borrower_);
@@ -662,7 +662,7 @@ abstract contract BaseHandler is Test {
         ) = _poolInfo.poolLoansInfo(address(_pool));
 
         (
-            , , , , , , ,
+            , , , , , , , ,
             address headAuction, ,
         ) = _pool.auctionInfo(address(0));
 
@@ -778,11 +778,11 @@ abstract contract BaseHandler is Test {
         uint256 bondFactor;
         uint256 bondSize;
         uint256 neutralPrice;
-        (,,,,,,, nextBorrower,,) = _pool.auctionInfo(address(0));
+        (,,,,,,,, nextBorrower,,) = _pool.auctionInfo(address(0));
         while (nextBorrower != address(0)) {
             data = string(abi.encodePacked("Borrower ", Strings.toHexString(uint160(nextBorrower), 20), " Auction Details :"));
             printInNextLine(data);
-            (, bondFactor, bondSize, kickTime, referencePrice, neutralPrice,,, nextBorrower,) = _pool.auctionInfo(nextBorrower);
+            (, bondFactor, bondSize, kickTime, referencePrice, neutralPrice,,,, nextBorrower,) = _pool.auctionInfo(nextBorrower);
 
             printLog("Bond Factor     = ", bondFactor);
             printLog("Bond Size       = ", bondSize);
