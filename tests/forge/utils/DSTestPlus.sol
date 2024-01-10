@@ -84,6 +84,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 debtInAuction;
         uint256 debtToCollateral;
         uint256 neutralPrice;
+        uint256 t0ReserveSettleAmount;
     }
 
     mapping(address => EnumerableSet.UintSet) lendersDepositedIndex;
@@ -450,6 +451,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 auctionTotalBondEscrowed;
         uint256 auctionDebtInAuction;
         uint256 borrowerDebtToCollateral;
+        uint256 borrowerT0ReserveSettleAmount;
     }
 
     function _assertAuction(AuctionParams memory state_) internal {
@@ -462,7 +464,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             vars.auctionReferencePrice,
             vars.auctionNeutralPrice,
             vars.borrowerDebtToCollateral,
-            ,
+            vars.borrowerT0ReserveSettleAmount,
             ,
             ,
         ) = _pool.auctionInfo(state_.borrower);
@@ -472,20 +474,21 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         (vars.auctionTotalBondEscrowed,,,,) = _pool.reservesInfo();
         (,, vars.auctionDebtInAuction,)  = _pool.debtInfo();
 
-        assertEq(vars.auctionKickTime != 0,     state_.active);
-        assertEq(vars.auctionKicker,            state_.kicker);
-        assertGe(lockedBonds,                   vars.auctionBondSize);
-        assertEq(vars.auctionBondSize,          state_.bondSize);
-        assertEq(vars.auctionBondFactor,        state_.bondFactor);
-        assertEq(vars.auctionKickTime,          state_.kickTime);
-        assertEq(vars.auctionReferencePrice,    state_.referencePrice);
-        assertEq(vars.auctionTotalBondEscrowed, state_.totalBondEscrowed);
+        assertEq(vars.auctionKickTime != 0,          state_.active);
+        assertEq(vars.auctionKicker,                 state_.kicker);
+        assertGe(lockedBonds,                        vars.auctionBondSize);
+        assertEq(vars.auctionBondSize,               state_.bondSize);
+        assertEq(vars.auctionBondFactor,             state_.bondFactor);
+        assertEq(vars.auctionKickTime,               state_.kickTime);
+        assertEq(vars.auctionReferencePrice,         state_.referencePrice);
+        assertEq(vars.auctionTotalBondEscrowed,      state_.totalBondEscrowed);
         assertEq(_auctionPrice(
             vars.auctionReferencePrice,
-            vars.auctionKickTime),              state_.auctionPrice);
-        assertEq(vars.auctionDebtInAuction,     state_.debtInAuction);
-        assertEq(vars.auctionNeutralPrice,      state_.neutralPrice);
-        assertEq(vars.borrowerDebtToCollateral,   state_.debtToCollateral);
+            vars.auctionKickTime),                   state_.auctionPrice);
+        assertEq(vars.auctionDebtInAuction,          state_.debtInAuction);
+        assertEq(vars.auctionNeutralPrice,           state_.neutralPrice);
+        assertEq(vars.borrowerDebtToCollateral,      state_.debtToCollateral);
+        assertEq(vars.borrowerT0ReserveSettleAmount, state_.t0ReserveSettleAmount);
 
         (
             uint256 kickTime,

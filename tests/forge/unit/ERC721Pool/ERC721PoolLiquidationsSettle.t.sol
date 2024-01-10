@@ -182,18 +182,19 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         // settle borrower 2, whose neutral price has been carried from borrower 1
         _assertAuction(
             AuctionParams({
-                borrower:          _borrower2,
-                active:            true,
-                kicker:            _lender,
-                bondSize:          55.955451071569254199 * 1e18,
-                bondFactor:        0.011180339887498948 * 1e18,
-                kickTime:          _startTime,
-                referencePrice:    2_893.468345572160133444 * 1e18,
-                totalBondEscrowed: 111.910902143138508398 * 1e18,
-                auctionPrice:      0,
-                debtInAuction:     10_009.615384615384620000 * 1e18,
-                debtToCollateral:  1_668.269230769230770000 * 1e18,
-                neutralPrice:      1_928.978897048106755629 * 1e18
+                borrower:              _borrower2,
+                active:                true,
+                kicker:                _lender,
+                bondSize:              55.955451071569254199 * 1e18,
+                bondFactor:            0.011180339887498948 * 1e18,
+                kickTime:              _startTime,
+                referencePrice:        2_893.468345572160133444 * 1e18,
+                totalBondEscrowed:     111.910902143138508398 * 1e18,
+                auctionPrice:          0,
+                debtInAuction:         10_009.615384615384620000 * 1e18,
+                debtToCollateral:      1_668.269230769230770000 * 1e18,
+                neutralPrice:          1_928.978897048106755629 * 1e18,
+                t0ReserveSettleAmount: 2.406157544378699381 * 1e18
             })
         );
 
@@ -214,18 +215,19 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
 
         _assertAuction(
             AuctionParams({
-                borrower:          _borrower2,
-                active:            false,
-                kicker:            address(0),
-                bondSize:          0,
-                bondFactor:        0,
-                kickTime:          0,
-                referencePrice:    0,
-                totalBondEscrowed: 111.910902143138508398 * 1e18,
-                auctionPrice:      0,
-                debtInAuction:     5_007.093514461301878824 * 1e18,
-                debtToCollateral:  0,
-                neutralPrice:      0
+                borrower:              _borrower2,
+                active:                false,
+                kicker:                address(0),
+                bondSize:              0,
+                bondFactor:            0,
+                kickTime:              0,
+                referencePrice:        0,
+                totalBondEscrowed:     111.910902143138508398 * 1e18,
+                auctionPrice:          0,
+                debtInAuction:         5_007.093514461301878824 * 1e18,
+                debtToCollateral:      0,
+                neutralPrice:          0,
+                t0ReserveSettleAmount: 0
             })
         );
 
@@ -264,18 +266,19 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         );
         _assertAuction(
             AuctionParams({
-                borrower:          _borrower,
-                active:            false,
-                kicker:            address(0),
-                bondSize:          0,
-                bondFactor:        0,
-                kickTime:          0,
-                referencePrice:    0,
-                totalBondEscrowed: 111.910902143138508398 * 1e18,
-                auctionPrice:      0,
-                debtInAuction:     0,
-                debtToCollateral:  0,
-                neutralPrice:      0
+                borrower:              _borrower,
+                active:                false,
+                kicker:                address(0),
+                bondSize:              0,
+                bondFactor:            0,
+                kickTime:              0,
+                referencePrice:        0,
+                totalBondEscrowed:     111.910902143138508398 * 1e18,
+                auctionPrice:          0,
+                debtInAuction:         0,
+                debtToCollateral:      0,
+                neutralPrice:          0,
+                t0ReserveSettleAmount: 0
             })
         );
         _assertBorrower({

@@ -612,18 +612,19 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         // auction 2 still ongoing
         _assertAuction(
             AuctionParams({
-                borrower:          _borrower,
-                active:            false,
-                kicker:            address(0),
-                bondSize:          0,
-                bondFactor:        0,
-                kickTime:          0,
-                referencePrice:    0,
-                totalBondEscrowed: 112.526190000038609125 * 1e18,
-                auctionPrice:      0,
-                debtInAuction:     10_064.901171882309537906 * 1e18,
-                debtToCollateral:  0,
-                neutralPrice:      0
+                borrower:              _borrower,
+                active:                false,
+                kicker:                address(0),
+                bondSize:              0,
+                bondFactor:            0,
+                kickTime:              0,
+                referencePrice:        0,
+                totalBondEscrowed:     112.526190000038609125 * 1e18,
+                auctionPrice:          0,
+                debtInAuction:         10_064.901171882309537906 * 1e18,
+                debtToCollateral:      0,
+                neutralPrice:          0,
+                t0ReserveSettleAmount: 0
             })
         );
 
@@ -687,18 +688,19 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
 
         _assertAuction(
             AuctionParams({
-                borrower:          _borrower,
-                active:            false,
-                kicker:            address(0),
-                bondSize:          0,
-                bondFactor:        0,
-                kickTime:          0,
-                referencePrice:    0,
-                totalBondEscrowed: 112.526190000038609125 * 1e18,
-                auctionPrice:      0,
-                debtInAuction:     0,
-                debtToCollateral:  0,
-                neutralPrice:      0
+                borrower:              _borrower,
+                active:                false,
+                kicker:                address(0),
+                bondSize:              0,
+                bondFactor:            0,
+                kickTime:              0,
+                referencePrice:        0,
+                totalBondEscrowed:     112.526190000038609125 * 1e18,
+                auctionPrice:          0,
+                debtInAuction:         0,
+                debtToCollateral:      0,
+                neutralPrice:          0,
+                t0ReserveSettleAmount: 0
             })
         );
 
@@ -908,18 +910,19 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         });
         _assertAuction(
             AuctionParams({
-                borrower:          _borrower,
-                active:            false,
-                kicker:            address(0),
-                bondSize:          0,
-                bondFactor:        0,
-                kickTime:          0,
-                referencePrice:    0,
-                totalBondEscrowed: 148.374406222773030563 * 1e18,
-                auctionPrice:      0,
-                debtInAuction:     10_066.670727855240484714 * 1e18,
-                debtToCollateral:  0,
-                neutralPrice:      0
+                borrower:              _borrower,
+                active:                false,
+                kicker:                address(0),
+                bondSize:              0,
+                bondFactor:            0,
+                kickTime:              0,
+                referencePrice:        0,
+                totalBondEscrowed:     148.374406222773030563 * 1e18,
+                auctionPrice:          0,
+                debtInAuction:         10_066.670727855240484714 * 1e18,
+                debtToCollateral:      0,
+                neutralPrice:          0,
+                t0ReserveSettleAmount: 0
             })
         );
         _assertBucket({
@@ -953,18 +956,19 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         });
         _assertAuction(
             AuctionParams({
-                borrower:          _borrower2,
-                active:            false,
-                kicker:            address(0),
-                bondSize:          0,
-                bondFactor:        0,
-                kickTime:          0,
-                referencePrice:    0,
-                totalBondEscrowed: 35.848216222734421438 * 1e18,
-                auctionPrice:      0,
-                debtInAuction:     0,
-                debtToCollateral:  0,
-                neutralPrice:      0
+                borrower:              _borrower2,
+                active:                false,
+                kicker:                address(0),
+                bondSize:              0,
+                bondFactor:            0,
+                kickTime:              0,
+                referencePrice:        0,
+                totalBondEscrowed:     35.848216222734421438 * 1e18,
+                auctionPrice:          0,
+                debtInAuction:         0,
+                debtToCollateral:      0,
+                neutralPrice:          0,
+                t0ReserveSettleAmount: 0
             })
         );
         _assertBucket({

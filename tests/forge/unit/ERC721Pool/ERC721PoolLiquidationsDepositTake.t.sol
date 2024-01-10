@@ -203,18 +203,19 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
 
         _assertAuction(
             AuctionParams({
-                borrower:          _borrower,
-                active:            true,
-                kicker:            _lender,
-                bondSize:          0.243847547737474028 * 1e18,
-                bondFactor:        0.011180339887498948 * 1e18,
-                kickTime:          block.timestamp - 6 hours,
-                referencePrice:    12.609408860297298412 * 1e18,
-                totalBondEscrowed: 0.243847547737474028 * 1e18,
-                auctionPrice:      12.609408860297298412 * 1e18,
-                debtInAuction:     21.810387715504679661 * 1e18,
-                debtToCollateral:  10.905193857752339830 * 1e18,
-                neutralPrice:      12.609408860297298412 * 1e18
+                borrower:              _borrower,
+                active:                true,
+                kicker:                _lender,
+                bondSize:              0.243847547737474028 * 1e18,
+                bondFactor:            0.011180339887498948 * 1e18,
+                kickTime:              block.timestamp - 6 hours,
+                referencePrice:        12.609408860297298412 * 1e18,
+                totalBondEscrowed:     0.243847547737474028 * 1e18,
+                auctionPrice:          12.609408860297298412 * 1e18,
+                debtInAuction:         21.810387715504679661 * 1e18,
+                debtToCollateral:      10.905193857752339830 * 1e18,
+                neutralPrice:          12.609408860297298412 * 1e18,
+                t0ReserveSettleAmount: 0.009143398668639057 * 1e18
             })
         );
 
@@ -245,18 +246,19 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
 
         _assertAuction(
             AuctionParams({
-                borrower:          _borrower,
-                active:            true,
-                kicker:            _lender,
-                bondSize:          0.076149339066797765 * 1e18,
-                bondFactor:        0.011180339887498948 * 1e18,
-                kickTime:          block.timestamp - 6 hours,
-                referencePrice:    12.609408860297298412 * 1e18,
-                totalBondEscrowed: 0.076149339066797765 * 1e18,
-                auctionPrice:      12.609408860297298412 * 1e18,
-                debtInAuction:     7.063223505145093670 * 1e18,
-                debtToCollateral:  10.905193857752339830 * 1e18,
-                neutralPrice:      12.609408860297298412 * 1e18
+                borrower:              _borrower,
+                active:                true,
+                kicker:                _lender,
+                bondSize:              0.076149339066797765 * 1e18,
+                bondFactor:            0.011180339887498948 * 1e18,
+                kickTime:              block.timestamp - 6 hours,
+                referencePrice:        12.609408860297298412 * 1e18,
+                totalBondEscrowed:     0.076149339066797765 * 1e18,
+                auctionPrice:          12.609408860297298412 * 1e18,
+                debtInAuction:         7.063223505145093670 * 1e18,
+                debtToCollateral:      10.905193857752339830 * 1e18,
+                neutralPrice:          12.609408860297298412 * 1e18,
+                t0ReserveSettleAmount: 0.009143398668639057 * 1e18
             })
         );
         // borrower is compensated LP for fractional collateral
