@@ -22,6 +22,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
         _invariant_A7();
         _invariant_A8();
         _invariant_A9();
+        _invariant_A10();
     }
 
     /// @dev checks sum of all borrower's t0debt is equals to total pool t0debtInAuction
@@ -150,6 +151,19 @@ abstract contract LiquidationInvariants is BasicInvariants {
             (,,,, referencePrice,,,,, nextBorrower,) = _pool.auctionInfo(nextBorrower);
             require(lastReferencePrice <= referencePrice, "Auction Invariant A9");
             lastReferencePrice = referencePrice;
+        }
+    }
+
+    /// @dev borrower t0 reserve settle amount should be set borrowerT0debt * borrowFeeRate / 2.
+    function _invariant_A10() internal view {
+        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
+
+        for (uint256 i = 0; i < actorCount; i++) {
+            address borrower = IBaseHandler(_handler).actors(i);
+            uint256 borrowerT0ReserveSettleAmount = IBaseHandler(_handler).borrowerT0ReserveSettleAmount(borrower);
+            (,,,,,,,uint256 requiredT0ReserveSettleAmount,,,) = _pool.auctionInfo(borrower);
+
+            require(borrowerT0ReserveSettleAmount == requiredT0ReserveSettleAmount, "Auction Invariant A10");
         }
     }
     

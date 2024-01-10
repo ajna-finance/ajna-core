@@ -143,6 +143,9 @@ abstract contract BaseHandler is Test {
     uint256 public borrowerPenalty; // Borrower penalty on take
     uint256 public kickerReward;    // Kicker reward on take
 
+    // Borrower reserve settlement state
+    mapping(address => uint256) public borrowerT0ReserveSettleAmount;
+
     // All Buckets used in invariant testing that also includes Buckets where collateral is added when a borrower is in auction and has partial NFT
     EnumerableSet.UintSet internal buckets;
 
@@ -527,6 +530,12 @@ abstract contract BaseHandler is Test {
         decreaseInBonds = 0;
         // record totalBondEscrowed before each action
         (previousTotalBonds, , , , ) = _pool.reservesInfo();
+
+        // Record borrower reserve settle amount
+        for(uint256 i = 0; i < actors.length; i++) {
+            address borrower = actors[i];
+            borrowerT0ReserveSettleAmount[borrower] = _getAuctionInfo(borrower).t0ReserveSettleAmount;
+        }
     }
 
     /********************************/

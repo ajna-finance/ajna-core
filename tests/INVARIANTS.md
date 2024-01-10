@@ -26,6 +26,7 @@
 - **A7**: total bond escrowed accumulator (`AuctionsState.totalBondEscrowed`) should increase when auction is kicked with the difference needed to cover the bond and should decrease only when kicker bonds withdrawn (`Pool.withdrawBonds`). Claimable bonds should be available for withdrawal from pool at any time.  
 - **A8**: Upon a take/arbtake/deposittake the kicker reward <= borrower penalty
 - **A9**: reference prices in liquidation queue shall not decrease
+- **A10**: Upon kick `t0ReserveSettleAmount` should be set to `BorrowerT0Debt * borrowFeeRate / 2` for the kicked borrower.
 
 ## Loans
 - **L1**: for each `Loan` in loans array (`LoansState.loans`) starting from index 1, the corresponding address (`Loan.borrower`) is not `0x`, the borrower t0 debt to collateral (`Loan.t0DebtToCollateral`) is different than 0 and the id mapped in indices mapping (`LoansState.indices`) equals index of loan in loans array.
