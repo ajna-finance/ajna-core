@@ -301,6 +301,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // Reserves can increase by up to 2e-18 (1/5e17) due to rounding error in inflator value multiplied with t0Debt
             (uint256 inflator, ) = _pool.inflatorInfo();
             reservesErrorMargin = Math.max(reservesErrorMargin, inflator/5e17);
+            reservesErrorMargin = Math.max(reservesErrorMargin, (increaseInReserves + decreaseInReserves) / 1e16);
 
             // In case of bucket take, collateral is taken at bucket price.
             uint256 takePrice = _priceAt(bucketIndex_);
@@ -440,6 +441,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
                     maxDepth_ -= 1;
                 }
+                reservesErrorMargin = Math.max(reservesErrorMargin, (reservesAfterAction + reservesBeforeAction) / 1e16);
             }
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
             if (
