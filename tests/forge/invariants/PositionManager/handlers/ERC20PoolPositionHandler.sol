@@ -24,7 +24,7 @@ contract ERC20PoolPositionHandler is PositionPoolHandler, BaseERC20PoolHandler, 
     address[] internal _borrowers;
 
     uint16 internal constant LENDERS = 200;
-    uint16 internal constant LOANS_COUNT = 500;
+    uint16 internal constant LOANS_COUNT = 320;
     uint16 nonce;
     uint256 numberOfBuckets;
 
