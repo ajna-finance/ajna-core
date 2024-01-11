@@ -21,7 +21,7 @@ contract PurchaseQuoteWithExternalLiquidityTest is Test {
     address   internal _lender;
 
     function setUp() external {
-        vm.createSelectFork(vm.envString("ETH_RPC_URL"));
+        vm.createSelectFork(vm.envString("ETH_RPC_URL"), 18800000);
         _ajnaPool = ERC20Pool(new ERC20PoolFactory(AJNA).deployPool(WETH, USDC, 0.05 * 10**18));
         _lender   = makeAddr("lender");
 
