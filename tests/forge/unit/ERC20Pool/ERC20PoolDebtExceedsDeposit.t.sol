@@ -223,12 +223,14 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             timeRemaining:              0
         });
 
+        skip(137 hours);
+
         // 2b. Call settle
         _settle({
             from:        _attacker,
             borrower:    _attacker,
             maxDepth:    10,
-            settledDebt: 42.383729854304427546 * 1e18
+            settledDebt: 42.416885344287936131 * 1e18
         });
 
         _assertBucket({
@@ -239,44 +241,43 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             exchangeRate: 1 * 1e18
         });
 
-        uint256 depositRemaining = 0.932448636751764778 * 1e18;
         _assertBucket({
             index:        3231,
             lpBalance:    148.131790867836699762 * 1e18,
             collateral:   1.040000000000000000 * 1e18,
-            deposit:      depositRemaining, 
+            deposit:      43.287456358996402570 * 1e18, 
 
-            exchangeRate: 0.714227777847530521 * 1e18
+            exchangeRate: 1.000155649738540122 * 1e18
         });
 
         // 2c. Withdraw the deposit remaing (should be about 50)
         //     the collateral moved (should be 1.04) from the 100 price bucket (all go to the attacker)
         _removeAllLiquidity({
             from:     _attacker,
-            amount:   depositRemaining,
+            amount:   43.287456358996402570 * 1e18,
             index:    3231,
             newLup:   1.0 * 1e18,
-            lpRedeem: 1.305533984637067512 * 1e18
+            lpRedeem: 43.280719726287177705 * 1e18
         });
 
         _removeAllCollateral({
             from: _attacker,
             amount: 1.040000000000000000 * 1e18,
             index: 3231,
-            lpRedeem: 146.826256883199632250 * 1e18
+            lpRedeem: 104.851071141549522057 * 1e18
         });
 
         _assertReserveAuction({
-            reserves:                   50.424157487626028454 * 1e18,
-            claimableReserves :         50.424157387627706093 * 1e18,
+            reserves:                   8.064905711449906111 * 1e18,
+            claimableReserves :         8.064905611408186835 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
         });
 
         // assert attacker's balances
-        // attacker does not profit in QT
-        assertEq(_quote.balanceOf(address(_attacker)),      1_999_998.523321822553325600 * 1e18);
+        // attacker profits with 40.878329544797963392 QT
+        assertEq(_quote.balanceOf(address(_attacker)),      2_000_040.878329544797963392 * 1e18);
         assertEq(_collateral.balanceOf(address(_attacker)), 11_000.0 * 1e18);
     }
 
