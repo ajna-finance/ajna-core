@@ -233,6 +233,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                     auctionInfo.auctionPrice
                 );
             }
+
+            // **A10**: T0 reserve settle amount resets if borrower is out of auction
+            if (_getAuctionInfo(borrower_).kickTime == 0) borrowerT0ReserveSettleAmount[borrower_] = 0;
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -341,6 +344,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             // assign value to fenwick tree to mitigate rounding error that could be created in a _fenwickRemove call
             fenwickDeposits[bucketIndex_] = afterTakeVars.deposit;
+
+            // **A10**: T0 reserve settle amount resets if borrower is out of auction
+            if (_getAuctionInfo(borrower_).kickTime == 0) borrowerT0ReserveSettleAmount[borrower_] = 0;
         } catch (bytes memory err) {
             // Reset event Logs
             vm.getRecordedLogs();
@@ -468,6 +474,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 buckets.add(7388);
                 lenderDepositTime[borrower_][7388] = block.timestamp;
             }
+
+            // **A10**: T0 reserve settle amount resets if borrower is out of auction
+            if (_getAuctionInfo(borrower_).kickTime == 0) borrowerT0ReserveSettleAmount[borrower_] = 0;
+            
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
