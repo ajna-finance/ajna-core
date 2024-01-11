@@ -24,7 +24,7 @@ contract ERC20PoolPositionHandler is PositionPoolHandler, BaseERC20PoolHandler, 
     address[] internal _borrowers;
 
     uint16 internal constant LENDERS = 200;
-    uint16 internal constant LOANS_COUNT = 500;
+    uint16 internal constant LOANS_COUNT = 320;
     uint16 nonce;
     uint256 numberOfBuckets;
 
@@ -117,7 +117,7 @@ contract ERC20PoolPositionHandler is PositionPoolHandler, BaseERC20PoolHandler, 
     ) external useTimestamps useRandomActor(takerIndex_) skipTime(skippedTime_) writeLogs {
         address borrower = _borrowers[constrictToRange(borrowerIndex_, 0, _borrowers.length - 1)];
 
-        (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
+        (, , , uint256 kickTime, , , , , , , ) = _pool.auctionInfo(borrower);
 
         // Kick borrower if not already kicked
         if (kickTime == 0) {

@@ -1617,18 +1617,19 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         _assertAuction(
             AuctionParams({
-                borrower:          _borrower,
-                active:            false,
-                kicker:            address(0),
-                bondSize:          0,
-                bondFactor:        0,
-                kickTime:          0,
-                referencePrice:    0,
-                totalBondEscrowed: 0,
-                auctionPrice:      0,
-                debtInAuction:     0,
-                debtToCollateral:  0,
-                neutralPrice:      0
+                borrower:              _borrower,
+                active:                false,
+                kicker:                address(0),
+                bondSize:              0,
+                bondFactor:            0,
+                kickTime:              0,
+                referencePrice:        0,
+                totalBondEscrowed:     0,
+                auctionPrice:          0,
+                debtInAuction:         0,
+                debtToCollateral:      0,
+                neutralPrice:          0,
+                t0ReserveSettleAmount: 0
             })
         );
         _assertBorrower({
@@ -1650,18 +1651,19 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         _assertAuction(
             AuctionParams({
-                borrower:          _borrower,
-                active:            true,
-                kicker:            _lender,
-                bondSize:          0.215563505329166046 * 1e18,
-                bondFactor:        0.011180339887498948 * 1e18,
-                kickTime:          block.timestamp,
-                referencePrice:    11.146834976502055842 * 1e18,
-                totalBondEscrowed: 0.215563505329166046 * 1e18,
-                auctionPrice:      2_853.589753984526295552 * 1e18,
-                debtInAuction:     19.280586055366139163 * 1e18,
-                debtToCollateral:  9.640293027683069581 * 1e18,
-                neutralPrice:      11.146834976502055842 * 1e18
+                borrower:              _borrower,
+                active:                true,
+                kicker:                _lender,
+                bondSize:              0.215563505329166046 * 1e18,
+                bondFactor:            0.011180339887498948 * 1e18,
+                kickTime:              block.timestamp,
+                referencePrice:        11.146834976502055842 * 1e18,
+                totalBondEscrowed:     0.215563505329166046 * 1e18,
+                auctionPrice:          2_853.589753984526295552 * 1e18,
+                debtInAuction:         19.280586055366139163 * 1e18,
+                debtToCollateral:      9.640293027683069581 * 1e18,
+                neutralPrice:          11.146834976502055842 * 1e18,
+                t0ReserveSettleAmount: 0.009143398668639057 * 1e18
             })
         );
         _assertKicker({
@@ -1683,18 +1685,19 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         _assertAuction(
             AuctionParams({
-                borrower:          _borrower,
-                active:            true,
-                kicker:            _lender,
-                bondSize:          0.215563505329166046 * 1e18,
-                bondFactor:        0.011180339887498948 * 1e18,
-                kickTime:          block.timestamp - 6.5 hours,
-                referencePrice:    11.146834976502055842 * 1e18,
-                totalBondEscrowed: 0.215563505329166046 * 1e18,
-                auctionPrice:      9.373333573165302108 * 1e18,
-                debtInAuction:     19.280586055366139163 * 1e18,
-                debtToCollateral:  9.640293027683069581 * 1e18,
-                neutralPrice:      11.146834976502055842 * 1e18
+                borrower:              _borrower,
+                active:                true,
+                kicker:                _lender,
+                bondSize:              0.215563505329166046 * 1e18,
+                bondFactor:            0.011180339887498948 * 1e18,
+                kickTime:              block.timestamp - 6.5 hours,
+                referencePrice:        11.146834976502055842 * 1e18,
+                totalBondEscrowed:     0.215563505329166046 * 1e18,
+                auctionPrice:          9.373333573165302108 * 1e18,
+                debtInAuction:         19.280586055366139163 * 1e18,
+                debtToCollateral:      9.640293027683069581 * 1e18,
+                neutralPrice:          11.146834976502055842 * 1e18,
+                t0ReserveSettleAmount: 0.009143398668639057 * 1e18
             })
         );
 

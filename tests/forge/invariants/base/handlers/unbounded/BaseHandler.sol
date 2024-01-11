@@ -50,12 +50,11 @@ abstract contract BaseHandler is Test {
 
     struct AuctionInfo {
         address kicker;
-        uint256 bondFactor;
-        uint256 bondSize;
         uint256 kickTime;
         uint256 referencePrice;
         uint256 neutralPrice;
         uint256 debtToCollateral;
+        uint256 t0ReserveSettleAmount;
         uint256 auctionPrice;
         uint256 auctionPriceIndex;
         address head;
@@ -143,6 +142,9 @@ abstract contract BaseHandler is Test {
     // Take penalty test state
     uint256 public borrowerPenalty; // Borrower penalty on take
     uint256 public kickerReward;    // Kicker reward on take
+
+    // Borrower reserve settlement state
+    mapping(address => uint256) public borrowerT0ReserveSettleAmount;
 
     // All Buckets used in invariant testing that also includes Buckets where collateral is added when a borrower is in auction and has partial NFT
     EnumerableSet.UintSet internal buckets;
@@ -331,12 +333,13 @@ abstract contract BaseHandler is Test {
     function _getAuctionInfo(address borrower_) internal view returns (AuctionInfo memory auctionInfo_) {
         (
             auctionInfo_.kicker,
-            auctionInfo_.bondFactor,
-            auctionInfo_.bondSize,
+            ,
+            ,
             auctionInfo_.kickTime,
             auctionInfo_.referencePrice,
             auctionInfo_.neutralPrice,
             auctionInfo_.debtToCollateral,
+            auctionInfo_.t0ReserveSettleAmount,
             auctionInfo_.head,
             ,
         ) = _pool.auctionInfo(borrower_);
@@ -527,6 +530,12 @@ abstract contract BaseHandler is Test {
         decreaseInBonds = 0;
         // record totalBondEscrowed before each action
         (previousTotalBonds, , , , ) = _pool.reservesInfo();
+
+        // Record borrower reserve settle amount
+        for(uint256 i = 0; i < actors.length; i++) {
+            address borrower = actors[i];
+            borrowerT0ReserveSettleAmount[borrower] = _getAuctionInfo(borrower).t0ReserveSettleAmount;
+        }
     }
 
     /********************************/
@@ -662,7 +671,7 @@ abstract contract BaseHandler is Test {
         ) = _poolInfo.poolLoansInfo(address(_pool));
 
         (
-            , , , , , , ,
+            , , , , , , , ,
             address headAuction, ,
         ) = _pool.auctionInfo(address(0));
 
@@ -778,11 +787,11 @@ abstract contract BaseHandler is Test {
         uint256 bondFactor;
         uint256 bondSize;
         uint256 neutralPrice;
-        (,,,,,,, nextBorrower,,) = _pool.auctionInfo(address(0));
+        (,,,,,,,, nextBorrower,,) = _pool.auctionInfo(address(0));
         while (nextBorrower != address(0)) {
             data = string(abi.encodePacked("Borrower ", Strings.toHexString(uint160(nextBorrower), 20), " Auction Details :"));
             printInNextLine(data);
-            (, bondFactor, bondSize, kickTime, referencePrice, neutralPrice,,, nextBorrower,) = _pool.auctionInfo(nextBorrower);
+            (, bondFactor, bondSize, kickTime, referencePrice, neutralPrice,,,, nextBorrower,) = _pool.auctionInfo(nextBorrower);
 
             printLog("Bond Factor     = ", bondFactor);
             printLog("Bond Size       = ", bondSize);

@@ -4,12 +4,18 @@ pragma solidity 0.8.18;
 
 import '../../../../utils/DSTestPlus.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
-import { Math }           from '@openzeppelin/contracts/utils/math/Math.sol';
+import { Math }  from '@openzeppelin/contracts/utils/math/Math.sol';
 
-import { Maths }                                    from 'src/libraries/internal/Maths.sol';
-import { _priceAt, _indexOf, MIN_PRICE, MAX_PRICE } from 'src/libraries/helpers/PoolHelper.sol';
-import { MAX_FENWICK_INDEX }                        from 'src/libraries/helpers/PoolHelper.sol';
-import { Buckets }                                  from 'src/libraries/internal/Buckets.sol'; 
+import { Maths } from 'src/libraries/internal/Maths.sol';
+import {
+    _priceAt,
+    _indexOf,
+    _borrowFeeRate,
+    MIN_PRICE,
+    MAX_PRICE,
+    MAX_FENWICK_INDEX
+} from 'src/libraries/helpers/PoolHelper.sol';
+import { Buckets }     from 'src/libraries/internal/Buckets.sol'; 
 
 import { BaseHandler } from './BaseHandler.sol';
 import '@std/Vm.sol';
@@ -40,6 +46,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         BorrowerInfo memory borrowerInfo = _getBorrowerInfo(borrower_);
         KickerInfo   memory kickerInfoBeforeKick = _getKickerInfo(_actor);
 
+        (uint256 interestRate, ) = _pool.interestRateInfo();
+
         // ensure actor always has the amount to pay for bond
         _ensureQuoteAmount(_actor, borrowerInfo.debt);
 
@@ -53,6 +61,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             // **A7**: totalBondEscrowed should increase when auctioned kicked with the difference needed to cover the bond 
             increaseInBonds += kickerInfoAfterKick.totalBond - kickerInfoBeforeKick.totalBond;
+
+            // **A10**: toReserve should be set to borrowerT0debt * borrowerFeeRate / 2
+            borrowerT0ReserveSettleAmount[borrower_] = Maths.wmul(borrowerInfo.t0Debt, _borrowFeeRate(interestRate)) / 2;
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -71,6 +82,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         BucketInfo memory bucketInfoBeforeKick = _getBucketInfo(bucketIndex_);
         KickerInfo memory kickerInfoBeforeKick = _getKickerInfo(_actor);
 
+        (uint256 interestRate, ) = _pool.interestRateInfo();
+
         // record fenwick tree state before action
         fenwickDeposits[bucketIndex_] = bucketInfoBeforeKick.deposit;
 
@@ -88,6 +101,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             // **A7**: totalBondEscrowed should increase when auctioned kicked with the difference needed to cover the bond 
             increaseInBonds += kickerInfoAfterKick.totalBond - kickerInfoBeforeKick.totalBond;
+
+            // **A10**: toReserve should be set to borrowerT0debt * borrowerFeeRate / 2
+            borrowerT0ReserveSettleAmount[maxBorrower] = Maths.wmul(borrowerInfo.t0Debt, _borrowFeeRate(interestRate)) / 2;
 
             _fenwickRemove(bucketInfoBeforeKick.deposit - bucketInfoAfterKick.deposit, bucketIndex_);
         } catch (bytes memory err) {
@@ -217,6 +233,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                     auctionInfo.auctionPrice
                 );
             }
+
+            // **A10**: T0 reserve settle amount resets if borrower is out of auction
+            if (_getAuctionInfo(borrower_).kickTime == 0) borrowerT0ReserveSettleAmount[borrower_] = 0;
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -325,6 +344,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             // assign value to fenwick tree to mitigate rounding error that could be created in a _fenwickRemove call
             fenwickDeposits[bucketIndex_] = afterTakeVars.deposit;
+
+            // **A10**: T0 reserve settle amount resets if borrower is out of auction
+            if (_getAuctionInfo(borrower_).kickTime == 0) borrowerT0ReserveSettleAmount[borrower_] = 0;
         } catch (bytes memory err) {
             // Reset event Logs
             vm.getRecordedLogs();
@@ -452,6 +474,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 buckets.add(7388);
                 lenderDepositTime[borrower_][7388] = block.timestamp;
             }
+
+            // **A10**: T0 reserve settle amount resets if borrower is out of auction
+            if (_getAuctionInfo(borrower_).kickTime == 0) borrowerT0ReserveSettleAmount[borrower_] = 0;
+            
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }

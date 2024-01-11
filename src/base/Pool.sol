@@ -741,6 +741,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 referencePrice_,
         uint256 neutralPrice_,
         uint256 debtToCollateral_,
+        uint256 t0ReserveSettleAmount_,
         address head_,
         address next_,
         address prev_
@@ -754,6 +755,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             liquidation.referencePrice,
             liquidation.neutralPrice,
             liquidation.debtToCollateral,
+            liquidation.t0ReserveSettleAmount,
             auctions.head,
             liquidation.next,
             liquidation.prev

@@ -154,21 +154,23 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             uint256 referencePrice,
             uint256 neutralPrice,
             uint256 debtToCollateral,
+            uint256 t0ReserveSettleAmount,
             address head,
             address next,
             address prev
         ) = _poolUtils.auctionInfo(address(_pool), _borrower);
         // since loan is not in auction values are 0
-        assertEq(kicker,            address(0));
-        assertEq(bondFactor,        0);
-        assertEq(bondSize,          0);
-        assertEq(kickTime,          0);
-        assertEq(referencePrice,    0);
-        assertEq(neutralPrice,      0);
-        assertEq(debtToCollateral,  0);
-        assertEq(head,              address(0));
-        assertEq(next,              address(0));
-        assertEq(prev,              address(0));
+        assertEq(kicker,                address(0));
+        assertEq(bondFactor,            0);
+        assertEq(bondSize,              0);
+        assertEq(kickTime,              0);
+        assertEq(referencePrice,        0);
+        assertEq(neutralPrice,          0);
+        assertEq(debtToCollateral,      0);
+        assertEq(t0ReserveSettleAmount, 0);
+        assertEq(head,                  address(0));
+        assertEq(next,                  address(0));
+        assertEq(prev,                  address(0));
     }
 
     function testPoolInfoUtilsAuctionInfoSingleLiquidation() external {
@@ -181,20 +183,22 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             uint256 referencePrice,
             uint256 neutralPrice,
             uint256 debtToCollateral,
+            uint256 t0ReserveSettleAmount,
             address head,
             address next,
             address prev
         ) = _poolUtils.auctionInfo(address(_pool), _borrower);
-        assertEq(kicker,            _lender);
-        assertEq(bondFactor,        0.011180339887498948 * 1e18);
-        assertEq(bondSize,          235.012894500590867635 * 1e18);
-        assertEq(kickTime,          _startTime);
-        assertEq(referencePrice,    243.051341028061451209 * 1e18);
-        assertEq(neutralPrice,      243.051341028061451209 * 1e18);
-        assertEq(debtToCollateral,  210.201923076923077020 * 1e18);
-        assertEq(head,              _borrower);
-        assertEq(next,              address(0));
-        assertEq(prev,              address(0));
+        assertEq(kicker,                 _lender);
+        assertEq(bondFactor,             0.011180339887498948 * 1e18);
+        assertEq(bondSize,               235.012894500590867635 * 1e18);
+        assertEq(kickTime,               _startTime);
+        assertEq(referencePrice,         243.051341028061451209 * 1e18);
+        assertEq(neutralPrice,           243.051341028061451209 * 1e18);
+        assertEq(debtToCollateral,       210.201923076923077020 * 1e18);
+        assertEq(t0ReserveSettleAmount,  10.105861686390537400 * 1e18);
+        assertEq(head,                   _borrower);
+        assertEq(next,                   address(0));
+        assertEq(prev,                   address(0));
     }
 
     function testPoolInfoUtilsBorrowerInfo() external {
