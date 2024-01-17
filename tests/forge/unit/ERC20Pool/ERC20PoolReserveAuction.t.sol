@@ -338,9 +338,9 @@ contract L2ERC20PoolReserveAuctionTest is Test {
     address          internal _bidder;
 
     function setUp() public {
-        vm.createSelectFork(vm.envString("BASE_ETH_RPC_URL"));
+        vm.createSelectFork(vm.envString("L2_ETH_RPC_URL"));
 
-        // Base L2 bwAJNA token address
+        // L2 bwAJNA token address (example is for Base)
         _ajna        = ERC20(0xf0f326af3b1Ed943ab95C29470730CC8Cf66ae47);
         _collateral  = new Token("Collateral", "C");
         _quote       = new Token("Quote", "Q");
