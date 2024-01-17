@@ -5,6 +5,7 @@ on: [push]
 env:
   FOUNDRY_PROFILE: ci
   ETH_RPC_URL: ${{secrets.ETH_RPC_URL}} ## Loads environment from secrets
+  L2_ETH_RPC_URL: ${{secrets.L2_ETH_RPC_URL}}
 
 jobs:
   check:

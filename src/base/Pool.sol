@@ -96,6 +96,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     uint256 internal constant QUOTE_ADDRESS      = 41;
     /// @dev Immutable quote token scale arg offset.
     uint256 internal constant QUOTE_SCALE        = 61;
+    /// @dev Address used to burn AJNA tokens
+    address internal constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     /***********************/
     /*** State Variables ***/
@@ -433,9 +435,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // burn required number of ajna tokens to take quote from reserves
-        IERC20(_getArgAddress(AJNA_ADDRESS)).safeTransferFrom(msg.sender, address(this), ajnaRequired);
-
-        IERC20Token(_getArgAddress(AJNA_ADDRESS)).burn(ajnaRequired);
+        IERC20(_getArgAddress(AJNA_ADDRESS)).safeTransferFrom(msg.sender, BURN_ADDRESS, ajnaRequired);
 
         // transfer quote token to caller
         _transferQuoteToken(msg.sender, amount_);

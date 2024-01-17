@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
+import "@std/Test.sol";
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
 import { ERC20HelperContract }                 from './ERC20DSTestPlus.sol';
 import { FlashloanBorrower, SomeDefiStrategy } from '../../utils/FlashloanBorrower.sol';
+import { Token }                               from '../../utils/Tokens.sol';
 
 import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/ERC20Pool.sol';
 import 'src/ERC20PoolFactory.sol';
+import 'src/PoolInfoUtils.sol';
 
 import { IPoolErrors } from 'src/interfaces/pool/IPool.sol'; 
 
@@ -321,4 +324,83 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         _assertReserveAuctionUnsettledLiquidation();
     }
 
+}
+
+contract L2ERC20PoolReserveAuctionTest is Test {
+    ERC20PoolFactory internal _poolFactory;
+    ERC20Pool        internal _pool;
+    ERC20            internal _ajna;
+    Token            internal _collateral;
+    Token            internal _quote;
+    PoolInfoUtils    internal _poolInfo;
+    address          internal _borrower;
+    address          internal _lender;
+    address          internal _bidder;
+
+    function setUp() public {
+        vm.createSelectFork(vm.envString("L2_ETH_RPC_URL"));
+
+        // L2 bwAJNA token address (example is for Base)
+        _ajna        = ERC20(0xf0f326af3b1Ed943ab95C29470730CC8Cf66ae47);
+        _collateral  = new Token("Collateral", "C");
+        _quote       = new Token("Quote", "Q");
+        _poolFactory = new ERC20PoolFactory(address(_ajna));
+        _pool        = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 1e18));
+        _poolInfo    = new PoolInfoUtils();
+
+        _borrower  = makeAddr("borrower");
+        _lender    = makeAddr("lender");
+        _bidder    = makeAddr("bidder");
+
+        // mint tokens
+        deal(address(_collateral), _borrower, 10 * 1e18);
+        deal(address(_quote),      _borrower, 100 * 1e18);
+        deal(address(_quote),      _lender,   10_000 * 1e18);
+        deal(address(_ajna),       _bidder,   10 * 1e18);
+
+        // add liquidity
+        changePrank(_lender);
+        _quote.approve(address(_pool), type(uint256).max);
+        _pool.addQuoteToken(1_000 * 1e18, 2500, block.timestamp);
+
+        // draw debt
+        changePrank(_borrower);
+        _collateral.approve(address(_pool), type(uint256).max);
+        _pool.drawDebt(address(_borrower), 300 * 1e18, 7000, 1 * 1e18);
+    }
+
+    function testStartAndTakeL2ReserveAuction() external {
+        // skip time to accumulate interest
+        skip(26 weeks);
+
+        // repay debt
+        changePrank(_borrower);
+        _quote.approve(address(_pool), type(uint256).max);
+        _pool.repayDebt(address(_borrower), 400 * 1e18, 1 * 1e18, address(_borrower), 7000);
+
+        // check token balances and confirm reserves are claimable
+        assertEq(_quote.balanceOf(address(_bidder)), 0);
+        assertEq(_ajna.balanceOf(address(_bidder)),  10 * 1e18);
+        assertEq(_ajna.balanceOf(address(_pool)),    0);
+        (, uint256 claimableReserves, , ,) = _poolInfo.poolReservesInfo(address(_pool));
+        assertEq(claimableReserves, 1.471235273731403306 * 1e18);
+
+        // kick reserve auction
+        changePrank(_bidder);
+        _pool.kickReserveAuction();
+        (, , uint256 remaining, ,) = _poolInfo.poolReservesInfo(address(_pool));
+        assertEq(remaining, 1.471235273731403306 * 1e18);
+
+        // take all at reasonable price
+        skip(32 hours);
+        (, , , uint256 auctionPrice,) = _poolInfo.poolReservesInfo(address(_pool));
+        assertEq(auctionPrice, 0.158255207587128891 * 1e18);
+        _ajna.approve(address(_pool), type(uint256).max);
+        _pool.takeReserves(2 * 1e18);
+
+        // check token balances ensuring AJNA was burned
+        assertEq(_quote.balanceOf(address(_bidder)), 1.471235273731403306 * 1e18);
+        assertEq(_ajna.balanceOf(address(_bidder)),  9.767169356346130372 * 1e18);
+        assertEq(_ajna.balanceOf(address(_pool)),    0);
+    }
 }
