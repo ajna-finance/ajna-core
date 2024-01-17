@@ -369,7 +369,7 @@ contract L2ERC20PoolReserveAuctionTest is Test {
         _pool.drawDebt(address(_borrower), 300 * 1e18, 7000, 1 * 1e18);
     }
 
-    function testStartAndTakeBaseReserveAuction() external {
+    function testStartAndTakeL2ReserveAuction() external {
         // skip time to accumulate interest
         skip(26 weeks);
 
