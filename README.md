@@ -16,6 +16,12 @@ The Ajna protocol is a non-custodial, peer-to-peer, permissionless lending, borr
 ### Pool limitations
 - Borrowers cannot draw debt from a pool in the same block as when the pool was created.
 - With the exception of quantized prices, pool inputs and most accumulators are not explicitly limited. The pool will stop functioning when the bounds of a `uint256` need to be exceeded to process a request.
+- Game theory for liquidations and reserve auctions relies on multiple actors.  If only a single actor is interacting, they may purchase collateral or reserves at a trivial price close to zero.
+- Pricing functions for liquidations and reserve auctions rely on the availability of the chain and accuracy of block timestamps.  If the chain is unavailable or returns inaccurate timestamps, collateral or reserves may be purchased well below market value.
+- Several protocol functions have a parameters to prevent MEV manipulation or processing against an undesired pool state.  Passing blanket values to these functions obviates their purpose.  For example, passing a `limitIndex_` of 7388 to `drawDebt` allows a combative MEV bot to move liquidity down to a price which could make the loan liquidatable on the very next block.
+### Bucket limitations
+- Lenders should maintain their deposit in buckets slightly below the market price.  Choosing an inappropriately high price will likely result in the lender losing their deposit in exchange for a potentially trivial amount of collateral.  Symmetrically, adding collateral to an inappropriately underpriced bucket will likely result in the actor losing their collateral in exchange for a potentially small amount of quote token.
+- Integrators should take care to understand how token decimal precision, exchange rate, and LP balance in a bucket will affect the lender, especially with respect to rounding.  Inflated exchange rates, whether occurring naturally or through manipulation, could cause lenders to lose a portion of their deposit due to the protocol rounding in favor of the pool.  This can be avoided using a proxy or helper contract to validate the deposit or adjust deposit amounts.
 ### Position NFT limitations
 - Position NFTs are vulnerable to front running attacks when buying from open markets. Seller of such NFT could redeem positions before transfer, and then transfer an NFT without any value to the buyer.
 Ajna positions NFTs should not be purchased from open markets.
