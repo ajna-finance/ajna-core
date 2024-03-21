@@ -15,6 +15,7 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
     address internal _borrower2;
     address internal _lender;
     address internal _attacker;
+    address internal _settler;
 
     function setUp() external {
         _startTest();
@@ -60,7 +61,11 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
         assertEq(_priceAt(3232), 100.332368143282009890 * 1e18);
     }
 
-    function testStealReservesWithMargin() external tearDown {
+    function testStealReservesWithMargin() external {
+
+        _settler  = makeAddr("settler");
+        _mintCollateralAndApproveTokens(_settler,  1_000 * 1e18);
+
         // Pool's reserves are already seeded with 50 quote token in setUp()
 
         // assert attacker's balances
@@ -223,12 +228,30 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             timeRemaining:              0
         });
 
-        // 2b. Call settle
+        skip(137 hours);
+
+        // 3rd party settler, snipes the settle
         _settle({
-            from:        _attacker,
+            from:        _settler,
             borrower:    _attacker,
             maxDepth:    10,
-            settledDebt: 42.383729854304427546 * 1e18
+            settledDebt: 42.416885344287936131 * 1e18
+        });
+
+        // 3rd party settler, adds collateral and removes QT
+        _addCollateral({
+            from:    _settler,
+            amount:  0.4400000001000000000 * 1e18,
+            index:   3231,
+            lpAward: 44.360068569968170018 * 1e18
+        });
+
+        _removeAllLiquidity({
+            from:     _settler,
+            amount:   43.287456358996402570 * 1e18,
+            index:    3231,
+            newLup:   1.0 * 1e18,
+            lpRedeem: 43.280719726287177705 * 1e18
         });
 
         _assertBucket({
@@ -239,45 +262,36 @@ contract ERC20PoolDebtExceedsDepositTest is ERC20HelperContract {
             exchangeRate: 1 * 1e18
         });
 
-        uint256 depositRemaining = 0.932448636751764778 * 1e18;
         _assertBucket({
             index:        3231,
-            lpBalance:    148.131790867836699762 * 1e18,
-            collateral:   1.040000000000000000 * 1e18,
-            deposit:      depositRemaining, 
-
-            exchangeRate: 0.714227777847530521 * 1e18
+            lpBalance:    149.211139711517692075 * 1e18,
+            collateral:   1.480000000100000000 * 1e18,
+            deposit:      0, 
+            exchangeRate: 1.000155649738540122 * 1e18
         });
 
-        // 2c. Withdraw the deposit remaing (should be about 50)
-        //     the collateral moved (should be 1.04) from the 100 price bucket (all go to the attacker)
-        _removeAllLiquidity({
-            from:     _attacker,
-            amount:   depositRemaining,
-            index:    3231,
-            newLup:   1.0 * 1e18,
-            lpRedeem: 1.305533984637067512 * 1e18
-        });
+        // 2c. Attacker withdraws remaining collateral
 
         _removeAllCollateral({
             from: _attacker,
-            amount: 1.040000000000000000 * 1e18,
+            amount: 1.469294121893826788 * 1e18,
             index: 3231,
-            lpRedeem: 146.826256883199632250 * 1e18
+            lpRedeem: 148.131790867836699762 * 1e18
         });
 
         _assertReserveAuction({
-            reserves:                   50.424157487626028454 * 1e18,
-            claimableReserves :         50.424157387627706093 * 1e18,
+            reserves:                   8.064905711449906111 * 1e18,
+            claimableReserves :         8.064905611408186835 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
         });
 
         // assert attacker's balances
-        // attacker does not profit in QT
-        assertEq(_quote.balanceOf(address(_attacker)),      1_999_998.523321822553325600 * 1e18);
-        assertEq(_collateral.balanceOf(address(_attacker)), 11_000.0 * 1e18);
+        // attacker looses 2 and change QT
+        // attacker gains 0.42... Collateral token
+        assertEq(_quote.balanceOf(address(_attacker)),      1_999_997.590873185801560822 * 1e18);
+        assertEq(_collateral.balanceOf(address(_attacker)), 11_000.429294121893826788 * 1e18);
     }
 
     function testSpendOrigFeePushBadDebtToBorrowers() external tearDown {
