@@ -247,3 +247,4 @@ cast send ${DAI_TOKEN} "approve(address,uint256)" ${WBTC_DAI_POOL} 50000ether \
 cast send ${WBTC_DAI_POOL} "addQuoteToken(uint256,uint256,uint256)" 100ether 3232 $(($(cast block -f timestamp) + 60)) \
 	--from ${DEPLOY_ADDRESS} --keystore ${DEPLOY_KEY}
 ```
+<br>## Welcome to Peer-to-Pool Lending<br>Ajna's P2Pool model for lending without an intermediary - new contributor, start your first bid with the Pool deployment tutorial. Tip: Use Bucket for pricing! <br>
